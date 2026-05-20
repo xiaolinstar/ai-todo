@@ -29,11 +29,17 @@ export function buildContext(argv: string[]): CliContext {
     apiUrl,
     client: new AiTodoClient({
       apiUrl,
-      token: fileConfig.token,
-      source: "cli"
+      token: fileConfig.token ?? process.env.AI_TODO_TOKEN,
+      source: "cli",
+      idempotencyKey: readFlagValue(argv, "--idempotency-key")
     })
   };
 }
+
+declare const process: {
+  env: Record<string, string | undefined>;
+  exitCode?: number;
+};
 
 export function readFlagValue(argv: string[], flag: string): string | undefined {
   const index = argv.indexOf(flag);

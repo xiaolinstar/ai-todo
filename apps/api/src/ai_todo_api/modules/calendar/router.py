@@ -2,7 +2,9 @@ from fastapi import APIRouter, Depends, Query
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
-from ai_todo_api.auth.deps import CurrentUser, get_current_user
+from ai_todo_api.auth.context import AuthContext, CurrentUser
+from ai_todo_api.auth.deps import get_auth_context, get_current_user, get_idempotency_key
+from ai_todo_api.common.write import run_write
 from ai_todo_api.db.session import get_db
 from ai_todo_api.modules.calendar.repository import CalendarEventRepository
 from ai_todo_api.modules.calendar.schemas import (
@@ -35,6 +37,12 @@ def _not_found(event_id: str) -> JSONResponse:
 def _validation_error(message: str) -> JSONResponse:
     body = ErrorResponse(error=ApiError(code="VALIDATION_ERROR", message=message))
     return JSONResponse(status_code=400, content=body.model_dump(by_alias=True))
+
+
+def _event_id_from_data(data: dict) -> list[str]:
+    event = data.get("calendarEvent") or {}
+    event_id = event.get("id") or data.get("id")
+    return [event_id] if event_id else []
 
 
 @router.get("/today")
@@ -82,52 +90,91 @@ def get_calendar_event(
 @router.post("/events")
 def create_calendar_event(
     input_data: CreateCalendarEventInput,
+    auth: AuthContext = Depends(get_auth_context),
     db: Session = Depends(get_db),
-    user: CurrentUser = Depends(get_current_user),
+    idempotency_key: str | None = Depends(get_idempotency_key),
 ) -> JSONResponse:
+    user = CurrentUser.from_auth(auth)
     service = _calendar_service(db, user)
 
-    try:
-        event = service.create(input_data)
-    except ValueError as error:
-        return _validation_error(str(error))
+    def handler() -> JSONResponse:
+        try:
+            event = service.create(input_data)
+        except ValueError as error:
+            return _validation_error(str(error))
+        body = ApiResponse(data=CreateCalendarEventResult(calendar_event=event))
+        return JSONResponse(status_code=201, content=body.model_dump(by_alias=True))
 
-    body = ApiResponse(data=CreateCalendarEventResult(calendar_event=event))
-    return JSONResponse(status_code=201, content=body.model_dump(by_alias=True))
+    return run_write(
+        db,
+        auth,
+        operation="create_calendar_event",
+        idempotency_key=idempotency_key,
+        target_type="calendar_event",
+        input_summary=input_data.model_dump(by_alias=True),
+        handler=handler,
+        extract_target_ids=_event_id_from_data,
+    )
 
 
 @router.patch("/events/{event_id}")
 def update_calendar_event(
     event_id: str,
     input_data: UpdateCalendarEventInput,
+    auth: AuthContext = Depends(get_auth_context),
     db: Session = Depends(get_db),
-    user: CurrentUser = Depends(get_current_user),
+    idempotency_key: str | None = Depends(get_idempotency_key),
 ) -> JSONResponse:
+    user = CurrentUser.from_auth(auth)
     service = _calendar_service(db, user)
 
-    try:
-        event = service.update(event_id, input_data)
-    except CalendarEventNotFoundError:
-        return _not_found(event_id)
-    except ValueError as error:
-        return _validation_error(str(error))
+    def handler() -> JSONResponse:
+        try:
+            event = service.update(event_id, input_data)
+        except CalendarEventNotFoundError:
+            return _not_found(event_id)
+        except ValueError as error:
+            return _validation_error(str(error))
+        body = ApiResponse(data=UpdateCalendarEventResult(calendar_event=event))
+        return JSONResponse(status_code=200, content=body.model_dump(by_alias=True))
 
-    body = ApiResponse(data=UpdateCalendarEventResult(calendar_event=event))
-    return JSONResponse(status_code=200, content=body.model_dump(by_alias=True))
+    return run_write(
+        db,
+        auth,
+        operation="update_calendar_event",
+        idempotency_key=idempotency_key,
+        target_type="calendar_event",
+        input_summary={"eventId": event_id, **input_data.model_dump(by_alias=True)},
+        handler=handler,
+        extract_target_ids=_event_id_from_data,
+    )
 
 
 @router.delete("/events/{event_id}")
 def delete_calendar_event(
     event_id: str,
+    auth: AuthContext = Depends(get_auth_context),
     db: Session = Depends(get_db),
-    user: CurrentUser = Depends(get_current_user),
+    idempotency_key: str | None = Depends(get_idempotency_key),
 ) -> JSONResponse:
+    user = CurrentUser.from_auth(auth)
     service = _calendar_service(db, user)
 
-    try:
-        deleted_id = service.delete(event_id)
-    except CalendarEventNotFoundError:
-        return _not_found(event_id)
+    def handler() -> JSONResponse:
+        try:
+            deleted_id = service.delete(event_id)
+        except CalendarEventNotFoundError:
+            return _not_found(event_id)
+        body = ApiResponse(data=DeleteCalendarEventResult(id=deleted_id))
+        return JSONResponse(status_code=200, content=body.model_dump(by_alias=True))
 
-    body = ApiResponse(data=DeleteCalendarEventResult(id=deleted_id))
-    return JSONResponse(status_code=200, content=body.model_dump(by_alias=True))
+    return run_write(
+        db,
+        auth,
+        operation="delete_calendar_event",
+        idempotency_key=idempotency_key,
+        target_type="calendar_event",
+        input_summary={"eventId": event_id},
+        handler=handler,
+        extract_target_ids=lambda data: [data["id"]],
+    )

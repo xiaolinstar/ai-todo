@@ -6,8 +6,11 @@ Global flags:
   --api-url <url>        API base URL (default: AI_TODO_API_URL or ~/.ai-todo/config.json)
 
 Setup:
-  ai-todo login [--api-url <url>]
+  ai-todo login [--api-url <url>] [--token <aitodo_xxx>]
   ai-todo whoami
+
+Global:
+  --idempotency-key <uuid>   Recommended for agent write retries
 
 Today:
   ai-todo today

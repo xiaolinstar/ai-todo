@@ -51,7 +51,7 @@ curl POST /v1/reminders   # 最直接
 
 1. **CLI 与 Agent 体验**：✅ 结构化 `reminder`/`calendar`/`contact` 子命令、`--json`、`login`/`whoami`、本地 `~/.ai-todo/config.json`
 2. **Skills / MCP**：✅ `skills/ai-todo/SKILL.md` + `docs/agent-usage.md` + `@ai-todo/agent-protocol` 工具表
-3. **API 硬化**：CLI Token、幂等键、`CommandLog`（Agent 写操作审计）
+3. **API 硬化**：✅ CLI Token（`POST/GET/DELETE /v1/api-tokens`）、幂等键、`CommandLog`
 4. **关联能力**：`reminder ↔ contact`、`calendar ↔ contact`（结构化 `contact_ids`）
 5. **微信小程序**（可选）：消费同一套 REST API
 6. ~~自然语言解析~~：**不在路线图**

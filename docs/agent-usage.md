@@ -12,12 +12,23 @@ pnpm build
 # 启动 API（另开终端）
 pnpm dev:api
 
-# 配置 CLI 默认地址（可选）
+# 配置 CLI（可选）
 ai-todo login --api-url http://127.0.0.1:3100
-# 或 export AI_TODO_API_URL=http://127.0.0.1:3100
+
+# 创建 API Token（仅返回一次明文，请保存）
+curl -s -X POST http://127.0.0.1:3100/v1/api-tokens \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"My Agent","scopes":["read","write"]}' | jq .
+
+ai-todo login --token aitodo_xxx
+# 或 export AI_TODO_TOKEN=aitodo_xxx
 ```
 
-全局建议：**所有 Agent 调用加 `--json`**，解析 `ok` / `data` / `error.code`。
+全局建议：
+
+- **所有 Agent 调用加 `--json`**，解析 `ok` / `data` / `error.code`
+- **写操作加 `--idempotency-key <uuid>`**（或 HTTP 头 `Idempotency-Key`），避免重试重复创建
+- 使用 **Bearer Token**（`ai-todo login --token …`）而非仅依赖开发用户旁路
 
 ## 推荐工作流
 

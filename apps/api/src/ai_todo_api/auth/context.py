@@ -1,0 +1,25 @@
+from dataclasses import dataclass
+
+
+DEFAULT_SCOPES = ("read", "write", "contact:read", "contact:write")
+
+
+@dataclass(frozen=True)
+class AuthContext:
+    user_id: str
+    display_name: str
+    timezone: str
+    api_token_id: str | None
+    scopes: tuple[str, ...]
+    client_source: str
+
+
+@dataclass(frozen=True)
+class CurrentUser:
+    id: str
+    display_name: str
+    timezone: str
+
+    @classmethod
+    def from_auth(cls, auth: AuthContext) -> "CurrentUser":
+        return cls(id=auth.user_id, display_name=auth.display_name, timezone=auth.timezone)

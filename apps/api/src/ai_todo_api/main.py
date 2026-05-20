@@ -1,9 +1,10 @@
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
-from fastapi.responses import HTMLResponse
+from fastapi import FastAPI, HTTPException
+from fastapi.responses import HTMLResponse, JSONResponse
 
 from ai_todo_api.auth.router import router as auth_router
+from ai_todo_api.modules.api_tokens.router import router as api_tokens_router
 from ai_todo_api.auth.service import ensure_dev_user
 from ai_todo_api.config import settings
 from ai_todo_api.db.session import SessionLocal
@@ -30,6 +31,19 @@ async def lifespan(_: FastAPI):
 app = FastAPI(title="ai-todo API", version="0.1.0", lifespan=lifespan)
 
 
+@app.exception_handler(HTTPException)
+async def http_exception_handler(_: object, exc: HTTPException) -> JSONResponse:
+    if isinstance(exc.detail, dict) and "error" in exc.detail:
+        return JSONResponse(status_code=exc.status_code, content=exc.detail)
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={
+            "ok": False,
+            "error": {"code": "HTTP_ERROR", "message": str(exc.detail)},
+        },
+    )
+
+
 @app.get("/", response_class=HTMLResponse)
 def preview() -> str:
     return preview_page()
@@ -41,6 +55,7 @@ def healthcheck() -> ApiResponse[dict[str, str]]:
 
 
 app.include_router(auth_router)
+app.include_router(api_tokens_router)
 app.include_router(reminders_router)
 app.include_router(calendar_router)
 app.include_router(contacts_router)

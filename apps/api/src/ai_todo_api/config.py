@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     )
     dev_user_id: str = Field(default="user_dev")
     dev_user_display_name: str = Field(default="开发用户")
+    allow_dev_auth: bool = Field(default=True)
 
 
 settings = Settings()

@@ -2,7 +2,9 @@ from fastapi import APIRouter, Depends, Query
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
-from ai_todo_api.auth.deps import CurrentUser, get_current_user
+from ai_todo_api.auth.context import AuthContext, CurrentUser
+from ai_todo_api.auth.deps import get_auth_context, get_current_user, get_idempotency_key
+from ai_todo_api.common.write import run_write
 from ai_todo_api.db.session import get_db
 from ai_todo_api.modules.reminders.repository import ReminderRepository
 from ai_todo_api.modules.reminders.schemas import (
@@ -39,6 +41,12 @@ def _not_found(reminder_id: str) -> JSONResponse:
 def _validation_error(message: str) -> JSONResponse:
     body = ErrorResponse(error=ApiError(code="VALIDATION_ERROR", message=message))
     return JSONResponse(status_code=400, content=body.model_dump(by_alias=True))
+
+
+def _reminder_id_from_data(data: dict) -> list[str]:
+    reminder = data.get("reminder") or {}
+    reminder_id = reminder.get("id") or data.get("id")
+    return [reminder_id] if reminder_id else []
 
 
 @router.get("")
@@ -88,90 +96,155 @@ def get_reminder(
 @router.post("")
 def create_reminder(
     input_data: CreateReminderInput,
+    auth: AuthContext = Depends(get_auth_context),
     db: Session = Depends(get_db),
-    user: CurrentUser = Depends(get_current_user),
+    idempotency_key: str | None = Depends(get_idempotency_key),
 ) -> JSONResponse:
+    user = CurrentUser.from_auth(auth)
     service = _reminder_service(db, user)
 
-    try:
-        reminder = service.create(input_data)
-    except ValueError as error:
-        return _validation_error(str(error))
+    def handler() -> JSONResponse:
+        try:
+            reminder = service.create(input_data)
+        except ValueError as error:
+            return _validation_error(str(error))
+        body = ApiResponse(data=CreateReminderResult(reminder=reminder))
+        return JSONResponse(status_code=201, content=body.model_dump(by_alias=True))
 
-    body = ApiResponse(data=CreateReminderResult(reminder=reminder))
-    return JSONResponse(status_code=201, content=body.model_dump(by_alias=True))
+    return run_write(
+        db,
+        auth,
+        operation="create_reminder",
+        idempotency_key=idempotency_key,
+        target_type="reminder",
+        input_summary=input_data.model_dump(by_alias=True),
+        handler=handler,
+        extract_target_ids=_reminder_id_from_data,
+    )
 
 
 @router.post("/{reminder_id}/complete")
 def complete_reminder(
     reminder_id: str,
     input_data: CompleteReminderInput | None = None,
+    auth: AuthContext = Depends(get_auth_context),
     db: Session = Depends(get_db),
-    user: CurrentUser = Depends(get_current_user),
+    idempotency_key: str | None = Depends(get_idempotency_key),
 ) -> JSONResponse:
+    user = CurrentUser.from_auth(auth)
     service = _reminder_service(db, user)
 
-    try:
-        reminder = service.complete(reminder_id, input_data)
-    except ReminderNotFoundError:
-        return _not_found(reminder_id)
+    def handler() -> JSONResponse:
+        try:
+            reminder = service.complete(reminder_id, input_data)
+        except ReminderNotFoundError:
+            return _not_found(reminder_id)
+        body = ApiResponse(data=CompleteReminderResult(reminder=reminder))
+        return JSONResponse(status_code=200, content=body.model_dump(by_alias=True))
 
-    body = ApiResponse(data=CompleteReminderResult(reminder=reminder))
-    return JSONResponse(status_code=200, content=body.model_dump(by_alias=True))
+    return run_write(
+        db,
+        auth,
+        operation="complete_reminder",
+        idempotency_key=idempotency_key,
+        target_type="reminder",
+        input_summary={"reminderId": reminder_id},
+        handler=handler,
+        extract_target_ids=_reminder_id_from_data,
+    )
 
 
 @router.post("/{reminder_id}/reschedule")
 def reschedule_reminder(
     reminder_id: str,
     input_data: RescheduleReminderInput,
+    auth: AuthContext = Depends(get_auth_context),
     db: Session = Depends(get_db),
-    user: CurrentUser = Depends(get_current_user),
+    idempotency_key: str | None = Depends(get_idempotency_key),
 ) -> JSONResponse:
+    user = CurrentUser.from_auth(auth)
     service = _reminder_service(db, user)
 
-    try:
-        reminder = service.reschedule(reminder_id, input_data)
-    except ReminderNotFoundError:
-        return _not_found(reminder_id)
-    except ValueError as error:
-        return _validation_error(str(error))
+    def handler() -> JSONResponse:
+        try:
+            reminder = service.reschedule(reminder_id, input_data)
+        except ReminderNotFoundError:
+            return _not_found(reminder_id)
+        except ValueError as error:
+            return _validation_error(str(error))
+        body = ApiResponse(data=RescheduleReminderResult(reminder=reminder))
+        return JSONResponse(status_code=200, content=body.model_dump(by_alias=True))
 
-    body = ApiResponse(data=RescheduleReminderResult(reminder=reminder))
-    return JSONResponse(status_code=200, content=body.model_dump(by_alias=True))
+    return run_write(
+        db,
+        auth,
+        operation="reschedule_reminder",
+        idempotency_key=idempotency_key,
+        target_type="reminder",
+        input_summary={"reminderId": reminder_id, **input_data.model_dump(by_alias=True)},
+        handler=handler,
+        extract_target_ids=_reminder_id_from_data,
+    )
 
 
 @router.patch("/{reminder_id}")
 def update_reminder(
     reminder_id: str,
     input_data: UpdateReminderInput,
+    auth: AuthContext = Depends(get_auth_context),
     db: Session = Depends(get_db),
-    user: CurrentUser = Depends(get_current_user),
+    idempotency_key: str | None = Depends(get_idempotency_key),
 ) -> JSONResponse:
+    user = CurrentUser.from_auth(auth)
     service = _reminder_service(db, user)
 
-    try:
-        reminder = service.update(reminder_id, input_data)
-    except ReminderNotFoundError:
-        return _not_found(reminder_id)
-    except ValueError as error:
-        return _validation_error(str(error))
+    def handler() -> JSONResponse:
+        try:
+            reminder = service.update(reminder_id, input_data)
+        except ReminderNotFoundError:
+            return _not_found(reminder_id)
+        except ValueError as error:
+            return _validation_error(str(error))
+        body = ApiResponse(data=UpdateReminderResult(reminder=reminder))
+        return JSONResponse(status_code=200, content=body.model_dump(by_alias=True))
 
-    body = ApiResponse(data=UpdateReminderResult(reminder=reminder))
-    return JSONResponse(status_code=200, content=body.model_dump(by_alias=True))
+    return run_write(
+        db,
+        auth,
+        operation="update_reminder",
+        idempotency_key=idempotency_key,
+        target_type="reminder",
+        input_summary={"reminderId": reminder_id, **input_data.model_dump(by_alias=True)},
+        handler=handler,
+        extract_target_ids=_reminder_id_from_data,
+    )
 
 
 @router.delete("/{reminder_id}")
 def delete_reminder(
     reminder_id: str,
+    auth: AuthContext = Depends(get_auth_context),
     db: Session = Depends(get_db),
-    user: CurrentUser = Depends(get_current_user),
+    idempotency_key: str | None = Depends(get_idempotency_key),
 ) -> JSONResponse:
+    user = CurrentUser.from_auth(auth)
     service = _reminder_service(db, user)
 
-    try:
-        deleted_id = service.delete(reminder_id)
-    except ReminderNotFoundError:
-        return _not_found(reminder_id)
+    def handler() -> JSONResponse:
+        try:
+            deleted_id = service.delete(reminder_id)
+        except ReminderNotFoundError:
+            return _not_found(reminder_id)
+        body = ApiResponse(data=DeleteReminderResult(id=deleted_id))
+        return JSONResponse(status_code=200, content=body.model_dump(by_alias=True))
 
-    body = ApiResponse(data=DeleteReminderResult(id=deleted_id))
-    return JSONResponse(status_code=200, content=body.model_dump(by_alias=True))
+    return run_write(
+        db,
+        auth,
+        operation="delete_reminder",
+        idempotency_key=idempotency_key,
+        target_type="reminder",
+        input_summary={"reminderId": reminder_id},
+        handler=handler,
+        extract_target_ids=lambda data: [data["id"]],
+    )

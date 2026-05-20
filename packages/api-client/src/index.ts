@@ -31,20 +31,31 @@ export interface AiTodoClientOptions {
   apiUrl: string;
   token?: string;
   source?: "miniapp" | "cli" | "agent" | "api";
+  idempotencyKey?: string;
+}
+
+export interface RequestOptions {
+  idempotencyKey?: string;
 }
 
 export class AiTodoClient {
   private readonly apiUrl: string;
   private readonly token?: string;
   private readonly source?: string;
+  private readonly defaultIdempotencyKey?: string;
 
   constructor(options: AiTodoClientOptions) {
     this.apiUrl = options.apiUrl.replace(/\/$/, "");
     this.token = options.token;
     this.source = options.source;
+    this.defaultIdempotencyKey = options.idempotencyKey;
   }
 
-  async request<T>(path: string, init: RequestInit = {}): Promise<ApiResponse<T>> {
+  async request<T>(
+    path: string,
+    init: RequestInit = {},
+    options: RequestOptions = {}
+  ): Promise<ApiResponse<T>> {
     const headers = new Headers(init.headers);
     headers.set("content-type", "application/json");
 
@@ -54,6 +65,11 @@ export class AiTodoClient {
 
     if (this.source) {
       headers.set("x-client-source", this.source);
+    }
+
+    const idempotencyKey = options.idempotencyKey ?? this.defaultIdempotencyKey;
+    if (idempotencyKey) {
+      headers.set("idempotency-key", idempotencyKey);
     }
 
     const response = await fetch(`${this.apiUrl}${path}`, {

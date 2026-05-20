@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends
 
-from ai_todo_api.auth.deps import CurrentUser, get_current_user
+from ai_todo_api.auth.context import CurrentUser
+from ai_todo_api.auth.deps import get_current_user
 from ai_todo_api.auth.schemas import MeResult, UserSummary
 from ai_todo_api.schemas import ApiResponse
 

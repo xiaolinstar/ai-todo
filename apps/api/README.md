@@ -25,15 +25,21 @@ cp .env.example .env
 
 ## Authentication (MVP)
 
-MVP uses a **fixed development user** (`AI_TODO_DEV_USER_ID`, default `user_dev`). Requests do
-not require an `Authorization` header yet. All reminders and contacts are scoped to this user.
-WeChat login and CLI tokens are planned for a later phase. See `docs/tech-decisions.md`.
+MVP supports **Bearer API tokens** and an optional **development user fallback**
+(`AI_TODO_ALLOW_DEV_AUTH=true`, default). Without `Authorization`, requests run as
+`user_dev`. With `Authorization: Bearer aitodo_…`, requests run as the token owner.
+See `docs/tech-decisions.md`.
+
+Write requests accept `Idempotency-Key` and are recorded in `command_logs`.
 
 ## Current Endpoints
 
 - `GET /`
 - `GET /v1/health`
 - `GET /v1/me`
+- `GET /v1/api-tokens`
+- `POST /v1/api-tokens`
+- `DELETE /v1/api-tokens/{token_id}`
 - `GET /v1/today`
 - `GET /v1/reminders` — 列表（`status`、`from`、`to`、`limit`）
 - `GET /v1/reminders/today` — 今日待办（含无截止 pending、逾期 pending）
