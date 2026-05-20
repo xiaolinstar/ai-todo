@@ -127,6 +127,16 @@ export interface ListRemindersParams {
   limit?: number;
 }
 
+export interface UserSummary {
+  id: EntityId;
+  displayName: string;
+  timezone: string;
+}
+
+export interface MeResult {
+  user: UserSummary;
+}
+
 export interface TodayResult {
   date: string;
   timezone: string;

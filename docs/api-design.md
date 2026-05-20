@@ -13,8 +13,10 @@ MVP API 需要覆盖：
 - 提醒事项创建、查询、完成、改期
 - 简单日程创建和查询
 - 联系人创建、查询、联系方式管理
-- 自然语言解析入口
 - Agent 写操作审计和幂等
+
+> **范围说明（2026-05-20）**：不实现服务端自然语言解析（`POST /v1/nl/parse` 等）。
+> 自然语言由 OpenClaw / Claude 等 Agent + CLI/Skills 承担，见 `docs/tech-decisions.md`。
 
 ## API 风格
 

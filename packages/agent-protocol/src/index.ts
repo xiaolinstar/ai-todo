@@ -18,3 +18,6 @@ export interface AgentWriteOptions {
   idempotencyKey: string;
   requireConfirmation?: boolean;
 }
+
+export { AI_TODO_AGENT_GUIDELINES, AI_TODO_AGENT_TOOLS } from "./tools";
+export type { AgentToolSpec } from "./tools";

@@ -1,6 +1,6 @@
 # ai-todo
 
-AI-native reminder, calendar, contact, and CLI workspace.
+AI-native reminder, calendar, and contact backend with a structured CLI for agents (OpenClaw, Claude, etc.)—no built-in NL parsing.
 
 ## Workspace
 
@@ -28,6 +28,18 @@ pnpm install
 pnpm typecheck
 pnpm build
 ```
+
+## Agents (OpenClaw / Claude / Cursor)
+
+Use the structured CLI with `--json`—no built-in natural language on the server.
+
+```bash
+pnpm dev:api          # terminal 1
+pnpm cli -- today --json   # terminal 2 (or: node apps/cli/dist/index.js)
+```
+
+- Command reference: [docs/agent-usage.md](docs/agent-usage.md)
+- Installable skill: [skills/ai-todo/SKILL.md](skills/ai-todo/SKILL.md)
 
 ## API Development
 

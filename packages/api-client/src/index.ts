@@ -15,6 +15,7 @@ import type {
   DeleteReminderResult,
   ListCalendarEventsParams,
   ListRemindersParams,
+  MeResult,
   ReminderDetailResult,
   ReminderListResult,
   RescheduleReminderInput,
@@ -188,6 +189,10 @@ export class AiTodoClient {
       `/v1/calendar/events/${encodeURIComponent(eventId)}`,
       { method: "DELETE" }
     );
+  }
+
+  me(): Promise<ApiResponse<MeResult>> {
+    return this.request<MeResult>("/v1/me");
   }
 
   today(): Promise<ApiResponse<TodayResult>> {
