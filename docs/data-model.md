@@ -1,0 +1,289 @@
+# ai-todo 数据模型设计
+
+日期：2026-05-19
+
+## 设计目标
+
+MVP 的核心模型围绕 `Reminder`、`CalendarEvent` 和 `Contact` 展开。
+
+`Reminder` 管“要记得完成的事”，`CalendarEvent` 管“某个时间的安排”，`Contact` 管“某个人是谁以及怎么联系”。三者共同服务于微信小程序、CLI 和 AI Agent。
+
+第一版数据模型应满足：
+
+- 支持个人用户数据隔离
+- 支持微信小程序登录和 CLI Token
+- 支持提醒事项、简单日程和个人通讯录
+- 支持自然语言创建后的结构化落库
+- 支持 Agent 写操作审计
+- 为未来邮件发送、参与人和自动规划预留关联点
+
+## 命名约定
+
+- 产品和 CLI：`ai-todo`
+- 用户可见的轻量事项：待办 / 提醒事项
+- 后端核心对象：`Reminder`
+- 日历对象：`CalendarEvent`
+- 通讯录对象：`Contact`
+- 联系方式对象：`ContactMethod`
+
+暂不引入完整 `Task` 模型。
+
+## 核心实体
+
+### User
+
+统一用户身份。业务数据必须通过 `user_id` 隔离，不直接依赖微信 `openid`。
+
+建议字段：
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `id` | string | 用户 ID |
+| `display_name` | string | 用户展示名 |
+| `timezone` | string | 默认时区，例如 `Asia/Shanghai` |
+| `locale` | string | 默认语言区域 |
+| `created_at` | datetime | 创建时间 |
+| `updated_at` | datetime | 更新时间 |
+| `deleted_at` | datetime? | 软删除时间 |
+
+### Identity
+
+登录身份绑定。MVP 先支持微信，后续可扩展 Apple、手机号、邮箱和 OAuth。
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `id` | string | 身份 ID |
+| `user_id` | string | 关联用户 |
+| `provider` | enum | `wechat` / `apple` / `phone` / `email` / `oauth` |
+| `provider_subject` | string | 第三方用户标识，例如微信 openid |
+| `union_id` | string? | 微信 unionid 或同类跨应用标识 |
+| `created_at` | datetime | 创建时间 |
+| `last_used_at` | datetime? | 最近使用时间 |
+
+唯一约束：`provider + provider_subject`。
+
+### ApiToken
+
+CLI 和 Agent 调用 API 的授权凭证。服务端只保存 token 哈希，不保存明文。
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `id` | string | Token ID |
+| `user_id` | string | 归属用户 |
+| `name` | string | 设备或用途名称，例如 `MacBook Codex` |
+| `token_hash` | string | Token 哈希 |
+| `scopes` | string[] | 权限范围 |
+| `expires_at` | datetime? | 过期时间 |
+| `last_used_at` | datetime? | 最近使用时间 |
+| `revoked_at` | datetime? | 吊销时间 |
+| `created_at` | datetime | 创建时间 |
+
+MVP 推荐作用域：
+
+- `read`
+- `write`
+- `reminder:write`
+- `calendar:write`
+- `contact:read`
+- `contact:write`
+- `agent:plan`
+
+### Reminder
+
+提醒事项。强调事情本身和完成状态，不一定占用日历时间。
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `id` | string | 提醒 ID |
+| `user_id` | string | 归属用户 |
+| `title` | string | 标题 |
+| `notes` | string? | 备注 |
+| `status` | enum | `pending` / `completed` / `cancelled` |
+| `due_at` | datetime? | 截止时间 |
+| `remind_at` | datetime? | 提醒触发时间 |
+| `priority` | enum? | `low` / `normal` / `high` |
+| `source` | enum | `miniapp` / `cli` / `agent` / `api` |
+| `created_by_token_id` | string? | CLI / Agent Token 来源 |
+| `created_at` | datetime | 创建时间 |
+| `updated_at` | datetime | 更新时间 |
+| `completed_at` | datetime? | 完成时间 |
+| `deleted_at` | datetime? | 软删除时间 |
+
+### CalendarEvent
+
+日历事件。强调时间占用或明确时间安排。
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `id` | string | 日程 ID |
+| `user_id` | string | 归属用户 |
+| `title` | string | 标题 |
+| `description` | string? | 描述 |
+| `start_at` | datetime | 开始时间 |
+| `end_at` | datetime? | 结束时间 |
+| `timezone` | string | 时区 |
+| `location` | string? | 地点 |
+| `reminder_id` | string? | 关联提醒事项 |
+| `source` | enum | `miniapp` / `cli` / `agent` / `api` |
+| `created_by_token_id` | string? | CLI / Agent Token 来源 |
+| `created_at` | datetime | 创建时间 |
+| `updated_at` | datetime | 更新时间 |
+| `deleted_at` | datetime? | 软删除时间 |
+
+MVP 不实现重复日程、会议室、复杂参与人和跨日程冲突检测。
+
+### Contact
+
+个人联系人。用于联系人搜索、自然语言联系人识别，以及未来邮件发送和日程参与人。
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `id` | string | 联系人 ID |
+| `user_id` | string | 归属用户 |
+| `display_name` | string | 展示名 |
+| `given_name` | string? | 名 |
+| `family_name` | string? | 姓 |
+| `nickname` | string? | 昵称 |
+| `company` | string? | 公司 |
+| `title` | string? | 职位 |
+| `notes` | string? | 备注 |
+| `source` | enum | `manual` / `imported` / `agent` / `api` |
+| `created_at` | datetime | 创建时间 |
+| `updated_at` | datetime | 更新时间 |
+| `deleted_at` | datetime? | 软删除时间 |
+
+MVP 中 `Contact` 是个人通讯录对象，不做企业组织架构。
+
+### ContactMethod
+
+联系人方式。一个联系人可以有多个邮箱、手机号或其他渠道。
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `id` | string | 联系方式 ID |
+| `user_id` | string | 冗余用户 ID，方便隔离查询 |
+| `contact_id` | string | 关联联系人 |
+| `type` | enum | `email` / `phone` / `wechat` / `other` |
+| `label` | string? | `work` / `home` / `personal` 等 |
+| `value` | string | 联系方式值 |
+| `normalized_value` | string | 归一化值 |
+| `is_primary` | boolean | 是否默认联系方式 |
+| `verified_at` | datetime? | 验证时间 |
+| `created_at` | datetime | 创建时间 |
+| `updated_at` | datetime | 更新时间 |
+
+建议唯一约束：`user_id + type + normalized_value`，避免同一用户重复录入同一个邮箱或手机号。
+
+### ContactAlias
+
+联系人别名。用于自然语言识别和消歧。
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `id` | string | 别名 ID |
+| `user_id` | string | 归属用户 |
+| `contact_id` | string | 关联联系人 |
+| `alias` | string | 别名，例如 `王总`、`Alice` |
+| `normalized_alias` | string | 归一化别名 |
+| `created_at` | datetime | 创建时间 |
+
+建议唯一约束：`user_id + normalized_alias + contact_id`。
+
+### ReminderContact
+
+提醒事项和联系人的关联关系。用于“提醒我给张三发方案”这类场景。
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `id` | string | 关联 ID |
+| `reminder_id` | string | 提醒 ID |
+| `contact_id` | string | 联系人 ID |
+| `role` | enum | `related` / `recipient` / `caller` |
+| `created_at` | datetime | 创建时间 |
+
+### CalendarEventContact
+
+日程和联系人的关联关系。MVP 中作为轻量参与人记录，不实现邀请流。
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `id` | string | 关联 ID |
+| `calendar_event_id` | string | 日程 ID |
+| `contact_id` | string | 联系人 ID |
+| `role` | enum | `participant` / `organizer` / `related` |
+| `created_at` | datetime | 创建时间 |
+
+### Tag
+
+轻量标签。第一版可选，如果实现成本高，可以先延后。
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `id` | string | 标签 ID |
+| `user_id` | string | 归属用户 |
+| `name` | string | 标签名 |
+| `color` | string? | 展示颜色 |
+| `created_at` | datetime | 创建时间 |
+
+### CommandLog
+
+记录 CLI、Agent 和高风险 API 写操作，方便审计和撤销。
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `id` | string | 日志 ID |
+| `user_id` | string | 用户 ID |
+| `api_token_id` | string? | Token 来源 |
+| `source` | enum | `cli` / `agent` / `miniapp` / `api` |
+| `operation` | string | 操作名 |
+| `request_id` | string? | 请求 ID |
+| `idempotency_key` | string? | 幂等键 |
+| `target_type` | string? | 影响对象类型 |
+| `target_ids` | string[] | 影响对象 ID |
+| `input_summary` | json | 脱敏后的输入摘要 |
+| `result_summary` | json | 脱敏后的结果摘要 |
+| `created_at` | datetime | 创建时间 |
+
+写接口应支持 `Idempotency-Key`，避免 Agent 重试造成重复创建。
+
+## 自然语言解析结果
+
+自然语言解析不建议直接把大模型原始输出落入业务表。建议先生成结构化解析结果，再由服务层校验并写入对应模型。
+
+示例：
+
+```json
+{
+  "intent": "create_reminder",
+  "title": "给客户王总发报价确认邮件",
+  "due_at": "2026-05-20T10:00:00+08:00",
+  "contacts": [
+    {
+      "matched_contact_id": "contact_123",
+      "text": "王总",
+      "confidence": 0.86,
+      "needs_confirmation": false
+    }
+  ]
+}
+```
+
+联系人匹配必须支持 `needs_confirmation`。当存在重名、低置信度或缺少邮箱时，系统应返回候选项，而不是自动执行邮件发送或高风险操作。
+
+## 未来扩展
+
+### EmailMessage
+
+未来邮件发送可单独引入：
+
+- `EmailAccount`
+- `EmailMessage`
+- `EmailRecipient`
+- `EmailAttachment`
+- `CommunicationLog`
+
+邮件发送会带来授权、风控、退信、附件、安全审计和撤回问题，不建议进入第一版 MVP。
+
+### Task
+
+如果未来需要项目型工作管理，可以在 `Reminder` 基础上扩展子项、清单和备注，仍不急于引入完整 `Task`。

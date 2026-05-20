@@ -1,0 +1,16 @@
+node_modules/
+.pnpm-store/
+dist/
+.venv/
+.turbo/
+.DS_Store
+.env
+.env.*
+!.env.example
+coverage/
+*.log
+*.tsbuildinfo
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/

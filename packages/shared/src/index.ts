@@ -1,0 +1,210 @@
+export type EntityId = string;
+
+export type ClientSource = "miniapp" | "cli" | "agent" | "api";
+
+export type ReminderStatus = "pending" | "completed" | "cancelled";
+
+export type ContactMethodType = "email" | "phone" | "wechat" | "other";
+
+export interface ContactSummary {
+  id: EntityId;
+  displayName: string;
+  nickname?: string;
+  company?: string;
+  title?: string;
+  primaryEmail?: string;
+  primaryPhone?: string;
+}
+
+export interface ContactMethodInput {
+  type: ContactMethodType;
+  value: string;
+  label?: string;
+  isPrimary?: boolean;
+}
+
+export interface ContactMethodSummary {
+  id: EntityId;
+  type: ContactMethodType;
+  label?: string;
+  value: string;
+  isPrimary: boolean;
+}
+
+export interface ContactDetail extends ContactSummary {
+  notes?: string;
+  methods: ContactMethodSummary[];
+  aliases: string[];
+}
+
+export interface CreateContactInput {
+  displayName: string;
+  nickname?: string;
+  company?: string;
+  title?: string;
+  notes?: string;
+  methods?: ContactMethodInput[];
+  aliases?: string[];
+}
+
+export interface CreateContactResult {
+  contact: ContactDetail;
+}
+
+export interface ContactListResult {
+  items: ContactSummary[];
+}
+
+export interface ContactDetailResult {
+  contact: ContactDetail;
+}
+
+export interface ReminderSummary {
+  id: EntityId;
+  title: string;
+  status: ReminderStatus;
+  notes?: string;
+  dueAt?: string;
+  remindAt?: string;
+  completedAt?: string;
+  contacts?: ContactSummary[];
+}
+
+export interface CreateReminderInput {
+  title: string;
+  notes?: string;
+  dueAt?: string;
+  remindAt?: string;
+  contactIds?: EntityId[];
+}
+
+export interface CreateReminderResult {
+  reminder: ReminderSummary;
+}
+
+export interface CompleteReminderResult {
+  reminder: ReminderSummary;
+}
+
+export interface ReminderListResult {
+  items: ReminderSummary[];
+}
+
+export interface ReminderDetailResult {
+  reminder: ReminderSummary;
+}
+
+export interface UpdateReminderInput {
+  title?: string;
+  notes?: string;
+  status?: ReminderStatus;
+  dueAt?: string;
+  remindAt?: string;
+}
+
+export interface RescheduleReminderInput {
+  dueAt?: string;
+  remindAt?: string;
+}
+
+export interface UpdateReminderResult {
+  reminder: ReminderSummary;
+}
+
+export interface RescheduleReminderResult {
+  reminder: ReminderSummary;
+}
+
+export interface DeleteReminderResult {
+  id: EntityId;
+  deleted: boolean;
+}
+
+export interface ListRemindersParams {
+  status?: ReminderStatus;
+  from?: string;
+  to?: string;
+  limit?: number;
+}
+
+export interface TodayResult {
+  date: string;
+  timezone: string;
+  reminders: ReminderSummary[];
+  calendarEvents: CalendarEventSummary[];
+}
+
+export interface CalendarEventSummary {
+  id: EntityId;
+  title: string;
+  startAt: string;
+  endAt?: string;
+  timezone: string;
+  location?: string;
+  description?: string;
+  contacts?: ContactSummary[];
+}
+
+export interface CreateCalendarEventInput {
+  title: string;
+  startAt: string;
+  endAt?: string;
+  timezone?: string;
+  location?: string;
+  description?: string;
+  contactIds?: EntityId[];
+}
+
+export interface CreateCalendarEventResult {
+  calendarEvent: CalendarEventSummary;
+}
+
+export interface CalendarEventListResult {
+  items: CalendarEventSummary[];
+}
+
+export interface CalendarEventDetailResult {
+  calendarEvent: CalendarEventSummary;
+}
+
+export interface UpdateCalendarEventInput {
+  title?: string;
+  startAt?: string;
+  endAt?: string;
+  timezone?: string;
+  location?: string;
+  description?: string;
+}
+
+export interface UpdateCalendarEventResult {
+  calendarEvent: CalendarEventSummary;
+}
+
+export interface DeleteCalendarEventResult {
+  id: EntityId;
+  deleted: boolean;
+}
+
+export interface ListCalendarEventsParams {
+  from?: string;
+  to?: string;
+  limit?: number;
+}
+
+export interface ApiError {
+  code: string;
+  message: string;
+  details?: unknown;
+}
+
+export type ApiResponse<T> =
+  | {
+      ok: true;
+      data: T;
+      requestId?: string;
+    }
+  | {
+      ok: false;
+      error: ApiError;
+      requestId?: string;
+    };

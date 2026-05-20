@@ -1,0 +1,16 @@
+{
+  "name": "ai-todo",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@9.15.0",
+  "scripts": {
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "pnpm -r lint",
+    "dev:api": "apps/api/.venv/bin/python -m ai_todo_api",
+    "dev:cli": "pnpm --filter @ai-todo/cli dev"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3"
+  }
+}

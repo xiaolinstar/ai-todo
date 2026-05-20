@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "baseUrl": ".",
+    "strict": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "outDir": "dist",
+    "paths": {
+      "@ai-todo/shared": ["./packages/shared/src/index.ts"],
+      "@ai-todo/api-client": ["./packages/api-client/src/index.ts"],
+      "@ai-todo/agent-protocol": ["./packages/agent-protocol/src/index.ts"]
+    }
+  }
+}
