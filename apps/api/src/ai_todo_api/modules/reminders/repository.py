@@ -46,7 +46,11 @@ class ReminderRepository:
         return reminder
 
 
-def reminder_to_summary(reminder: ReminderModel) -> ReminderSummary:
+def reminder_to_summary(
+    reminder: ReminderModel,
+    *,
+    contacts: list | None = None,
+) -> ReminderSummary:
     return ReminderSummary(
         id=reminder.id,
         title=reminder.title,
@@ -55,7 +59,7 @@ def reminder_to_summary(reminder: ReminderModel) -> ReminderSummary:
         due_at=reminder.due_at,
         remind_at=reminder.remind_at,
         completed_at=_format_datetime(reminder.completed_at),
-        contacts=[],
+        contacts=contacts or [],
     )
 
 

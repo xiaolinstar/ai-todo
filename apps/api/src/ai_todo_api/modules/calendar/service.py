@@ -10,6 +10,7 @@ from ai_todo_api.modules.calendar.schemas import (
     CreateCalendarEventInput,
     UpdateCalendarEventInput,
 )
+from ai_todo_api.modules.contacts.links import ContactLinkService
 
 
 class CalendarEventNotFoundError(Exception):
@@ -17,10 +18,17 @@ class CalendarEventNotFoundError(Exception):
 
 
 class CalendarEventService:
-    def __init__(self, repository: CalendarEventRepository, user_id: str, timezone: str) -> None:
+    def __init__(
+        self,
+        repository: CalendarEventRepository,
+        user_id: str,
+        timezone: str,
+        links: ContactLinkService,
+    ) -> None:
         self._repository = repository
         self._user_id = user_id
         self._timezone = timezone
+        self._links = links
 
     def create(self, input_data: CreateCalendarEventInput) -> CalendarEventSummary:
         title = input_data.title.strip()
@@ -48,10 +56,18 @@ class CalendarEventService:
             updated_at=now,
         )
 
-        return event_to_summary(self._repository.add(event))
+        saved = self._repository.add(event)
+        contacts = (
+            self._links.replace_calendar_contacts(saved.id, input_data.contact_ids)
+            if input_data.contact_ids
+            else []
+        )
+        return event_to_summary(saved, contacts=contacts)
 
     def get(self, event_id: str) -> CalendarEventSummary:
-        return event_to_summary(self._require(event_id))
+        event = self._require(event_id)
+        contacts = self._links.summaries_for_calendar_event(event.id)
+        return event_to_summary(event, contacts=contacts)
 
     def list_events(
         self,
@@ -72,7 +88,12 @@ class CalendarEventService:
                 to_date=to_date,
             )
         ]
-        return [event_to_summary(event) for event in filtered[:limit]]
+        limited = filtered[:limit]
+        contact_map = self._links.summaries_for_calendar_events([event.id for event in limited])
+        return [
+            event_to_summary(event, contacts=contact_map.get(event.id, []))
+            for event in limited
+        ]
 
     def list_today(self) -> list[CalendarEventSummary]:
         today = today_in_timezone(self._timezone)
@@ -87,7 +108,11 @@ class CalendarEventService:
                 target_date=today,
             )
         ]
-        return [event_to_summary(event) for event in visible]
+        contact_map = self._links.summaries_for_calendar_events([event.id for event in visible])
+        return [
+            event_to_summary(event, contacts=contact_map.get(event.id, []))
+            for event in visible
+        ]
 
     def update(self, event_id: str, input_data: UpdateCalendarEventInput) -> CalendarEventSummary:
         event = self._require(event_id)
@@ -95,6 +120,8 @@ class CalendarEventService:
 
         if not updates:
             raise ValueError("At least one field is required to update a calendar event.")
+
+        contact_ids = updates.pop("contact_ids", None)
 
         if "title" in updates:
             title = (updates["title"] or "").strip()
@@ -119,7 +146,14 @@ class CalendarEventService:
 
         _validate_time_range(event.start_at, event.end_at, event.timezone)
         event.updated_at = now_utc()
-        return event_to_summary(self._repository.save(event))
+        saved = self._repository.save(event)
+
+        if contact_ids is not None:
+            contacts = self._links.replace_calendar_contacts(saved.id, contact_ids)
+            return event_to_summary(saved, contacts=contacts)
+
+        contacts = self._links.summaries_for_calendar_event(saved.id)
+        return event_to_summary(saved, contacts=contacts)
 
     def delete(self, event_id: str) -> str:
         event = self._require(event_id)

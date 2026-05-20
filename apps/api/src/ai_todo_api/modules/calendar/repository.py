@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 
 from ai_todo_api.db.models import CalendarEventModel
 from ai_todo_api.modules.calendar.schemas import CalendarEventSummary
+from ai_todo_api.modules.contacts.schemas import ContactSummary
 
 
 class CalendarEventRepository:
@@ -43,7 +44,11 @@ class CalendarEventRepository:
         return event
 
 
-def event_to_summary(event: CalendarEventModel) -> CalendarEventSummary:
+def event_to_summary(
+    event: CalendarEventModel,
+    *,
+    contacts: list[ContactSummary] | None = None,
+) -> CalendarEventSummary:
     return CalendarEventSummary(
         id=event.id,
         title=event.title,
@@ -52,5 +57,5 @@ def event_to_summary(event: CalendarEventModel) -> CalendarEventSummary:
         timezone=event.timezone,
         location=event.location,
         description=event.description,
-        contacts=[],
+        contacts=contacts or [],
     )

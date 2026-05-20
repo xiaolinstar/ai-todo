@@ -6,6 +6,8 @@ from ai_todo_api.auth.context import AuthContext, CurrentUser
 from ai_todo_api.auth.deps import get_auth_context, get_current_user, get_idempotency_key
 from ai_todo_api.common.write import run_write
 from ai_todo_api.db.session import get_db
+from ai_todo_api.modules.contacts.links import ContactLinkService
+from ai_todo_api.modules.contacts.service import ContactNotFoundError
 from ai_todo_api.modules.reminders.repository import ReminderRepository
 from ai_todo_api.modules.reminders.schemas import (
     CompleteReminderInput,
@@ -28,7 +30,12 @@ router = APIRouter(prefix="/v1/reminders", tags=["reminders"])
 
 
 def _reminder_service(db: Session, user: CurrentUser) -> ReminderService:
-    return ReminderService(ReminderRepository(db, user.id), user.id, user.timezone)
+    return ReminderService(
+        ReminderRepository(db, user.id),
+        user.id,
+        user.timezone,
+        ContactLinkService(db, user.id),
+    )
 
 
 def _not_found(reminder_id: str) -> JSONResponse:
@@ -41,6 +48,13 @@ def _not_found(reminder_id: str) -> JSONResponse:
 def _validation_error(message: str) -> JSONResponse:
     body = ErrorResponse(error=ApiError(code="VALIDATION_ERROR", message=message))
     return JSONResponse(status_code=400, content=body.model_dump(by_alias=True))
+
+
+def _contact_not_found(contact_id: str) -> JSONResponse:
+    body = ErrorResponse(
+        error=ApiError(code="CONTACT_NOT_FOUND", message=f"Contact {contact_id} was not found."),
+    )
+    return JSONResponse(status_code=404, content=body.model_dump(by_alias=True))
 
 
 def _reminder_id_from_data(data: dict) -> list[str]:
@@ -106,6 +120,8 @@ def create_reminder(
     def handler() -> JSONResponse:
         try:
             reminder = service.create(input_data)
+        except ContactNotFoundError as error:
+            return _contact_not_found(str(error))
         except ValueError as error:
             return _validation_error(str(error))
         body = ApiResponse(data=CreateReminderResult(reminder=reminder))
@@ -203,6 +219,8 @@ def update_reminder(
             reminder = service.update(reminder_id, input_data)
         except ReminderNotFoundError:
             return _not_found(reminder_id)
+        except ContactNotFoundError as error:
+            return _contact_not_found(str(error))
         except ValueError as error:
             return _validation_error(str(error))
         body = ApiResponse(data=UpdateReminderResult(reminder=reminder))

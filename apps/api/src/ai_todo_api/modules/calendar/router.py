@@ -7,6 +7,8 @@ from ai_todo_api.auth.deps import get_auth_context, get_current_user, get_idempo
 from ai_todo_api.common.write import run_write
 from ai_todo_api.db.session import get_db
 from ai_todo_api.modules.calendar.repository import CalendarEventRepository
+from ai_todo_api.modules.contacts.links import ContactLinkService
+from ai_todo_api.modules.contacts.service import ContactNotFoundError
 from ai_todo_api.modules.calendar.schemas import (
     CalendarEventDetailResult,
     CalendarEventListResult,
@@ -24,7 +26,12 @@ router = APIRouter(prefix="/v1/calendar", tags=["calendar"])
 
 
 def _calendar_service(db: Session, user: CurrentUser) -> CalendarEventService:
-    return CalendarEventService(CalendarEventRepository(db, user.id), user.id, user.timezone)
+    return CalendarEventService(
+        CalendarEventRepository(db, user.id),
+        user.id,
+        user.timezone,
+        ContactLinkService(db, user.id),
+    )
 
 
 def _not_found(event_id: str) -> JSONResponse:
@@ -37,6 +44,13 @@ def _not_found(event_id: str) -> JSONResponse:
 def _validation_error(message: str) -> JSONResponse:
     body = ErrorResponse(error=ApiError(code="VALIDATION_ERROR", message=message))
     return JSONResponse(status_code=400, content=body.model_dump(by_alias=True))
+
+
+def _contact_not_found(contact_id: str) -> JSONResponse:
+    body = ErrorResponse(
+        error=ApiError(code="CONTACT_NOT_FOUND", message=f"Contact {contact_id} was not found."),
+    )
+    return JSONResponse(status_code=404, content=body.model_dump(by_alias=True))
 
 
 def _event_id_from_data(data: dict) -> list[str]:
@@ -100,6 +114,8 @@ def create_calendar_event(
     def handler() -> JSONResponse:
         try:
             event = service.create(input_data)
+        except ContactNotFoundError as error:
+            return _contact_not_found(str(error))
         except ValueError as error:
             return _validation_error(str(error))
         body = ApiResponse(data=CreateCalendarEventResult(calendar_event=event))
@@ -133,6 +149,8 @@ def update_calendar_event(
             event = service.update(event_id, input_data)
         except CalendarEventNotFoundError:
             return _not_found(event_id)
+        except ContactNotFoundError as error:
+            return _contact_not_found(str(error))
         except ValueError as error:
             return _validation_error(str(error))
         body = ApiResponse(data=UpdateCalendarEventResult(calendar_event=event))

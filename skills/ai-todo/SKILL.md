@@ -26,12 +26,12 @@ Expect `ok: true` and `data.user.id` (dev: `user_dev`).
 | Task | Command |
 |------|---------|
 | Today overview | `ai-todo today --json` |
-| Create reminder | `ai-todo reminder create --title "…" [--due "…"] --json` |
+| Create reminder | `ai-todo reminder create --title "…" [--due "…"] [--contact <id> ...] --json` |
 | List reminders | `ai-todo reminder list [--status pending] --json` |
 | Complete | `ai-todo reminder done <reminder_id> --json` |
 | Reschedule | `ai-todo reminder reschedule <id> --due "…" --json` |
 | Delete reminder | `ai-todo reminder delete <id> --json` |
-| Create event | `ai-todo calendar add --title "…" --start "…" [--end "…"] --json` |
+| Create event | `ai-todo calendar add --title "…" --start "…" [--end "…"] [--contact <id> ...] --json` |
 | Today events | `ai-todo calendar today --json` |
 | Search contact | `ai-todo contact search "…" --json` |
 | Add contact | `ai-todo contact add "…" [--email "…"] --json` |
@@ -44,8 +44,14 @@ User: 「明天上午十点提醒我给王总发报价邮件」
 
 1. Resolve date in agent timezone → `2026-05-21T10:00:00+08:00`
 2. `ai-todo contact search "王总" --json` → confirm single match or ask user
-3. `ai-todo reminder create --title "给客户王总发报价邮件" --due "2026-05-21T10:00:00+08:00" --json`
+3. `ai-todo reminder create --title "给客户王总发报价邮件" --due "2026-05-21T10:00:00+08:00" --contact <contact_id> --json`
 4. Reply with `data.reminder.id` and summary
+
+User: 「晚上 6 点联系小明完成作业」
+
+1. `ai-todo contact search "小明" --json` → pick `contact_id`
+2. `ai-todo reminder create --title "联系小明完成作业" --due "2026-05-20T18:00:00+08:00" --contact <contact_id> --json`
+3. Response includes `data.reminder.contacts[]` with display name and primary email for later email-cli
 
 User: 「今天有什么安排」
 

@@ -1,3 +1,4 @@
+from ai_todo_api.modules.contacts.schemas import ContactSummary
 from ai_todo_api.schemas import CamelModel
 
 
@@ -9,7 +10,7 @@ class CalendarEventSummary(CamelModel):
     timezone: str
     location: str | None = None
     description: str | None = None
-    contacts: list[object] = []
+    contacts: list[ContactSummary] = []
 
 
 class CreateCalendarEventInput(CamelModel):
@@ -41,6 +42,7 @@ class UpdateCalendarEventInput(CamelModel):
     timezone: str | None = None
     location: str | None = None
     description: str | None = None
+    contact_ids: list[str] | None = None
 
 
 class UpdateCalendarEventResult(CamelModel):

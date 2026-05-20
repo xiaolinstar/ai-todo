@@ -1,5 +1,5 @@
 import type { CliContext } from "../context";
-import { handleApi, positionalAfter, readFlagValue } from "../context";
+import { handleApi, positionalAfter, readFlagValue, readRepeatedFlag } from "../context";
 
 export async function runCalendarToday(ctx: CliContext): Promise<void> {
   await handleApi(ctx, await ctx.client.listCalendarToday(), (data) => {
@@ -48,14 +48,22 @@ export async function runCalendarAdd(ctx: CliContext, argv: string[]): Promise<v
   const location = readFlagValue(argv, "--location");
 
   if (!title || !start) {
-    console.error("Usage: ai-todo calendar add --title <text> --start <iso> [--end <iso>]");
+    console.error(
+      "Usage: ai-todo calendar add --title <text> --start <iso> [--end <iso>] [--contact <contact_id> ...]"
+    );
     process.exitCode = 1;
     return;
   }
 
   await handleApi(
     ctx,
-    await ctx.client.createCalendarEvent({ title, startAt: start, endAt: end, location }),
+    await ctx.client.createCalendarEvent({
+      title,
+      startAt: start,
+      endAt: end,
+      location,
+      contactIds: readRepeatedFlag(argv, "--contact")
+    }),
     (data) => {
       if (!ctx.json) {
         const event = data.calendarEvent;

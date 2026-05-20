@@ -8,6 +8,7 @@ from ai_todo_api.common.reminder_dates import (
 )
 from ai_todo_api.common.time import now_utc, today_in_timezone
 from ai_todo_api.db.models import ReminderModel
+from ai_todo_api.modules.contacts.links import ContactLinkService
 from ai_todo_api.modules.reminders.repository import ReminderRepository, reminder_to_summary
 from ai_todo_api.modules.reminders.schemas import (
     CompleteReminderInput,
@@ -23,10 +24,17 @@ class ReminderNotFoundError(Exception):
 
 
 class ReminderService:
-    def __init__(self, repository: ReminderRepository, user_id: str, timezone: str) -> None:
+    def __init__(
+        self,
+        repository: ReminderRepository,
+        user_id: str,
+        timezone: str,
+        links: ContactLinkService,
+    ) -> None:
         self._repository = repository
         self._user_id = user_id
         self._timezone = timezone
+        self._links = links
 
     def create(self, input_data: CreateReminderInput) -> ReminderSummary:
         title = input_data.title.strip()
@@ -47,11 +55,18 @@ class ReminderService:
             updated_at=now,
         )
 
-        return reminder_to_summary(self._repository.add(reminder))
+        saved = self._repository.add(reminder)
+        contacts = (
+            self._links.replace_reminder_contacts(saved.id, input_data.contact_ids)
+            if input_data.contact_ids
+            else []
+        )
+        return reminder_to_summary(saved, contacts=contacts)
 
     def get(self, reminder_id: str) -> ReminderSummary:
         reminder = self._require(reminder_id)
-        return reminder_to_summary(reminder)
+        contacts = self._links.summaries_for_reminder(reminder.id)
+        return reminder_to_summary(reminder, contacts=contacts)
 
     def list_reminders(
         self,
@@ -76,7 +91,12 @@ class ReminderService:
                 continue
             filtered.append(reminder)
 
-        return [reminder_to_summary(reminder) for reminder in filtered[:limit]]
+        limited = filtered[:limit]
+        contact_map = self._links.summaries_for_reminders([reminder.id for reminder in limited])
+        return [
+            reminder_to_summary(reminder, contacts=contact_map.get(reminder.id, []))
+            for reminder in limited
+        ]
 
     def list_today(self) -> list[ReminderSummary]:
         today = today_in_timezone(self._timezone)
@@ -91,7 +111,11 @@ class ReminderService:
                 today=today,
             )
         ]
-        return [reminder_to_summary(reminder) for reminder in visible]
+        contact_map = self._links.summaries_for_reminders([reminder.id for reminder in visible])
+        return [
+            reminder_to_summary(reminder, contacts=contact_map.get(reminder.id, []))
+            for reminder in visible
+        ]
 
     def complete(self, reminder_id: str, input_data: CompleteReminderInput | None = None) -> ReminderSummary:
         reminder = self._require(reminder_id)
@@ -99,7 +123,7 @@ class ReminderService:
         reminder.status = "completed"
         reminder.completed_at = completed_at
         reminder.updated_at = completed_at
-        return reminder_to_summary(self._repository.save(reminder))
+        return self._summary(self._repository.save(reminder))
 
     def update(self, reminder_id: str, input_data: UpdateReminderInput) -> ReminderSummary:
         reminder = self._require(reminder_id)
@@ -107,6 +131,8 @@ class ReminderService:
 
         if not updates:
             raise ValueError("At least one field is required to update a reminder.")
+
+        contact_ids = updates.pop("contact_ids", None)
 
         if "title" in updates:
             title = (updates["title"] or "").strip()
@@ -131,7 +157,13 @@ class ReminderService:
             reminder.remind_at = _clean_optional(updates["remind_at"])
 
         reminder.updated_at = now_utc()
-        return reminder_to_summary(self._repository.save(reminder))
+        saved = self._repository.save(reminder)
+
+        if contact_ids is not None:
+            contacts = self._links.replace_reminder_contacts(saved.id, contact_ids)
+            return reminder_to_summary(saved, contacts=contacts)
+
+        return self._summary(saved)
 
     def reschedule(self, reminder_id: str, input_data: RescheduleReminderInput) -> ReminderSummary:
         due_at = _clean_optional(input_data.due_at)
@@ -152,7 +184,7 @@ class ReminderService:
             reminder.completed_at = None
 
         reminder.updated_at = now_utc()
-        return reminder_to_summary(self._repository.save(reminder))
+        return self._summary(self._repository.save(reminder))
 
     def delete(self, reminder_id: str) -> str:
         reminder = self._require(reminder_id)
@@ -161,6 +193,10 @@ class ReminderService:
         reminder.updated_at = now
         self._repository.save(reminder)
         return reminder.id
+
+    def _summary(self, reminder: ReminderModel) -> ReminderSummary:
+        contacts = self._links.summaries_for_reminder(reminder.id)
+        return reminder_to_summary(reminder, contacts=contacts)
 
     def _require(self, reminder_id: str) -> ReminderModel:
         reminder = self._repository.get(reminder_id)

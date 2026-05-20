@@ -46,6 +46,16 @@ export function readFlagValue(argv: string[], flag: string): string | undefined 
   return index >= 0 ? argv[index + 1] : undefined;
 }
 
+export function readRepeatedFlag(argv: string[], flag: string): string[] {
+  const values: string[] = [];
+  for (let index = 0; index < argv.length; index += 1) {
+    if (argv[index] === flag && argv[index + 1]) {
+      values.push(argv[index + 1]);
+    }
+  }
+  return values;
+}
+
 export function hasFlag(argv: string[], flag: string): boolean {
   return argv.includes(flag);
 }
@@ -65,7 +75,13 @@ export function positionalAfter(argv: string[], ...anchors: string[]): string | 
   const values: string[] = [];
   for (let index = start + 1; index < argv.length; index += 1) {
     const arg = argv[index];
-    if (GLOBAL_FLAGS.has(arg) || arg === "--email" || arg === "--phone" || arg === "--alias") {
+    if (
+      GLOBAL_FLAGS.has(arg) ||
+      arg === "--email" ||
+      arg === "--phone" ||
+      arg === "--alias" ||
+      arg === "--contact"
+    ) {
       if (!GLOBAL_FLAGS.has(arg)) {
         index += 1;
       }

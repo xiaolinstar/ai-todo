@@ -100,6 +100,7 @@ export interface UpdateReminderInput {
   status?: ReminderStatus;
   dueAt?: string;
   remindAt?: string;
+  contactIds?: EntityId[];
 }
 
 export interface RescheduleReminderInput {
@@ -184,6 +185,7 @@ export interface UpdateCalendarEventInput {
   timezone?: string;
   location?: string;
   description?: string;
+  contactIds?: EntityId[];
 }
 
 export interface UpdateCalendarEventResult {

@@ -1,12 +1,14 @@
 import type { ReminderStatus } from "@ai-todo/shared";
 
 import type { CliContext } from "../context";
-import { handleApi, positionalAfter, readFlagValue } from "../context";
+import { handleApi, positionalAfter, readFlagValue, readRepeatedFlag } from "../context";
 
 export async function runReminderCreate(ctx: CliContext, argv: string[]): Promise<void> {
   const title = readFlagValue(argv, "--title") ?? positionalAfter(argv, "add", "create");
   if (!title) {
-    console.error("Usage: ai-todo reminder create --title <text> [--due <iso>]");
+    console.error(
+      "Usage: ai-todo reminder create --title <text> [--due <iso>] [--contact <contact_id> ...]"
+    );
     process.exitCode = 1;
     return;
   }
@@ -17,7 +19,8 @@ export async function runReminderCreate(ctx: CliContext, argv: string[]): Promis
       title,
       dueAt: readFlagValue(argv, "--due"),
       remindAt: readFlagValue(argv, "--remind"),
-      notes: readFlagValue(argv, "--notes")
+      notes: readFlagValue(argv, "--notes"),
+      contactIds: readRepeatedFlag(argv, "--contact")
     }),
     (data) => {
       if (!ctx.json) {

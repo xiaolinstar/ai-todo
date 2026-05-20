@@ -102,6 +102,26 @@ class ReminderModel(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
 
+class ReminderContactModel(Base):
+    __tablename__ = "reminder_contacts"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    reminder_id: Mapped[str] = mapped_column(
+        String(64),
+        ForeignKey("reminders.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    contact_id: Mapped[str] = mapped_column(
+        String(64),
+        ForeignKey("contacts.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    role: Mapped[str] = mapped_column(String(32), nullable=False, default="related")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
 class ContactModel(Base):
     __tablename__ = "contacts"
 
@@ -192,3 +212,23 @@ class CalendarEventModel(Base):
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class CalendarEventContactModel(Base):
+    __tablename__ = "calendar_event_contacts"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    calendar_event_id: Mapped[str] = mapped_column(
+        String(64),
+        ForeignKey("calendar_events.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    contact_id: Mapped[str] = mapped_column(
+        String(64),
+        ForeignKey("contacts.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    role: Mapped[str] = mapped_column(String(32), nullable=False, default="participant")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
