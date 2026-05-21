@@ -25,6 +25,9 @@ async function main(): Promise<void> {
     case "whoami":
       await core.runWhoami(ctx);
       break;
+    case "logout":
+      await core.runLogout(ctx);
+      break;
     case "today":
       await core.runToday(ctx);
       break;
@@ -74,8 +77,10 @@ async function main(): Promise<void> {
         await calendar.runCalendarShow(ctx, argv);
       } else if (action === "delete") {
         await calendar.runCalendarDelete(ctx, argv);
+      } else if (action === "update") {
+        await calendar.runCalendarUpdate(ctx, argv);
       } else {
-        console.error("Usage: ai-todo calendar <today|list|add|show|delete>");
+        console.error("Usage: ai-todo calendar <today|list|add|show|update|delete>");
         process.exitCode = 1;
       }
       break;
@@ -88,8 +93,10 @@ async function main(): Promise<void> {
         await contact.runContactSearch(ctx, argv);
       } else if (action === "show") {
         await contact.runContactShow(ctx, argv);
+      } else if (action === "update") {
+        await contact.runContactUpdate(ctx, argv);
       } else {
-        console.error("Usage: ai-todo contact <add|search|show>");
+        console.error("Usage: ai-todo contact <add|search|show|update>");
         process.exitCode = 1;
       }
       break;

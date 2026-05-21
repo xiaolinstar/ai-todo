@@ -5,9 +5,12 @@ Global flags:
   --json                 Output API JSON (recommended for agents)
   --api-url <url>        API base URL (default: AI_TODO_API_URL or ~/.ai-todo/config.json)
 
-Setup:
-  ai-todo login [--api-url <url>] [--token <aitodo_xxx>]
+Auth (Personal Access Token, like OPENAI_API_KEY):
+  export AI_TODO_TOKEN=aitodo_xxx              # recommended for agents
+  ai-todo login --token aitodo_xxx             # or save to ~/.ai-todo/config.json
+  ai-todo login --issue-pat [--name "My Agent"] # one-shot PAT for local dev
   ai-todo whoami
+  ai-todo logout                               # clears config file token only
 
 Global:
   --idempotency-key <uuid>   Recommended for agent write retries
@@ -30,12 +33,14 @@ Calendar:
   ai-todo calendar list [--date YYYY-MM-DD]
   ai-todo calendar add --title <text> --start <iso> [--end <iso>] [--location <text>]
   ai-todo calendar show <event_id>
+  ai-todo calendar update <event_id> [--title <text>] [--start <iso>] [--end <iso>]
   ai-todo calendar delete <event_id>
 
 Contacts:
   ai-todo contact add <name> [--email <v>] [--phone <v>] [--alias <v>]
   ai-todo contact search <query>
   ai-todo contact show <contact_id>
+  ai-todo contact update <contact_id> [--name <text>] [--email <v>] [--phone <v>]
 
 Agents: see docs/agent-usage.md and skills/ai-todo/SKILL.md`);
 }

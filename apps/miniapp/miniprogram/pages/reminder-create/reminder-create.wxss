@@ -1,0 +1,60 @@
+.create-page {
+  padding-top: 16rpx;
+}
+
+.field {
+  margin-bottom: 28rpx;
+}
+
+.switch-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.picker-row {
+  display: flex;
+  gap: 16rpx;
+  margin-bottom: 28rpx;
+}
+
+.picker-box {
+  flex: 1;
+  min-width: 0;
+  padding: 20rpx 24rpx;
+  border-radius: 12rpx;
+  background: var(--todo-surface-muted);
+  font-size: 28rpx;
+  text-align: center;
+}
+
+.contact-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.contact-chip {
+  padding: 12rpx 20rpx;
+  border-radius: 999rpx;
+  background: rgba(var(--todo-primary-rgb), 0.1);
+  color: var(--todo-primary-strong);
+  font-size: 26rpx;
+}
+
+.clear {
+  margin-left: 12rpx;
+  font-weight: 700;
+}
+
+.pick-btn {
+  width: auto !important;
+  min-height: 64rpx !important;
+  padding: 0 24rpx !important;
+  font-size: 26rpx !important;
+}
+
+.submit {
+  margin-top: 32rpx;
+}

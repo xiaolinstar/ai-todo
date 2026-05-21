@@ -1,6 +1,7 @@
 import { AiTodoClient } from "@ai-todo/api-client";
 import type { ApiResponse } from "@ai-todo/shared";
 
+import { printAuthHint, resolveTokenSource } from "./auth";
 import { loadConfig, saveConfig } from "./config";
 
 export interface CliContext {
@@ -23,13 +24,14 @@ export function buildContext(argv: string[]): CliContext {
   const fileConfig = loadConfig();
   const apiUrl =
     apiUrlFlag ?? process.env.AI_TODO_API_URL ?? fileConfig.apiUrl ?? "http://127.0.0.1:3100";
+  const { token } = resolveTokenSource();
 
   return {
     json,
     apiUrl,
     client: new AiTodoClient({
       apiUrl,
-      token: fileConfig.token ?? process.env.AI_TODO_TOKEN,
+      token,
       source: "cli",
       idempotencyKey: readFlagValue(argv, "--idempotency-key")
     })
@@ -80,7 +82,8 @@ export function positionalAfter(argv: string[], ...anchors: string[]): string | 
       arg === "--email" ||
       arg === "--phone" ||
       arg === "--alias" ||
-      arg === "--contact"
+      arg === "--contact" ||
+      arg === "--name"
     ) {
       if (!GLOBAL_FLAGS.has(arg)) {
         index += 1;
@@ -97,6 +100,7 @@ export function positionalAfter(argv: string[], ...anchors: string[]): string | 
         "--start",
         "--end",
         "--location",
+        "--description",
         "--status",
         "--date",
         "--from",
@@ -129,6 +133,9 @@ export async function handleApi<T>(
   if (!response.ok) {
     const code = response.error.code ? `[${response.error.code}] ` : "";
     console.error(`${code}${response.error.message}`);
+    if (response.error.code === "UNAUTHORIZED") {
+      printAuthHint("invalid");
+    }
     process.exitCode = 1;
     return;
   }

@@ -81,4 +81,51 @@ export async function runContactShow(ctx: CliContext, argv: string[]): Promise<v
   });
 }
 
+export async function runContactUpdate(ctx: CliContext, argv: string[]): Promise<void> {
+  const id = positionalAfter(argv, "contact", "update");
+  if (!id) {
+    console.error(
+      "Usage: ai-todo contact update <contact_id> [--name <text>] [--email <v>] [--phone <v>] [--alias <v>] [--notes <text>]"
+    );
+    process.exitCode = 1;
+    return;
+  }
+
+  const displayName = readFlagValue(argv, "--name");
+  const email = readFlagValue(argv, "--email");
+  const phone = readFlagValue(argv, "--phone");
+  const alias = readFlagValue(argv, "--alias");
+  const notes = readFlagValue(argv, "--notes");
+  const hasNotes = argv.includes("--notes");
+
+  if (!displayName && !email && !phone && !alias && !hasNotes) {
+    console.error("Provide at least one field to update");
+    process.exitCode = 1;
+    return;
+  }
+
+  const methods: CreateContactInput["methods"] = [];
+  if (email) {
+    methods.push({ type: "email", value: email, label: "work", isPrimary: true });
+  }
+  if (phone) {
+    methods.push({ type: "phone", value: phone, label: "mobile", isPrimary: true });
+  }
+
+  await handleApi(
+    ctx,
+    await ctx.client.updateContact(id, {
+      displayName,
+      notes: hasNotes ? notes : undefined,
+      methods: methods.length > 0 ? methods : undefined,
+      aliases: alias ? [alias] : undefined
+    }),
+    (data) => {
+      if (!ctx.json) {
+        console.log(`已更新联系人：${data.contact.displayName} (${data.contact.id})`);
+      }
+    }
+  );
+}
+
 declare const process: { exitCode?: number };

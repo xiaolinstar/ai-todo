@@ -37,3 +37,24 @@ def test_create_search_and_show_contact(client: TestClient) -> None:
     detail = detail_response.json()["data"]["contact"]
     assert detail["id"] == contact["id"]
     assert detail["methods"][0]["type"] == "email"
+
+
+def test_update_contact(client: TestClient) -> None:
+    create_response = client.post(
+        "/v1/contacts",
+        json={"displayName": "张三", "methods": [{"type": "email", "value": "a@example.com"}]},
+    )
+    contact_id = create_response.json()["data"]["contact"]["id"]
+
+    update_response = client.patch(
+        f"/v1/contacts/{contact_id}",
+        json={
+            "displayName": "张三（客户）",
+            "methods": [{"type": "email", "value": "zhang@example.com", "isPrimary": True}],
+        },
+    )
+
+    assert update_response.status_code == 200
+    updated = update_response.json()["data"]["contact"]
+    assert updated["displayName"] == "张三（客户）"
+    assert updated["primaryEmail"] == "zhang@example.com"

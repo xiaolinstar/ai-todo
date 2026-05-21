@@ -63,6 +63,13 @@ export const AI_TODO_AGENT_TOOLS: AgentToolSpec[] = [
     jsonFlag: "--json"
   },
   {
+    name: "ai_todo_calendar_update",
+    description: "Update a calendar event title, times, location, or linked contacts.",
+    command:
+      'ai-todo calendar update <event_id> [--title "<title>"] [--start "<iso>"] [--end "<iso>"]',
+    jsonFlag: "--json"
+  },
+  {
     name: "ai_todo_calendar_today",
     description: "List calendar events for today.",
     command: "ai-todo calendar today",
@@ -80,6 +87,13 @@ export const AI_TODO_AGENT_TOOLS: AgentToolSpec[] = [
     command:
       'ai-todo contact add "<name>" [--email "<email>"] [--phone "<phone>"] [--alias "<alias>"]',
     jsonFlag: "--json"
+  },
+  {
+    name: "ai_todo_contact_update",
+    description: "Update contact name, email, phone, alias, or notes.",
+    command:
+      'ai-todo contact update <contact_id> [--name "<name>"] [--email "<email>"] [--phone "<phone>"]',
+    jsonFlag: "--json"
   }
 ];
 
@@ -87,6 +101,7 @@ export const AI_TODO_AGENT_GUIDELINES = [
   "Always pass --json when invoking commands programmatically.",
   "Parse natural language in the agent; call ai-todo with structured fields only.",
   "On contact name ambiguity, run contact search and ask the user to pick an id.",
+  "Set AI_TODO_TOKEN (or ai-todo login --token / --issue-pat) before agent calls.",
   "Set AI_TODO_API_URL if the API is not on http://127.0.0.1:3100.",
   "Exit code is non-zero when the API returns ok: false."
 ] as const;

@@ -1,0 +1,4 @@
+{
+  "desc": "ai-todo sitemap",
+  "rules": [{ "action": "allow", "page": "*" }]
+}

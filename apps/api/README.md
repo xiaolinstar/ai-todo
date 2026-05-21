@@ -58,6 +58,7 @@ Write requests accept `Idempotency-Key` and are recorded in `command_logs`.
 - `POST /v1/contacts`
 - `GET /v1/contacts`
 - `GET /v1/contacts/{contact_id}`
+- `PATCH /v1/contacts/{contact_id}`
 
 ## Persistence
 

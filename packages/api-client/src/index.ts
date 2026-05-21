@@ -9,6 +9,8 @@ import type {
   CreateCalendarEventResult,
   CreateContactInput,
   CreateContactResult,
+  CreateApiTokenInput,
+  CreateApiTokenResult,
   CreateReminderInput,
   CreateReminderResult,
   DeleteCalendarEventResult,
@@ -23,6 +25,8 @@ import type {
   TodayResult,
   UpdateCalendarEventInput,
   UpdateCalendarEventResult,
+  UpdateContactInput,
+  UpdateContactResult,
   UpdateReminderInput,
   UpdateReminderResult
 } from "@ai-todo/shared";
@@ -229,5 +233,22 @@ export class AiTodoClient {
 
   getContact(contactId: string): Promise<ApiResponse<ContactDetailResult>> {
     return this.request<ContactDetailResult>(`/v1/contacts/${encodeURIComponent(contactId)}`);
+  }
+
+  updateContact(
+    contactId: string,
+    input: UpdateContactInput
+  ): Promise<ApiResponse<UpdateContactResult>> {
+    return this.request<UpdateContactResult>(`/v1/contacts/${encodeURIComponent(contactId)}`, {
+      method: "PATCH",
+      body: JSON.stringify(input)
+    });
+  }
+
+  createApiToken(input: CreateApiTokenInput): Promise<ApiResponse<CreateApiTokenResult>> {
+    return this.request<CreateApiTokenResult>("/v1/api-tokens", {
+      method: "POST",
+      body: JSON.stringify(input)
+    });
   }
 }

@@ -14,3 +14,6 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 *.egg-info/
+
+# WeChat DevTools
+apps/miniapp/project.private.config.json

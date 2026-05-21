@@ -57,3 +57,17 @@ class ContactListResult(CamelModel):
 
 class ContactDetailResult(CamelModel):
     contact: ContactDetail
+
+
+class UpdateContactInput(CamelModel):
+    display_name: str | None = None
+    nickname: str | None = None
+    company: str | None = None
+    title: str | None = None
+    notes: str | None = None
+    methods: list[ContactMethodInput] | None = None
+    aliases: list[str] | None = None
+
+
+class UpdateContactResult(CamelModel):
+    contact: ContactDetail

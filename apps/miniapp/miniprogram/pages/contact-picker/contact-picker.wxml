@@ -1,0 +1,18 @@
+<view class="page picker-page">
+  <view class="card search-bar">
+    <input class="search-input" placeholder="搜索姓名或别名" value="{{query}}" bindinput="onQueryInput" confirm-type="search" bindconfirm="onSearch" />
+    <button class="todo-button todo-button-primary search-btn" size="mini" hover-class="todo-button-hover" bindtap="onSearch">搜索</button>
+  </view>
+
+  <view class="meta hint">点击联系人以选择并返回</view>
+
+  <view wx:if="{{loading}}" class="empty">加载中…</view>
+  <view wx:elif="{{error}}" class="error-banner">{{error}}</view>
+  <view wx:elif="{{items.length === 0}}" class="card empty-card">暂无联系人</view>
+  <view wx:else class="page-body">
+    <view class="card contact-item" wx:for="{{items}}" wx:key="id" data-item="{{item}}" bindtap="onSelect">
+      <view class="contact-name">{{item.displayName}}</view>
+      <view class="meta" wx:if="{{item.subtitle}}">{{item.subtitle}}</view>
+    </view>
+  </view>
+</view>

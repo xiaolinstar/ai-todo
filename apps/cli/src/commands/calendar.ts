@@ -112,4 +112,47 @@ export async function runCalendarDelete(ctx: CliContext, argv: string[]): Promis
   });
 }
 
+export async function runCalendarUpdate(ctx: CliContext, argv: string[]): Promise<void> {
+  const id = positionalAfter(argv, "update");
+  const title = readFlagValue(argv, "--title");
+  const start = readFlagValue(argv, "--start");
+  const end = readFlagValue(argv, "--end");
+  const location = readFlagValue(argv, "--location");
+  const description = readFlagValue(argv, "--description");
+  const contactIds = readRepeatedFlag(argv, "--contact");
+  const hasContacts = argv.includes("--contact");
+
+  if (!id) {
+    console.error(
+      "Usage: ai-todo calendar update <event_id> [--title <text>] [--start <iso>] [--end <iso>] [--location <text>] [--contact <contact_id> ...]"
+    );
+    process.exitCode = 1;
+    return;
+  }
+
+  if (!title && !start && end === undefined && location === undefined && !description && !hasContacts) {
+    console.error("Provide at least one field to update");
+    process.exitCode = 1;
+    return;
+  }
+
+  await handleApi(
+    ctx,
+    await ctx.client.updateCalendarEvent(id, {
+      title,
+      startAt: start,
+      endAt: end,
+      location,
+      description,
+      contactIds: hasContacts ? contactIds : undefined
+    }),
+    (data) => {
+      if (!ctx.json) {
+        const event = data.calendarEvent;
+        console.log(`已更新日程：${event.title} (${event.id})`);
+      }
+    }
+  );
+}
+
 declare const process: { exitCode?: number };

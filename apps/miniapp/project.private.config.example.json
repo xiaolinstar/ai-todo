@@ -1,0 +1,11 @@
+{
+  "description": "复制为 project.private.config.json（已被 gitignore），本地 DevTools 会合并此配置",
+  "libVersion": "3.4.3",
+  "projectname": "ai-todo",
+  "setting": {
+    "urlCheck": false,
+    "compileHotReLoad": false,
+    "minified": true,
+    "enhance": true
+  }
+}

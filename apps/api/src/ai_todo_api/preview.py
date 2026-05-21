@@ -62,8 +62,15 @@ def preview_page() -> str:
       </section>
 
       <section>
+        <h2>Personal Access Token</h2>
+        <p>Agent / CLI 使用 PAT（类似 API Key）：</p>
+        <p><code>export AI_TODO_TOKEN=aitodo_xxx</code></p>
+        <p>本地开发一次性签发：<code>ai-todo login --issue-pat</code></p>
+      </section>
+
+      <section>
         <h2>CLI 验证</h2>
-        <p><code>node apps/cli/dist/index.js add "明天上午十点提醒我给客户王总发报价确认邮件" --api-url http://127.0.0.1:3100</code></p>
+        <p><code>node apps/cli/dist/index.js whoami --api-url http://127.0.0.1:3100</code></p>
         <p><code>node apps/cli/dist/index.js today --api-url http://127.0.0.1:3100</code></p>
       </section>
     </main>

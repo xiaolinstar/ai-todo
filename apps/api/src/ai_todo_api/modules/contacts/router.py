@@ -12,6 +12,8 @@ from ai_todo_api.modules.contacts.schemas import (
     ContactListResult,
     CreateContactInput,
     CreateContactResult,
+    UpdateContactInput,
+    UpdateContactResult,
 )
 from ai_todo_api.modules.contacts.service import ContactNotFoundError, ContactService
 from ai_todo_api.schemas import ApiError, ApiResponse, ErrorResponse
@@ -87,3 +89,40 @@ def get_contact(
 
     body = ApiResponse(data=ContactDetailResult(contact=contact))
     return JSONResponse(status_code=200, content=body.model_dump(by_alias=True))
+
+
+@router.patch("/{contact_id}")
+def update_contact(
+    contact_id: str,
+    input_data: UpdateContactInput,
+    auth: AuthContext = Depends(get_auth_context),
+    db: Session = Depends(get_db),
+    idempotency_key: str | None = Depends(get_idempotency_key),
+) -> JSONResponse:
+    user = CurrentUser.from_auth(auth)
+    contact_service = ContactService(ContactRepository(db, user.id), user.id)
+
+    def handler() -> JSONResponse:
+        try:
+            contact = contact_service.update(contact_id, input_data)
+        except ContactNotFoundError:
+            body = ErrorResponse(
+                error=ApiError(code="CONTACT_NOT_FOUND", message=f"Contact {contact_id} was not found."),
+            )
+            return JSONResponse(status_code=404, content=body.model_dump(by_alias=True))
+        except ValueError as error:
+            body = ErrorResponse(error=ApiError(code="VALIDATION_ERROR", message=str(error)))
+            return JSONResponse(status_code=400, content=body.model_dump(by_alias=True))
+        body = ApiResponse(data=UpdateContactResult(contact=contact))
+        return JSONResponse(status_code=200, content=body.model_dump(by_alias=True))
+
+    return run_write(
+        db,
+        auth,
+        operation="update_contact",
+        idempotency_key=idempotency_key,
+        target_type="contact",
+        input_summary={"contactId": contact_id, **input_data.model_dump(by_alias=True)},
+        handler=handler,
+        extract_target_ids=_contact_id_from_data,
+    )

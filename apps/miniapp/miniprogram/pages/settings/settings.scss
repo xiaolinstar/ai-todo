@@ -1,0 +1,39 @@
+.settings-page {
+  padding-top: 16rpx;
+}
+
+.field {
+  margin-bottom: 24rpx;
+}
+
+.help {
+  margin-top: 10rpx;
+}
+
+.user-block {
+  margin-bottom: 20rpx;
+}
+
+.user-name {
+  color: var(--todo-text-primary);
+  font-size: 32rpx;
+  font-weight: 700;
+}
+
+.action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+}
+
+.action-btn {
+  width: auto !important;
+  min-height: 64rpx !important;
+  padding: 0 24rpx !important;
+  font-size: 26rpx !important;
+}
+
+.tips .tip {
+  margin-bottom: 12rpx;
+  line-height: 1.7;
+}

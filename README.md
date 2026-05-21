@@ -19,6 +19,7 @@ packages/
   config/
 docs/
   tech-decisions.md  # 技术决策（小程序原生、开发用户等）
+  miniapp-conventions.md  # 微信小程序规范（对齐 party-helper）
 ```
 
 ## First Commands
@@ -53,3 +54,13 @@ pnpm dev:api
 ```
 
 The API listens on `http://127.0.0.1:3100`.
+
+## WeChat Miniapp
+
+Native WeChat miniapp MVP in `apps/miniapp/`. See [apps/miniapp/README.md](apps/miniapp/README.md).
+
+```bash
+pnpm dev:api   # start API first
+pnpm build:wechat   # if you changed miniapp .ts/.scss
+# Then open apps/miniapp in WeChat DevTools (disable domain check for local dev)
+```

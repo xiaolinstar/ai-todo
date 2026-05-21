@@ -11,18 +11,35 @@ pnpm build
 
 # 启动 API（另开终端）
 pnpm dev:api
-
-# 配置 CLI（可选）
-ai-todo login --api-url http://127.0.0.1:3100
-
-# 创建 API Token（仅返回一次明文，请保存）
-curl -s -X POST http://127.0.0.1:3100/v1/api-tokens \
-  -H 'Content-Type: application/json' \
-  -d '{"name":"My Agent","scopes":["read","write"]}' | jq .
-
-ai-todo login --token aitodo_xxx
-# 或 export AI_TODO_TOKEN=aitodo_xxx
 ```
+
+## 认证（Personal Access Token）
+
+Agent 场景推荐 **PAT + 环境变量**，与 `OPENAI_API_KEY` 相同模式——不在 CLI 里做 Token 生命周期管理。
+
+**优先级**：`AI_TODO_TOKEN` 环境变量 > `~/.ai-todo/config.json` > 本地 dev 旁路（`AI_TODO_ALLOW_DEV_AUTH=true`）
+
+```bash
+# 方式 1：环境变量（推荐，适合 Agent / CI）
+export AI_TODO_TOKEN=aitodo_xxx
+export AI_TODO_API_URL=http://127.0.0.1:3100   # 可选
+
+# 方式 2：本地配置文件
+ai-todo login --token aitodo_xxx --api-url http://127.0.0.1:3100
+
+# 方式 3：本地开发一次性签发 PAT（需 dev 旁路或已有 Token）
+ai-todo login --issue-pat --name "My Agent"
+
+# 验证
+ai-todo whoami --json
+
+# 退出（仅清除配置文件中的 Token；环境变量需 unset AI_TODO_TOKEN）
+ai-todo logout
+```
+
+**生产环境**（规划中）：在 Web 控制台或小程序设置页创建 PAT；或 OAuth 授权链接 / 扫码（类似 GitHub CLI `gh auth login`），CLI 收到 Token 后写入环境变量或配置文件。
+
+未配置 Token 且 dev 旁路关闭时，CLI 会提示上述配置方式；401 响应同样会附带提示。
 
 全局建议：
 
@@ -86,9 +103,11 @@ ai-todo reminder delete rem_xxx --json
 | 提醒列表 | `ai-todo reminder list [--status pending]` |
 | 完成提醒 | `ai-todo reminder done <id>` |
 | 创建日程 | `ai-todo calendar add --title … --start …` |
+| 更新日程 | `ai-todo calendar update <id> [--title …] [--start …]` |
 | 今日日程 | `ai-todo calendar today --json` |
 | 搜索联系人 | `ai-todo contact search "<q>"` |
 | 创建联系人 | `ai-todo contact add "<name>" --email …` |
+| 更新联系人 | `ai-todo contact update <id> [--name …] [--email …]` |
 
 完整列表：`ai-todo help`
 

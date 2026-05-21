@@ -20,6 +20,11 @@ class ContactRepository:
         self._session.refresh(contact)
         return self.get(contact.id) or contact
 
+    def save(self, contact: ContactModel) -> ContactModel:
+        self._session.commit()
+        self._session.refresh(contact)
+        return self.get(contact.id) or contact
+
     def get(self, contact_id: str) -> ContactModel | None:
         statement = (
             select(ContactModel)

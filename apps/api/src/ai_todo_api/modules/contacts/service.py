@@ -13,6 +13,7 @@ from ai_todo_api.modules.contacts.schemas import (
     ContactDetail,
     ContactSummary,
     CreateContactInput,
+    UpdateContactInput,
 )
 
 
@@ -82,6 +83,67 @@ class ContactService:
             )
 
         return contact_to_detail(self._repository.add(contact))
+
+    def update(self, contact_id: str, input_data: UpdateContactInput) -> ContactDetail:
+        contact = self._repository.get(contact_id)
+        if contact is None:
+            raise ContactNotFoundError(contact_id)
+
+        updates = input_data.model_dump(exclude_unset=True)
+        if not updates:
+            raise ValueError("At least one field is required to update a contact.")
+
+        now = now_utc()
+
+        if "display_name" in updates:
+            display_name = (updates["display_name"] or "").strip()
+            if not display_name:
+                raise ValueError("Contact display name cannot be empty.")
+            contact.display_name = display_name
+
+        for field in ("nickname", "company", "title", "notes"):
+            if field in updates:
+                setattr(contact, field, _clean_optional(updates[field]))
+
+        if "methods" in updates:
+            contact.methods.clear()
+            primary_seen: set[str] = set()
+            for method in input_data.methods or []:
+                value = method.value.strip()
+                if not value:
+                    continue
+                is_primary = method.is_primary or method.type not in primary_seen
+                if is_primary:
+                    primary_seen.add(method.type)
+                contact.methods.append(
+                    ContactMethodModel(
+                        id=f"cm_{uuid4().hex[:12]}",
+                        user_id=self._user_id,
+                        type=method.type,
+                        label=_clean_optional(method.label),
+                        value=value,
+                        normalized_value=normalize_method_value(method.type, value),
+                        is_primary=is_primary,
+                        created_at=now,
+                        updated_at=now,
+                    )
+                )
+
+        if "aliases" in updates:
+            contact.aliases.clear()
+            for alias in _unique_aliases(updates["aliases"] or []):
+                contact.aliases.append(
+                    ContactAliasModel(
+                        id=f"ca_{uuid4().hex[:12]}",
+                        user_id=self._user_id,
+                        alias=alias,
+                        normalized_alias=normalize_text(alias),
+                        created_at=now,
+                    )
+                )
+
+        contact.updated_at = now
+        return contact_to_detail(self._repository.save(contact))
 
     def search(self, query: str | None = None, limit: int = 20) -> list[ContactSummary]:
         return [contact_to_summary(contact) for contact in self._repository.search(query, limit)]

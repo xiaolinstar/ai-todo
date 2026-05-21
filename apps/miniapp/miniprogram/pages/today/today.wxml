@@ -1,0 +1,42 @@
+<view class="page today-page">
+  <view wx:if="{{error}}" class="error-banner">{{error}}</view>
+
+  <view class="header-row">
+    <view>
+      <view class="date-label">{{dateLabel}}</view>
+      <view class="meta" wx:if="{{timezone}}">{{timezone}}</view>
+    </view>
+    <button class="todo-button todo-button-primary header-btn" size="mini" hover-class="todo-button-hover" bindtap="goCreate">
+      新建提醒
+    </button>
+  </view>
+
+  <view class="section-title">提醒</view>
+  <view wx:if="{{loading && !loaded}}" class="empty">加载中…</view>
+  <view wx:elif="{{reminders.length === 0}}" class="card empty-card">今日暂无待办提醒</view>
+  <view wx:else class="page-body">
+    <view class="card reminder-item" wx:for="{{reminders}}" wx:key="id">
+      <view class="reminder-row">
+        <view class="check {{item.status === 'completed' ? 'checked' : ''}}" data-id="{{item.id}}" bindtap="onComplete">
+          <text wx:if="{{item.status === 'completed'}}">✓</text>
+        </view>
+        <view class="reminder-body">
+          <view class="reminder-title {{item.status === 'completed' ? 'done' : ''}}">{{item.title}}</view>
+          <view class="meta" wx:if="{{item.dueLabel}}">截止 {{item.dueLabel}}</view>
+          <view class="meta" wx:if="{{item.contactNames}}">关联：{{item.contactNames}}</view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="section-title">日程</view>
+  <view wx:if="{{calendarEvents.length === 0}}" class="card empty-card">今日暂无日程</view>
+  <view wx:else class="page-body">
+    <view class="card event-item" wx:for="{{calendarEvents}}" wx:key="id">
+      <view class="event-title">{{item.title}}</view>
+      <view class="meta">{{item.timeLabel}}</view>
+      <view class="meta" wx:if="{{item.location}}">📍 {{item.location}}</view>
+      <view class="meta" wx:if="{{item.contactNames}}">参与：{{item.contactNames}}</view>
+    </view>
+  </view>
+</view>

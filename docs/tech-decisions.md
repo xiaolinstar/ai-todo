@@ -31,7 +31,7 @@ curl POST /v1/reminders   # 最直接
 
 ### 微信小程序
 
-- **技术栈：微信原生**（不使用 Taro / uni-app）
+- **技术栈：微信原生**（TypeScript + Sass，对齐 party-helper，见 `docs/miniapp-conventions.md`）
 - 优先级低于 CLI/Skills；MVP 页面：今日、创建提醒、完成、联系人（见 `apps/miniapp/README.md`）
 
 ### 认证与用户
@@ -53,12 +53,23 @@ curl POST /v1/reminders   # 最直接
 2. **Skills / MCP**：✅ `skills/ai-todo/SKILL.md` + `docs/agent-usage.md` + `@ai-todo/agent-protocol` 工具表
 3. **API 硬化**：✅ CLI Token（`POST/GET/DELETE /v1/api-tokens`）、幂等键、`CommandLog`
 4. **关联能力**：✅ `reminder ↔ contact`、`calendar ↔ contact`（`contact_ids` / `contacts[]` 摘要）
-5. **微信小程序**（可选）：消费同一套 REST API
-6. ~~自然语言解析~~：**不在路线图**
+5. **Agent 闭环补全**：✅ `calendar update`、`contact update`、`logout`、PAT 认证 UX（`AI_TODO_TOKEN` / `login --token` / `login --issue-pat`）
+6. **微信小程序**：✅ MVP 原生小程序（今日 / 创建提醒 / 联系人 / 设置），见 `apps/miniapp/README.md`
+7. ~~自然语言解析~~：**不在路线图**
+
+## 认证策略（2026-05-21）
+
+**Agent / CLI 采用 PAT 模式**（类似 GitHub PAT、`OPENAI_API_KEY`）：
+
+- 用户在生产环境通过 Web 控制台或小程序创建 PAT，写入 `AI_TODO_TOKEN`
+- 本地开发可用 `ai-todo login --issue-pat` 一次性签发（依赖 dev 旁路）
+- **不做** CLI `token list/revoke` 子命令——Token 生命周期由控制台 / 小程序管理
+
+**规划中**（Phase C+）：OAuth 授权链接或扫码登录（类似 `gh auth login`），CLI 检测到未授权时引导用户完成浏览器授权，自动写入 Token。
 
 ## 待后续决定
 
-- CLI Token 创建入口（小程序 vs 独立控制台）
+- CLI Token 创建入口（小程序 vs Web 控制台 vs OAuth 扫码）
 - MCP Server 独立包 vs 仅维护 Skill 文档 + 调用 CLI
 - `contact resolve` 是否做纯规则/搜索版（无 LLM）
 

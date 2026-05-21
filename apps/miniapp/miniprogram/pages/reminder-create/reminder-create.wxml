@@ -1,0 +1,39 @@
+<view class="page create-page">
+  <view class="card section-inner">
+    <view class="field">
+      <view class="field-label">标题</view>
+      <input class="input-field" placeholder="要提醒的事项" value="{{title}}" bindinput="onTitleInput" />
+    </view>
+
+    <view class="field switch-row">
+      <view class="field-label">设置截止时间</view>
+      <switch checked="{{hasDue}}" bindchange="onDueToggle" color="#1677ff" />
+    </view>
+
+    <view wx:if="{{hasDue}}" class="picker-row">
+      <picker mode="date" value="{{dueDate}}" bindchange="onDateChange">
+        <view class="picker-box">{{dueDate}}</view>
+      </picker>
+      <picker mode="time" value="{{dueTime}}" bindchange="onTimeChange">
+        <view class="picker-box">{{dueTime}}</view>
+      </picker>
+    </view>
+
+    <view class="field">
+      <view class="field-label">关联联系人（可选）</view>
+      <view class="contact-row">
+        <view class="contact-chip" wx:if="{{selectedContact}}">
+          {{selectedContact.displayName}}
+          <text class="clear" bindtap="clearContact">×</text>
+        </view>
+        <button class="todo-button todo-button-secondary pick-btn" size="mini" hover-class="todo-button-hover" bindtap="pickContact">
+          选择联系人
+        </button>
+      </view>
+    </view>
+  </view>
+
+  <button class="todo-button todo-button-primary submit" loading="{{submitting}}" hover-class="todo-button-hover" bindtap="onSubmit">
+    创建提醒
+  </button>
+</view>

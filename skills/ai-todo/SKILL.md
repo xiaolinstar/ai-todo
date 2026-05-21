@@ -11,11 +11,13 @@ description: Manage personal reminders, calendar events, and contacts via the ai
 2. **Never** call NL parse endpoints; they are out of scope.
 3. **Structured fields only**: `--title`, `--due`, `--start`, ISO-8601 with timezone (e.g. `2026-05-20T14:00:00+08:00`).
 4. **Contacts**: run `ai-todo contact search "<name>" --json` before writes; if multiple matches, ask the user to pick `contact_id`.
-5. Ensure API is reachable (`AI_TODO_API_URL` or `ai-todo login --api-url …`).
+5. **Auth**: set `AI_TODO_TOKEN` (preferred) or `ai-todo login --token …`; local dev: `ai-todo login --issue-pat`.
+6. Ensure API is reachable (`AI_TODO_API_URL` or `ai-todo login --api-url …`).
 
 ## Setup check
 
 ```bash
+export AI_TODO_TOKEN=aitodo_xxx   # or: ai-todo login --issue-pat
 ai-todo whoami --json
 ```
 
@@ -32,9 +34,11 @@ Expect `ok: true` and `data.user.id` (dev: `user_dev`).
 | Reschedule | `ai-todo reminder reschedule <id> --due "…" --json` |
 | Delete reminder | `ai-todo reminder delete <id> --json` |
 | Create event | `ai-todo calendar add --title "…" --start "…" [--end "…"] [--contact <id> ...] --json` |
+| Update event | `ai-todo calendar update <event_id> [--title "…"] [--start "…"] --json` |
 | Today events | `ai-todo calendar today --json` |
 | Search contact | `ai-todo contact search "…" --json` |
 | Add contact | `ai-todo contact add "…" [--email "…"] --json` |
+| Update contact | `ai-todo contact update <contact_id> [--name "…"] [--email "…"] --json` |
 
 Shorthand (human): `ai-todo add "title only"` creates a reminder without due date (shows in today).
 

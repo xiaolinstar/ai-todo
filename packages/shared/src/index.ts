@@ -59,6 +59,33 @@ export interface ContactDetailResult {
   contact: ContactDetail;
 }
 
+export interface UpdateContactInput {
+  displayName?: string;
+  nickname?: string;
+  company?: string;
+  title?: string;
+  notes?: string;
+  methods?: ContactMethodInput[];
+  aliases?: string[];
+}
+
+export interface UpdateContactResult {
+  contact: ContactDetail;
+}
+
+export interface CreateApiTokenInput {
+  name: string;
+  scopes?: string[];
+}
+
+export interface CreateApiTokenResult {
+  id: string;
+  token: string;
+  name: string;
+  scopes: string[];
+  expiresAt?: string;
+}
+
 export interface ReminderSummary {
   id: EntityId;
   title: string;

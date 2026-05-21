@@ -1,0 +1,32 @@
+<view class="page contacts-page">
+  <view class="card search-bar">
+    <input class="search-input" placeholder="搜索姓名或别名" value="{{query}}" bindinput="onQueryInput" confirm-type="search" bindconfirm="onSearch" />
+    <button class="todo-button todo-button-primary search-btn" size="mini" hover-class="todo-button-hover" bindtap="onSearch">搜索</button>
+  </view>
+
+  <view wx:if="{{loading}}" class="empty">加载中…</view>
+  <view wx:elif="{{error}}" class="error-banner">{{error}}</view>
+  <view wx:elif="{{items.length === 0}}" class="card empty-card">暂无联系人</view>
+  <view wx:else class="page-body">
+    <view class="card contact-item" wx:for="{{items}}" wx:key="id" data-item="{{item}}" bindtap="onTapContact">
+      <view class="contact-name">{{item.displayName}}</view>
+      <view class="meta" wx:if="{{item.subtitle}}">{{item.subtitle}}</view>
+    </view>
+  </view>
+
+  <view class="fab-area">
+    <button class="todo-button todo-button-primary" hover-class="todo-button-hover" bindtap="showAdd">添加联系人</button>
+  </view>
+
+  <view wx:if="{{showAddForm}}" class="modal-mask" bindtap="hideAdd">
+    <view class="modal card section-inner" catchtap="noop">
+      <view class="modal-title">添加联系人</view>
+      <input class="input-field" placeholder="姓名" value="{{newName}}" bindinput="onNewNameInput" />
+      <input class="input-field mt" placeholder="邮箱（可选）" value="{{newEmail}}" bindinput="onNewEmailInput" />
+      <view class="modal-actions">
+        <button class="todo-button todo-button-secondary" hover-class="todo-button-hover" bindtap="hideAdd">取消</button>
+        <button class="todo-button todo-button-primary" loading="{{adding}}" hover-class="todo-button-hover" bindtap="onAddContact">保存</button>
+      </view>
+    </view>
+  </view>
+</view>

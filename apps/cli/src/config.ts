@@ -26,6 +26,13 @@ export function saveConfig(patch: CliConfig): void {
   fs.writeFileSync(CONFIG_PATH, `${JSON.stringify(next, null, 2)}\n`, "utf8");
 }
 
+export function clearToken(): void {
+  const current = loadConfig();
+  const { token: _removed, ...rest } = current;
+  fs.mkdirSync(CONFIG_DIR, { recursive: true });
+  fs.writeFileSync(CONFIG_PATH, `${JSON.stringify(rest, null, 2)}\n`, "utf8");
+}
+
 export function configPath(): string {
   return CONFIG_PATH;
 }
