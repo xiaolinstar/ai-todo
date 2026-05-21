@@ -89,10 +89,10 @@ apps/miniapp/
 
 | 角色 | 用途 |
 |------|------|
-| `--todo-primary` | 主操作、确认、继续 |
+| `--todo-primary` | 主操作、链接（iOS 蓝 #007AFF） |
 | `--todo-good` | 成功、完成态 |
-| `--todo-danger` | 删除、 risky 操作 |
-| `--todo-bg-page` | 页面背景 |
+| `--todo-danger` | 逾期、删除、警示 |
+| `--todo-bg-page` | 分组背景（#F2F2F7） |
 | `--todo-surface` | 卡片、面板 |
 | `--todo-text-primary` / `secondary` / `muted` / `subtle` | 文字层级 |
 | `--todo-border-subtle` / `--todo-border-card` | 分割线与卡片描边 |
@@ -103,10 +103,13 @@ apps/miniapp/
 
 优先使用 `app.scss` 中已定义的：
 
-- `.page` — 页面容器（`min-height: 100vh; padding: 32rpx`）
-- `.card`、`.section`、`.section-inner`、`.section-title`、`.section-desc`
-- `.primary-button`、`.secondary-button`、`.plain-button`
-- `.todo-button` + `.todo-button-primary` / `-secondary`（与 party-helper 的 `.party-button-*` 对应）
+- `.page` — 页面容器
+- `.large-title` / `.large-subtitle` — Apple 大标题区
+- `.inset-group` / `.list-cell` — iOS 分组列表
+- `.form-group` / `.form-row` — iOS 表单行
+- `.week-strip` / `.day-circle` — 日历周视图
+- `.fab` — 圆形 + 悬浮按钮
+- `.todo-button` + `.todo-button-primary` / `-secondary` / `-ghost`
 
 ### 布局稳定性（来自 party-helper AGENTS.md）
 
@@ -157,7 +160,7 @@ pnpm typecheck:wechat # 仅 tsc
 |----|--------------|---------|
 | CSS 前缀 | `--party-*` | `--todo-*` |
 | 核心逻辑位置 | `packages/games/*` + vendor 同步 | 后端 API + `lib/api.ts` |
-| TabBar | 无（单首页入口） | 有（今日 / 联系人 / 设置） |
+| TabBar | 无（单首页入口） | 自定义 TabBar：4 图标 + 居中「+」新建 |
 | 分享 | 首页/设置/反馈均 `lib/share.ts` | MVP 可选，待产品需要时补齐 |
 | CI 脚本 | `check:wechat-vendor` | 无 vendor；仅 `check:wechat` |
 

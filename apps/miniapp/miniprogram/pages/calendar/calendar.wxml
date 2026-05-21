@@ -1,0 +1,67 @@
+<view class="page page-with-tab calendar-page">
+  <view wx:if="{{error}}" class="error-banner">
+    <text>{{error}}</text>
+    <text class="link-text" bindtap="goMine">去配置</text>
+  </view>
+
+  <view class="large-title-wrap">
+    <view class="large-title">日历</view>
+    <view class="large-subtitle">{{weekdayLabel}} · {{dateLabel}}<text wx:if="{{timezone}}"> · {{timezone}}</text></view>
+  </view>
+
+  <view class="month-nav">
+    <view class="month-label">{{monthLabel}}</view>
+    <view
+      wx:if="{{!isToday}}"
+      class="month-action pressable"
+      bindtap="goToday"
+      hover-class="month-action-hover"
+    >
+      今天
+    </view>
+  </view>
+
+  <view class="week-strip">
+    <view
+      class="week-day pressable"
+      wx:for="{{weekDays}}"
+      wx:key="iso"
+      data-iso="{{item.iso}}"
+      bindtap="onSelectDay"
+      hover-class="week-day-hover"
+    >
+      <text class="weekday-label">{{item.weekday}}</text>
+      <view class="day-circle {{item.isSelected ? 'selected' : ''}} {{item.isToday ? 'today' : ''}}">
+        {{item.day}}
+      </view>
+    </view>
+  </view>
+
+  <view wx:if="{{loading && !loaded}}" class="loading-state">
+    <view class="meta">加载中…</view>
+  </view>
+
+  <block wx:elif="{{events.length === 0}}">
+    <view class="empty-state inset-group">
+      <view class="empty-icon">📅</view>
+      <view class="empty-title">{{isToday ? '今天没有日程' : '这一天没有日程'}}</view>
+      <view class="empty-desc">点击底部 + 新建日程，或在上方切换日期</view>
+    </view>
+  </block>
+
+  <block wx:else>
+    <view class="group-header">{{isToday ? '今日安排' : '全天'}}</view>
+    <view class="inset-group">
+      <view class="event-row" wx:for="{{events}}" wx:key="id">
+        <view class="event-accent" style="background: {{item.accentColor}};"></view>
+        <view class="cell-body compact">
+          <view class="cell-title">{{item.title}}</view>
+          <view class="cell-meta accent">{{item.timeLabel}}</view>
+          <view wx:if="{{item.location || item.contactNames}}" class="cell-subline">
+            {{item.location}}{{item.location && item.contactNames ? ' · ' : ''}}{{item.contactNames}}
+          </view>
+        </view>
+      </view>
+    </view>
+  </block>
+</view>

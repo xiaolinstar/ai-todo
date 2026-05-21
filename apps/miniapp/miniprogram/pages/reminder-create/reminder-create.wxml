@@ -1,35 +1,35 @@
 <view class="page create-page">
-  <view class="card section-inner">
-    <view class="field">
-      <view class="field-label">标题</view>
-      <input class="input-field" placeholder="要提醒的事项" value="{{title}}" bindinput="onTitleInput" />
+  <view class="group-header">提醒详情</view>
+  <view class="form-group">
+    <view class="form-row">
+      <text class="form-label">标题</text>
+      <input class="form-input" placeholder="必填" value="{{title}}" bindinput="onTitleInput" />
     </view>
-
-    <view class="field switch-row">
-      <view class="field-label">设置截止时间</view>
-      <switch checked="{{hasDue}}" bindchange="onDueToggle" color="#1677ff" />
+    <view class="form-row">
+      <text class="form-label">截止时间</text>
+      <switch checked="{{hasDue}}" bindchange="onDueToggle" color="#007AFF" />
     </view>
-
-    <view wx:if="{{hasDue}}" class="picker-row">
+    <view wx:if="{{hasDue}}" class="form-row">
+      <text class="form-label">日期</text>
       <picker mode="date" value="{{dueDate}}" bindchange="onDateChange">
-        <view class="picker-box">{{dueDate}}</view>
-      </picker>
-      <picker mode="time" value="{{dueTime}}" bindchange="onTimeChange">
-        <view class="picker-box">{{dueTime}}</view>
+        <view class="picker-inline">{{dueDate}}</view>
       </picker>
     </view>
-
-    <view class="field">
-      <view class="field-label">关联联系人（可选）</view>
-      <view class="contact-row">
-        <view class="contact-chip" wx:if="{{selectedContact}}">
-          {{selectedContact.displayName}}
-          <text class="clear" bindtap="clearContact">×</text>
-        </view>
-        <button class="todo-button todo-button-secondary pick-btn" size="mini" hover-class="todo-button-hover" bindtap="pickContact">
-          选择联系人
-        </button>
-      </view>
+    <view wx:if="{{hasDue}}" class="form-row">
+      <text class="form-label">时间</text>
+      <picker mode="time" value="{{dueTime}}" bindchange="onTimeChange">
+        <view class="picker-inline">{{dueTime}}</view>
+      </picker>
+    </view>
+    <view class="form-row">
+      <text class="form-label">联系人</text>
+      <button class="todo-button todo-button-ghost todo-button-sm pick-inline" size="mini" hover-class="todo-button-hover" bindtap="pickContact">
+        {{selectedContact ? selectedContact.displayName : '选择'}}
+      </button>
+    </view>
+    <view wx:if="{{selectedContact}}" class="form-row">
+      <text class="form-label"></text>
+      <text class="chip-clear link-text" bindtap="clearContact">移除联系人</text>
     </view>
   </view>
 

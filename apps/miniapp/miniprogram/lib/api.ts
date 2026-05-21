@@ -111,6 +111,20 @@ export function fetchToday() {
   return request<TodayResult>("/v1/today");
 }
 
+export function fetchRemindersToday() {
+  return request<{ items: ReminderSummary[] }>("/v1/reminders/today");
+}
+
+export function fetchCalendarToday() {
+  return request<{ items: CalendarEventSummary[] }>("/v1/calendar/today");
+}
+
+export function fetchCalendarByDate(date: string) {
+  return request<{ items: CalendarEventSummary[] }>(
+    `/v1/calendar/events?from=${encodeURIComponent(date)}&to=${encodeURIComponent(date)}`
+  );
+}
+
 export function fetchMe() {
   return request<MeResult>("/v1/me");
 }
@@ -128,6 +142,19 @@ export function createReminder(input: {
   contactIds?: string[];
 }) {
   return request<{ reminder: ReminderSummary }>("/v1/reminders", {
+    method: "POST",
+    data: input
+  });
+}
+
+export function createCalendarEvent(input: {
+  title: string;
+  startAt: string;
+  endAt?: string;
+  location?: string;
+  contactIds?: string[];
+}) {
+  return request<{ calendarEvent: CalendarEventSummary }>("/v1/calendar/events", {
     method: "POST",
     data: input
   });

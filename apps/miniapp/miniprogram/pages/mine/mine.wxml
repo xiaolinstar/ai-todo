@@ -1,0 +1,53 @@
+<view class="page page-with-tab mine-page">
+  <view class="profile-card inset-group">
+    <view class="profile-inner">
+      <view class="avatar avatar-lg" style="background: {{avatarColor}};">{{initial}}</view>
+      <view class="profile-text">
+        <view class="profile-name">{{userName || '未连接'}}</view>
+        <view wx:if="{{connected}}" class="cell-meta">{{userId}}</view>
+        <view wx:if="{{connected}}" class="cell-meta">{{timezone}}</view>
+        <view wx:else class="cell-meta">配置 API 后即可同步数据</view>
+      </view>
+      <view class="status-dot {{connected ? 'online' : ''}}"></view>
+    </view>
+  </view>
+
+  <view class="group-header">连接</view>
+  <view class="form-group">
+    <view class="form-row stack">
+      <text class="form-label">API 地址</text>
+      <input class="form-input" placeholder="http://127.0.0.1:3100" value="{{apiUrl}}" bindinput="onApiUrlInput" />
+    </view>
+    <view class="form-row stack">
+      <text class="form-label">Access Token</text>
+      <input class="form-input" password placeholder="aitodo_xxx（可选）" value="{{token}}" bindinput="onTokenInput" />
+    </view>
+  </view>
+  <view class="form-hint">本地默认 127.0.0.1:3100；留空 Token 可使用 dev 旁路</view>
+  <button class="todo-button todo-button-primary" hover-class="todo-button-hover" bindtap="onSave">保存并连接</button>
+
+  <view class="group-header">账号操作</view>
+  <view class="inset-group action-group">
+    <view class="settings-cell pressable" bindtap="onTestConnection" hover-class="list-cell-hover">
+      <text class="settings-label">测试连接</text>
+      <text class="settings-value">{{testing ? '检测中…' : (connected ? '已连接' : '未连接')}}</text>
+    </view>
+    <view class="settings-cell pressable" bindtap="onIssuePat" hover-class="list-cell-hover">
+      <text class="settings-label">签发 PAT</text>
+      <text class="settings-value link-text">{{issuing ? '处理中…' : '创建'}}</text>
+    </view>
+    <view class="settings-cell pressable" bindtap="onClearToken" hover-class="list-cell-hover">
+      <text class="settings-label danger">清除 Token</text>
+    </view>
+  </view>
+
+  <view class="group-header">开发提示</view>
+  <view class="inset-group tips-group">
+    <view class="settings-cell">
+      <text class="cell-meta">开发者工具 → 详情 → 勾选「不校验合法域名」</text>
+    </view>
+    <view class="settings-cell">
+      <text class="cell-meta">终端运行 pnpm dev:api</text>
+    </view>
+  </view>
+</view>

@@ -13,9 +13,15 @@ declare const wx: {
   navigateTo(options: {
     url: string;
     events?: Record<string, (data: any) => void>;
+    success?: () => void;
   }): void;
   navigateBack(options?: { delta?: number }): void;
-  switchTab(options: { url: string }): void;
+  switchTab(options: { url: string; success?: () => void }): void;
+  showActionSheet(options: {
+    itemList: string[];
+    success?: (res: { tapIndex: number }) => void;
+    fail?: () => void;
+  }): void;
   showLoading(options: { title: string }): void;
   hideLoading(): void;
   showToast(options: {
@@ -37,4 +43,6 @@ declare const wx: {
 
 declare function App(options: any): void;
 declare function Page(options: any): void;
+declare function Component(options: any): void;
 declare function getApp(): { globalData: Record<string, unknown> };
+declare function getCurrentPages(): Array<{ getTabBar?: () => { setData: (data: Record<string, unknown>) => void } | null }>;

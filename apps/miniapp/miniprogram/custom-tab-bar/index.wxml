@@ -1,0 +1,50 @@
+<view class="tab-bar">
+  <view class="tab-bar-inner">
+    <view
+      class="tab-item pressable {{selected === 0 ? 'active' : ''}}"
+      data-index="0"
+      bindtap="switchTab"
+      hover-class="tab-item-hover"
+    >
+      <view class="tab-icon icon-todo {{selected === 0 ? 'active' : ''}}"></view>
+      <text class="tab-text">待办</text>
+    </view>
+
+    <view
+      class="tab-item pressable {{selected === 1 ? 'active' : ''}}"
+      data-index="1"
+      bindtap="switchTab"
+      hover-class="tab-item-hover"
+    >
+      <view class="tab-icon icon-calendar {{selected === 1 ? 'active' : ''}}"></view>
+      <text class="tab-text">日历</text>
+    </view>
+
+    <view class="tab-create-wrap">
+      <view class="tab-create pressable" bindtap="onCreateTap" hover-class="tab-create-hover">
+        <text class="tab-create-icon">+</text>
+      </view>
+      <text class="tab-create-label">新建</text>
+    </view>
+
+    <view
+      class="tab-item pressable {{selected === 2 ? 'active' : ''}}"
+      data-index="2"
+      bindtap="switchTab"
+      hover-class="tab-item-hover"
+    >
+      <view class="tab-icon icon-contacts {{selected === 2 ? 'active' : ''}}"></view>
+      <text class="tab-text">通讯录</text>
+    </view>
+
+    <view
+      class="tab-item pressable {{selected === 3 ? 'active' : ''}}"
+      data-index="3"
+      bindtap="switchTab"
+      hover-class="tab-item-hover"
+    >
+      <view class="tab-icon icon-mine {{selected === 3 ? 'active' : ''}}"></view>
+      <text class="tab-text">我的</text>
+    </view>
+  </view>
+</view>

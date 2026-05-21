@@ -1,32 +1,41 @@
 page {
-  --todo-primary: #1677ff;
-  --todo-primary-strong: #0958d9;
-  --todo-primary-rgb: 22, 119, 255;
-  --todo-good: #52c41a;
-  --todo-good-rgb: 82, 196, 26;
-  --todo-danger: #ff4d4f;
-  --todo-danger-strong: #cf1322;
-  --todo-danger-rgb: 255, 77, 79;
-  --todo-bg-page: #f7f8fa;
+  /* iOS-inspired palette */
+  --todo-primary: #007aff;
+  --todo-primary-strong: #0051d5;
+  --todo-primary-rgb: 0, 122, 255;
+  --todo-good: #34c759;
+  --todo-good-rgb: 52, 199, 89;
+  --todo-warning: #ff9500;
+  --todo-warning-rgb: 255, 149, 0;
+  --todo-danger: #ff3b30;
+  --todo-danger-strong: #d70015;
+  --todo-danger-rgb: 255, 59, 48;
+  --todo-accent-calendar: #ff3b30;
+  --todo-bg-page: #f2f2f7;
   --todo-surface: #ffffff;
-  --todo-surface-muted: #f2f3f5;
-  --todo-text-primary: #1f2329;
-  --todo-text-secondary: #333333;
-  --todo-text-muted: #646a73;
-  --todo-text-subtle: #8a9199;
-  --todo-text-placeholder: #bbbbbb;
+  --todo-surface-muted: #f2f2f7;
+  --todo-surface-elevated: #ffffff;
+  --todo-text-primary: #000000;
+  --todo-text-secondary: #3c3c43;
+  --todo-text-muted: #636366;
+  --todo-text-subtle: #8e8e93;
+  --todo-text-placeholder: #c7c7cc;
   --todo-text-inverse: #ffffff;
-  --todo-border-subtle: #ededed;
-  --todo-border-card: rgba(0, 0, 0, 0.04);
-  --todo-link: #576b95;
-  --todo-shadow-card: 0 8rpx 20rpx rgba(0, 0, 0, 0.04);
-  --todo-shadow-panel: 0 8rpx 24rpx rgba(0, 0, 0, 0.04);
-  --todo-overlay: rgba(0, 0, 0, 0.45);
+  --todo-border-subtle: rgba(60, 60, 67, 0.12);
+  --todo-border-card: rgba(60, 60, 67, 0.08);
+  --todo-link: #007aff;
+  --todo-shadow-card: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
+  --todo-shadow-panel: 0 8rpx 24rpx rgba(0, 0, 0, 0.06);
+  --todo-shadow-fab: 0 12rpx 36rpx rgba(0, 122, 255, 0.32);
+  --todo-overlay: rgba(0, 0, 0, 0.4);
+  --todo-radius-group: 20rpx;
+  --todo-radius-cell: 0;
+  --todo-separator: 1rpx solid var(--todo-border-subtle);
 
   min-height: 100vh;
   background: var(--todo-bg-page);
   color: var(--todo-text-primary);
-  font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
 
 view,
@@ -51,64 +60,427 @@ button::after {
 
 .page {
   min-height: 100vh;
-  padding: 32rpx;
+  padding: 24rpx 32rpx 32rpx;
 }
 
-.card {
-  border-radius: 24rpx;
+.page-with-tab {
+  padding-bottom: calc(128rpx + env(safe-area-inset-bottom));
+}
+
+/* Large title — Apple Reminders / Calendar header */
+.large-title-wrap {
+  margin-bottom: 28rpx;
+}
+
+.large-title {
+  color: var(--todo-text-primary);
+  font-size: 68rpx;
+  font-weight: 700;
+  letter-spacing: -1rpx;
+  line-height: 1.1;
+}
+
+.large-subtitle {
+  margin-top: 8rpx;
+  color: var(--todo-text-subtle);
+  font-size: 28rpx;
+  line-height: 1.5;
+}
+
+.summary-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-top: 16rpx;
+}
+
+.summary-chip {
+  padding: 8rpx 18rpx;
+  border-radius: 999rpx;
+  background: rgba(var(--todo-primary-rgb), 0.1);
+  color: var(--todo-primary);
+  font-size: 24rpx;
+  font-weight: 600;
+}
+
+.summary-chip.warn {
+  background: rgba(var(--todo-danger-rgb), 0.12);
+  color: var(--todo-danger);
+}
+
+/* Inset grouped list — iOS Settings / Reminders */
+.group-header {
+  margin: 8rpx 16rpx 12rpx;
+  color: var(--todo-text-subtle);
+  font-size: 26rpx;
+  font-weight: 400;
+  letter-spacing: 0.5rpx;
+  text-transform: uppercase;
+}
+
+.inset-group {
+  overflow: hidden;
+  margin-bottom: 28rpx;
+  border-radius: var(--todo-radius-group);
   background: var(--todo-surface);
-  box-shadow: var(--todo-shadow-card);
 }
 
-.page-body {
+.list-cell {
+  display: flex;
+  align-items: flex-start;
+  gap: 20rpx;
+  padding: 24rpx 28rpx;
+  background: var(--todo-surface);
+}
+
+.list-cell + .list-cell {
+  border-top: var(--todo-separator);
+}
+
+.list-cell-hover {
+  background: rgba(0, 122, 255, 0.08) !important;
+}
+
+.pressable {
+  transition: transform 0.12s ease, opacity 0.12s ease, background 0.12s ease;
+}
+
+.pressable-active {
+  transform: scale(0.97);
+  opacity: 0.88;
+}
+
+.cell-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.cell-title {
+  color: var(--todo-text-primary);
+  font-size: 32rpx;
+  font-weight: 400;
+  line-height: 1.35;
+}
+
+.cell-title.done {
+  color: var(--todo-text-subtle);
+  text-decoration: line-through;
+}
+
+.cell-meta {
+  margin-top: 6rpx;
+  color: var(--todo-text-subtle);
+  font-size: 26rpx;
+  line-height: 1.45;
+}
+
+.cell-meta.overdue {
+  color: var(--todo-danger);
+  font-weight: 500;
+}
+
+.cell-meta.accent {
+  color: var(--todo-primary);
+}
+
+.cell-body.compact {
   display: flex;
   flex-direction: column;
-  gap: 24rpx;
+  gap: 4rpx;
+  min-width: 0;
 }
 
-.section-title {
-  margin-bottom: 8rpx;
+.cell-subline {
+  overflow: hidden;
+  color: var(--todo-text-subtle);
+  font-size: 26rpx;
+  line-height: 1.35;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.cell-subline.overdue {
+  color: var(--todo-danger);
+}
+
+/* Reminders checkbox */
+.reminder-check {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 48rpx;
+  height: 48rpx;
+  margin-top: 2rpx;
+  border: 3rpx solid #c7c7cc;
+  border-radius: 50%;
+  color: var(--todo-text-inverse);
+  font-size: 26rpx;
+  font-weight: 700;
+  transition: transform 0.15s ease;
+}
+
+.reminder-check:active {
+  transform: scale(0.92);
+}
+
+.reminder-check.checked {
+  border-color: var(--todo-primary);
+  background: var(--todo-primary);
+}
+
+.check-hit {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  padding: 12rpx;
+  margin: -12rpx 0 -12rpx -12rpx;
+  border-radius: 999rpx;
+}
+
+.check-hit-hover {
+  background: rgba(0, 122, 255, 0.12);
+}
+
+/* Calendar event row */
+.event-row {
+  display: flex;
+  align-items: stretch;
+  gap: 20rpx;
+  padding: 24rpx 28rpx;
+  background: var(--todo-surface);
+}
+
+.event-row + .event-row {
+  border-top: var(--todo-separator);
+}
+
+.event-accent {
+  flex-shrink: 0;
+  width: 8rpx;
+  border-radius: 999rpx;
+  background: var(--todo-accent-calendar);
+}
+
+.event-time {
+  flex-shrink: 0;
+  width: 120rpx;
   color: var(--todo-text-muted);
+  font-size: 26rpx;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.4;
+}
+
+/* Week strip — Calendar day picker */
+.week-strip {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 28rpx;
+  padding: 20rpx 8rpx;
+  border-radius: var(--todo-radius-group);
+  background: var(--todo-surface);
+}
+
+.week-day {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  gap: 10rpx;
+  padding: 8rpx 0;
+}
+
+.weekday-label {
+  color: var(--todo-text-subtle);
+  font-size: 22rpx;
+}
+
+.day-circle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 50%;
+  color: var(--todo-text-primary);
+  font-size: 30rpx;
+  font-weight: 500;
+  transition: background 0.15s ease, transform 0.12s ease;
+}
+
+.week-day-hover .day-circle {
+  background: rgba(0, 122, 255, 0.1);
+}
+
+.day-circle.today {
+  color: var(--todo-danger);
+  font-weight: 700;
+}
+
+.day-circle.selected {
+  background: var(--todo-primary);
+  color: var(--todo-text-inverse);
+  font-weight: 600;
+}
+
+.day-circle.selected.today {
+  color: var(--todo-text-inverse);
+}
+
+.month-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16rpx;
+}
+
+.month-label {
+  color: var(--todo-text-primary);
+  font-size: 34rpx;
+  font-weight: 600;
+}
+
+.month-action {
+  padding: 12rpx 20rpx;
+  border-radius: 999rpx;
+  background: rgba(var(--todo-primary-rgb), 0.1);
+  color: var(--todo-primary);
   font-size: 26rpx;
   font-weight: 600;
 }
 
-.section-inner {
-  padding: 32rpx;
+.month-action-hover {
+  opacity: 0.85;
+  background: rgba(var(--todo-primary-rgb), 0.18);
 }
 
-.meta {
+/* Contact avatar */
+.avatar {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 50%;
+  color: var(--todo-text-inverse);
+  font-size: 28rpx;
+  font-weight: 600;
+}
+
+.avatar-lg {
+  width: 120rpx;
+  height: 120rpx;
+  font-size: 48rpx;
+}
+
+.contact-row-inner {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+}
+
+/* Search — iOS style */
+.search-group {
+  margin-bottom: 24rpx;
+}
+
+.search-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  padding: 16rpx 24rpx;
+  border-radius: 20rpx;
+  background: rgba(118, 118, 128, 0.12);
+}
+
+.search-icon {
+  color: var(--todo-text-subtle);
+  font-size: 32rpx;
+  line-height: 1;
+}
+
+.search-input {
+  flex: 1;
+  min-width: 0;
+  color: var(--todo-text-primary);
+  font-size: 30rpx;
+}
+
+/* Form — iOS inset form */
+.form-group {
+  overflow: hidden;
+  margin-bottom: 28rpx;
+  border-radius: var(--todo-radius-group);
+  background: var(--todo-surface);
+}
+
+.form-row {
+  display: flex;
+  align-items: center;
+  min-height: 96rpx;
+  padding: 20rpx 28rpx;
+}
+
+.form-row + .form-row {
+  border-top: var(--todo-separator);
+}
+
+.form-row.stack {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12rpx;
+}
+
+.form-label {
+  flex-shrink: 0;
+  width: 180rpx;
+  color: var(--todo-text-primary);
+  font-size: 30rpx;
+}
+
+.form-input {
+  flex: 1;
+  min-width: 0;
+  color: var(--todo-text-primary);
+  font-size: 30rpx;
+  text-align: right;
+}
+
+.form-row.stack .form-input {
+  width: 100%;
+  padding: 16rpx 20rpx;
+  border-radius: 12rpx;
+  background: var(--todo-surface-muted);
+  text-align: left;
+}
+
+.form-hint {
+  margin: -8rpx 16rpx 20rpx;
   color: var(--todo-text-subtle);
   font-size: 24rpx;
-  line-height: 1.6;
+  line-height: 1.5;
 }
 
-.error-banner {
-  margin-bottom: 20rpx;
-  padding: 20rpx 24rpx;
-  border-radius: 12rpx;
-  background: #fff2f0;
-  color: var(--todo-danger-strong);
-  font-size: 26rpx;
+.picker-inline {
+  flex: 1;
+  color: var(--todo-primary);
+  font-size: 30rpx;
+  text-align: right;
 }
 
-.empty {
-  padding: 48rpx 0;
-  color: var(--todo-text-subtle);
-  font-size: 26rpx;
-  text-align: center;
-}
-
+/* Buttons */
 .todo-button {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 100%;
-  min-height: 88rpx;
+  min-height: 96rpx;
   padding: 0 32rpx;
-  border: 1rpx solid transparent;
-  border-radius: 12rpx;
-  font-size: 30rpx;
+  border: none;
+  border-radius: 24rpx;
+  font-size: 32rpx;
   font-weight: 600;
   line-height: 1.2;
   white-space: nowrap;
@@ -117,28 +489,211 @@ button::after {
 .todo-button-primary {
   background: var(--todo-primary);
   color: var(--todo-text-inverse);
-  box-shadow: 0 10rpx 24rpx rgba(var(--todo-primary-rgb), 0.18);
 }
 
 .todo-button-secondary {
   background: var(--todo-surface);
   color: var(--todo-primary);
-  border-color: rgba(var(--todo-primary-rgb), 0.32);
+  box-shadow: inset 0 0 0 1rpx rgba(var(--todo-primary-rgb), 0.25);
+}
+
+.todo-button-ghost {
+  background: rgba(var(--todo-primary-rgb), 0.1);
+  color: var(--todo-primary);
 }
 
 .todo-button-hover {
-  opacity: 0.92;
+  opacity: 0.88;
 }
 
 .todo-button[disabled] {
-  opacity: 0.56;
+  opacity: 0.45;
+}
+
+.todo-button-sm {
+  min-height: 72rpx;
+  padding: 0 28rpx;
+  border-radius: 18rpx;
+  font-size: 28rpx;
+}
+
+/* FAB — circular + like Apple */
+.fab {
+  position: fixed;
+  right: 36rpx;
+  bottom: calc(28rpx + env(safe-area-inset-bottom));
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 112rpx;
+  height: 112rpx;
+  border-radius: 50%;
+  background: var(--todo-primary);
+  box-shadow: var(--todo-shadow-fab);
+}
+
+.fab-hover {
+  transform: scale(0.94);
+  opacity: 0.95;
+}
+
+.fab-icon {
+  margin-top: -4rpx;
+  color: var(--todo-text-inverse);
+  font-size: 64rpx;
+  font-weight: 300;
+  line-height: 1;
+}
+
+/* States */
+.meta {
+  color: var(--todo-text-subtle);
+  font-size: 26rpx;
+  line-height: 1.55;
+}
+
+.error-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8rpx;
+  margin-bottom: 20rpx;
+  padding: 20rpx 24rpx;
+  border-radius: 16rpx;
+  background: rgba(var(--todo-danger-rgb), 0.1);
+  color: var(--todo-danger-strong);
+  font-size: 26rpx;
+  line-height: 1.5;
+}
+
+.link-text {
+  color: var(--todo-link);
+  font-weight: 600;
+}
+
+.loading-state,
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80rpx 40rpx;
+  text-align: center;
+}
+
+.empty-icon {
+  margin-bottom: 20rpx;
+  font-size: 72rpx;
+  line-height: 1;
+  opacity: 0.45;
+}
+
+.empty-title {
+  margin-bottom: 8rpx;
+  color: var(--todo-text-primary);
+  font-size: 32rpx;
+  font-weight: 600;
+}
+
+.empty-desc {
+  color: var(--todo-text-subtle);
+  font-size: 26rpx;
+  line-height: 1.55;
+}
+
+/* Modal sheet */
+.sheet-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: var(--todo-overlay);
+}
+
+.sheet-panel {
+  width: 100%;
+  padding: 24rpx 32rpx calc(32rpx + env(safe-area-inset-bottom));
+  border-radius: 24rpx 24rpx 0 0;
+  background: var(--todo-bg-page);
+}
+
+.sheet-handle {
+  width: 72rpx;
+  height: 8rpx;
+  margin: 0 auto 24rpx;
+  border-radius: 999rpx;
+  background: rgba(60, 60, 67, 0.2);
+}
+
+.sheet-title {
+  margin-bottom: 24rpx;
+  color: var(--todo-text-primary);
+  font-size: 34rpx;
+  font-weight: 700;
+  text-align: center;
+}
+
+.sheet-actions {
+  display: flex;
+  gap: 16rpx;
+  margin-top: 24rpx;
+}
+
+.sheet-actions button {
+  flex: 1;
+}
+
+.contact-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8rpx;
+  padding: 10rpx 20rpx;
+  border-radius: 999rpx;
+  background: rgba(var(--todo-primary-rgb), 0.12);
+  color: var(--todo-primary);
+  font-size: 26rpx;
+}
+
+.chip-clear {
+  color: var(--todo-text-subtle);
+  font-size: 32rpx;
+  font-weight: 400;
+  line-height: 1;
+}
+
+/* Legacy aliases */
+.card {
+  border-radius: var(--todo-radius-group);
+  background: var(--todo-surface);
+}
+
+.section {
+  overflow: hidden;
+  margin-bottom: 24rpx;
+  border-radius: var(--todo-radius-group);
+  background: var(--todo-surface);
+}
+
+.section-inner {
+  padding: 28rpx;
+}
+
+.section-title {
+  margin-bottom: 12rpx;
+  color: var(--todo-text-subtle);
+  font-size: 26rpx;
+  font-weight: 400;
 }
 
 .input-field {
+  width: 100%;
   padding: 20rpx 24rpx;
-  border-radius: 12rpx;
+  border-radius: 14rpx;
   background: var(--todo-surface-muted);
-  font-size: 28rpx;
+  font-size: 30rpx;
 }
 
 .field-label {

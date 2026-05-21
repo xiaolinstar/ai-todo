@@ -2,9 +2,13 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.request = request;
 exports.fetchToday = fetchToday;
+exports.fetchRemindersToday = fetchRemindersToday;
+exports.fetchCalendarToday = fetchCalendarToday;
+exports.fetchCalendarByDate = fetchCalendarByDate;
 exports.fetchMe = fetchMe;
 exports.completeReminder = completeReminder;
 exports.createReminder = createReminder;
+exports.createCalendarEvent = createCalendarEvent;
 exports.searchContacts = searchContacts;
 exports.createContact = createContact;
 exports.issuePat = issuePat;
@@ -53,6 +57,15 @@ function request(path, options = {}) {
 function fetchToday() {
     return request("/v1/today");
 }
+function fetchRemindersToday() {
+    return request("/v1/reminders/today");
+}
+function fetchCalendarToday() {
+    return request("/v1/calendar/today");
+}
+function fetchCalendarByDate(date) {
+    return request(`/v1/calendar/events?from=${encodeURIComponent(date)}&to=${encodeURIComponent(date)}`);
+}
 function fetchMe() {
     return request("/v1/me");
 }
@@ -64,6 +77,12 @@ function completeReminder(reminderId) {
 }
 function createReminder(input) {
     return request("/v1/reminders", {
+        method: "POST",
+        data: input
+    });
+}
+function createCalendarEvent(input) {
+    return request("/v1/calendar/events", {
         method: "POST",
         data: input
     });

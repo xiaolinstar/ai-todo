@@ -1,0 +1,55 @@
+<view class="page create-page">
+  <view class="group-header">日程详情</view>
+  <view class="form-group">
+    <view class="form-row">
+      <text class="form-label">标题</text>
+      <input class="form-input" placeholder="必填" value="{{title}}" bindinput="onTitleInput" />
+    </view>
+    <view class="form-row">
+      <text class="form-label">开始日期</text>
+      <picker mode="date" value="{{startDate}}" bindchange="onStartDateChange">
+        <view class="picker-inline">{{startDate}}</view>
+      </picker>
+    </view>
+    <view class="form-row">
+      <text class="form-label">开始时间</text>
+      <picker mode="time" value="{{startTime}}" bindchange="onStartTimeChange">
+        <view class="picker-inline">{{startTime}}</view>
+      </picker>
+    </view>
+    <view class="form-row">
+      <text class="form-label">结束时间</text>
+      <switch checked="{{hasEnd}}" bindchange="onEndToggle" color="#007AFF" />
+    </view>
+    <view wx:if="{{hasEnd}}" class="form-row">
+      <text class="form-label">结束日期</text>
+      <picker mode="date" value="{{endDate}}" bindchange="onEndDateChange">
+        <view class="picker-inline">{{endDate}}</view>
+      </picker>
+    </view>
+    <view wx:if="{{hasEnd}}" class="form-row">
+      <text class="form-label">结束时刻</text>
+      <picker mode="time" value="{{endTime}}" bindchange="onEndTimeChange">
+        <view class="picker-inline">{{endTime}}</view>
+      </picker>
+    </view>
+    <view class="form-row">
+      <text class="form-label">地点</text>
+      <input class="form-input" placeholder="可选" value="{{location}}" bindinput="onLocationInput" />
+    </view>
+    <view class="form-row">
+      <text class="form-label">联系人</text>
+      <button class="todo-button todo-button-ghost todo-button-sm pick-inline" size="mini" hover-class="todo-button-hover" bindtap="pickContact">
+        {{selectedContact ? selectedContact.displayName : '选择'}}
+      </button>
+    </view>
+    <view wx:if="{{selectedContact}}" class="form-row">
+      <text class="form-label"></text>
+      <text class="chip-clear link-text" bindtap="clearContact">移除联系人</text>
+    </view>
+  </view>
+
+  <button class="todo-button todo-button-primary submit" loading="{{submitting}}" hover-class="todo-button-hover" bindtap="onSubmit">
+    创建日程
+  </button>
+</view>

@@ -1,18 +1,49 @@
 <view class="page picker-page">
-  <view class="card search-bar">
-    <input class="search-input" placeholder="搜索姓名或别名" value="{{query}}" bindinput="onQueryInput" confirm-type="search" bindconfirm="onSearch" />
-    <button class="todo-button todo-button-primary search-btn" size="mini" hover-class="todo-button-hover" bindtap="onSearch">搜索</button>
-  </view>
-
-  <view class="meta hint">点击联系人以选择并返回</view>
-
-  <view wx:if="{{loading}}" class="empty">加载中…</view>
-  <view wx:elif="{{error}}" class="error-banner">{{error}}</view>
-  <view wx:elif="{{items.length === 0}}" class="card empty-card">暂无联系人</view>
-  <view wx:else class="page-body">
-    <view class="card contact-item" wx:for="{{items}}" wx:key="id" data-item="{{item}}" bindtap="onSelect">
-      <view class="contact-name">{{item.displayName}}</view>
-      <view class="meta" wx:if="{{item.subtitle}}">{{item.subtitle}}</view>
+  <view class="search-group">
+    <view class="search-wrap">
+      <text class="search-icon">⌕</text>
+      <input
+        class="search-input"
+        placeholder="搜索联系人"
+        value="{{query}}"
+        bindinput="onQueryInput"
+        confirm-type="search"
+        bindconfirm="onSearch"
+      />
+      <text wx:if="{{query}}" class="link-text" bindtap="onClearSearch">清除</text>
     </view>
   </view>
+
+  <view class="form-hint">点击联系人即可选择并返回</view>
+
+  <view wx:if="{{loading && !loaded}}" class="loading-state">
+    <view class="meta">加载中…</view>
+  </view>
+  <view wx:elif="{{error}}" class="error-banner">{{error}}</view>
+
+  <block wx:elif="{{items.length === 0}}">
+    <view class="empty-state inset-group">
+      <view class="empty-title">未找到联系人</view>
+      <view class="empty-desc">请先在通讯录中添加联系人</view>
+    </view>
+  </block>
+
+  <block wx:else>
+    <view class="inset-group">
+      <view
+        class="list-cell contact-row-inner"
+        wx:for="{{items}}"
+        wx:key="id"
+        data-item="{{item}}"
+        bindtap="onSelect"
+        hover-class="list-cell-hover"
+      >
+        <view class="avatar" style="background: {{item.avatarColor}};">{{item.initial}}</view>
+        <view class="cell-body">
+          <view class="cell-title">{{item.displayName}}</view>
+          <view wx:if="{{item.subtitle}}" class="cell-meta">{{item.subtitle}}</view>
+        </view>
+      </view>
+    </view>
+  </block>
 </view>

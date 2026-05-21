@@ -30,5 +30,6 @@
     }
   },
   "appid": "touristappid",
-  "projectname": "ai-todo"
+  "projectname": "ai-todo",
+  "libVersion": "3.5.5"
 }

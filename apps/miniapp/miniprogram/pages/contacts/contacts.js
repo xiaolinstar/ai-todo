@@ -1,10 +1,13 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const api_1 = require("../../lib/api");
+const format_1 = require("../../lib/format");
+const tab_bar_1 = require("../../lib/tab-bar");
 Page({
     data: {
         query: "",
         loading: false,
+        loaded: false,
         error: "",
         items: [],
         showAddForm: false,
@@ -13,13 +16,21 @@ Page({
         adding: false
     },
     onShow() {
+        (0, tab_bar_1.updateTabBarSelected)(2);
         this.loadContacts();
+    },
+    onPullDownRefresh() {
+        this.loadContacts(this.data.query.trim()).finally(() => wx.stopPullDownRefresh());
     },
     onQueryInput(e) {
         this.setData({ query: e.detail.value });
     },
     onSearch() {
         this.loadContacts(this.data.query.trim());
+    },
+    onClearSearch() {
+        this.setData({ query: "" });
+        this.loadContacts();
     },
     loadContacts(query) {
         this.setData({ loading: true, error: "" });
@@ -29,19 +40,21 @@ Page({
             if (!response.ok || !response.data) {
                 this.setData({
                     loading: false,
+                    loaded: true,
                     error: ((_a = response.error) === null || _a === void 0 ? void 0 : _a.message) || "加载失败"
                 });
                 return;
             }
             this.setData({
                 loading: false,
+                loaded: true,
                 items: response.data.items.map((item) => (Object.assign(Object.assign({}, item), { subtitle: [item.primaryEmail, item.primaryPhone, item.company]
                         .filter(Boolean)
-                        .join(" · ") })))
+                        .join(" · "), initial: (0, format_1.getInitial)(item.displayName), avatarColor: (0, format_1.avatarColor)(item.displayName) })))
             });
         })
             .catch(() => {
-            this.setData({ loading: false, error: "无法连接 API" });
+            this.setData({ loading: false, loaded: true, error: "无法连接 API" });
         });
     },
     onTapContact(e) {

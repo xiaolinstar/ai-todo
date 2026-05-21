@@ -84,6 +84,14 @@ for (const file of walk(miniprogramRoot)) {
   }
 }
 
+const customTabBarBase = resolve(miniprogramRoot, "custom-tab-bar/index");
+for (const ext of [".ts", ".js", ".wxml", ".scss", ".wxss", ".json"]) {
+  const path = `${customTabBarBase}${ext}`;
+  if (!existsSync(path)) {
+    fail(`custom tab bar is missing ${relative(root, path)}`);
+  }
+}
+
 if (!process.exitCode) {
   console.log("ai-todo wechat miniprogram static checks passed");
 }
