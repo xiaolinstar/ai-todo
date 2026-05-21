@@ -6,8 +6,8 @@
       bindtap="switchTab"
       hover-class="tab-item-hover"
     >
-      <view class="tab-icon icon-todo {{selected === 0 ? 'active' : ''}}"></view>
-      <text class="tab-text">待办</text>
+      <view class="tab-icon icon-reminder {{selected === 0 ? 'active' : ''}}"></view>
+      <text class="tab-text">提醒</text>
     </view>
 
     <view

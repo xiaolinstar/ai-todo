@@ -23,7 +23,7 @@ Component({
             const current = pages[pages.length - 1];
             const route = (current === null || current === void 0 ? void 0 : current.route) || "";
             const indexMap = {
-                "pages/todos/todos": 0,
+                "pages/reminders/reminders": 0,
                 "pages/calendar/calendar": 1,
                 "pages/contacts/contacts": 2,
                 "pages/mine/mine": 3
@@ -39,7 +39,7 @@ Component({
             if (Number.isNaN(index) || index === self.data.selected)
                 return;
             const pages = [
-                "/pages/todos/todos",
+                "/pages/reminders/reminders",
                 "/pages/calendar/calendar",
                 "/pages/contacts/contacts",
                 "/pages/mine/mine"

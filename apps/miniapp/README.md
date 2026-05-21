@@ -42,7 +42,7 @@ pnpm check:wechat
 
 | Tab | 页面 | 说明 |
 |-----|------|------|
-| 待办 | `pages/todos/todos` | 默认今日视角，接 `/v1/reminders/today` |
+| 提醒 | `pages/reminders/reminders` | 默认今日视角，接 `/v1/reminders/today` |
 | 日历 | `pages/calendar/calendar` | 默认今天，可切换日期 |
 | 通讯录 | `pages/contacts/contacts` | 联系人列表与新建 |
 | 我的 | `pages/mine/mine` | API 配置、PAT、账号信息 |

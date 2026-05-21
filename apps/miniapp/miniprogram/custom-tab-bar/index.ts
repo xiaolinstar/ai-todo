@@ -32,7 +32,7 @@ Component({
       const current = pages[pages.length - 1] as { route?: string } | undefined;
       const route = current?.route || "";
       const indexMap: Record<string, number> = {
-        "pages/todos/todos": 0,
+        "pages/reminders/reminders": 0,
         "pages/calendar/calendar": 1,
         "pages/contacts/contacts": 2,
         "pages/mine/mine": 3
@@ -49,7 +49,7 @@ Component({
       if (Number.isNaN(index) || index === self.data.selected) return;
 
       const pages = [
-        "/pages/todos/todos",
+        "/pages/reminders/reminders",
         "/pages/calendar/calendar",
         "/pages/contacts/contacts",
         "/pages/mine/mine"

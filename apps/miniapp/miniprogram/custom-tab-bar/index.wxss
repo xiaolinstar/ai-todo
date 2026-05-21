@@ -53,8 +53,8 @@
   height: 44rpx;
 }
 
-.tab-icon.active.icon-todo::before,
-.tab-icon.active.icon-todo::after,
+.tab-icon.active.icon-reminder::before,
+.tab-icon.active.icon-reminder::after,
 .tab-icon.active.icon-calendar::before,
 .tab-icon.active.icon-calendar::after,
 .tab-icon.active.icon-contacts::before,
@@ -65,15 +65,15 @@
   background: #007aff;
 }
 
-/* Reminders — checklist */
-.icon-todo::before,
-.icon-todo::after {
+/* Reminder — checklist */
+.icon-reminder::before,
+.icon-reminder::after {
   content: "";
   position: absolute;
   box-sizing: border-box;
 }
 
-.icon-todo::before {
+.icon-reminder::before {
   top: 4rpx;
   left: 6rpx;
   width: 30rpx;
@@ -82,7 +82,7 @@
   border-radius: 8rpx;
 }
 
-.icon-todo::after {
+.icon-reminder::after {
   top: 16rpx;
   left: 12rpx;
   width: 18rpx;

@@ -1,5 +1,5 @@
 export const TAB_PAGES = [
-  "/pages/todos/todos",
+  "/pages/reminders/reminders",
   "/pages/calendar/calendar",
   "/pages/contacts/contacts",
   "/pages/mine/mine"

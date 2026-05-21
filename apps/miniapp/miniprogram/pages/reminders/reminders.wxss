@@ -1,4 +1,4 @@
-.todos-page {
+.reminders-page {
   padding-top: 8rpx;
 }
 
@@ -47,50 +47,26 @@
   line-height: 1.4;
 }
 
-.todo-list {
+.reminder-list {
   overflow: hidden;
 }
 
-.todo-row {
+.reminder-row {
   max-height: 200rpx;
-  transition:
-    opacity 0.32s ease,
-    transform 0.32s ease,
-    max-height 0.34s ease,
-    padding 0.34s ease;
+  transition: opacity 0.32s ease, transform 0.32s ease, max-height 0.34s ease, padding 0.34s ease;
 }
 
-.todo-row.completing .cell-title {
+.reminder-row.completing .cell-title {
   transition: color 0.25s ease;
 }
 
-.todo-row.exiting {
+.reminder-row.exiting {
   opacity: 0;
   max-height: 0;
   padding-top: 0 !important;
   padding-bottom: 0 !important;
   transform: translateX(48rpx) scale(0.98);
   pointer-events: none;
-}
-
-.cell-body.compact {
-  display: flex;
-  flex-direction: column;
-  gap: 4rpx;
-  min-width: 0;
-}
-
-.cell-subline {
-  overflow: hidden;
-  color: var(--todo-text-subtle);
-  font-size: 26rpx;
-  line-height: 1.35;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-.cell-subline.overdue {
-  color: var(--todo-danger);
 }
 
 .reminder-check.popping {
@@ -111,11 +87,9 @@
   0% {
     transform: scale(0.72);
   }
-
   60% {
     transform: scale(1.08);
   }
-
   100% {
     transform: scale(1);
   }

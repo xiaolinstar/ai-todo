@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.TAB_PAGES = void 0;
 exports.updateTabBarSelected = updateTabBarSelected;
 exports.TAB_PAGES = [
-    "/pages/todos/todos",
+    "/pages/reminders/reminders",
     "/pages/calendar/calendar",
     "/pages/contacts/contacts",
     "/pages/mine/mine"
