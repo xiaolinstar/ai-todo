@@ -54,8 +54,9 @@ curl POST /v1/reminders   # 最直接
 3. **API 硬化**：✅ CLI Token（`POST/GET/DELETE /v1/api-tokens`）、幂等键、`CommandLog`
 4. **关联能力**：✅ `reminder ↔ contact`、`calendar ↔ contact`（`contact_ids` / `contacts[]` 摘要）
 5. **Agent 闭环补全**：✅ `calendar update`、`contact update`、`logout`、PAT 认证 UX（`AI_TODO_TOKEN` / `login --token` / `login --issue-pat`）
-6. **微信小程序**：✅ MVP 原生小程序（今日 / 创建提醒 / 联系人 / 设置），见 `apps/miniapp/README.md`
-7. ~~自然语言解析~~：**不在路线图**
+6. **微信小程序**：✅ MVP 原生小程序（提醒 / 日历 / 通讯录 / 我的），见 `apps/miniapp/README.md`
+7. **生产部署（C1）**：✅ API Dockerfile + `docker-compose.prod.yml`，见 `docs/deploy.md`
+8. ~~自然语言解析~~：**不在路线图**
 
 ## 认证策略（2026-05-21）
 

@@ -18,13 +18,14 @@ from ai_todo_api.schemas import ApiResponse
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    with SessionLocal() as session:
-        ensure_dev_user(
-            session,
-            user_id=settings.dev_user_id,
-            display_name=settings.dev_user_display_name,
-            timezone=settings.timezone,
-        )
+    if settings.allow_dev_auth:
+        with SessionLocal() as session:
+            ensure_dev_user(
+                session,
+                user_id=settings.dev_user_id,
+                display_name=settings.dev_user_display_name,
+                timezone=settings.timezone,
+            )
     yield
 
 

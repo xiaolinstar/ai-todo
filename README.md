@@ -55,6 +55,10 @@ pnpm dev:api
 
 The API listens on `http://127.0.0.1:3100`.
 
+## Production Deploy
+
+See [docs/deploy.md](docs/deploy.md) for Docker deployment on a VPS (Phase C1).
+
 ## WeChat Miniapp
 
 Native WeChat miniapp MVP in `apps/miniapp/`. See [apps/miniapp/README.md](apps/miniapp/README.md).

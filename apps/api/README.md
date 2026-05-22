@@ -71,3 +71,17 @@ Run migrations after pulling:
 ```bash
 alembic upgrade head
 ```
+
+## Production Deploy
+
+Docker image + PostgreSQL stack for VPS deployment. See **[docs/deploy.md](../../docs/deploy.md)**.
+
+```bash
+cd apps/api
+cp .env.production.example .env.production
+# edit POSTGRES_PASSWORD
+docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build
+curl http://127.0.0.1:3100/v1/health
+```
+
+Production must set `AI_TODO_ALLOW_DEV_AUTH=false`. All requests then require a Bearer PAT until WeChat login (Phase C2) ships.
