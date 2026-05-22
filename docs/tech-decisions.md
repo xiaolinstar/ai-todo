@@ -56,7 +56,8 @@ curl POST /v1/reminders   # 最直接
 5. **Agent 闭环补全**：✅ `calendar update`、`contact update`、`logout`、PAT 认证 UX（`AI_TODO_TOKEN` / `login --token` / `login --issue-pat`）
 6. **微信小程序**：✅ MVP 原生小程序（提醒 / 日历 / 通讯录 / 我的），见 `apps/miniapp/README.md`
 7. **生产部署（C1）**：✅ API Dockerfile + `docker-compose.prod.yml`，见 `docs/deploy.md`
-8. ~~自然语言解析~~：**不在路线图**
+8. **微信登录（C2）**：✅ `identities` 表 + `POST /v1/auth/wechat/login` + 小程序 `wx.login`
+9. ~~自然语言解析~~：**不在路线图**
 
 ## 认证策略（2026-05-21）
 

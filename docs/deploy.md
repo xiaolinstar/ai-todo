@@ -56,6 +56,8 @@ docker compose -f docker-compose.prod.yml logs -f api
 | `AI_TODO_PORT` | `3100` | 容器内端口 |
 | `AI_TODO_PUBLISH_PORT` | `3100` | 宿主机映射端口 |
 | `AI_TODO_TIMEZONE` | `Asia/Shanghai` | 默认用户时区 |
+| `AI_TODO_WECHAT_APP_ID` | 生产必填 | 微信小程序 AppID |
+| `AI_TODO_WECHAT_APP_SECRET` | 生产必填 | 微信小程序 AppSecret |
 
 完整模板见 `apps/api/.env.production.example`。
 
@@ -117,8 +119,8 @@ docker compose -f docker-compose.prod.yml --env-file .env.production up -d --bui
 
 ## 下一步（Phase C2）
 
-- `POST /v1/auth/wechat/login` + 小程序 `wx.login`
-- 微信公众平台配置 request 合法域名
+- ✅ `POST /v1/auth/wechat/login` + 小程序 `wx.login`（见 `apps/api/src/ai_todo_api/auth/wechat_service.py`）
+- 微信公众平台配置 request 合法域名 + HTTPS（C3）
 - 关闭小程序「不校验合法域名」调试选项
 
 见 `docs/tech-decisions.md` 认证策略章节。

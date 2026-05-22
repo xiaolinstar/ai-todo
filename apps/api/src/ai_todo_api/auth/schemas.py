@@ -9,3 +9,12 @@ class UserSummary(CamelModel):
 
 class MeResult(CamelModel):
     user: UserSummary
+
+
+class WechatLoginInput(CamelModel):
+    code: str
+
+
+class WechatLoginResult(CamelModel):
+    access_token: str
+    user: UserSummary

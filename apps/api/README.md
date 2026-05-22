@@ -37,6 +37,7 @@ Write requests accept `Idempotency-Key` and are recorded in `command_logs`.
 - `GET /`
 - `GET /v1/health`
 - `GET /v1/me`
+- `POST /v1/auth/wechat/login` — miniapp `wx.login` code exchange (requires `AI_TODO_WECHAT_APP_ID/SECRET`)
 - `GET /v1/api-tokens`
 - `POST /v1/api-tokens`
 - `DELETE /v1/api-tokens/{token_id}`

@@ -1,4 +1,5 @@
 import { fetchMe, issuePat } from "../../lib/api";
+import { ensureAuth, loginWithWechat } from "../../lib/auth";
 import { avatarColor, getInitial } from "../../lib/format";
 import { clearToken, getConfig, saveConfig } from "../../lib/config";
 import { updateTabBarSelected } from "../../lib/tab-bar";
@@ -14,7 +15,8 @@ Page({
     avatarColor: "#007AFF",
     connected: false,
     testing: false,
-    issuing: false
+    issuing: false,
+    loggingIn: false
   },
 
   onShow() {
@@ -25,7 +27,7 @@ Page({
       token: config.token
     });
     if (config.apiUrl) {
-      this.testConnection(false);
+      this.bootstrapConnection(false);
     }
   },
 
@@ -43,7 +45,7 @@ Page({
       token: this.data.token
     });
     wx.showToast({ title: "已保存", icon: "success" });
-    this.testConnection(true);
+    this.bootstrapConnection(true);
   },
 
   onClearToken() {
@@ -61,16 +63,71 @@ Page({
   },
 
   onTestConnection() {
-    this.testConnection(true);
+    this.bootstrapConnection(true);
   },
 
-  testConnection(showToast: boolean) {
+  onWechatLogin() {
+    saveConfig({ apiUrl: this.data.apiUrl });
+    this.setData({ loggingIn: true });
+    loginWithWechat()
+      .then((response) => {
+        this.setData({ loggingIn: false });
+        if (!response.ok || !response.data) {
+          wx.showToast({
+            title: response.error?.message || "微信登录失败",
+            icon: "none"
+          });
+          return;
+        }
+        saveConfig({ token: response.data.accessToken });
+        this.setData({ token: response.data.accessToken });
+        this.applyUser(response.data.user, true);
+      })
+      .catch(() => {
+        this.setData({ loggingIn: false });
+        wx.showToast({ title: "微信登录失败", icon: "none" });
+      });
+  },
+
+  bootstrapConnection(showToast: boolean) {
     saveConfig({
       apiUrl: this.data.apiUrl,
       token: this.data.token
     });
 
     this.setData({ testing: true });
+    return ensureAuth()
+      .then((authenticated) => {
+        const config = getConfig();
+        this.setData({ token: config.token });
+        if (!authenticated) {
+          return this.testConnection(showToast);
+        }
+        return fetchMe().then((response) => {
+          this.setData({ testing: false });
+          if (!response.ok || !response.data) {
+            if (showToast) {
+              wx.showToast({
+                title: response.error?.message || "连接失败",
+                icon: "none"
+              });
+            }
+            this.resetProfile();
+            return;
+          }
+          this.applyUser(response.data.user, showToast);
+        });
+      })
+      .catch(() => {
+        this.setData({ testing: false });
+        this.resetProfile();
+        if (showToast) {
+          wx.showToast({ title: "无法连接 API", icon: "none" });
+        }
+      });
+  },
+
+  testConnection(showToast: boolean) {
     return fetchMe()
       .then((response) => {
         this.setData({ testing: false });
@@ -81,43 +138,46 @@ Page({
               icon: "none"
             });
           }
-          this.setData({
-            userName: "",
-            userId: "",
-            timezone: "",
-            initial: "?",
-            avatarColor: "#007AFF",
-            connected: false
-          });
+          this.resetProfile();
           return;
         }
-        const { user } = response.data;
-        this.setData({
-          userName: user.displayName,
-          userId: user.id,
-          timezone: user.timezone,
-          initial: getInitial(user.displayName),
-          avatarColor: avatarColor(user.displayName),
-          connected: true
-        });
-        if (showToast) {
-          wx.showToast({ title: "连接成功", icon: "success" });
-        }
+        this.applyUser(response.data.user, showToast);
       })
       .catch(() => {
-        this.setData({
-          testing: false,
-          userName: "",
-          userId: "",
-          timezone: "",
-          initial: "?",
-          avatarColor: "#007AFF",
-          connected: false
-        });
+        this.setData({ testing: false });
+        this.resetProfile();
         if (showToast) {
           wx.showToast({ title: "无法连接 API", icon: "none" });
         }
       });
+  },
+
+  applyUser(
+    user: { displayName: string; id: string; timezone: string },
+    showToast: boolean
+  ) {
+    this.setData({
+      userName: user.displayName,
+      userId: user.id,
+      timezone: user.timezone,
+      initial: getInitial(user.displayName),
+      avatarColor: avatarColor(user.displayName),
+      connected: true
+    });
+    if (showToast) {
+      wx.showToast({ title: "连接成功", icon: "success" });
+    }
+  },
+
+  resetProfile() {
+    this.setData({
+      userName: "",
+      userId: "",
+      timezone: "",
+      initial: "?",
+      avatarColor: "#007AFF",
+      connected: false
+    });
   },
 
   onIssuePat() {
@@ -143,7 +203,7 @@ Page({
           title: "PAT 已签发",
           content: "Token 已保存到本地。",
           showCancel: false,
-          success: () => this.testConnection(true)
+          success: () => this.bootstrapConnection(true)
         });
       })
       .catch(() => {

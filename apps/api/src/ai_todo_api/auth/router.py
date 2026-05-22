@@ -1,12 +1,23 @@
 from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
 
 from ai_todo_api.auth.context import CurrentUser
 from ai_todo_api.auth.deps import get_current_user
-from ai_todo_api.auth.schemas import MeResult, UserSummary
+from ai_todo_api.auth.schemas import MeResult, UserSummary, WechatLoginInput, WechatLoginResult
+from ai_todo_api.auth.wechat_service import login_with_wechat_code
+from ai_todo_api.db.session import get_db
 from ai_todo_api.schemas import ApiResponse
 
 
 router = APIRouter(prefix="/v1", tags=["auth"])
+
+
+@router.post("/auth/wechat/login", status_code=200)
+def wechat_login(
+    body: WechatLoginInput,
+    db: Session = Depends(get_db),
+) -> ApiResponse[WechatLoginResult]:
+    return ApiResponse(data=login_with_wechat_code(db, body.code))
 
 
 @router.get("/me")

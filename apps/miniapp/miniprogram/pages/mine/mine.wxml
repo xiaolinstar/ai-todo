@@ -6,7 +6,7 @@
         <view class="profile-name">{{userName || '未连接'}}</view>
         <view wx:if="{{connected}}" class="cell-meta">{{userId}}</view>
         <view wx:if="{{connected}}" class="cell-meta">{{timezone}}</view>
-        <view wx:else class="cell-meta">配置 API 后即可同步数据</view>
+        <view wx:else class="cell-meta">配置 API 后使用微信登录同步数据</view>
       </view>
       <view class="status-dot {{connected ? 'online' : ''}}"></view>
     </view>
@@ -20,11 +20,12 @@
     </view>
     <view class="form-row stack">
       <text class="form-label">Access Token</text>
-      <input class="form-input" password placeholder="aitodo_xxx（可选）" value="{{token}}" bindinput="onTokenInput" />
+      <input class="form-input" password placeholder="aitodo_xxx（可选，开发用）" value="{{token}}" bindinput="onTokenInput" />
     </view>
   </view>
-  <view class="form-hint">本地默认 127.0.0.1:3100；留空 Token 可使用 dev 旁路</view>
-  <button class="todo-button todo-button-primary" hover-class="todo-button-hover" bindtap="onSave">保存并连接</button>
+  <view class="form-hint">生产环境请配置 HTTPS API 地址；优先使用微信登录，Token 仅作开发备用</view>
+  <button class="todo-button todo-button-primary" hover-class="todo-button-hover" bindtap="onWechatLogin">{{loggingIn ? '登录中…' : '微信登录'}}</button>
+  <button class="todo-button todo-button-secondary" hover-class="todo-button-hover" bindtap="onSave">保存并连接</button>
 
   <view class="group-header">账号操作</view>
   <view class="inset-group action-group">
@@ -33,7 +34,7 @@
       <text class="settings-value">{{testing ? '检测中…' : (connected ? '已连接' : '未连接')}}</text>
     </view>
     <view class="settings-cell pressable" bindtap="onIssuePat" hover-class="list-cell-hover">
-      <text class="settings-label">签发 PAT</text>
+      <text class="settings-label">签发 PAT（开发）</text>
       <text class="settings-value link-text">{{issuing ? '处理中…' : '创建'}}</text>
     </view>
     <view class="settings-cell pressable" bindtap="onClearToken" hover-class="list-cell-hover">
@@ -47,7 +48,10 @@
       <text class="cell-meta">开发者工具 → 详情 → 勾选「不校验合法域名」</text>
     </view>
     <view class="settings-cell">
-      <text class="cell-meta">终端运行 pnpm dev:api</text>
+      <text class="cell-meta">服务端需配置 AI_TODO_WECHAT_APP_ID / SECRET</text>
+    </view>
+    <view class="settings-cell">
+      <text class="cell-meta">本地 dev 可留空 Token 并使用 allow_dev_auth</text>
     </view>
   </view>
 </view>

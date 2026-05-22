@@ -2,6 +2,10 @@ declare const wx: {
   getStorageSync<T = unknown>(key: string): T;
   setStorageSync<T = unknown>(key: string, value: T): void;
   removeStorageSync(key: string): void;
+  login(options: {
+    success?: (res: { code?: string }) => void;
+    fail?: (err: unknown) => void;
+  }): void;
   request(options: {
     url: string;
     method?: string;

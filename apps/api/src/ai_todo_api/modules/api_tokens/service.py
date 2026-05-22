@@ -21,6 +21,39 @@ class ApiTokenNotFoundError(Exception):
     pass
 
 
+def create_token_for_user(
+    session: Session,
+    *,
+    user_id: str,
+    name: str,
+    scopes: list[str],
+    timezone: str,
+    expires_at: str | None = None,
+) -> CreateApiTokenResult:
+    plain = generate_api_token()
+    now = now_utc()
+    token = ApiTokenModel(
+        id=f"token_{uuid4().hex[:12]}",
+        user_id=user_id,
+        name=name,
+        token_hash=hash_api_token(plain),
+        scopes=dumps_json(_normalize_scopes(scopes)),
+        expires_at=_parse_optional_datetime(expires_at, timezone),
+        created_at=now,
+    )
+    session.add(token)
+    session.commit()
+    session.refresh(token)
+
+    return CreateApiTokenResult(
+        id=token.id,
+        token=plain,
+        name=token.name,
+        scopes=loads_json(token.scopes),
+        expires_at=_format_datetime(token.expires_at),
+    )
+
+
 class ApiTokenService:
     def __init__(self, session: Session) -> None:
         self._session = session
@@ -30,27 +63,13 @@ class ApiTokenService:
         if not name:
             raise ValueError("Token name is required.")
 
-        plain = generate_api_token()
-        now = now_utc()
-        token = ApiTokenModel(
-            id=f"token_{uuid4().hex[:12]}",
+        return create_token_for_user(
+            self._session,
             user_id=auth.user_id,
             name=name,
-            token_hash=hash_api_token(plain),
-            scopes=dumps_json(_normalize_scopes(input_data.scopes)),
-            expires_at=_parse_optional_datetime(input_data.expires_at, auth.timezone),
-            created_at=now,
-        )
-        self._session.add(token)
-        self._session.commit()
-        self._session.refresh(token)
-
-        return CreateApiTokenResult(
-            id=token.id,
-            token=plain,
-            name=token.name,
-            scopes=loads_json(token.scopes),
-            expires_at=_format_datetime(token.expires_at),
+            scopes=input_data.scopes,
+            timezone=auth.timezone,
+            expires_at=input_data.expires_at,
         )
 
     def list_tokens(self, user_id: str) -> list[ApiTokenSummary]:
