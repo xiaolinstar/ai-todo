@@ -23,6 +23,20 @@ pnpm build:wechat
 #    详情 → 勾选「不校验合法域名」→ 编译
 ```
 
+## 生产 / 体验版
+
+上线前 checklist：
+
+1. 按 [docs/deploy.md](../../docs/deploy.md) 部署 API（HTTPS + 微信 AppID/Secret）
+2. 微信公众平台配置 **request 合法域名**（如 `api.example.com`）
+3. **我的** 页 API 地址改为 `https://api.example.com`（不要带路径）
+4. 使用 **微信登录**，不要依赖 dev 旁路或手动 PAT
+5. 关闭开发者工具「不校验合法域名」，真机验证
+
+```bash
+pnpm check:wechat   # CI 同款检查
+```
+
 静态检查：
 
 ```bash

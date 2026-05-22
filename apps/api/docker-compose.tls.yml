@@ -1,0 +1,28 @@
+# TLS overlay for docker-compose.prod.yml
+# Usage:
+#   cp deploy/Caddyfile.example deploy/Caddyfile
+#   # edit deploy/Caddyfile: set API_DOMAIN, choose api:3100 upstream
+#   docker compose -f docker-compose.prod.yml -f docker-compose.tls.yml \
+#     --env-file .env.production up -d --build
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      API_DOMAIN: ${API_DOMAIN:?Set API_DOMAIN in .env.production}
+      API_UPSTREAM: ${API_UPSTREAM:-api:3100}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      api:
+        condition: service_started
+
+volumes:
+  caddy_data:
+  caddy_config:

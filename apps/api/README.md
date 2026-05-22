@@ -85,4 +85,4 @@ docker compose -f docker-compose.prod.yml --env-file .env.production up -d --bui
 curl http://127.0.0.1:3100/v1/health
 ```
 
-Production must set `AI_TODO_ALLOW_DEV_AUTH=false`. All requests then require a Bearer PAT until WeChat login (Phase C2) ships.
+Production must set `AI_TODO_ALLOW_DEV_AUTH=false`. Miniapp auth uses WeChat login; rate limiting applies to `POST /v1/auth/wechat/login`. See **[docs/deploy.md](../../docs/deploy.md)** for HTTPS and domain setup.

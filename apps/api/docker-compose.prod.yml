@@ -28,8 +28,12 @@ services:
       AI_TODO_DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-ai_todo}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-ai_todo}
       AI_TODO_ALLOW_DEV_AUTH: ${AI_TODO_ALLOW_DEV_AUTH:-false}
       AI_TODO_TIMEZONE: ${AI_TODO_TIMEZONE:-Asia/Shanghai}
+      AI_TODO_WECHAT_APP_ID: ${AI_TODO_WECHAT_APP_ID:-}
+      AI_TODO_WECHAT_APP_SECRET: ${AI_TODO_WECHAT_APP_SECRET:-}
+      AI_TODO_RATE_LIMIT_ENABLED: ${AI_TODO_RATE_LIMIT_ENABLED:-true}
+      AI_TODO_RATE_LIMIT_WECHAT_LOGIN_PER_MINUTE: ${AI_TODO_RATE_LIMIT_WECHAT_LOGIN_PER_MINUTE:-10}
     ports:
-      - "${AI_TODO_PUBLISH_PORT:-3100}:3100"
+      - "127.0.0.1:${AI_TODO_PUBLISH_PORT:-3100}:3100"
     depends_on:
       postgres:
         condition: service_healthy

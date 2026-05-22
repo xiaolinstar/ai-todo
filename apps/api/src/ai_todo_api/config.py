@@ -16,6 +16,8 @@ class Settings(BaseSettings):
     allow_dev_auth: bool = Field(default=True)
     wechat_app_id: str | None = Field(default=None)
     wechat_app_secret: str | None = Field(default=None)
+    rate_limit_enabled: bool = Field(default=True)
+    rate_limit_wechat_login_per_minute: int = Field(default=10, ge=1)
 
 
 settings = Settings()

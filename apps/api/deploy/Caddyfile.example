@@ -1,0 +1,12 @@
+# Copy to Caddyfile and set API_DOMAIN in .env.production, e.g. api.example.com
+#
+# Host Caddy (API bound to 127.0.0.1:3100):
+#   reverse_proxy 127.0.0.1:3100
+#
+# Docker Compose TLS overlay (API service name `api` on compose network):
+#   reverse_proxy api:3100
+
+{$API_DOMAIN} {
+  encode gzip
+  reverse_proxy {$API_UPSTREAM}
+}

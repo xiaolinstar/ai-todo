@@ -57,7 +57,8 @@ curl POST /v1/reminders   # 最直接
 6. **微信小程序**：✅ MVP 原生小程序（提醒 / 日历 / 通讯录 / 我的），见 `apps/miniapp/README.md`
 7. **生产部署（C1）**：✅ API Dockerfile + `docker-compose.prod.yml`，见 `docs/deploy.md`
 8. **微信登录（C2）**：✅ `identities` 表 + `POST /v1/auth/wechat/login` + 小程序 `wx.login`
-9. ~~自然语言解析~~：**不在路线图**
+9. **生产硬化（C3）**：✅ HTTPS/Caddy 模板、微信合法域名文档、CI、微信登录限流
+10. ~~自然语言解析~~：**不在路线图**
 
 ## 认证策略（2026-05-21）
 
