@@ -28,7 +28,13 @@ services:
     environment:
       AI_TODO_HOST: 0.0.0.0
       AI_TODO_PORT: ${AI_TODO_PORT:-3100}
-      AI_TODO_DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-ai_todo}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-ai_todo}
+      POSTGRES_USER: ${POSTGRES_USER:-ai_todo}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env.production}
+      POSTGRES_DB: ${POSTGRES_DB:-ai_todo}
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      # 可选：完整 URL 覆盖（密码含 @/# 等时 entrypoint 会自动编码，一般无需手动设置）
+      AI_TODO_DATABASE_URL: ${AI_TODO_DATABASE_URL:-}
       AI_TODO_ALLOW_DEV_AUTH: ${AI_TODO_ALLOW_DEV_AUTH:-false}
       AI_TODO_TIMEZONE: ${AI_TODO_TIMEZONE:-Asia/Shanghai}
       AI_TODO_WECHAT_APP_ID: ${AI_TODO_WECHAT_APP_ID:-}
