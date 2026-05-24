@@ -2,7 +2,7 @@ from fastapi.testclient import TestClient
 
 from ai_todo_api.auth.service import ensure_dev_user
 from ai_todo_api.config import settings
-from tests.conftest import TestingSessionLocal, client
+from tests.conftest import TestingSessionLocal
 
 
 def _seed_dev_user() -> None:

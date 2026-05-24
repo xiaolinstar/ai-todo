@@ -14,8 +14,8 @@
 
 ```text
 开发者 push main
-    → GitHub Actions CI（pytest + check:wechat）
-    → CI 通过后 Deploy 工作流 SSH 到 VPS
+    → CI（scan → build → test → publish deploy-manifest）
+    → CD 校验指纹后拉取 GHCR 镜像部署（VPS 不 build）
     → git pull + docker compose up --build（API 宿主机 :8082）
     → xiaolin-gateway 反代 https://wodi.games
     → curl https://wodi.games/v1/health
@@ -97,7 +97,9 @@ docker compose up -d
 
 ---
 
-## 三、GitHub Actions 自动部署
+## 三、GitHub Actions（CI / CD）
+
+详见 [ci-cd.md](./ci-cd.md)。CI 产出 `deploy-manifest`（含 API 镜像 digest 指纹）；CD 仅消费该制品，不在服务器上重新 build API 镜像。
 
 ### Secrets（ai-todo 仓库）
 
@@ -152,7 +154,7 @@ curl -sf https://wodi.games/v1/health
 ### API 变更
 
 ```text
-1. 本地 pytest / pnpm check:wechat
+1. 本地 `pytest`（`apps/api`）、`pnpm typecheck`、`pnpm lint`、`pnpm check:wechat`
 2. PR → main（CI 绿）
 3. merge 后自动 SSH 部署
 4. curl https://wodi.games/v1/health

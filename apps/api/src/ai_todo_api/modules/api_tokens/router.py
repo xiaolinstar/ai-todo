@@ -10,7 +10,6 @@ from ai_todo_api.db.session import get_db
 from ai_todo_api.modules.api_tokens.schemas import (
     ApiTokenListResult,
     CreateApiTokenInput,
-    CreateApiTokenResult,
     RevokeApiTokenResult,
 )
 from ai_todo_api.modules.api_tokens.service import ApiTokenNotFoundError, ApiTokenService

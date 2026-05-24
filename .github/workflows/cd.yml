@@ -1,0 +1,133 @@
+name: CD
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Target environment
+        type: choice
+        options:
+          - production
+          - staging
+        default: production
+      ci_run_id:
+        description: CI workflow run ID (optional; default = linked CI run on auto deploy)
+        type: string
+        required: false
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+concurrency:
+  group: cd-${{ github.event.inputs.environment || 'production' }}
+  cancel-in-progress: false
+
+jobs:
+  resolve-manifest:
+    name: Resolve CI deploy manifest
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    outputs:
+      git_sha: ${{ steps.manifest.outputs.git_sha }}
+      api_image: ${{ steps.manifest.outputs.api_image }}
+      fingerprint: ${{ steps.manifest.outputs.fingerprint }}
+      ci_run_id: ${{ steps.ci_run.outputs.run_id }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Resolve CI run id
+        id: ci_run
+        env:
+          INPUT_RUN_ID: ${{ github.event.inputs.ci_run_id }}
+        run: |
+          if [[ -n "$INPUT_RUN_ID" ]]; then
+            echo "run_id=$INPUT_RUN_ID" >> "$GITHUB_OUTPUT"
+          elif [[ "${{ github.event_name }}" == "workflow_run" ]]; then
+            echo "run_id=${{ github.event.workflow_run.id }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "Missing ci_run_id for manual CD without workflow_run context" >&2
+            exit 1
+          fi
+
+      - name: Download deploy-manifest from CI
+        uses: dawidd6/action-download-artifact@v6
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          workflow: ci.yml
+          run_id: ${{ steps.ci_run.outputs.run_id }}
+          name: deploy-manifest
+          path: manifest
+          if_no_artifact_found: fail
+
+      - name: Verify manifest fingerprint
+        run: node scripts/ci/verify-deploy-manifest.mjs manifest/deploy-manifest.json
+
+      - name: Export manifest fields
+        id: manifest
+        run: |
+          SHA=$(node -e "console.log(JSON.parse(require('fs').readFileSync('manifest/deploy-manifest.json','utf8')).gitSha)")
+          IMG=$(node -e "console.log(JSON.parse(require('fs').readFileSync('manifest/deploy-manifest.json','utf8')).artifacts.api.image)")
+          FP=$(node -e "console.log(JSON.parse(require('fs').readFileSync('manifest/deploy-manifest.json','utf8')).fingerprint)")
+          echo "git_sha=$SHA" >> "$GITHUB_OUTPUT"
+          echo "api_image=$IMG" >> "$GITHUB_OUTPUT"
+          echo "fingerprint=$FP" >> "$GITHUB_OUTPUT"
+
+  deploy:
+    name: Deploy API from manifest
+    needs: [resolve-manifest]
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || 'production' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download verified manifest
+        uses: dawidd6/action-download-artifact@v6
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          workflow: ci.yml
+          run_id: ${{ needs.resolve-manifest.outputs.ci_run_id }}
+          name: deploy-manifest
+          path: manifest
+
+      - name: Copy manifest to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: ${{ secrets.DEPLOY_PORT || 22 }}
+          source: manifest/deploy-manifest.json
+          target: /tmp/
+          strip_components: 1
+          overwrite: true
+
+      - name: Deploy (pull CI image, no build)
+        uses: appleboy/ssh-action@v1.2.0
+        env:
+          FINGERPRINT: ${{ needs.resolve-manifest.outputs.fingerprint }}
+          CI_RUN_ID: ${{ needs.resolve-manifest.outputs.ci_run_id }}
+          GHCR_DEPLOY_TOKEN: ${{ secrets.GHCR_DEPLOY_TOKEN }}
+          GHCR_DEPLOY_USER: ${{ secrets.GHCR_DEPLOY_USER || github.repository_owner }}
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: ${{ secrets.DEPLOY_PORT || 22 }}
+          envs: FINGERPRINT,CI_RUN_ID,GHCR_DEPLOY_TOKEN,GHCR_DEPLOY_USER
+          script_stop: true
+          script: |
+            set -euo pipefail
+            echo "CD fingerprint=${FINGERPRINT} ci_run=${CI_RUN_ID}"
+            export AI_TODO_DEPLOY_MANIFEST=/tmp/deploy-manifest.json
+            cd "${{ secrets.DEPLOY_PATH || '/opt/ai-todo' }}"
+            bash apps/api/deploy/remote-deploy.sh

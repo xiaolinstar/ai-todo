@@ -21,6 +21,8 @@ services:
     restart: unless-stopped
 
   api:
+    # CD sets AI_TODO_API_IMAGE from deploy-manifest (GHCR digest); local deploy leaves empty → build
+    image: ${AI_TODO_API_IMAGE:-}
     build:
       context: .
       args:

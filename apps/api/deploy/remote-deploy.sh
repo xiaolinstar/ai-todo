@@ -1,8 +1,16 @@
 #!/usr/bin/env bash
-# Run on the VPS after git pull (also invoked by GitHub Actions deploy workflow).
+# Run on the VPS after git pull (also invoked by GitHub Actions CD workflow).
+#
+# CD (recommended): set AI_TODO_DEPLOY_MANIFEST to CI deploy-manifest.json path.
+# Local / emergency: omit manifest → build on host (legacy).
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+if [[ -n "${AI_TODO_DEPLOY_MANIFEST:-}" && -f "${AI_TODO_DEPLOY_MANIFEST}" ]]; then
+  exec "$SCRIPT_DIR/deploy-from-manifest.sh" "${AI_TODO_DEPLOY_MANIFEST}"
+fi
+
 API_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 cd "$API_DIR"
 
