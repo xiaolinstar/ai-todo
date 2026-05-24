@@ -121,6 +121,47 @@ curl https://wodi.games/v1/health
 
 本地开发：开发者工具勾选「不校验合法域名」，API 使用 `http://127.0.0.1:3100`。
 
+## 数据库密码
+
+### 为什么改 `.env.production` 不够？
+
+Postgres 官方镜像 **只在数据卷首次创建时** 读取 `POSTGRES_PASSWORD` 并初始化库。之后修改 `.env.production` 只会改变 API 容器使用的密码，**不会**自动更新卷里已存储的密码——这是 PostgreSQL Docker 的标准行为，不是 ai-todo 的 bug。
+
+| 场景 | 做法 |
+|------|------|
+| **首次部署** | 在 `.env.production` 设好密码 → `docker compose up` 即可 |
+| **轮换密码（保留数据）** | 见下方脚本 |
+| **开发/测试清空重来** | `docker compose down -v` 后重新 `up`（**删除全部业务数据**） |
+
+### 轮换密码（推荐流程）
+
+```bash
+cd ~/AgentProjects/ai-todo/apps/api
+
+# 1. 编辑 .env.production，把 POSTGRES_PASSWORD 改为新密码
+# 2. 同步到 Postgres 卷内并重启 API
+python3 scripts/rotate_postgres_password.py
+
+# 3. 验证
+curl http://127.0.0.1:8082/v1/health
+```
+
+预览 SQL（不执行）：
+
+```bash
+python3 scripts/rotate_postgres_password.py --dry-run
+```
+
+**注意：**
+
+- 密码可含 `@`、`#` 等字符；entrypoint 会自动 URL 编码，**不要**手写 `AI_TODO_DATABASE_URL`（除非你知道如何编码）
+- 若曾手动设置过 `AI_TODO_DATABASE_URL`，轮换后请删除该行，避免与 `POSTGRES_PASSWORD` 不一致
+- 先备份再轮换：`docker compose -f docker-compose.prod.yml exec postgres pg_dump -U ai_todo ai_todo > backup.sql`
+
+### 故障现象
+
+API 日志出现 `password authentication failed for user "ai_todo"` → 几乎总是 **env 密码与卷内密码不一致**，按上表处理，**不要**反复 `down -v` 除非确认可以丢数据。
+
 ## 容器行为
 
 | 步骤 | 说明 |

@@ -222,6 +222,7 @@ docker compose -f apps/api/docker-compose.prod.yml exec postgres \
 | 现象 | 可能原因 | 处理 |
 |------|----------|------|
 | Docker build pip 失败 | PyPI 网络超时 | 使用腾讯云镜像，见 deploy.md |
+| `password authentication failed` | `.env` 密码与 Postgres 卷不一致 | `python3 scripts/rotate_postgres_password.py`，见 deploy.md |
 | health 502 | gateway 未启动或 upstream 端口错 | 检查 `:8082` 与 gateway conf |
 | 微信登录 503 | 未配 AppID/Secret | 检查 `.env.production` |
 | 小程序 request 失败 | 合法域名未配 | 公众平台填 `wodi.games` |

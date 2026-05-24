@@ -28,6 +28,17 @@ def main() -> None:
         except Exception as error:  # noqa: BLE001 - retry on any connection error
             if attempt >= MAX_ATTEMPTS:
                 print(f"Database not ready after {MAX_ATTEMPTS} attempts: {error}", file=sys.stderr)
+                message = str(error).lower()
+                if "password authentication failed" in message:
+                    print(
+                        "\nHint: POSTGRES_PASSWORD in .env.production does not match the "
+                        "password stored in the Postgres data volume.\n"
+                        "  • To rotate: edit .env.production, then run "
+                        "python3 scripts/rotate_postgres_password.py\n"
+                        "  • Fresh dev reset only: docker compose ... down -v\n"
+                        "See docs/deploy.md § 数据库密码",
+                        file=sys.stderr,
+                    )
                 sys.exit(1)
             print(f"Waiting for database ({attempt}/{MAX_ATTEMPTS})…")
             time.sleep(SLEEP_SECONDS)
