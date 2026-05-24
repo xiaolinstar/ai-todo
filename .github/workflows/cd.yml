@@ -98,6 +98,18 @@ jobs:
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.environment || 'production' }}
     steps:
+      - name: Ensure deploy secrets exist
+        run: |
+          missing=()
+          [[ -z "${{ secrets.DEPLOY_HOST }}" ]] && missing+=("DEPLOY_HOST")
+          [[ -z "${{ secrets.DEPLOY_USER }}" ]] && missing+=("DEPLOY_USER")
+          [[ -z "${{ secrets.DEPLOY_SSH_KEY }}" ]] && missing+=("DEPLOY_SSH_KEY")
+          if ((${#missing[@]} > 0)); then
+            echo "::error::Missing GitHub secrets in environment '${{ github.event.inputs.environment || 'production' }}' (or repository): ${missing[*]}"
+            echo "Configure via: gh secret set DEPLOY_HOST --env production"
+            exit 1
+          fi
+
       - name: Download verified manifest
         uses: actions/download-artifact@v4
         with:
