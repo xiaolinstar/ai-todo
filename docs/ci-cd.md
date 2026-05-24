@@ -59,6 +59,8 @@ Phase 4 · publish (仅 main push)
 
 CD 部署前会执行 `scripts/ci/verify-deploy-manifest.mjs` 校验指纹未被篡改。
 
+`cd.yml` 需 `permissions.actions: read`，以便 `workflow_run` 触发的 CD 能下载 CI 上传的 `deploy-manifest` 制品。
+
 ## CD 与多环境
 
 | 环境 | GitHub Environment | 触发方式 | Secrets |
