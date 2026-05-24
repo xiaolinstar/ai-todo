@@ -36,7 +36,7 @@ Use the structured CLI with `--json`—no built-in natural language on the serve
 
 ```bash
 pnpm dev:api          # terminal 1
-pnpm cli -- today --json   # terminal 2 (or: node apps/cli/dist/index.js)
+pnpm cli today --json # terminal 2
 ```
 
 - Command reference: [docs/agent-usage.md](docs/agent-usage.md)
@@ -57,7 +57,9 @@ The API listens on `http://127.0.0.1:3100`.
 
 ## Production Deploy
 
-See [docs/deploy.md](docs/deploy.md) for Docker deployment, HTTPS (Caddy), WeChat domain setup, and CI/CD. **Release runbook:** [docs/release-runbook.md](docs/release-runbook.md).
+生产环境通过 **xiaolin-gateway** 提供 `https://wodi.games`，API 宿主机端口 **8082**。
+
+See [docs/deploy.md](docs/deploy.md) for Docker deployment, gateway routing, WeChat domain setup, and CI/CD. **Release runbook:** [docs/release-runbook.md](docs/release-runbook.md).
 
 ## WeChat Miniapp
 

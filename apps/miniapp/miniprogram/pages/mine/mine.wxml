@@ -16,7 +16,7 @@
   <view class="form-group">
     <view class="form-row stack">
       <text class="form-label">API 地址</text>
-      <input class="form-input" placeholder="http://127.0.0.1:3100" value="{{apiUrl}}" bindinput="onApiUrlInput" />
+      <input class="form-input" placeholder="https://wodi.games" value="{{apiUrl}}" bindinput="onApiUrlInput" />
     </view>
     <view class="form-row stack">
       <text class="form-label">Access Token</text>

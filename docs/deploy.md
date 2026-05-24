@@ -1,120 +1,125 @@
 # ai-todo 生产部署
 
-本文说明如何在自有服务器上用 Docker 部署 ai-todo API，并完成小程序上线所需的 HTTPS 与域名配置（Phase C1–C3）。
+本文说明如何在腾讯云 VPS 上用 Docker 部署 ai-todo API，并通过 **xiaolin-gateway** 提供 HTTPS，完成小程序上线所需配置。
+
+## 架构（推荐）
+
+与 [xiaolin-docs](https://github.com/xiaolinstar/xiaolin-docs) / [xiaolin-gateway](https://github.com/xiaolinstar/xiaolin-gateway) 一致：
+
+```text
+小程序 wx.request
+    → https://wodi.games/v1/...
+    → xiaolin-gateway（Nginx，443，证书集中管理）
+    → 宿主机 :8082
+    → ai-todo API 容器（内部 :3100）+ Postgres
+```
+
+宿主机端口约定（与现有服务对齐）：
+
+| 服务 | 宿主机端口 |
+|------|-----------|
+| xiaolin-docs | 8080 |
+| xiaolin-life | 8081 |
+| **ai-todo API** | **8082** |
 
 ## 前置条件
 
-- Linux 服务器（或任意支持 Docker 的环境）
-- [Docker Engine](https://docs.docker.com/engine/install/) 与 Docker Compose v2
-- 已备案域名（小程序 request 合法域名要求 HTTPS）
-- 微信小程序 AppID / AppSecret
+- Linux 服务器 + Docker Compose v2
+- 已备案域名 **wodi.games**（HTTPS 证书放在 xiaolin-gateway）
+- 微信小程序 AppID / AppSecret（测试号或正式号）
+- xiaolin-gateway 已部署并可 `git pull && docker compose up -d`
 
-## 快速部署（Docker Compose）
-
-在服务器上克隆仓库后：
+## 1. 部署 API（ai-todo 仓库）
 
 ```bash
-cd apps/api
+cd ~/AgentProjects/ai-todo/apps/api
 cp .env.production.example .env.production
+# 编辑 POSTGRES_PASSWORD、AI_TODO_WECHAT_APP_ID/SECRET
 ```
 
-编辑 `.env.production`，**至少修改**：
+`.env.production` 关键项：
 
 | 变量 | 说明 |
 |------|------|
 | `POSTGRES_PASSWORD` | 数据库强密码 |
+| `AI_TODO_PUBLISH_PORT` | `8082`（默认） |
+| `AI_TODO_ALLOW_DEV_AUTH` | `false` |
 | `AI_TODO_WECHAT_APP_ID` | 小程序 AppID |
 | `AI_TODO_WECHAT_APP_SECRET` | 小程序 AppSecret |
 
-启动 API + PostgreSQL（API 仅绑定本机 `127.0.0.1:3100`，供反向代理转发）：
+启动（**不要**启用 `docker-compose.tls.yml`，TLS 由 gateway 负责）：
 
 ```bash
 docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build
+curl http://127.0.0.1:8082/v1/health
 ```
 
-验证：
+### Docker 构建失败（pip install exit code 1）
+
+国内服务器访问 PyPI 可能超时。compose 已默认使用腾讯云镜像；也可显式指定：
 
 ```bash
-curl http://127.0.0.1:3100/v1/health
-# {"ok":true,"data":{"service":"ai-todo-api","status":"ok"}}
+PIP_INDEX_URL=https://mirrors.cloud.tencent.com/pypi/simple \
+  docker compose -f docker-compose.prod.yml --env-file .env.production build --no-cache
 ```
 
-查看日志：
+或单独构建镜像：
 
 ```bash
-docker compose -f docker-compose.prod.yml logs -f api
+docker build \
+  --build-arg PIP_INDEX_URL=https://mirrors.cloud.tencent.com/pypi/simple \
+  -t ai-todo-api:latest .
 ```
 
-## HTTPS（Caddy）
-
-小程序正式环境 **必须** 使用 HTTPS。推荐在 API 前加 Caddy 自动签发证书。
-
-### 方式 A：Docker Compose TLS 叠加
+查看构建详细日志：
 
 ```bash
-cd apps/api
-cp deploy/Caddyfile.example deploy/Caddyfile
-# 编辑 deploy/Caddyfile，确认 reverse_proxy 指向 api:3100
+docker compose -f docker-compose.prod.yml build --progress=plain --no-cache api 2>&1 | tee /tmp/ai-todo-build.log
 ```
 
-在 `.env.production` 增加：
+## 2. 配置 xiaolin-gateway
+
+在 [xiaolin-gateway](https://github.com/xiaolinstar/xiaolin-gateway) 仓库：
+
+1. 证书放到 `app/ai-todo/cert/`（`wodi.games_bundle.crt`、`wodi.games.key`）
+2. vhost 配置 `app/ai-todo/ai-todo.conf`：`wodi.games` → `宿主机IP:8082`
+3. `docker-compose.yml` 挂载 `app/ai-todo/cert`
+
+部署 gateway（重启容器会重新加载配置，**无需**额外 `docker exec nginx -s reload`）：
 
 ```bash
-API_DOMAIN=api.example.com
-API_UPSTREAM=api:3100
+cd ~/AgentProjects/xiaolin-gateway
+git pull
+docker compose up -d
+curl https://wodi.games/v1/health
 ```
 
-启动带 TLS 的完整栈：
+## 3. 微信小程序
 
-```bash
-docker compose -f docker-compose.prod.yml -f docker-compose.tls.yml \
-  --env-file .env.production up -d --build
-```
+### 合法域名（微信公众平台，非代码）
 
-验证：
+登录 [微信公众平台](https://mp.weixin.qq.com/)（或[测试号管理页](https://mp.weixin.qq.com/debug/cgi-bin/sandbox)）→ **开发 → 开发管理 → 开发设置 → 服务器域名**：
 
-```bash
-curl https://api.example.com/v1/health
-```
-
-### 方式 B：宿主机 Caddy / Nginx
-
-API 容器已绑定 `127.0.0.1:3100`，在宿主机安装 Caddy 或 Nginx 即可。
-
-宿主机 Caddy 示例（`/etc/caddy/Caddyfile`）：
-
-```caddy
-api.example.com {
-  reverse_proxy 127.0.0.1:3100
-}
-```
-
-Nginx 同理：`proxy_pass http://127.0.0.1:3100;`，并配置 TLS（certbot 等）。
-
-模板见 `apps/api/deploy/Caddyfile.example`。
-
-## 微信小程序合法域名（C3）
-
-在 [微信公众平台](https://mp.weixin.qq.com/) → **开发** → **开发管理** → **开发设置** → **服务器域名**：
-
-| 类型 | 域名 | 示例 |
-|------|------|------|
-| request 合法域名 | API 域名（HTTPS，无端口路径） | `https://api.example.com` |
+| 类型 | 填写内容 |
+|------|----------|
+| request 合法域名 | `https://wodi.games`（测试号）；正式号多为 `wodi.games` |
 
 注意：
 
-- 仅填域名，不要带 `https://` 前缀或路径
-- 域名需已备案且证书有效
+- **仅在公众平台后台填写**，不在小程序代码里配置
+- 不要带路径或端口
+- 测试号与正式号输入格式可能不同，以当前后台提示为准
 - 配置后约 5 分钟生效
 
-### 小程序端配置
+### 小程序代码侧
 
-1. 打开 `apps/miniapp`，在 **我的** 页将 API 地址改为 `https://api.example.com`
-2. 使用 **微信登录**（`wx.login` → `POST /v1/auth/wechat/login`）
-3. 关闭开发者工具 **「不校验合法域名、web-view、TLS 版本」** 选项后再测
-4. 真机预览 / 体验版验证 request 与登录流程
+| 项 | 配置位置 |
+|----|----------|
+| AppID | `apps/miniapp/project.config.json` → `appid` |
+| API 基址 | 代码默认 `https://wodi.games`（体验版/正式版）；开发者工具用 `http://127.0.0.1:3100` |
+| 微信登录 | 「我的」页 → 微信登录 |
 
-本地开发仍可继续使用 `http://127.0.0.1:3100` + 勾选「不校验合法域名」。
+本地开发：开发者工具勾选「不校验合法域名」，API 使用 `http://127.0.0.1:3100`。
 
 ## 容器行为
 
@@ -122,86 +127,48 @@ Nginx 同理：`proxy_pass http://127.0.0.1:3100;`，并配置 TLS（certbot 等
 |------|------|
 | 等待数据库 | `scripts/wait_for_db.py` 轮询 PostgreSQL |
 | 迁移 | `alembic upgrade head` |
-| 启动 | `python -m ai_todo_api`，监听 `0.0.0.0:3100` |
-
-镜像内置 healthcheck：`GET /v1/health`。
+| 启动 | `python -m ai_todo_api`，容器内监听 `0.0.0.0:3100` |
 
 ## 环境变量
 
 | 变量 | 生产推荐 | 说明 |
 |------|----------|------|
 | `POSTGRES_PASSWORD` | **必填** | 数据库密码 |
-| `AI_TODO_ALLOW_DEV_AUTH` | `false` | 关闭无 Token 的 `user_dev` 旁路 |
+| `AI_TODO_ALLOW_DEV_AUTH` | `false` | 关闭 dev 旁路 |
 | `AI_TODO_WECHAT_APP_ID` | **必填** | 微信小程序 AppID |
 | `AI_TODO_WECHAT_APP_SECRET` | **必填** | 微信小程序 AppSecret |
-| `AI_TODO_RATE_LIMIT_ENABLED` | `true` | 启用限流 |
-| `AI_TODO_RATE_LIMIT_WECHAT_LOGIN_PER_MINUTE` | `10` | 每 IP 每分钟微信登录次数上限 |
-| `AI_TODO_HOST` | `0.0.0.0` | compose 已设置 |
+| `AI_TODO_PUBLISH_PORT` | `8082` | 宿主机映射端口 |
 | `AI_TODO_PORT` | `3100` | 容器内端口 |
-| `AI_TODO_PUBLISH_PORT` | `3100` | 宿主机映射端口（绑定 127.0.0.1） |
-| `AI_TODO_TIMEZONE` | `Asia/Shanghai` | 默认用户时区 |
-| `API_DOMAIN` | TLS 叠加必填 | Caddy 证书域名 |
-| `API_UPSTREAM` | `api:3100` | Caddy 反代目标 |
+| `PIP_INDEX_URL` | 腾讯云镜像 | Docker 构建时 pip 源 |
 
 完整模板见 `apps/api/.env.production.example`。
-
-### 生产认证说明
-
-`AI_TODO_ALLOW_DEV_AUTH=false` 时，**所有 API 请求必须带** `Authorization: Bearer aitodo_…`。
-
-- CLI / Agent：使用 PAT（`AI_TODO_TOKEN` 或 `ai-todo login --token`）
-- 小程序：微信登录自动签发 PAT（`POST /v1/auth/wechat/login`）
-
-### 限流说明
-
-`/v1/auth/wechat/login` 默认按客户端 IP 限流（识别 `X-Forwarded-For`，需在反向代理后保留该头）。超限返回 `429`，错误码 `RATE_LIMITED`。
 
 ## CI / CD
 
 | 工作流 | 文件 | 触发 |
 |--------|------|------|
 | CI | `.github/workflows/ci.yml` | push / PR → `main` |
-| Deploy | `.github/workflows/deploy.yml` | CI 成功后自动部署；可手动 `workflow_dispatch` |
+| Deploy | `.github/workflows/deploy.yml` | CI 成功后自动部署；可手动触发 |
 
-**完整上线操作手册（含 GitHub Secrets、小程序提审、回滚）**：见 **[docs/release-runbook.md](./release-runbook.md)**。
+**完整上线 checklist**：见 [docs/release-runbook.md](./release-runbook.md)。
 
-## 仅构建 API 镜像
+## 备选：内置 Caddy（无 xiaolin-gateway 时）
 
-```bash
-cd apps/api
-docker build -t ai-todo-api:latest .
-docker run --rm -p 3100:3100 \
-  -e AI_TODO_DATABASE_URL='postgresql+psycopg://user:pass@host:5432/ai_todo' \
-  -e AI_TODO_ALLOW_DEV_AUTH=false \
-  ai-todo-api:latest
-```
-
-需确保数据库可从容器访问，且已创建空库。
-
-## 升级发布
-
-手动升级（未启用 GitHub Actions 时）：
-
-```bash
-git pull
-bash apps/api/deploy/remote-deploy.sh
-```
-
-启用 Actions 后，merge `main` 即可自动部署。启动时会自动执行新的 Alembic 迁移。
+若未使用 gateway，可启用 `docker-compose.tls.yml` + `deploy/Caddyfile`。当前生产环境推荐 gateway 方案，见上文。
 
 ## 本地开发 vs 生产
 
 | 项 | 本地 | 生产 |
 |----|------|------|
-| Compose 文件 | `docker-compose.yml`（仅 Postgres） | `docker-compose.prod.yml`（Postgres + API） |
-| TLS | 不需要 | Caddy / Nginx + 合法域名 |
-| Env 文件 | `.env` / `.env.example` | `.env.production` |
-| Dev 旁路 | `AI_TODO_ALLOW_DEV_AUTH=true` | **必须** `false` |
-| API 运行 | 宿主机 `python -m ai_todo_api` | Docker 容器 |
-| 小程序 API 地址 | `http://127.0.0.1:3100` | `https://api.example.com` |
+| Compose | `docker-compose.yml`（仅 Postgres） | `docker-compose.prod.yml` |
+| API 运行 | 宿主机 `pnpm dev:api`（:3100） | Docker 容器 → 宿主机 :8082 |
+| HTTPS | 不需要 | xiaolin-gateway → `https://wodi.games` |
+| 合法域名 | 开发者工具跳过校验 | 公众平台配置 `wodi.games` |
+| 小程序 API | `http://127.0.0.1:3100` | `https://wodi.games`（代码默认） |
 
 ## 相关文档
 
 - 上线操作手册：`docs/release-runbook.md`
 - 技术决策：`docs/tech-decisions.md`
 - 小程序开发：`apps/miniapp/README.md`
+- 网关项目：`https://github.com/xiaolinstar/xiaolin-gateway`

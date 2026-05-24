@@ -2,6 +2,12 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
+# 国内服务器构建可传：--build-arg PIP_INDEX_URL=https://mirrors.cloud.tencent.com/pypi/simple
+ARG PIP_INDEX_URL=https://pypi.org/simple
+ENV PIP_DEFAULT_TIMEOUT=120 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_INDEX_URL=${PIP_INDEX_URL}
+
 RUN apt-get update \
   && apt-get install -y --no-install-recommends libpq5 \
   && rm -rf /var/lib/apt/lists/*
@@ -12,7 +18,8 @@ COPY alembic.ini ./
 COPY alembic ./alembic
 COPY scripts ./scripts
 
-RUN pip install --no-cache-dir .
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel \
+  && pip install --no-cache-dir .
 
 COPY docker-entrypoint.sh /docker-entrypoint.sh
 RUN chmod +x /docker-entrypoint.sh

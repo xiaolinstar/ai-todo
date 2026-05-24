@@ -75,14 +75,18 @@ alembic upgrade head
 
 ## Production Deploy
 
-Docker image + PostgreSQL stack for VPS deployment. See **[docs/deploy.md](../../docs/deploy.md)**.
+Docker + PostgreSQL，宿主机 **8082** → 容器 3100。HTTPS 由 [xiaolin-gateway](https://github.com/xiaolinstar/xiaolin-gateway) 反代 `https://wodi.games`。
+
+See **[docs/deploy.md](../../docs/deploy.md)**。
 
 ```bash
 cd apps/api
 cp .env.production.example .env.production
-# edit POSTGRES_PASSWORD
+# 编辑 POSTGRES_PASSWORD、微信 AppID/Secret
 docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build
-curl http://127.0.0.1:3100/v1/health
+curl http://127.0.0.1:8082/v1/health
 ```
 
-Production must set `AI_TODO_ALLOW_DEV_AUTH=false`. Miniapp auth uses WeChat login; rate limiting applies to `POST /v1/auth/wechat/login`. See **[docs/deploy.md](../../docs/deploy.md)** for HTTPS and domain setup.
+国内服务器若 `pip install` 构建失败，见 deploy.md — 默认已使用腾讯云 PyPI 镜像。
+
+Production must set `AI_TODO_ALLOW_DEV_AUTH=false`. Miniapp auth uses WeChat login.

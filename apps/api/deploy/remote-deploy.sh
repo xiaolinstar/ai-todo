@@ -20,7 +20,7 @@ fi
 docker compose "${COMPOSE_FILES[@]}" --env-file "$ENV_FILE" up -d --build
 
 PUBLISH_PORT="$(grep -E '^AI_TODO_PUBLISH_PORT=' "$ENV_FILE" | cut -d= -f2- || true)"
-PUBLISH_PORT="${PUBLISH_PORT:-3100}"
+PUBLISH_PORT="${PUBLISH_PORT:-8082}"
 curl -sf "http://127.0.0.1:${PUBLISH_PORT}/v1/health" >/dev/null
 
 echo "ai-todo API deploy OK (health check passed on 127.0.0.1:${PUBLISH_PORT})"

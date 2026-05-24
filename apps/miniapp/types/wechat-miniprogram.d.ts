@@ -43,6 +43,12 @@ declare const wx: {
   }): void;
   stopPullDownRefresh(): void;
   setNavigationBarTitle(options: { title: string }): void;
+  getAccountInfoSync(): {
+    miniProgram: {
+      envVersion: "develop" | "trial" | "release";
+      appId: string;
+    };
+  };
 };
 
 declare function App(options: any): void;
