@@ -36,7 +36,8 @@ services:
       AI_TODO_RATE_LIMIT_ENABLED: ${AI_TODO_RATE_LIMIT_ENABLED:-true}
       AI_TODO_RATE_LIMIT_WECHAT_LOGIN_PER_MINUTE: ${AI_TODO_RATE_LIMIT_WECHAT_LOGIN_PER_MINUTE:-10}
     ports:
-      - "${AI_TODO_PUBLISH_PORT:-8082}:3100"
+      # 宿主机 :8082 → 容器 :3100（AI_TODO_PUBLISH_PORT 来自 .env.production）
+      - "${AI_TODO_PUBLISH_PORT:-8082}:${AI_TODO_PORT:-3100}"
     depends_on:
       postgres:
         condition: service_healthy
