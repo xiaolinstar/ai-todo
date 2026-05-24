@@ -6,17 +6,18 @@
 
 ## 技术栈
 
-- 源码：**TypeScript + Sass**（`miniprogram/**/*.ts` / `*.scss`）
-- 运行：**JavaScript + WXSS**（`pnpm build:wechat` 生成，已提交仓库供 DevTools 直接加载）
-- 工程根目录：`apps/miniapp`（含 `miniprogramRoot: miniprogram/`）
+- 源码：**TypeScript + Sass + WXML + JSON**（每页面/组件 **四件套**）
+- 编译：**微信开发者工具** `typescript` / `sass` 插件（与 party-helper 一致）
+- **`.js` / `.wxss` 不提交 Git**（`apps/miniapp/.gitignore`）
+- 工程根目录：`apps/miniapp`（DevTools 导入此目录）
 
 ## 本地开发
 
 ```bash
 pnpm dev:api
-pnpm build:wechat
-# 微信开发者工具 → 导入 apps/miniapp
+# 微信开发者工具 → 导入 apps/miniapp → 确认已启用 TS/Sass 编译插件
 # 详情 → 勾选「不校验合法域名」
+pnpm check:wechat   # 提交前
 ```
 
 开发者工具下 API 默认 `http://127.0.0.1:3100`（见 `lib/config.ts`）。
@@ -56,10 +57,11 @@ pnpm check:wechat
 
 | 现象 | 处理 |
 |------|------|
-| `未找到 pages/.../xxx.js` | `pnpm build:wechat` 后重新编译 |
+| `未找到 pages/.../xxx.js` | 确认 `project.config.json` 已启用 `useCompilerPlugins: ["typescript","sass"]`；DevTools 重新编译 |
+| 改了 .ts 没生效 | DevTools「编译」→「清缓存」→ 重新编译 |
 | 无法连接 API（本地） | 勾选「不校验合法域名」；API 用 `127.0.0.1:3100` |
 | 无法连接 API（真机） | 公众平台配置 `wodi.games`；确认 `https://wodi.games/v1/health` |
-| request 不在合法域名列表 | 检查公众平台域名配置，非代码问题 |
+| Git 里出现 .js/.wxss | 勿提交；运行 `git rm --cached` 移除跟踪 |
 
 ## Tab 结构
 

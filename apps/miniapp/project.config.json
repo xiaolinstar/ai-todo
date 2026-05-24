@@ -3,10 +3,13 @@
   "miniprogramRoot": "miniprogram/",
   "compileType": "miniprogram",
   "setting": {
-    "useCompilerPlugins": [],
+    "useCompilerPlugins": [
+      "typescript",
+      "sass"
+    ],
     "ignoreUploadUnusedFiles": true,
     "compileHotReLoad": false,
-    "es6": true,
+    "es6": false,
     "postcss": false,
     "compileWorklet": false,
     "minified": true,

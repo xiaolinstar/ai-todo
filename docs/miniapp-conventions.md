@@ -20,20 +20,19 @@ ai-todo 与 party-helper 的业务差异：
 ## 技术栈
 
 - **微信原生**（不使用 Taro / uni-app）
-- **TypeScript + Sass 为源码**（`.ts` / `.scss`，编码风格对齐 party-helper）
-- **微信开发者工具加载预构建产物**（`.js` / `.wxss`，由 `pnpm build:wechat` 生成并提交仓库）
-- **ES Module 编写、`require` 运行**：源码用 `import`，构建后转为 CommonJS 供小程序加载
+- **TypeScript + Sass 为源码**（`.ts` / `.scss` / `.wxml` / `.json` 四件套）
+- **微信开发者工具编译**（`useCompilerPlugins: ["typescript", "sass"]`，与 party-helper 一致）
+- **`.js` / `.wxss` 为本地/CI 生成物，不提交 Git**（见 `apps/miniapp/.gitignore`）
+- **ES Module 编写、`require` 运行**：源码用 `import`，DevTools 编译后转为 CommonJS
 
-> 说明：party-helper 依赖 DevTools 的 `typescript`/`sass` 编译插件做实时编译；ai-todo 额外提供 **`pnpm build:wechat`**，避免本地 DevTools 未启用插件时出现「找不到 .js」等大量报错。若你的 DevTools 已正确启用插件，也可在 `project.config.json` 中恢复 `useCompilerPlugins: ["typescript", "sass"]` 并省略提交 `.js`/`.wxss`（与 party-helper 完全一致）。
-
-`project.config.json` 默认：
+`project.config.json`：
 
 ```json
 {
   "miniprogramRoot": "miniprogram/",
   "setting": {
-    "useCompilerPlugins": [],
-    "es6": true
+    "useCompilerPlugins": ["typescript", "sass"],
+    "es6": false
   }
 }
 ```
@@ -143,12 +142,14 @@ apps/miniapp/
 仓库根目录：
 
 ```bash
-pnpm build:wechat     # .ts→.js、.scss→.wxss（改小程序源码后必跑）
-pnpm check:wechat     # typecheck + build + 页面完整性
-pnpm typecheck:wechat # 仅 tsc
+pnpm build:wechat:check  # CI 同款：仅校验 ts/scss 可编译，不写 .js/.wxss
+pnpm check:wechat        # typecheck + 编译检查 + 四文件结构
+pnpm typecheck:wechat    # 仅 tsc
 ```
 
-修改 `miniprogram/**` 下的 `.ts` 或 `.scss` 后，**至少运行 `pnpm build:wechat`**，再在微信开发者工具中编译/预览。
+修改 `miniprogram/**` 下的 `.ts` 或 `.scss` 后，运行 `pnpm check:wechat`，再在微信开发者工具中编译/预览（DevTools 负责 ts→js、scss→wxss）。
+
+**不要**手改或提交 `miniprogram/**/*.js` / `**/*.wxss`。
 
 ## 文档语言
 
@@ -166,7 +167,7 @@ pnpm typecheck:wechat # 仅 tsc
 
 ## 新页面 Checklist
 
-- [ ] `pages/<name>/<name>.{ts,wxml,scss,json}` 四文件齐全
+- [ ] `pages/<name>/<name>.{ts,wxml,scss,json}` 四文件齐全（**无** `.js`/`.wxss` 进 Git）
 - [ ] 已在 `app.json` `pages` 数组注册（Tab 页同时更新 `tabBar`）
 - [ ] 样式使用 `--todo-*` 与全局 layout 类，无随意 hex
 - [ ] 业务调用经 `lib/`，页面无裸 `wx.request`

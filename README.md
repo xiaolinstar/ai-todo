@@ -67,6 +67,6 @@ Native WeChat miniapp MVP in `apps/miniapp/`. See [apps/miniapp/README.md](apps/
 
 ```bash
 pnpm dev:api   # start API first
-pnpm build:wechat   # if you changed miniapp .ts/.scss
+pnpm check:wechat   # if you changed miniapp .ts/.scss
 # Then open apps/miniapp in WeChat DevTools (disable domain check for local dev)
 ```

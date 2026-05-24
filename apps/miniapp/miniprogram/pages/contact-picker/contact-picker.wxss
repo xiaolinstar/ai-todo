@@ -1,7 +1,0 @@
-.picker-page {
-  padding-top: 8rpx;
-}
-
-.contact-row-inner {
-  align-items: center;
-}

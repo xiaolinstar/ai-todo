@@ -1,3 +1,4 @@
+import { execSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, extname, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -5,8 +6,11 @@ import ts from "typescript";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const root = resolve(scriptDir, "..");
-const miniprogramRoot = resolve(root, "apps/miniapp/miniprogram");
+const miniappRoot = resolve(root, "apps/miniapp");
+const miniprogramRoot = resolve(miniappRoot, "miniprogram");
 const appJsonPath = resolve(miniprogramRoot, "app.json");
+
+const PAGE_SOURCE_EXTS = [".ts", ".wxml", ".scss", ".json"];
 
 function readJson(path) {
   return JSON.parse(readFileSync(path, "utf8"));
@@ -28,27 +32,49 @@ function fail(message) {
   process.exitCode = 1;
 }
 
-const appTs = resolve(miniprogramRoot, "app.ts");
-const appJs = resolve(miniprogramRoot, "app.js");
-const appScss = resolve(miniprogramRoot, "app.scss");
-const appWxss = resolve(miniprogramRoot, "app.wxss");
-
-for (const path of [appTs, appJs, appScss, appWxss]) {
-  if (!existsSync(path)) fail(`missing ${relative(root, path)}`);
-}
-
-if (!existsSync(appJsonPath)) {
-  fail(`missing ${relative(root, appJsonPath)}`);
-} else {
-  const appJson = readJson(appJsonPath);
-  for (const page of appJson.pages ?? []) {
-    const pageBase = resolve(miniprogramRoot, page);
-    for (const ext of [".ts", ".js", ".wxml", ".scss", ".wxss", ".json"]) {
-      const path = `${pageBase}${ext}`;
-      if (!existsSync(path)) fail(`app.json page is missing ${relative(root, path)}`);
+function assertSourceBundle(basePath, label, extensions) {
+  for (const ext of extensions) {
+    const path = `${basePath}${ext}`;
+    if (!existsSync(path)) {
+      fail(`${label} is missing ${relative(root, path)}`);
     }
   }
 }
+
+function assertNoTrackedGeneratedFiles() {
+  try {
+    const tracked = execSync(
+      'git ls-files "apps/miniapp/miniprogram/**/*.js" "apps/miniapp/miniprogram/**/*.wxss"',
+      { cwd: root, encoding: "utf8" }
+    ).trim();
+    if (tracked) {
+      fail(
+        "Generated miniapp .js/.wxss must not be tracked in git (use DevTools plugins or git rm):\n" +
+          tracked
+      );
+    }
+  } catch {
+    // git unavailable — skip
+  }
+}
+
+assertSourceBundle(resolve(miniprogramRoot, "app"), "app", [".ts", ".scss"]);
+if (!existsSync(appJsonPath)) {
+  fail(`missing ${relative(root, appJsonPath)}`);
+}
+
+if (!process.exitCode) {
+  const appJson = readJson(appJsonPath);
+  for (const page of appJson.pages ?? []) {
+    assertSourceBundle(resolve(miniprogramRoot, page), `app.json page ${page}`, PAGE_SOURCE_EXTS);
+  }
+}
+
+assertSourceBundle(
+  resolve(miniprogramRoot, "custom-tab-bar/index"),
+  "custom tab bar",
+  PAGE_SOURCE_EXTS
+);
 
 for (const file of walk(miniprogramRoot)) {
   if (extname(file) !== ".json") continue;
@@ -84,13 +110,7 @@ for (const file of walk(miniprogramRoot)) {
   }
 }
 
-const customTabBarBase = resolve(miniprogramRoot, "custom-tab-bar/index");
-for (const ext of [".ts", ".js", ".wxml", ".scss", ".wxss", ".json"]) {
-  const path = `${customTabBarBase}${ext}`;
-  if (!existsSync(path)) {
-    fail(`custom tab bar is missing ${relative(root, path)}`);
-  }
-}
+assertNoTrackedGeneratedFiles();
 
 if (!process.exitCode) {
   console.log("ai-todo wechat miniprogram static checks passed");

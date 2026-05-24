@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { dirname, extname, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import * as sass from "sass";
@@ -7,6 +7,7 @@ import ts from "typescript";
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const root = resolve(scriptDir, "..");
 const miniprogramRoot = resolve(root, "apps/miniapp/miniprogram");
+const checkOnly = process.argv.includes("--check");
 
 function walk(dir) {
   const files = [];
@@ -43,12 +44,16 @@ function transpileTs(file) {
     return;
   }
 
-  writeFileSync(file.replace(/\.ts$/, ".js"), result.outputText, "utf8");
+  if (!checkOnly) {
+    writeFileSync(file.replace(/\.ts$/, ".js"), result.outputText, "utf8");
+  }
 }
 
 function compileScss(file) {
   const result = sass.compile(file, { style: "expanded" });
-  writeFileSync(file.replace(/\.scss$/, ".wxss"), result.css, "utf8");
+  if (!checkOnly) {
+    writeFileSync(file.replace(/\.scss$/, ".wxss"), result.css, "utf8");
+  }
 }
 
 if (!existsSync(miniprogramRoot)) {
@@ -71,7 +76,6 @@ for (const file of walk(miniprogramRoot)) {
 }
 
 if (!process.exitCode) {
-  console.log(
-    `wechat miniprogram build ok (${tsCount} ts→js, ${scssCount} scss→wxss)`
-  );
+  const mode = checkOnly ? "check ok" : "build ok";
+  console.log(`wechat miniprogram ${mode} (${tsCount} ts, ${scssCount} scss)`);
 }

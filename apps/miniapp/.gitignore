@@ -1,0 +1,3 @@
+# DevTools / local build 生成的产物（源码为 .ts / .scss，见 docs/miniapp-conventions.md）
+miniprogram/**/*.js
+miniprogram/**/*.wxss

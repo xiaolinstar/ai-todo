@@ -12,7 +12,8 @@
     "cli": "pnpm --filter @ai-todo/cli build && node apps/cli/dist/index.js",
     "typecheck:wechat": "tsc -p apps/miniapp/tsconfig.json --noEmit",
     "build:wechat": "node scripts/build-wechat-miniprogram.mjs",
-    "check:wechat": "pnpm typecheck:wechat && pnpm build:wechat && node scripts/check-wechat-miniprogram.mjs"
+    "build:wechat:check": "node scripts/build-wechat-miniprogram.mjs --check",
+    "check:wechat": "pnpm typecheck:wechat && pnpm build:wechat:check && node scripts/check-wechat-miniprogram.mjs"
   },
   "devDependencies": {
     "sass": "^1.89.2",
