@@ -4,6 +4,7 @@ dist/
 .venv/
 .turbo/
 .DS_Store
+.claude/
 .env
 .env.*
 !.env.example
