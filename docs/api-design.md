@@ -429,136 +429,9 @@ PATCH /v1/contacts/{contact_id}/methods/{method_id}
 DELETE /v1/contacts/{contact_id}/methods/{method_id}
 ```
 
-### 解析联系人
+## 不提供自然语言接口
 
-```http
-POST /v1/contacts/resolve
-```
-
-请求：
-
-```json
-{
-  "text": "给客户王总发报价确认邮件",
-  "required_method": "email"
-}
-```
-
-响应：
-
-```json
-{
-  "ok": true,
-  "data": {
-    "matches": [
-      {
-        "text": "王总",
-        "contact": {
-          "id": "contact_123",
-          "display_name": "王总"
-        },
-        "confidence": 0.86,
-        "needs_confirmation": false,
-        "available_methods": [
-          {
-            "type": "email",
-            "value": "wang@example.com",
-            "is_primary": true
-          }
-        ]
-      }
-    ]
-  }
-}
-```
-
-重名或低置信度时：
-
-```json
-{
-  "ok": false,
-  "error": {
-    "code": "CONTACT_AMBIGUOUS",
-    "message": "Multiple contacts matched this name.",
-    "details": {
-      "text": "王总",
-      "candidates": [
-        {
-          "id": "contact_123",
-          "display_name": "王总",
-          "company": "示例科技"
-        },
-        {
-          "id": "contact_456",
-          "display_name": "王总",
-          "company": "另一家公司"
-        }
-      ]
-    }
-  }
-}
-```
-
-## Natural Language 接口
-
-### 解析自然语言
-
-```http
-POST /v1/nl/parse
-```
-
-请求：
-
-```json
-{
-  "text": "明天上午十点提醒我给客户王总发报价确认邮件",
-  "timezone": "Asia/Shanghai",
-  "mode": "preview"
-}
-```
-
-`mode` 可选：
-
-- `preview`：只返回解析结果，不写入
-- `execute`：校验后写入业务对象
-
-响应：
-
-```json
-{
-  "ok": true,
-  "data": {
-    "intent": "create_reminder",
-    "preview": {
-      "title": "给客户王总发报价确认邮件",
-      "due_at": "2026-05-20T10:00:00+08:00",
-      "contacts": [
-        {
-          "text": "王总",
-          "contact_id": "contact_123",
-          "confidence": 0.86,
-          "needs_confirmation": false
-        }
-      ]
-    }
-  }
-}
-```
-
-需要确认时，不执行写操作：
-
-```json
-{
-  "ok": false,
-  "error": {
-    "code": "CONFIRMATION_REQUIRED",
-    "message": "This operation needs user confirmation.",
-    "details": {
-      "reasons": ["CONTACT_AMBIGUOUS"]
-    }
-  }
-}
-```
+API 不提供 `POST /v1/nl/parse` 或 NLP 版 `POST /v1/contacts/resolve`。调用方 Agent 负责自然语言理解、时间解析、联系人语义消歧和用户确认；本 API 只接收结构化字段并提供联系人搜索、详情查询、CRUD、幂等、审计和权限控制。
 
 ## Today 聚合接口
 
@@ -592,11 +465,9 @@ GET /v1/today
 | `NOT_FOUND` | 资源不存在 |
 | `IDEMPOTENCY_CONFLICT` | 幂等键冲突 |
 | `CONTACT_NOT_FOUND` | 联系人不存在 |
-| `CONTACT_AMBIGUOUS` | 联系人匹配不唯一 |
 | `CONTACT_METHOD_REQUIRED` | 缺少所需联系方式 |
 | `CONFIRMATION_REQUIRED` | 需要用户确认 |
 | `RATE_LIMITED` | 请求过于频繁 |
-| `NL_PARSE_FAILED` | 自然语言解析失败 |
 
 ## MVP 不做
 
@@ -607,3 +478,4 @@ GET /v1/today
 - 组织通讯录
 - 多人协作权限
 - 自动批量排期
+- 自然语言解析 / 内置 LLM / Prompt 编排

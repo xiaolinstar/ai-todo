@@ -1,6 +1,6 @@
 # ai-todo 技术决策
 
-日期：2026-05-20（持续更新）
+日期：2026-05-20（持续更新；2026-05-25 确认自然语言解析不进入路线图）
 
 ## 产品焦点
 
@@ -11,11 +11,12 @@ AI 交互交给用户已有的 Agent 环境（OpenClaw、Claude Code/Codex、Cur
 - **CLI**：结构化命令 + `--json` 输出
 - **Skills / MCP（规划）**：把 CLI 或 HTTP API 封装成 Agent 可调用的工具
 
-因此 **不做**（或明确推迟、且可能永久不做）：
+因此 **不做**：
 
 - `POST /v1/nl/parse` 等服务端自然语言入口
 - CLI 的 `parse` / `ask` 等依赖内置模型的命令
 - 服务端联系人 LLM 消歧（`POST /v1/contacts/resolve` 的 NLP 版本）
+- 把“用户自然语言 → 意图/时间/联系人/动作”的解析逻辑放进本项目
 
 Agent 侧自然语言 → 时间/意图理解，由 **外部模型 + Skills** 完成，再调用本项目的结构化接口，例如：
 
@@ -26,6 +27,16 @@ curl POST /v1/reminders   # 最直接
 ```
 
 联系人场景：Agent 用 `contact search` / `GET /v1/contacts?q=` 做匹配，重名时向用户确认，而非服务端 NL。
+
+### 长期规划护栏
+
+后续规划时默认遵守：
+
+- 不再把“自然语言解析并执行”作为 ai-todo 的路线图事项
+- 不再规划内置 LLM、Prompt 编排、模型调用、意图识别、时间解析或联系人语义消歧
+- 允许规划 **CLI / Skill / MCP / HTTP API** 能力，让外部 Agent 更稳定地调用本项目
+- 允许提供结构化搜索、CRUD、批量操作、幂等、审计、权限和错误码
+- 如果未来确需“解析”二字，只能指确定性的结构化校验或精确字段查询，不指 LLM/NLP 能力
 
 ## 已确认
 
@@ -58,7 +69,7 @@ curl POST /v1/reminders   # 最直接
 7. **生产部署（C1）**：✅ API Dockerfile + `docker-compose.prod.yml`，见 `docs/deploy.md`
 8. **微信登录（C2）**：✅ `identities` 表 + `POST /v1/auth/wechat/login` + 小程序 `wx.login`
 9. **生产硬化（C3）**：✅ HTTPS/Caddy 模板、微信合法域名文档、CI、微信登录限流
-10. ~~自然语言解析~~：**不在路线图**
+10. ~~自然语言解析~~：**不在路线图，交给调用方 Agent / Skill 实现**
 
 ## 认证策略（2026-05-21）
 
@@ -74,8 +85,7 @@ curl POST /v1/reminders   # 最直接
 
 - CLI Token 创建入口（小程序 vs Web 控制台 vs OAuth 扫码）
 - MCP Server 独立包 vs 仅维护 Skill 文档 + 调用 CLI
-- `contact resolve` 是否做纯规则/搜索版（无 LLM）
 
 ## 文档说明
 
-`docs/initial-planning.md`、`api-design.md`、`cli-design.md` 中仍有早期「自然语言 MVP」描述，以 **本文「产品焦点」** 为准；后续迭代文档时应将 NL 章节标为「已放弃 / 由 Agent 承担」。
+`docs/initial-planning.md`、`api-design.md`、`cli-design.md` 中若出现早期「自然语言 MVP」描述，以 **本文「产品焦点」** 为准；后续迭代文档时应删除或标为「已放弃 / 由 Agent 承担」。

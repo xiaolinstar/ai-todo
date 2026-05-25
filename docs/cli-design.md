@@ -16,8 +16,8 @@ CLI 不是完整 TUI，也不直接保存微信登录态。它通过独立 API T
 - 默认输出适合人类阅读
 - 所有查询和写操作都支持 `--json`
 - 写操作支持幂等，适合 Agent 重试
-- 自然语言入口和结构化入口并存
-- 联系人解析必须可解释、可确认
+- CLI 只提供结构化能力，不内置自然语言解析、意图识别或 LLM 调用
+- 联系人能力通过搜索、详情和 ID 引用实现；重名确认由调用方 Agent 或用户完成
 - 高风险操作需要显式参数或确认
 
 ## 全局参数
@@ -90,12 +90,6 @@ ai-todo logout
 ## Reminder 命令
 
 ### add
-
-自然语言创建提醒：
-
-```bash
-ai-todo add "明天上午十点提醒我给客户王总发报价确认邮件"
-```
 
 结构化创建提醒：
 
@@ -255,12 +249,6 @@ ai-todo calendar list --date 2026-05-20
 
 ### calendar add
 
-自然语言：
-
-```bash
-ai-todo calendar add "明天下午两点和 Alice 讨论项目计划"
-```
-
 结构化：
 
 ```bash
@@ -363,56 +351,6 @@ JSON 输出：
 ai-todo contact show contact_123
 ```
 
-### contact resolve
-
-用于 Agent 在执行写操作前解析自然语言联系人。
-
-```bash
-ai-todo contact resolve "给客户王总发报价确认邮件" --required-method email --json
-```
-
-JSON 输出：
-
-```json
-{
-  "ok": true,
-  "matches": [
-    {
-      "text": "王总",
-      "contact": {
-        "id": "contact_123",
-        "display_name": "王总"
-      },
-      "confidence": 0.86,
-      "needs_confirmation": false,
-      "available_methods": [
-        {
-          "type": "email",
-          "value": "wang@example.com",
-          "is_primary": true
-        }
-      ]
-    }
-  ]
-}
-```
-
-如果缺少邮箱：
-
-```json
-{
-  "ok": false,
-  "error": {
-    "code": "CONTACT_METHOD_REQUIRED",
-    "message": "This contact does not have an email address.",
-    "contact": {
-      "id": "contact_123",
-      "display_name": "王总"
-    }
-  }
-}
-```
-
 ### contact update
 
 ```bash
@@ -425,46 +363,9 @@ ai-todo contact update contact_123 --company "新公司"
 ai-todo contact method add contact_123 --type email --value wang@example.com --label work
 ```
 
-## Natural Language 命令
+## 不提供自然语言命令
 
-### parse
-
-只解析，不执行：
-
-```bash
-ai-todo parse "明天上午十点提醒我给客户王总发报价确认邮件"
-```
-
-JSON 输出：
-
-```json
-{
-  "ok": true,
-  "intent": "create_reminder",
-  "preview": {
-    "title": "给客户王总发报价确认邮件",
-    "due_at": "2026-05-20T10:00:00+08:00",
-    "contacts": [
-      {
-        "text": "王总",
-        "contact_id": "contact_123",
-        "confidence": 0.86,
-        "needs_confirmation": false
-      }
-    ]
-  }
-}
-```
-
-### ask
-
-面向用户的轻量问答入口：
-
-```bash
-ai-todo ask "我今天最重要的三件事是什么？"
-```
-
-MVP 中 `ask` 可先只读取今日提醒和日程，不执行写操作。
+CLI 不提供 `parse`、`ask`、NLP 版 `contact resolve` 等命令。自然语言理解由 OpenClaw、Claude、Codex、Cursor 等调用方完成；调用方应在确认后调用结构化 CLI 命令或 HTTP API。
 
 ## Agent 使用约束
 
@@ -472,7 +373,8 @@ Agent 调用 CLI 时建议遵守：
 
 - 查询优先使用 `--json`
 - 写操作必须提供 `--idempotency-key`
-- 联系人不明确时停止执行并请求用户确认
+- Agent 自行解析自然语言，并把结果转换为结构化字段
+- 联系人不明确时，先调用 `contact search`，再请求用户选择联系人 ID
 - 缺少必要联系方式时不得假设
 - 批量修改必须显式使用批量命令，MVP 暂不提供
 - 邮件发送不在 MVP CLI 范围内
@@ -480,7 +382,10 @@ Agent 调用 CLI 时建议遵守：
 推荐 Agent 创建提醒：
 
 ```bash
-ai-todo add "明天上午十点提醒我给客户王总发报价确认邮件" \
+ai-todo reminder create \
+  --title "给客户王总发报价确认邮件" \
+  --due "2026-05-20T10:00:00+08:00" \
+  --contact contact_123 \
   --json \
   --idempotency-key "uuid"
 ```
@@ -494,7 +399,6 @@ ai-todo add "明天上午十点提醒我给客户王总发报价确认邮件" \
 | `VALIDATION_ERROR` | 参数错误 |
 | `NOT_FOUND` | 资源不存在 |
 | `CONTACT_NOT_FOUND` | 联系人不存在 |
-| `CONTACT_AMBIGUOUS` | 联系人匹配不唯一 |
 | `CONTACT_METHOD_REQUIRED` | 缺少所需联系方式 |
 | `CONFIRMATION_REQUIRED` | 需要用户确认 |
 | `IDEMPOTENCY_CONFLICT` | 幂等键冲突 |
@@ -518,8 +422,6 @@ ai-todo calendar add
 ai-todo contact add
 ai-todo contact search
 ai-todo contact show
-ai-todo contact resolve
-ai-todo parse
 ```
 
 暂缓：
@@ -530,3 +432,4 @@ ai-todo parse
 - 自动排期
 - 撤销复杂操作
 - 第三方日历同步
+- 自然语言解析命令不在路线图
