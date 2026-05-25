@@ -1,4 +1,5 @@
-import { createCalendarEvent, type ContactSummary } from "../../lib/api";
+import { createCalendarEvent } from "../../lib/api";
+import type { ContactSummary } from "../../lib/api";
 import { combineDateTime, nowIsoTime, todayIsoDate } from "../../lib/format";
 
 Page({
@@ -57,8 +58,8 @@ Page({
     wx.navigateTo({
       url: "/pages/contact-picker/contact-picker",
       events: {
-        selectContact: (contact: ContactSummary) => {
-          this.setData({ selectedContact: contact });
+        selectContact: (data: unknown) => {
+          this.setData({ selectedContact: data as ContactSummary });
         }
       }
     });

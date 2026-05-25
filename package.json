@@ -13,6 +13,7 @@
     "typecheck:wechat": "tsc -p apps/miniapp/tsconfig.json --noEmit",
     "build:wechat": "node scripts/build-wechat-miniprogram.mjs",
     "build:wechat:check": "node scripts/build-wechat-miniprogram.mjs --check",
+    "clean:wechat": "node scripts/clean-wechat-miniprogram.mjs",
     "check:wechat": "pnpm typecheck:wechat && pnpm build:wechat:check && node scripts/check-wechat-miniprogram.mjs"
   },
   "devDependencies": {

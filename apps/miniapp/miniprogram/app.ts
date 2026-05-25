@@ -4,8 +4,8 @@ import { getDefaultApiUrl } from "./lib/config";
 App({
   globalData: {},
   onLaunch() {
-    const apiUrl = wx.getStorageSync<string>("apiUrl");
-    if (!apiUrl) {
+    const apiUrl = wx.getStorageSync("apiUrl");
+    if (typeof apiUrl !== "string" || !apiUrl) {
       wx.setStorageSync("apiUrl", getDefaultApiUrl());
     }
     ensureAuth().catch(() => undefined);

@@ -22,10 +22,15 @@ export function getDefaultApiUrl(): string {
   return PRODUCTION_API_URL;
 }
 
+function readStorageString(key: string): string {
+  const value = wx.getStorageSync(key);
+  return typeof value === "string" ? value : "";
+}
+
 export function getConfig(): AppConfig {
   return {
-    apiUrl: wx.getStorageSync<string>(STORAGE_API_URL) || getDefaultApiUrl(),
-    token: wx.getStorageSync<string>(STORAGE_TOKEN) || ""
+    apiUrl: readStorageString(STORAGE_API_URL) || getDefaultApiUrl(),
+    token: readStorageString(STORAGE_TOKEN)
   };
 }
 

@@ -1,4 +1,5 @@
-import { completeReminder, fetchMe, fetchRemindersToday, type ReminderSummary } from "../../lib/api";
+import { completeReminder, fetchMe, fetchRemindersToday } from "../../lib/api";
+import type { ReminderSummary } from "../../lib/api";
 import {
   buildReminderSubline,
   formatDateTime,

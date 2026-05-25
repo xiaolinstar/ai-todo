@@ -142,14 +142,25 @@ apps/miniapp/
 仓库根目录：
 
 ```bash
-pnpm build:wechat:check  # CI 同款：仅校验 ts/scss 可编译，不写 .js/.wxss
-pnpm check:wechat        # typecheck + 编译检查 + 四文件结构
-pnpm typecheck:wechat    # 仅 tsc
+pnpm clean:wechat       # 删除 miniprogram 下本地 .js/.wxss（DevTools 编译前建议执行）
+pnpm build:wechat:check   # CI 同款：仅校验 ts/scss 可编译，不写 .js/.wxss
+pnpm check:wechat         # typecheck + 编译检查 + 四文件结构 + tabBar 图标
+pnpm typecheck:wechat     # 仅 tsc
 ```
 
 修改 `miniprogram/**` 下的 `.ts` 或 `.scss` 后，运行 `pnpm check:wechat`，再在微信开发者工具中编译/预览（DevTools 负责 ts→js、scss→wxss）。
 
 **不要**手改或提交 `miniprogram/**/*.js` / `**/*.wxss`。
+
+### `pnpm check:wechat` 覆盖范围
+
+| 步骤 | 内容 |
+|------|------|
+| `typecheck:wechat` | TypeScript 严格类型检查（`tsc --noEmit`） |
+| `build:wechat:check` | 与 DevTools 相近的 ts→js、scss→wxss 编译验证（**不落盘**） |
+| `check-wechat-miniprogram.mjs` | 四件套完整性、JSON 合法性、tabBar 图标路径、禁止本地/跟踪的 `.js`/`.wxss` |
+
+**不包含**：Prettier / ESLint、WXML 格式统一、微信开发者工具专有 UI 校验。若 DevTools 仍有警告，请在工具内查看具体项；本地开发可在 `project.private.config.json` 中设置 `urlCheck: false`（见 `project.private.config.example.json`）。
 
 ## 文档语言
 

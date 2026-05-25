@@ -11,6 +11,7 @@ const miniprogramRoot = resolve(miniappRoot, "miniprogram");
 const appJsonPath = resolve(miniprogramRoot, "app.json");
 
 const PAGE_SOURCE_EXTS = [".ts", ".wxml", ".scss", ".json"];
+const GENERATED_EXTS = [".js", ".wxss"];
 
 function readJson(path) {
   return JSON.parse(readFileSync(path, "utf8"));
@@ -41,6 +42,21 @@ function assertSourceBundle(basePath, label, extensions) {
   }
 }
 
+function assertNoLocalGeneratedFiles() {
+  const generated = [];
+  for (const file of walk(miniprogramRoot)) {
+    const ext = extname(file);
+    if (!GENERATED_EXTS.includes(ext)) continue;
+    generated.push(relative(root, file));
+  }
+  if (generated.length <= 0) return;
+
+  fail(
+    "Local generated miniapp .js/.wxss must be removed before DevTools compile (run pnpm clean:wechat):\n" +
+      generated.join("\n")
+  );
+}
+
 function assertNoTrackedGeneratedFiles() {
   try {
     const tracked = execSync(
@@ -58,6 +74,23 @@ function assertNoTrackedGeneratedFiles() {
   }
 }
 
+function assertTabBarIcons(appJson) {
+  const list = appJson.tabBar?.list ?? [];
+  for (const item of list) {
+    const label = item.pagePath || item.text || "tabBar item";
+    if (!item.iconPath || !item.selectedIconPath) {
+      fail(`tabBar list item "${label}" is missing iconPath/selectedIconPath`);
+      continue;
+    }
+    for (const iconPath of [item.iconPath, item.selectedIconPath]) {
+      const fullPath = resolve(miniprogramRoot, iconPath);
+      if (!existsSync(fullPath)) {
+        fail(`tabBar icon not found: ${relative(root, fullPath)}`);
+      }
+    }
+  }
+}
+
 assertSourceBundle(resolve(miniprogramRoot, "app"), "app", [".ts", ".scss"]);
 if (!existsSync(appJsonPath)) {
   fail(`missing ${relative(root, appJsonPath)}`);
@@ -65,6 +98,7 @@ if (!existsSync(appJsonPath)) {
 
 if (!process.exitCode) {
   const appJson = readJson(appJsonPath);
+  assertTabBarIcons(appJson);
   for (const page of appJson.pages ?? []) {
     assertSourceBundle(resolve(miniprogramRoot, page), `app.json page ${page}`, PAGE_SOURCE_EXTS);
   }
@@ -92,9 +126,8 @@ for (const file of walk(miniprogramRoot)) {
     fileName: file,
     reportDiagnostics: true,
     compilerOptions: {
-      target: ts.ScriptTarget.ES2020,
-      module: ts.ModuleKind.ESNext,
-      moduleResolution: ts.ModuleResolutionKind.Bundler,
+      target: ts.ScriptTarget.ES2015,
+      module: ts.ModuleKind.CommonJS,
       strict: true
     }
   });
@@ -110,6 +143,7 @@ for (const file of walk(miniprogramRoot)) {
   }
 }
 
+assertNoLocalGeneratedFiles();
 assertNoTrackedGeneratedFiles();
 
 if (!process.exitCode) {

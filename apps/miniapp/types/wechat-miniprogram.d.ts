@@ -1,6 +1,6 @@
 declare const wx: {
-  getStorageSync<T = unknown>(key: string): T;
-  setStorageSync<T = unknown>(key: string, value: T): void;
+  getStorageSync(key: string): unknown;
+  setStorageSync(key: string, value: unknown): void;
   removeStorageSync(key: string): void;
   login(options: {
     success?: (res: { code?: string }) => void;
@@ -16,7 +16,7 @@ declare const wx: {
   }): void;
   navigateTo(options: {
     url: string;
-    events?: Record<string, (data: any) => void>;
+    events?: Record<string, (data: unknown) => void>;
     success?: () => void;
   }): void;
   navigateBack(options?: { delta?: number }): void;
@@ -55,4 +55,8 @@ declare function App(options: any): void;
 declare function Page(options: any): void;
 declare function Component(options: any): void;
 declare function getApp(): { globalData: Record<string, unknown> };
-declare function getCurrentPages(): Array<{ getTabBar?: () => { setData: (data: Record<string, unknown>) => void } | null }>;
+declare function getCurrentPages(): Array<{
+  route?: string;
+  getTabBar?: () => { setData: (data: Record<string, unknown>) => void } | null;
+  showAdd?: () => void;
+}>;

@@ -1,4 +1,5 @@
-import { createContact, searchContacts, type ContactSummary } from "../../lib/api";
+import { createContact, searchContacts } from "../../lib/api";
+import type { ContactSummary } from "../../lib/api";
 import { avatarColor, getInitial } from "../../lib/format";
 import { updateTabBarSelected } from "../../lib/tab-bar";
 

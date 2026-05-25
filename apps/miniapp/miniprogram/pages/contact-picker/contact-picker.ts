@@ -1,4 +1,5 @@
-import { searchContacts, type ContactSummary } from "../../lib/api";
+import { searchContacts } from "../../lib/api";
+import type { ContactSummary } from "../../lib/api";
 import { avatarColor, getInitial } from "../../lib/format";
 
 interface ContactView extends ContactSummary {
@@ -65,10 +66,9 @@ Page({
 
   onSelect(e: { currentTarget: { dataset: { item: ContactSummary } } }) {
     const item = e.currentTarget.dataset.item;
-    const page = this as unknown as {
-      getOpenerEventChannel(): { emit: (name: string, data: unknown) => void };
-    };
-    page.getOpenerEventChannel().emit("selectContact", item);
+    const channel = (this as { getOpenerEventChannel(): { emit: (name: string, data: unknown) => void } })
+      .getOpenerEventChannel();
+    channel.emit("selectContact", item);
     wx.navigateBack();
   }
 });

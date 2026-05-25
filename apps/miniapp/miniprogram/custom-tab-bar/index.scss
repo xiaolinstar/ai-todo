@@ -5,9 +5,8 @@
   left: 0;
   z-index: 99;
   padding-bottom: env(safe-area-inset-bottom);
-  background: rgba(249, 249, 249, 0.94);
+  background: #f9f9f9;
   border-top: 1rpx solid rgba(60, 60, 67, 0.12);
-  backdrop-filter: blur(16px);
 }
 
 .tab-bar-inner {
@@ -24,7 +23,6 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 6rpx;
   min-width: 0;
   min-height: 96rpx;
   padding: 8rpx 0;
@@ -41,6 +39,7 @@
 }
 
 .tab-text {
+  margin-top: 6rpx;
   color: #8e8e93;
   font-size: 20rpx;
   line-height: 1.2;
@@ -175,7 +174,6 @@
   flex-direction: column;
   align-items: center;
   justify-content: flex-end;
-  gap: 4rpx;
   min-width: 0;
   padding-bottom: 4rpx;
 }
@@ -206,6 +204,7 @@
 }
 
 .tab-create-label {
+  margin-top: 4rpx;
   color: #8e8e93;
   font-size: 20rpx;
 }

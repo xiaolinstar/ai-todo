@@ -17,6 +17,7 @@
 pnpm dev:api
 # 微信开发者工具 → 导入 apps/miniapp → 确认已启用 TS/Sass 编译插件
 # 详情 → 勾选「不校验合法域名」
+pnpm clean:wechat  # 删除本地 .js/.wxss 后再打开 DevTools
 pnpm check:wechat   # 提交前
 ```
 
@@ -57,6 +58,7 @@ pnpm check:wechat
 
 | 现象 | 处理 |
 |------|------|
+| DevTools 语法/重复文件警告 | 运行 `pnpm clean:wechat` 删除旧 `.js`/`.wxss`，再让 DevTools 从 `.ts`/`.scss` 重新编译 |
 | `未找到 pages/.../xxx.js` | 确认 `project.config.json` 已启用 `useCompilerPlugins: ["typescript","sass"]`；DevTools 重新编译 |
 | 改了 .ts 没生效 | DevTools「编译」→「清缓存」→ 重新编译 |
 | 无法连接 API（本地） | 勾选「不校验合法域名」；API 用 `127.0.0.1:3100` |

@@ -25,7 +25,6 @@
     "condition": false,
     "swc": false,
     "disableSWC": true,
-    "urlCheck": false,
     "babelSetting": {
       "ignore": [],
       "disablePlugins": [],
