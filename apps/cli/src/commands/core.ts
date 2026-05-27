@@ -1,10 +1,14 @@
 import type { CliContext } from "../context";
 import { handleApi, persistApiUrl, readFlagValue } from "../context";
 import { printAuthHint, resolveTokenSource } from "../auth";
-import { clearToken, configPath, saveConfig } from "../config";
+import { clearToken, resolveApiUrl, saveSettings, settingsPath } from "../settings";
+
+function readLoginUrl(argv: string[]): string | undefined {
+  return readFlagValue(argv, "--url") ?? readFlagValue(argv, "--api-url");
+}
 
 export async function runLogin(ctx: CliContext, argv: string[]): Promise<void> {
-  const apiUrl = readFlagValue(argv, "--api-url") ?? ctx.apiUrl;
+  const apiUrl = readLoginUrl(argv) ?? ctx.apiUrl;
   persistApiUrl(apiUrl);
 
   const token = readFlagValue(argv, "--token");
@@ -17,7 +21,7 @@ export async function runLogin(ctx: CliContext, argv: string[]): Promise<void> {
   }
 
   if (token) {
-    saveConfig({ token, apiUrl });
+    saveSettings({ token, url: apiUrl });
   }
 
   const resolved = resolveTokenSource();
@@ -28,7 +32,7 @@ export async function runLogin(ctx: CliContext, argv: string[]): Promise<void> {
         {
           ok: true,
           apiUrl,
-          configPath: configPath(),
+          settingsPath: settingsPath(),
           tokenSource: resolved.source,
           hasToken: resolved.source !== "none"
         },
@@ -41,14 +45,15 @@ export async function runLogin(ctx: CliContext, argv: string[]): Promise<void> {
 
   console.log(`已保存 API 地址：${apiUrl}`);
   if (token) {
-    console.log("已保存 API Token 到本地配置文件");
-    console.log("提示：Agent 环境更推荐 export AI_TODO_TOKEN=…（优先级高于配置文件）");
+    console.log(`已写入 ${settingsPath()}`);
+    console.log("后续直接运行 ai-todo whoami / ai-todo today 等命令即可，无需再传 --url。");
+    console.log("Agent 环境仍可用 export AI_TODO_TOKEN=… 覆盖配置文件。");
   } else if (resolved.source === "env") {
     console.log("检测到 AI_TODO_TOKEN 环境变量（已生效）");
   } else {
     printAuthHint("missing");
   }
-  console.log(`配置文件：${configPath()}`);
+  console.log(`配置文件：${settingsPath()}`);
 }
 
 async function issuePersonalAccessToken(
@@ -65,7 +70,7 @@ async function issuePersonalAccessToken(
             error: {
               code: "PAT_CREATE_NOT_SUPPORTED",
               message:
-                "Create a Personal Access Token in the WeChat miniapp Mine tab, then run ai-todo login --token …"
+                "Create a Personal Access Token in the WeChat miniapp Mine tab, then run ai-todo login --url … --token …"
             }
           },
           null,
@@ -75,7 +80,7 @@ async function issuePersonalAccessToken(
     } else {
       console.error("生产/远程 API 不支持 CLI 直接签发 PAT。");
       console.error("请在微信小程序「我的 → CLI / Agent 访问令牌」中创建，然后：");
-      console.error("  ai-todo login --token aitodo_xxx --api-url", apiUrl);
+      console.error(`  ai-todo login --url ${apiUrl} --token aitodo_xxx`);
     }
     process.exitCode = 1;
     return;
@@ -96,7 +101,7 @@ async function issuePersonalAccessToken(
   }
 
   const { token, id, scopes } = response.data;
-  saveConfig({ token, apiUrl });
+  saveSettings({ token, url: apiUrl });
 
   if (ctx.json) {
     console.log(
@@ -107,7 +112,7 @@ async function issuePersonalAccessToken(
           tokenId: id,
           token,
           scopes,
-          savedTo: configPath(),
+          savedTo: settingsPath(),
           envHint: `export AI_TODO_TOKEN=${token}`
         },
         null,
@@ -124,7 +129,7 @@ async function issuePersonalAccessToken(
   console.log("推荐写入 Agent 环境变量：");
   console.log(`  export AI_TODO_TOKEN=${token}`);
   console.log("");
-  console.log(`已同时保存到 ${configPath()}（可被环境变量覆盖）`);
+  console.log(`已同时保存到 ${settingsPath()}（可被环境变量覆盖）`);
 }
 
 export async function runLogout(ctx: CliContext): Promise<void> {
@@ -136,12 +141,12 @@ export async function runLogout(ctx: CliContext): Promise<void> {
       JSON.stringify(
         {
           ok: true,
-          clearedConfig: true,
+          clearedSettings: true,
           tokenSource: resolved.source,
           note:
             resolved.source === "env"
               ? "AI_TODO_TOKEN 环境变量仍生效；unset AI_TODO_TOKEN 可完全退出"
-              : "本地 Token 已清除"
+              : "settings.json 中的 token 已清除"
         },
         null,
         2
@@ -150,7 +155,7 @@ export async function runLogout(ctx: CliContext): Promise<void> {
     return;
   }
 
-  console.log("已清除 ~/.ai-todo/config.json 中的 Token");
+  console.log(`已清除 ${settingsPath()} 中的 token`);
   if (resolved.source === "env") {
     console.log("注意：AI_TODO_TOKEN 环境变量仍然生效");
     console.log("运行 unset AI_TODO_TOKEN 可完全退出授权");
@@ -184,8 +189,11 @@ export async function runWhoami(ctx: CliContext): Promise<void> {
   await handleApi(ctx, await ctx.client.me(), (data) => {
     if (!ctx.json) {
       const sourceLabel =
-        resolved.source === "env" ? "环境变量 AI_TODO_TOKEN" : "本地配置文件";
+        resolved.source === "env"
+          ? "环境变量 AI_TODO_TOKEN"
+          : `配置文件 ${settingsPath()}`;
       console.log(`${data.user.displayName} (${data.user.id})`);
+      console.log(`API：${resolveApiUrl()}`);
       console.log(`时区：${data.user.timezone}`);
       console.log(`授权来源：${sourceLabel}`);
     }

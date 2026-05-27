@@ -138,3 +138,29 @@ def test_cli_calendar_show_update_delete(cli_runner: CliRunner, demo_suffix: str
 
     missing = cli_runner.run("calendar", "show", event_id, json_output=True)
     assert missing.returncode != 0 or missing.json()["ok"] is False
+
+
+def test_cli_ignores_trailing_api_url_flag_on_delete(cli_runner: CliRunner, demo_suffix: str) -> None:
+    """Legacy scripts may pass --api-url after positional args; must not corrupt IDs."""
+    create = cli_runner.run(
+        "reminder",
+        "create",
+        "--title",
+        f"flag-test-{demo_suffix}",
+        "--due",
+        "2026-05-28T10:00:00+08:00",
+        json_output=True,
+    )
+    assert create.returncode == 0
+    reminder_id = create.json()["data"]["reminder"]["id"]
+
+    delete = cli_runner.run(
+        "reminder",
+        "delete",
+        reminder_id,
+        "--api-url",
+        cli_runner.api_url,
+        json_output=True,
+    )
+    assert delete.returncode == 0, delete.stderr
+    assert delete.json()["ok"] is True

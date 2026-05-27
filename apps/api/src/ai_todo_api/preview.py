@@ -63,15 +63,15 @@ def preview_page() -> str:
 
       <section>
         <h2>Personal Access Token</h2>
-        <p>Agent / CLI 使用 PAT（类似 API Key）：</p>
-        <p><code>export AI_TODO_TOKEN=aitodo_xxx</code></p>
+        <p>Agent / CLI 使用 PAT，写入 <code>~/.ai-todo/settings.json</code>：</p>
+        <p><code>ai-todo login --url http://127.0.0.1:3100 --token aitodo_xxx</code></p>
         <p>本地开发一次性签发：<code>ai-todo login --issue-pat</code></p>
       </section>
 
       <section>
         <h2>CLI 验证</h2>
-        <p><code>node apps/cli/dist/index.js whoami --api-url http://127.0.0.1:3100</code></p>
-        <p><code>node apps/cli/dist/index.js today --api-url http://127.0.0.1:3100</code></p>
+        <p><code>ai-todo whoami</code></p>
+        <p><code>ai-todo today --json</code></p>
       </section>
     </main>
   </body>

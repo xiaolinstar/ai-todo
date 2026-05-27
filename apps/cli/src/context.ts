@@ -2,7 +2,7 @@ import { AiTodoClient } from "@ai-todo/api-client";
 import type { ApiResponse } from "@ai-todo/shared";
 
 import { printAuthHint, resolveTokenSource } from "./auth";
-import { loadConfig, saveConfig } from "./config";
+import { loadSettings, resolveApiUrl, saveSettings } from "./settings";
 
 export interface CliContext {
   json: boolean;
@@ -10,20 +10,29 @@ export interface CliContext {
   client: AiTodoClient;
 }
 
-const GLOBAL_FLAGS = new Set([
-  "--json",
-  "--api-url",
-  "--yes",
-  "--idempotency-key",
-  "--profile"
-]);
+const GLOBAL_FLAGS = new Set(["--json", "--yes", "--api-url", "--url", "--idempotency-key", "--profile"]);
+const GLOBAL_FLAGS_WITH_VALUE = new Set(["--api-url", "--url", "--idempotency-key", "--profile"]);
+
+/** Strip global flags before resolving positional args (e.g. trailing --api-url). */
+export function commandArgv(argv: string[]): string[] {
+  const result: string[] = [];
+  for (let index = 0; index < argv.length; index += 1) {
+    const arg = argv[index];
+    if (GLOBAL_FLAGS.has(arg)) {
+      if (GLOBAL_FLAGS_WITH_VALUE.has(arg)) {
+        index += 1;
+      }
+      continue;
+    }
+    result.push(arg);
+  }
+  return result;
+}
 
 export function buildContext(argv: string[]): CliContext {
   const json = argv.includes("--json");
-  const apiUrlFlag = readFlagValue(argv, "--api-url");
-  const fileConfig = loadConfig();
-  const apiUrl =
-    apiUrlFlag ?? process.env.AI_TODO_API_URL ?? fileConfig.apiUrl ?? "http://127.0.0.1:3100";
+  const settings = loadSettings();
+  const apiUrl = resolveApiUrl(settings);
   const { token } = resolveTokenSource();
 
   return {
@@ -39,7 +48,6 @@ export function buildContext(argv: string[]): CliContext {
 }
 
 declare const process: {
-  env: Record<string, string | undefined>;
   exitCode?: number;
 };
 
@@ -63,9 +71,10 @@ export function hasFlag(argv: string[], flag: string): boolean {
 }
 
 export function positionalAfter(argv: string[], ...anchors: string[]): string | undefined {
+  const args = commandArgv(argv);
   let start = -1;
   for (const anchor of anchors) {
-    const index = argv.indexOf(anchor);
+    const index = args.indexOf(anchor);
     if (index > start) {
       start = index;
     }
@@ -75,10 +84,9 @@ export function positionalAfter(argv: string[], ...anchors: string[]): string | 
   }
 
   const values: string[] = [];
-  for (let index = start + 1; index < argv.length; index += 1) {
-    const arg = argv[index];
+  for (let index = start + 1; index < args.length; index += 1) {
+    const arg = args[index];
     if (
-      GLOBAL_FLAGS.has(arg) ||
       arg === "--email" ||
       arg === "--phone" ||
       arg === "--alias" ||
@@ -86,13 +94,10 @@ export function positionalAfter(argv: string[], ...anchors: string[]): string | 
       arg === "--contact" ||
       arg === "--name"
     ) {
-      if (!GLOBAL_FLAGS.has(arg)) {
-        index += 1;
-      }
+      index += 1;
       continue;
     }
     if (
-      arg.startsWith("--") &&
       [
         "--title",
         "--due",
@@ -145,5 +150,5 @@ export async function handleApi<T>(
 }
 
 export function persistApiUrl(apiUrl: string): void {
-  saveConfig({ apiUrl });
+  saveSettings({ url: apiUrl });
 }

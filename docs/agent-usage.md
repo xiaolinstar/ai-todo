@@ -15,36 +15,47 @@ pnpm dev:api
 
 ## 认证（Personal Access Token）
 
-Agent 场景推荐 **PAT + 环境变量**，与 `OPENAI_API_KEY` 相同模式。
+与 OpenAI / Anthropic 等工具相同：**连接信息放在本地配置文件**，命令只关注业务。
 
-**获取 PAT（生产环境）**：微信小程序 → **我的 → CLI / Agent 访问令牌 → 创建新令牌**，复制后在本机配置：
+**配置文件**：`~/.ai-todo/settings.json`（示例见 `apps/cli/settings.example.json`）
+
+```json
+{
+  "url": "https://wodi.games",
+  "token": "aitodo_xxx"
+}
+```
+
+**首次配置（生产）**：微信小程序 → **我的 → CLI / Agent 访问令牌 → 创建**，然后：
 
 ```bash
-export AI_TODO_TOKEN=aitodo_xxx
-export AI_TODO_API_URL=https://wodi.games   # 可选
-ai-todo login --token aitodo_xxx --api-url https://wodi.games
+ai-todo login --url https://wodi.games --token aitodo_xxx
 ai-todo whoami --json
 ```
 
-**优先级**：`AI_TODO_TOKEN` 环境变量 > `~/.ai-todo/config.json` > 本地 dev 旁路（`AI_TODO_ALLOW_DEV_AUTH=true`，仅 127.0.0.1）
+**优先级**：`AI_TODO_TOKEN` / `AI_TODO_API_URL` 环境变量 > `~/.ai-todo/settings.json` > 默认 `http://127.0.0.1:3100`
 
 ```bash
-# 方式 1：环境变量（推荐，适合 Agent / CI）
+# Agent / CI 仍可用环境变量覆盖（推荐）
 export AI_TODO_TOKEN=aitodo_xxx
+export AI_TODO_API_URL=https://wodi.games
 
-# 方式 2：本地配置文件
-ai-todo login --token aitodo_xxx --api-url https://wodi.games
-
-# 方式 3：本地开发一次性签发（仅 127.0.0.1 API）
+# 本地开发一次性签发（仅 127.0.0.1 API）
 ai-todo login --issue-pat --name "My Agent"
 
-# 退出（仅清除配置文件中的 Token；环境变量需 unset AI_TODO_TOKEN）
+# 退出（清除 settings.json 中的 token；环境变量需 unset AI_TODO_TOKEN）
 ai-todo logout
 ```
 
-> 微信登录下发的是**会话 Token**（仅供小程序），不能用于 CLI。CLI 必须使用上述 PAT。
+> 微信登录下发的是**会话 Token**（仅供小程序），不能用于 CLI。CLI 必须使用 PAT。
 
-未配置 Token 且 dev 旁路关闭时，CLI 会提示上述配置方式；401 响应同样会附带提示。
+配置完成后，日常命令**无需**再传 `--url`：
+
+```bash
+ai-todo today --json
+ai-todo reminder list --json
+ai-todo contact list --json
+```
 
 全局建议：
 

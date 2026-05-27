@@ -31,18 +31,10 @@ ai-todo <command> [options]
 | 参数 | 说明 |
 | --- | --- |
 | `--json` | 输出 JSON |
-| `--api-url <url>` | 指定 API 地址 |
-| `--profile <name>` | 使用指定本地配置 |
-| `--timezone <tz>` | 指定时区 |
-| `--yes` | 跳过非高风险确认 |
 | `--idempotency-key <key>` | 指定幂等键 |
 
-本地配置建议保存：
-
-- API URL
-- API Token
-- 默认时区
-- 默认输出格式
+连接与认证写入 `~/.ai-todo/settings.json`（`url` + `token`），见 `apps/cli/settings.example.json`。  
+`ai-todo login --url … --token …` 负责首次配置；业务命令不再携带 `--api-url`。
 
 ## 登录与授权
 

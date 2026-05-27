@@ -1,19 +1,24 @@
+import { settingsPath } from "./settings";
+
 export function printHelp(): void {
   console.log(`ai-todo — structured CLI for reminders, calendar, and contacts
 
-Global flags:
-  --json                 Output API JSON (recommended for agents)
-  --api-url <url>        API base URL (default: AI_TODO_API_URL or ~/.ai-todo/config.json)
+Configuration (~/.ai-todo/settings.json):
+  One-time setup (like API keys for other AI tools):
+    ai-todo login --url https://wodi.games --token aitodo_xxx
+  Local dev:
+    ai-todo login --issue-pat
+  Example file: apps/cli/settings.example.json
 
-Auth (Personal Access Token, like OPENAI_API_KEY):
-  # Create a PAT in the WeChat miniapp Mine tab first, then:
-  export AI_TODO_TOKEN=aitodo_xxx              # recommended for agents
-  ai-todo login --token aitodo_xxx             # or save to ~/.ai-todo/config.json
-  ai-todo login --issue-pat [--name "My Agent"] # local dev only (127.0.0.1)
+  Priority: AI_TODO_TOKEN / AI_TODO_API_URL env > settings.json > http://127.0.0.1:3100
+
+Auth:
+  ai-todo login [--url <url>] [--token aitodo_xxx] [--issue-pat]
   ai-todo whoami
-  ai-todo logout                               # clears config file token only
+  ai-todo logout
 
-Global:
+Global flags (commands only):
+  --json                 Output API JSON (recommended for agents)
   --idempotency-key <uuid>   Recommended for agent write retries
 
 Today:
@@ -43,6 +48,8 @@ Contacts:
   ai-todo contact search <query>
   ai-todo contact show <contact_id_or_handle>
   ai-todo contact update <contact_id_or_handle> [--handle <handle>] [--name <text>] [--email <v>] [--phone <v>]
+
+Settings file: ${settingsPath()}
 
 Agents: see docs/agent-usage.md and skills/ai-todo/SKILL.md`);
 }
