@@ -288,6 +288,7 @@ JSON 输出：
 
 ```bash
 ai-todo contact add "王总" \
+  --handle wangzong \
   --company "示例科技" \
   --title "采购负责人" \
   --email wang@example.com \
@@ -303,6 +304,7 @@ JSON 输出：
   "operation": "create_contact",
   "contact": {
     "id": "contact_123",
+    "handle": "wangzong",
     "display_name": "王总",
     "company": "示例科技",
     "methods": [
@@ -351,10 +353,16 @@ JSON 输出：
 ai-todo contact show contact_123
 ```
 
+也可以使用当前用户通讯录内唯一的 `handle`：
+
+```bash
+ai-todo contact show wangzong
+```
+
 ### contact update
 
 ```bash
-ai-todo contact update contact_123 --company "新公司"
+ai-todo contact update wangzong --company "新公司"
 ```
 
 ### contact method add
@@ -374,7 +382,7 @@ Agent 调用 CLI 时建议遵守：
 - 查询优先使用 `--json`
 - 写操作必须提供 `--idempotency-key`
 - Agent 自行解析自然语言，并把结果转换为结构化字段
-- 联系人不明确时，先调用 `contact search`，再请求用户选择联系人 ID
+- 联系人不明确时，先调用 `contact search`，再请求用户选择联系人 ID 或 handle
 - 缺少必要联系方式时不得假设
 - 批量修改必须显式使用批量命令，MVP 暂不提供
 - 邮件发送不在 MVP CLI 范围内

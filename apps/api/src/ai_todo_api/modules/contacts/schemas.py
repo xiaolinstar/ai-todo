@@ -15,6 +15,7 @@ class ContactMethodInput(CamelModel):
 
 class CreateContactInput(CamelModel):
     display_name: str
+    handle: str | None = None
     nickname: str | None = None
     company: str | None = None
     title: str | None = None
@@ -33,6 +34,7 @@ class ContactMethodSummary(CamelModel):
 
 class ContactSummary(CamelModel):
     id: str
+    handle: str
     display_name: str
     nickname: str | None = None
     company: str | None = None
@@ -42,6 +44,8 @@ class ContactSummary(CamelModel):
 
 
 class ContactDetail(ContactSummary):
+    linked_user_id: str | None = None
+    handle_source: str
     notes: str | None = None
     methods: list[ContactMethodSummary] = []
     aliases: list[str] = []
@@ -61,6 +65,7 @@ class ContactDetailResult(CamelModel):
 
 class UpdateContactInput(CamelModel):
     display_name: str | None = None
+    handle: str | None = None
     nickname: str | None = None
     company: str | None = None
     title: str | None = None

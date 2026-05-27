@@ -8,6 +8,7 @@ export type ContactMethodType = "email" | "phone" | "wechat" | "other";
 
 export interface ContactSummary {
   id: EntityId;
+  handle: string;
   displayName: string;
   nickname?: string;
   company?: string;
@@ -32,6 +33,8 @@ export interface ContactMethodSummary {
 }
 
 export interface ContactDetail extends ContactSummary {
+  linkedUserId?: EntityId;
+  handleSource: "generated" | "manual" | string;
   notes?: string;
   methods: ContactMethodSummary[];
   aliases: string[];
@@ -39,6 +42,7 @@ export interface ContactDetail extends ContactSummary {
 
 export interface CreateContactInput {
   displayName: string;
+  handle?: string;
   nickname?: string;
   company?: string;
   title?: string;
@@ -61,6 +65,7 @@ export interface ContactDetailResult {
 
 export interface UpdateContactInput {
   displayName?: string;
+  handle?: string;
   nickname?: string;
   company?: string;
   title?: string;
@@ -157,6 +162,7 @@ export interface ListRemindersParams {
 
 export interface UserSummary {
   id: EntityId;
+  username?: string;
   displayName: string;
   timezone: string;
 }

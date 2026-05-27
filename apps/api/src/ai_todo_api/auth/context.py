@@ -7,6 +7,7 @@ DEFAULT_SCOPES = ("read", "write", "contact:read", "contact:write")
 @dataclass(frozen=True)
 class AuthContext:
     user_id: str
+    username: str | None
     display_name: str
     timezone: str
     api_token_id: str | None
@@ -17,9 +18,15 @@ class AuthContext:
 @dataclass(frozen=True)
 class CurrentUser:
     id: str
+    username: str | None
     display_name: str
     timezone: str
 
     @classmethod
     def from_auth(cls, auth: AuthContext) -> "CurrentUser":
-        return cls(id=auth.user_id, display_name=auth.display_name, timezone=auth.timezone)
+        return cls(
+            id=auth.user_id,
+            username=auth.username,
+            display_name=auth.display_name,
+            timezone=auth.timezone,
+        )

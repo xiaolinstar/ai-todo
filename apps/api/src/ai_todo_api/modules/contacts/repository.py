@@ -2,6 +2,7 @@ from sqlalchemy import or_, select
 from sqlalchemy.orm import Session, selectinload
 
 from ai_todo_api.db.models import ContactAliasModel, ContactMethodModel, ContactModel
+from ai_todo_api.modules.contacts.handles import normalize_handle
 from ai_todo_api.modules.contacts.schemas import (
     ContactDetail,
     ContactMethodSummary,
@@ -25,11 +26,14 @@ class ContactRepository:
         self._session.refresh(contact)
         return self.get(contact.id) or contact
 
-    def get(self, contact_id: str) -> ContactModel | None:
+    def get(self, contact_ref: str) -> ContactModel | None:
         statement = (
             select(ContactModel)
             .where(
-                ContactModel.id == contact_id,
+                or_(
+                    ContactModel.id == contact_ref,
+                    ContactModel.handle == normalize_handle(contact_ref),
+                ),
                 ContactModel.user_id == self._user_id,
             )
             .options(
@@ -38,6 +42,28 @@ class ContactRepository:
             )
         )
         return self._session.scalar(statement)
+
+    def handle_exists(self, handle: str, exclude_contact_id: str | None = None) -> bool:
+        statement = select(ContactModel.id).where(
+            ContactModel.user_id == self._user_id,
+            ContactModel.handle == handle,
+        )
+        if exclude_contact_id:
+            statement = statement.where(ContactModel.id != exclude_contact_id)
+        return self._session.scalar(statement) is not None
+
+    def next_available_handle(self, seed: str) -> str:
+        base = seed[:64] or "contact"
+        if not self.handle_exists(base):
+            return base
+
+        for sequence in range(1, 100):
+            suffix = f"{sequence:02d}"
+            candidate = f"{base[: 64 - len(suffix)]}{suffix}"
+            if not self.handle_exists(candidate):
+                return candidate
+
+        raise ValueError("Unable to generate a unique contact handle.")
 
     def search(self, query: str | None = None, limit: int = 20) -> list[ContactModel]:
         statement = (
@@ -56,6 +82,7 @@ class ContactRepository:
                 statement.outerjoin(ContactAliasModel)
                 .where(
                     or_(
+                        ContactModel.handle.ilike(pattern),
                         ContactModel.display_name.ilike(pattern),
                         ContactModel.nickname.ilike(pattern),
                         ContactModel.company.ilike(pattern),
@@ -74,6 +101,7 @@ def contact_to_summary(contact: ContactModel) -> ContactSummary:
 
     return ContactSummary(
         id=contact.id,
+        handle=contact.handle,
         display_name=contact.display_name,
         nickname=contact.nickname,
         company=contact.company,
@@ -87,6 +115,8 @@ def contact_to_detail(contact: ContactModel) -> ContactDetail:
     summary = contact_to_summary(contact)
     return ContactDetail(
         **summary.model_dump(),
+        linked_user_id=contact.linked_user_id,
+        handle_source=contact.handle_source,
         notes=contact.notes,
         methods=[
             ContactMethodSummary(

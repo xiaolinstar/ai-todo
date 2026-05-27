@@ -78,6 +78,7 @@ def get_auth_context(
         scopes = tuple(loads_json(token.scopes))
         auth = AuthContext(
             user_id=user.id,
+            username=user.username,
             display_name=user.display_name,
             timezone=user.timezone,
             api_token_id=token.id,
@@ -93,6 +94,7 @@ def get_auth_context(
         )
         auth = AuthContext(
             user_id=user.id,
+            username=user.username,
             display_name=user.display_name,
             timezone=user.timezone,
             api_token_id=None,

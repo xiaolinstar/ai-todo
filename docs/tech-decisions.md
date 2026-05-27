@@ -40,6 +40,14 @@ curl POST /v1/reminders   # 最直接
 
 ## 已确认
 
+### 用户名与通讯录标识
+
+- `User.username`：平台级公开用户名，全局唯一，用于共享电子名片、URL、跨用户引用和未来协作。
+- `Contact.handle`：当前用户个人通讯录内的本地唯一短标识，用于 CLI / Agent / MCP / URL 参数引用联系人。
+- `Contact` 是用户的个人信息库条目，不一定是平台注册用户。
+- 当联系人关联平台用户时，可默认使用 `User.username` 作为 `Contact.handle`，但用户可以随时修改本地 `handle`，不影响对方的 `username`。
+- 唯一性：`users.username` 全局唯一；`contacts.user_id + contacts.handle` 局部唯一。
+
 ### 微信小程序
 
 - **技术栈：微信原生**（TypeScript + Sass，对齐 party-helper，见 `docs/miniapp-conventions.md`）

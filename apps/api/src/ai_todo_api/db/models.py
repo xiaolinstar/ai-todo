@@ -12,6 +12,7 @@ class UserModel(Base):
     __tablename__ = "users"
 
     id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    username: Mapped[str | None] = mapped_column(String(64), nullable=True, unique=True, index=True)
     display_name: Mapped[str] = mapped_column(String(255), nullable=False)
     timezone: Mapped[str] = mapped_column(String(64), nullable=False)
     locale: Mapped[str | None] = mapped_column(String(32), nullable=True)
@@ -144,6 +145,9 @@ class ReminderContactModel(Base):
 
 class ContactModel(Base):
     __tablename__ = "contacts"
+    __table_args__ = (
+        UniqueConstraint("user_id", "handle", name="uq_contacts_user_handle"),
+    )
 
     id: Mapped[str] = mapped_column(String(64), primary_key=True)
     user_id: Mapped[str] = mapped_column(
@@ -152,6 +156,14 @@ class ContactModel(Base):
         nullable=False,
         index=True,
     )
+    linked_user_id: Mapped[str | None] = mapped_column(
+        String(64),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    handle: Mapped[str] = mapped_column(String(64), nullable=False)
+    handle_source: Mapped[str] = mapped_column(String(32), nullable=False, default="generated")
     display_name: Mapped[str] = mapped_column(String(255), nullable=False)
     nickname: Mapped[str | None] = mapped_column(String(255), nullable=True)
     company: Mapped[str | None] = mapped_column(String(255), nullable=True)

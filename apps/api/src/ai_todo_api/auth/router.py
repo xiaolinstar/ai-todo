@@ -28,6 +28,7 @@ def me(user: CurrentUser = Depends(get_current_user)) -> ApiResponse[MeResult]:
         data=MeResult(
             user=UserSummary(
                 id=user.id,
+                username=user.username,
                 display_name=user.display_name,
                 timezone=user.timezone,
             )

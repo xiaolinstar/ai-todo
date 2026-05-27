@@ -2,6 +2,7 @@ from uuid import uuid4
 
 from ai_todo_api.common.time import now_utc
 from ai_todo_api.db.models import ContactAliasModel, ContactMethodModel, ContactModel
+from ai_todo_api.modules.contacts.handles import build_handle_seed, normalize_handle
 from ai_todo_api.modules.contacts.repository import (
     ContactRepository,
     contact_to_detail,
@@ -31,10 +32,19 @@ class ContactService:
         if not display_name:
             raise ValueError("Contact display name is required.")
 
+        explicit_handle = _clean_optional(input_data.handle)
+        handle = (
+            _manual_handle(explicit_handle, self._repository)
+            if explicit_handle
+            else self._repository.next_available_handle(build_handle_seed(display_name))
+        )
+
         now = now_utc()
         contact = ContactModel(
             id=f"contact_{uuid4().hex[:12]}",
             user_id=self._user_id,
+            handle=handle,
+            handle_source="manual" if explicit_handle else "generated",
             display_name=display_name,
             nickname=_clean_optional(input_data.nickname),
             company=_clean_optional(input_data.company),
@@ -101,6 +111,18 @@ class ContactService:
                 raise ValueError("Contact display name cannot be empty.")
             contact.display_name = display_name
 
+        if "handle" in updates:
+            explicit_handle = _clean_optional(updates["handle"])
+            if not explicit_handle:
+                raise ValueError("Contact handle cannot be empty.")
+            handle = normalize_handle(explicit_handle)
+            if not handle:
+                raise ValueError("Contact handle must contain letters or numbers.")
+            if self._repository.handle_exists(handle, exclude_contact_id=contact.id):
+                raise ValueError(f"Contact handle '{handle}' is already used.")
+            contact.handle = handle
+            contact.handle_source = "manual"
+
         for field in ("nickname", "company", "title", "notes"):
             if field in updates:
                 setattr(contact, field, _clean_optional(updates[field]))
@@ -160,6 +182,15 @@ def _clean_optional(value: str | None) -> str | None:
         return None
     cleaned = value.strip()
     return cleaned or None
+
+
+def _manual_handle(value: str, repository: ContactRepository) -> str:
+    handle = normalize_handle(value)
+    if not handle:
+        raise ValueError("Contact handle must contain letters or numbers.")
+    if repository.handle_exists(handle):
+        raise ValueError(f"Contact handle '{handle}' is already used.")
+    return handle
 
 
 def _unique_aliases(values: list[str | None]) -> list[str]:

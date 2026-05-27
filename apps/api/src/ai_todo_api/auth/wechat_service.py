@@ -73,6 +73,7 @@ def login_with_wechat_code(session: Session, code: str) -> WechatLoginResult:
         access_token=token.token,
         user=UserSummary(
             id=user.id,
+            username=user.username,
             display_name=user.display_name,
             timezone=user.timezone,
         ),

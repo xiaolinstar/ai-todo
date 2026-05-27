@@ -13,12 +13,14 @@ export interface ApiResponse<T> {
 
 export interface UserSummary {
   id: string;
+  username?: string;
   displayName: string;
   timezone: string;
 }
 
 export interface ContactSummary {
   id: string;
+  handle: string;
   displayName: string;
   nickname?: string;
   company?: string;
