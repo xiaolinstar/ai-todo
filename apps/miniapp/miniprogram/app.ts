@@ -1,11 +1,13 @@
 import { ensureAuth } from "./lib/auth";
-import { getDefaultApiUrl } from "./lib/config";
+import { getDefaultApiUrl, isDevelopEnv } from "./lib/config";
 
 App({
   globalData: {},
   onLaunch() {
     const apiUrl = wx.getStorageSync("apiUrl");
-    if (typeof apiUrl !== "string" || !apiUrl) {
+    if (!isDevelopEnv()) {
+      wx.setStorageSync("apiUrl", getDefaultApiUrl());
+    } else if (typeof apiUrl !== "string" || !apiUrl) {
       wx.setStorageSync("apiUrl", getDefaultApiUrl());
     }
     ensureAuth().catch(() => undefined);

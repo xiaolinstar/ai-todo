@@ -1,7 +1,7 @@
 import { fetchMe, issuePat } from "../../lib/api";
 import { ensureAuth, loginWithWechat } from "../../lib/auth";
 import { avatarColor, getInitial } from "../../lib/format";
-import { clearToken, getConfig, saveConfig } from "../../lib/config";
+import { clearToken, getConfig, isDevelopEnv, saveConfig } from "../../lib/config";
 import { updateTabBarSelected } from "../../lib/tab-bar";
 
 Page({
@@ -16,7 +16,8 @@ Page({
     connected: false,
     testing: false,
     issuing: false,
-    loggingIn: false
+    loggingIn: false,
+    showDevControls: false
   },
 
   onShow() {
@@ -24,7 +25,8 @@ Page({
     const config = getConfig();
     this.setData({
       apiUrl: config.apiUrl,
-      token: config.token
+      token: config.token,
+      showDevControls: isDevelopEnv()
     });
     if (config.apiUrl) {
       this.bootstrapConnection(false);
@@ -41,7 +43,7 @@ Page({
 
   onSave() {
     saveConfig({
-      apiUrl: this.data.apiUrl,
+      apiUrl: isDevelopEnv() ? this.data.apiUrl : undefined,
       token: this.data.token
     });
     wx.showToast({ title: "已保存", icon: "success" });
@@ -67,16 +69,23 @@ Page({
   },
 
   onWechatLogin() {
-    saveConfig({ apiUrl: this.data.apiUrl });
+    if (isDevelopEnv()) {
+      saveConfig({ apiUrl: this.data.apiUrl });
+    }
     this.setData({ loggingIn: true });
     loginWithWechat()
       .then((response) => {
         this.setData({ loggingIn: false });
         if (!response.ok || !response.data) {
-          wx.showToast({
-            title: response.error?.message || "微信登录失败",
-            icon: "none"
-          });
+          const code = response.error?.code || "";
+          const hint = response.error?.message || "微信登录失败";
+          const title =
+            code === "DATABASE_ERROR"
+              ? "数据库需迁移"
+              : hint.length > 20
+                ? "微信登录失败"
+                : hint;
+          wx.showToast({ title, icon: "none", duration: 2500 });
           return;
         }
         saveConfig({ token: response.data.accessToken });
@@ -91,7 +100,7 @@ Page({
 
   bootstrapConnection(showToast: boolean) {
     saveConfig({
-      apiUrl: this.data.apiUrl,
+      apiUrl: isDevelopEnv() ? this.data.apiUrl : undefined,
       token: this.data.token
     });
 
@@ -182,7 +191,7 @@ Page({
 
   onIssuePat() {
     saveConfig({
-      apiUrl: this.data.apiUrl,
+      apiUrl: isDevelopEnv() ? this.data.apiUrl : undefined,
       token: this.data.token
     });
 

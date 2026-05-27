@@ -1,7 +1,9 @@
+import logging
 from uuid import uuid4
 
 from fastapi import HTTPException
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from ai_todo_api.auth.context import DEFAULT_SCOPES
@@ -10,16 +12,20 @@ from ai_todo_api.auth.wechat_client import WechatAuthError, WechatSession, excha
 from ai_todo_api.common.time import now_utc
 from ai_todo_api.config import settings
 from ai_todo_api.db.models import IdentityModel, UserModel
+from ai_todo_api.auth.service import ensure_dev_user
 from ai_todo_api.modules.api_tokens.service import create_token_for_user
 
 
 WECHAT_PROVIDER = "wechat"
 DEFAULT_WECHAT_DISPLAY_NAME = "微信用户"
 MINIAPP_TOKEN_NAME = "WeChat Miniapp"
+logger = logging.getLogger(__name__)
 
 
 def login_with_wechat_code(session: Session, code: str) -> WechatLoginResult:
     if not settings.wechat_app_id or not settings.wechat_app_secret:
+        if settings.allow_dev_auth:
+            return _login_with_dev_user(session)
         raise HTTPException(
             status_code=503,
             detail={
@@ -60,14 +66,58 @@ def login_with_wechat_code(session: Session, code: str) -> WechatLoginResult:
             },
         ) from exc
 
-    user = _get_or_create_user(session, wechat_session)
+    try:
+        return _complete_wechat_login(session, wechat_session)
+    except IntegrityError as exc:
+        session.rollback()
+        try:
+            return _complete_wechat_login(session, wechat_session)
+        except IntegrityError as retry_exc:
+            session.rollback()
+            raise _integrity_http_error(retry_exc) from retry_exc
+    except SQLAlchemyError as exc:
+        session.rollback()
+        logger.exception("wechat login database error")
+        raise _database_http_error(exc) from exc
+
+
+def _login_with_dev_user(session: Session) -> WechatLoginResult:
+    """Local dev: issue a miniapp token for the configured dev user without WeChat API."""
+    user = ensure_dev_user(
+        session,
+        user_id=settings.dev_user_id,
+        display_name=settings.dev_user_display_name,
+        timezone=settings.timezone,
+    )
+    token = create_token_for_user(
+        session,
+        user_id=user.id,
+        name=f"{MINIAPP_TOKEN_NAME} (dev)",
+        scopes=list(DEFAULT_SCOPES),
+        timezone=user.timezone,
+    )
+    return WechatLoginResult(
+        access_token=token.token,
+        user=UserSummary(
+            id=user.id,
+            username=user.username,
+            display_name=user.display_name,
+            timezone=user.timezone,
+        ),
+    )
+
+
+def _complete_wechat_login(session: Session, wechat_session: WechatSession) -> WechatLoginResult:
+    user = _get_or_create_user(session, wechat_session, commit=False)
     token = create_token_for_user(
         session,
         user_id=user.id,
         name=MINIAPP_TOKEN_NAME,
         scopes=list(DEFAULT_SCOPES),
         timezone=user.timezone,
+        commit=False,
     )
+    session.commit()
 
     return WechatLoginResult(
         access_token=token.token,
@@ -80,7 +130,12 @@ def login_with_wechat_code(session: Session, code: str) -> WechatLoginResult:
     )
 
 
-def _get_or_create_user(session: Session, wechat_session: WechatSession) -> UserModel:
+def _get_or_create_user(
+    session: Session,
+    wechat_session: WechatSession,
+    *,
+    commit: bool,
+) -> UserModel:
     now = now_utc()
     identity = session.scalar(
         select(IdentityModel).where(
@@ -90,10 +145,25 @@ def _get_or_create_user(session: Session, wechat_session: WechatSession) -> User
     )
 
     if identity is not None:
+        user = session.get(UserModel, identity.user_id)
+        if user is None:
+            logger.warning(
+                "Removing orphan identity %s for openid %s",
+                identity.id,
+                wechat_session.openid,
+            )
+            session.delete(identity)
+            session.flush()
+            identity = None
+
+    if identity is not None:
         identity.last_used_at = now
         if wechat_session.union_id and not identity.union_id:
             identity.union_id = wechat_session.union_id
-        session.commit()
+        if commit:
+            session.commit()
+        else:
+            session.flush()
 
         user = session.get(UserModel, identity.user_id)
         if user is None:
@@ -116,6 +186,9 @@ def _get_or_create_user(session: Session, wechat_session: WechatSession) -> User
         created_at=now,
         updated_at=now,
     )
+    session.add(user)
+    session.flush()
+
     identity = IdentityModel(
         id=f"id_{uuid4().hex[:12]}",
         user_id=user.id,
@@ -125,8 +198,42 @@ def _get_or_create_user(session: Session, wechat_session: WechatSession) -> User
         created_at=now,
         last_used_at=now,
     )
-    session.add(user)
     session.add(identity)
-    session.commit()
-    session.refresh(user)
+    if commit:
+        session.commit()
+        session.refresh(user)
+    else:
+        session.flush()
     return user
+
+
+def _integrity_http_error(exc: IntegrityError) -> HTTPException:
+    detail = str(getattr(exc, "orig", exc)).lower()
+    if "foreign key" in detail and "identities_user_id_fkey" in detail:
+        message = "WeChat user bootstrap failed. Retry login after API restart."
+    else:
+        message = "Failed to create WeChat user. Please retry."
+    return HTTPException(
+        status_code=500,
+        detail={
+            "ok": False,
+            "error": {
+                "code": "INTERNAL_ERROR",
+                "message": message,
+            },
+        },
+    )
+
+
+def _database_http_error(exc: SQLAlchemyError) -> HTTPException:
+    message = "Database error during WeChat login."
+    detail = str(exc).lower()
+    if "username" in detail or "identities" in detail or "does not exist" in detail:
+        message = "Database schema is out of date. Run alembic upgrade head on the API host."
+    return HTTPException(
+        status_code=500,
+        detail={
+            "ok": False,
+            "error": {"code": "DATABASE_ERROR", "message": message},
+        },
+    )

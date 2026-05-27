@@ -10,14 +10,21 @@ export interface AppConfig {
   token: string;
 }
 
-export function getDefaultApiUrl(): string {
+export function getMiniProgramEnvVersion(): string {
   try {
-    const { miniProgram } = wx.getAccountInfoSync();
-    if (miniProgram.envVersion === "develop") {
-      return LOCAL_API_URL;
-    }
+    return wx.getAccountInfoSync().miniProgram.envVersion;
   } catch {
-    // DevTools 以外环境走生产默认
+    return "release";
+  }
+}
+
+export function isDevelopEnv(): boolean {
+  return getMiniProgramEnvVersion() === "develop";
+}
+
+export function getDefaultApiUrl(): string {
+  if (isDevelopEnv()) {
+    return LOCAL_API_URL;
   }
   return PRODUCTION_API_URL;
 }
@@ -28,15 +35,17 @@ function readStorageString(key: string): string {
 }
 
 export function getConfig(): AppConfig {
+  const storedApiUrl = readStorageString(STORAGE_API_URL);
+  const apiUrl = isDevelopEnv() ? storedApiUrl || getDefaultApiUrl() : PRODUCTION_API_URL;
   return {
-    apiUrl: readStorageString(STORAGE_API_URL) || getDefaultApiUrl(),
+    apiUrl,
     token: readStorageString(STORAGE_TOKEN)
   };
 }
 
 export function saveConfig(patch: Partial<AppConfig>): void {
   if (patch.apiUrl !== undefined) {
-    wx.setStorageSync(STORAGE_API_URL, patch.apiUrl.trim());
+    wx.setStorageSync(STORAGE_API_URL, isDevelopEnv() ? patch.apiUrl.trim() : PRODUCTION_API_URL);
   }
   if (patch.token !== undefined) {
     wx.setStorageSync(STORAGE_TOKEN, patch.token.trim());

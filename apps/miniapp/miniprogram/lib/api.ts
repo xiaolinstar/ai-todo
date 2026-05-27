@@ -89,15 +89,15 @@ export function request<T>(
       header: buildHeaders(),
       success(res) {
         if (res.statusCode >= 400) {
-          const body = res.data as ApiResponse<T>;
-          resolve(
-            body?.ok === false
-              ? body
-              : {
-                  ok: false,
-                  error: { code: "HTTP_ERROR", message: `HTTP ${res.statusCode}` }
-                }
-          );
+          const body = res.data as ApiResponse<T> | undefined;
+          if (body && typeof body === "object" && body.ok === false && body.error) {
+            resolve(body);
+            return;
+          }
+          resolve({
+            ok: false,
+            error: { code: "HTTP_ERROR", message: `HTTP ${res.statusCode}` }
+          });
           return;
         }
         resolve(res.data as ApiResponse<T>);

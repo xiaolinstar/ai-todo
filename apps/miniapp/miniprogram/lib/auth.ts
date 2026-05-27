@@ -1,5 +1,5 @@
 import { fetchMe, request } from "./api";
-import { getConfig, saveConfig } from "./config";
+import { getConfig, isDevelopEnv, saveConfig } from "./config";
 
 export interface WechatLoginResult {
   accessToken: string;
@@ -42,7 +42,12 @@ export function ensureAuth(): Promise<boolean> {
       return performWechatLogin();
     });
   }
-  return performWechatLogin();
+  // 开发者工具 + allow_dev_auth：无需微信登录即可访问 API
+  if (isDevelopEnv()) {
+    return fetchMe().then((response) => response.ok);
+  }
+  // 预览/正式版：启动时不自动 wx.login，避免 code 被消耗；用户点「微信登录」再换 code
+  return Promise.resolve(false);
 }
 
 function performWechatLogin(): Promise<boolean> {

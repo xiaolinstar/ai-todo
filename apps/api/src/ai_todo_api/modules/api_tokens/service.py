@@ -29,6 +29,7 @@ def create_token_for_user(
     scopes: list[str],
     timezone: str,
     expires_at: str | None = None,
+    commit: bool = True,
 ) -> CreateApiTokenResult:
     plain = generate_api_token()
     now = now_utc()
@@ -42,8 +43,11 @@ def create_token_for_user(
         created_at=now,
     )
     session.add(token)
-    session.commit()
-    session.refresh(token)
+    if commit:
+        session.commit()
+        session.refresh(token)
+    else:
+        session.flush()
 
     return CreateApiTokenResult(
         id=token.id,

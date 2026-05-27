@@ -81,6 +81,7 @@ AI_TODO_ALLOW_DEV_AUTH=false
 bash deploy/remote-deploy.sh
 curl -sf http://127.0.0.1:8082/v1/health
 curl -sf https://wodi.games/v1/health
+curl -sf https://wodi.games/v1/health/db
 ```
 
 若 Docker 构建 `pip install` 失败，见 [deploy.md](./deploy.md)「Docker 构建失败」— 使用腾讯云 PyPI 镜像。
@@ -114,6 +115,7 @@ docker compose up -d
 
 ```bash
 curl -sf https://wodi.games/v1/health
+curl -sf https://wodi.games/v1/health/db
 ```
 
 ---
@@ -227,7 +229,37 @@ docker compose -f apps/api/docker-compose.prod.yml exec postgres \
 | `password authentication failed` | `.env` 密码与 Postgres 卷不一致 | `python3 scripts/rotate_postgres_password.py`，见 deploy.md |
 | health 502 | gateway 未启动或 upstream 端口错 | 检查 `:8082` 与 gateway conf |
 | 微信登录 503 | 未配 AppID/Secret | 检查 `.env.production` |
+| 微信登录 500 / FK `identities_user_id_fkey` | 先写 `users` 再写 `identities` 失败或脏数据 | 见下方「微信登录 FK 修复」；部署最新 API 后重试 |
+| 微信登录 500 `DATABASE_ERROR` | 未跑迁移 | `docker compose ... exec api alembic upgrade head`；确认 `/v1/health/db` 中 `identitiesTable: true` |
+| 微信登录 500 其他 | AppID 与小程序不一致、库异常 | 对齐 AppID/Secret；查 API 日志 |
 | 小程序 request 失败 | 合法域名未配 | 公众平台填 `wodi.games` |
+
+### 微信登录 FK 修复（`identities_user_id_fkey`）
+
+日志若出现 `Key (user_id)=(...) is not present in table "users"`：
+
+```bash
+cd ~/AgentProjects/ai-todo/apps/api
+
+# 1. 清理孤儿 identity（有 identity 无 user）
+docker compose -f docker-compose.prod.yml --env-file .env.production exec postgres \
+  psql -U ai_todo -d ai_todo -c \
+  "DELETE FROM identities i WHERE NOT EXISTS (SELECT 1 FROM users u WHERE u.id = i.user_id);"
+
+# 2. 查看迁移状态（若 upgrade head 失败，把完整报错保存下来）
+docker compose -f docker-compose.prod.yml --env-file .env.production exec api alembic current
+docker compose -f docker-compose.prod.yml --env-file .env.production exec api alembic upgrade head
+
+# 3. 拉取含 wechat 修复的代码并重建 API
+cd ~/AgentProjects/ai-todo && git pull
+cd apps/api
+docker compose -f docker-compose.prod.yml --env-file .env.production build api
+docker compose -f docker-compose.prod.yml --env-file .env.production up -d api
+```
+
+小程序侧：**清除 Token → 再点一次微信登录**（每次都会换新 `code`）。
+
+若 `alembic upgrade head` 在 `20260526_0009` 失败，可先确认是否已到 `20260521_0008`（含 `identities` 表）；微信登录不依赖 `0009`，但 API 镜像若含 `username` 字段则必须完成 `0009` 或保持镜像与库版本一致。
 
 ---
 

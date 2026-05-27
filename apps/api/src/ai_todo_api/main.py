@@ -1,13 +1,18 @@
+import logging
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import HTMLResponse, JSONResponse
+from sqlalchemy import inspect, text
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session
 
 from ai_todo_api.auth.router import router as auth_router
 from ai_todo_api.modules.api_tokens.router import router as api_tokens_router
 from ai_todo_api.auth.service import ensure_dev_user
 from ai_todo_api.config import settings
-from ai_todo_api.db.session import SessionLocal
+from ai_todo_api.db.session import SessionLocal, get_db
 from ai_todo_api.modules.calendar.router import router as calendar_router
 from ai_todo_api.modules.contacts.router import router as contacts_router
 from ai_todo_api.modules.reminders.router import router as reminders_router
@@ -30,6 +35,43 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(title="ai-todo API", version="0.1.0", lifespan=lifespan)
+logger = logging.getLogger(__name__)
+
+
+def _error_response(
+    *,
+    status_code: int,
+    code: str,
+    message: str,
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=status_code,
+        content={
+            "ok": False,
+            "error": {"code": code, "message": message},
+        },
+    )
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(
+    _: Request,
+    exc: RequestValidationError,
+) -> JSONResponse:
+    return _error_response(
+        status_code=422,
+        code="VALIDATION_ERROR",
+        message="Request validation failed.",
+    )
+
+
+@app.exception_handler(SQLAlchemyError)
+async def sqlalchemy_exception_handler(_: Request, exc: SQLAlchemyError) -> JSONResponse:
+    logger.exception("database error")
+    message = "Database error."
+    if "username" in str(exc).lower() or "identities" in str(exc).lower():
+        message = "Database schema is out of date. Run alembic upgrade head on the API host."
+    return _error_response(status_code=500, code="DATABASE_ERROR", message=message)
 
 
 @app.exception_handler(HTTPException)
@@ -45,6 +87,18 @@ async def http_exception_handler(_: object, exc: HTTPException) -> JSONResponse:
     )
 
 
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    if isinstance(exc, HTTPException):
+        return await http_exception_handler(request, exc)
+    logger.exception("unhandled error")
+    return _error_response(
+        status_code=500,
+        code="INTERNAL_ERROR",
+        message="Unexpected server error.",
+    )
+
+
 @app.get("/", response_class=HTMLResponse)
 def preview() -> str:
     return preview_page()
@@ -53,6 +107,28 @@ def preview() -> str:
 @app.get("/v1/health")
 def healthcheck() -> ApiResponse[dict[str, str]]:
     return ApiResponse(data={"service": "ai-todo-api", "status": "ok"})
+
+
+@app.get("/v1/health/db")
+def health_db(db: Session = Depends(get_db)) -> ApiResponse[dict[str, object]]:
+    db.execute(text("SELECT 1"))
+    revision = db.execute(text("SELECT version_num FROM alembic_version")).scalar_one_or_none()
+    inspector = inspect(db.bind)
+    tables = set(inspector.get_table_names())
+    users_columns = (
+        {column["name"] for column in inspector.get_columns("users")} if "users" in tables else set()
+    )
+    identities_ok = "identities" in tables
+    username_ok = "username" in users_columns
+    status = "ok" if identities_ok else "degraded"
+    return ApiResponse(
+        data={
+            "status": status,
+            "alembicRevision": revision,
+            "identitiesTable": identities_ok,
+            "usersHasUsername": username_ok,
+        }
+    )
 
 
 app.include_router(auth_router)
