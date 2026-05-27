@@ -1,6 +1,6 @@
 from uuid import uuid4
 
-from sqlalchemy import delete, select
+from sqlalchemy import delete, or_, select
 from sqlalchemy.orm import Session, selectinload
 
 from ai_todo_api.common.time import now_utc
@@ -9,6 +9,7 @@ from ai_todo_api.db.models import (
     ContactModel,
     ReminderContactModel,
 )
+from ai_todo_api.modules.contacts.handles import normalize_handle
 from ai_todo_api.modules.contacts.repository import contact_to_summary
 from ai_todo_api.modules.contacts.service import ContactNotFoundError
 from ai_todo_api.modules.contacts.schemas import ContactSummary
@@ -19,25 +20,42 @@ class ContactLinkService:
         self._session = session
         self._user_id = user_id
 
-    def validate_contact_ids(self, contact_ids: list[str]) -> list[str]:
-        unique_ids = _dedupe(contact_ids)
-        if not unique_ids:
+    def validate_contact_ids(self, contact_refs: list[str]) -> list[str]:
+        return self.resolve_contact_refs(contact_refs)
+
+    def resolve_contact_refs(self, contact_refs: list[str]) -> list[str]:
+        unique_refs = _dedupe(contact_refs)
+        if not unique_refs:
             return []
 
+        normalized_handles = [normalize_handle(contact_ref) for contact_ref in unique_refs]
+        usable_handles = [handle for handle in normalized_handles if handle]
         contacts = list(
             self._session.scalars(
                 select(ContactModel)
                 .where(
                     ContactModel.user_id == self._user_id,
-                    ContactModel.id.in_(unique_ids),
+                    or_(
+                        ContactModel.id.in_(unique_refs),
+                        ContactModel.handle.in_(usable_handles),
+                    ),
                 )
             )
         )
-        found = {contact.id for contact in contacts}
-        missing = [contact_id for contact_id in unique_ids if contact_id not in found]
-        if missing:
-            raise ContactNotFoundError(missing[0])
-        return unique_ids
+        by_id = {contact.id: contact for contact in contacts}
+        by_handle = {contact.handle: contact for contact in contacts}
+
+        result: list[str] = []
+        seen_ids: set[str] = set()
+        for contact_ref in unique_refs:
+            contact = by_id.get(contact_ref) or by_handle.get(normalize_handle(contact_ref))
+            if contact is None:
+                raise ContactNotFoundError(contact_ref)
+            if contact.id in seen_ids:
+                continue
+            seen_ids.add(contact.id)
+            result.append(contact.id)
+        return result
 
     def replace_reminder_contacts(
         self,

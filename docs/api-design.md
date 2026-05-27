@@ -202,6 +202,8 @@ POST /v1/reminders
 }
 ```
 
+`contact_ids` 为兼容早期契约保留字段名；服务端会把每一项解析为当前用户通讯录内的 `Contact.id` 或 `Contact.handle`，并最终存储真实 `contact_id`。后续如升级大版本，可考虑改名为 `contact_refs`。
+
 响应：
 
 ```json
@@ -233,7 +235,7 @@ GET /v1/reminders?status=pending&from=2026-05-19&to=2026-05-20
 - `status`
 - `from`
 - `to`
-- `contact_id`
+- `contact_id` / `contact_handle`
 - `limit`
 - `cursor`
 
@@ -306,6 +308,8 @@ POST /v1/calendar/events
   "contact_ids": ["contact_456"]
 }
 ```
+
+`contact_ids` 中的值可传 `Contact.id` 或当前用户通讯录内唯一的 `Contact.handle`。
 
 ### 查询日程
 
@@ -399,11 +403,15 @@ GET /v1/contacts?q=王总&limit=20
 GET /v1/contacts/{contact_id}
 ```
 
+`{contact_id}` 也可传当前用户通讯录内唯一的 `handle`。
+
 ### 更新联系人
 
 ```http
 PATCH /v1/contacts/{contact_id}
 ```
+
+`{contact_id}` 也可传当前用户通讯录内唯一的 `handle`。
 
 ### 删除联系人
 

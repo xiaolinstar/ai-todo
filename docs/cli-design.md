@@ -97,7 +97,7 @@ ai-todo logout
 ai-todo reminder create \
   --title "给客户王总发报价确认邮件" \
   --due "2026-05-20 10:00" \
-  --contact contact_123
+  --contact wangzong
 ```
 
 人类输出：
@@ -122,6 +122,7 @@ JSON 输出：
     "contacts": [
       {
         "id": "contact_123",
+        "handle": "wangzong",
         "display_name": "王总"
       }
     ]
@@ -192,7 +193,7 @@ ai-todo list --status pending
 | `--status <status>` | `pending` / `completed` / `cancelled` |
 | `--from <date>` | 起始日期 |
 | `--to <date>` | 结束日期 |
-| `--contact <id>` | 按联系人筛选 |
+| `--contact <id_or_handle>` | 按联系人筛选 |
 | `--limit <n>` | 返回数量 |
 
 ### done
@@ -256,7 +257,7 @@ ai-todo calendar add \
   --title "和 Alice 讨论项目计划" \
   --start "2026-05-20 14:00" \
   --end "2026-05-20 15:00" \
-  --contact contact_456
+  --contact alice
 ```
 
 JSON 输出：
@@ -273,6 +274,7 @@ JSON 输出：
     "contacts": [
       {
         "id": "contact_456",
+        "handle": "alice",
         "display_name": "Alice"
       }
     ]
@@ -393,7 +395,7 @@ Agent 调用 CLI 时建议遵守：
 ai-todo reminder create \
   --title "给客户王总发报价确认邮件" \
   --due "2026-05-20T10:00:00+08:00" \
-  --contact contact_123 \
+  --contact wangzong \
   --json \
   --idempotency-key "uuid"
 ```

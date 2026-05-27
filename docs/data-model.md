@@ -167,6 +167,7 @@ MVP 中 `Contact` 是个人通讯录对象，不做企业组织架构。
 - `User.username` 全局唯一
 - `Contact.user_id + Contact.handle` 唯一
 - `Contact.handle` 可作为 CLI 的联系人引用参数，例如 `--contact xiaolin`
+- 提醒和日程写接口的 `contact_ids` 当前兼容接收 `Contact.id` 或 `Contact.handle`，服务端解析后只落库真实 `contact_id`
 - `Contact.linked_user_id` 只表达“这个通讯录条目关联了哪个平台用户”，不强制 `handle` 与 `username` 永久一致
 
 生成规则建议：
@@ -278,11 +279,11 @@ MVP 中 `Contact` 是个人通讯录对象，不做企业组织架构。
 {
   "title": "给客户王总发报价确认邮件",
   "due_at": "2026-05-20T10:00:00+08:00",
-  "contact_ids": ["contact_123"]
+  "contact_ids": ["wangzong"]
 }
 ```
 
-当联系人重名、缺少邮箱或用户表达不清时，Agent 应通过 `contact search` / `GET /v1/contacts?q=` 获取候选项，并向用户确认后再写入联系人 ID。本项目只负责结构化校验、权限、审计、幂等和持久化。
+当联系人重名、缺少邮箱或用户表达不清时，Agent 应通过 `contact search` / `GET /v1/contacts?q=` 获取候选项，并向用户确认后再写入联系人 ID 或 handle。本项目只负责结构化校验、权限、审计、幂等和持久化。
 
 ## 未来扩展
 
