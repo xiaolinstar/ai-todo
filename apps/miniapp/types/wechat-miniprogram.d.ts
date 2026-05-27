@@ -41,6 +41,11 @@ declare const wx: {
     showCancel?: boolean;
     success?: (res: { confirm: boolean; cancel: boolean }) => void;
   }): void;
+  setClipboardData(options: {
+    data: string;
+    success?: () => void;
+    fail?: () => void;
+  }): void;
   stopPullDownRefresh(): void;
   setNavigationBarTitle(options: { title: string }): void;
   getAccountInfoSync(): {

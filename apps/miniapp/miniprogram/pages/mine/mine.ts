@@ -1,23 +1,40 @@
-import { fetchMe, issuePat } from "../../lib/api";
-import { ensureAuth, loginWithWechat } from "../../lib/auth";
+import {
+  createPat as createPatRequest,
+  fetchMe,
+  listApiTokens,
+  revokeAllApiTokens,
+  revokeApiToken
+} from "../../lib/api";
+import { hasValidSession, loginWithWechat } from "../../lib/auth";
 import { avatarColor, getInitial } from "../../lib/format";
 import { clearToken, getConfig, isDevelopEnv, saveConfig } from "../../lib/config";
 import { updateTabBarSelected } from "../../lib/tab-bar";
 
+interface PatItem {
+  id: string;
+  name: string;
+  createdAt: string;
+  lastUsedAt: string;
+}
+
 Page({
   data: {
     apiUrl: "",
-    token: "",
     userName: "",
     userId: "",
     timezone: "",
     initial: "?",
     avatarColor: "#007AFF",
-    connected: false,
+    loggedIn: false,
     testing: false,
-    issuing: false,
     loggingIn: false,
-    showDevControls: false
+    showDevControls: false,
+    patItems: [] as PatItem[],
+    patLoading: false,
+    creatingPat: false,
+    patName: "",
+    newPatToken: "",
+    patSubmitting: false
   },
 
   onShow() {
@@ -25,11 +42,10 @@ Page({
     const config = getConfig();
     this.setData({
       apiUrl: config.apiUrl,
-      token: config.token,
       showDevControls: isDevelopEnv()
     });
     if (config.apiUrl) {
-      this.bootstrapConnection(false);
+      this.refreshSession(false);
     }
   },
 
@@ -37,35 +53,10 @@ Page({
     this.setData({ apiUrl: e.detail.value });
   },
 
-  onTokenInput(e: { detail: { value: string } }) {
-    this.setData({ token: e.detail.value });
-  },
-
-  onSave() {
-    saveConfig({
-      apiUrl: isDevelopEnv() ? this.data.apiUrl : undefined,
-      token: this.data.token
-    });
+  onSaveDevApiUrl() {
+    saveConfig({ apiUrl: this.data.apiUrl });
     wx.showToast({ title: "已保存", icon: "success" });
-    this.bootstrapConnection(true);
-  },
-
-  onClearToken() {
-    clearToken();
-    this.setData({
-      token: "",
-      userName: "",
-      userId: "",
-      timezone: "",
-      initial: "?",
-      avatarColor: "#007AFF",
-      connected: false
-    });
-    wx.showToast({ title: "已清除 Token", icon: "none" });
-  },
-
-  onTestConnection() {
-    this.bootstrapConnection(true);
+    this.refreshSession(true);
   },
 
   onWechatLogin() {
@@ -89,8 +80,8 @@ Page({
           return;
         }
         saveConfig({ token: response.data.accessToken });
-        this.setData({ token: response.data.accessToken });
         this.applyUser(response.data.user, true);
+        this.loadPatList();
       })
       .catch(() => {
         this.setData({ loggingIn: false });
@@ -98,62 +89,43 @@ Page({
       });
   },
 
-  bootstrapConnection(showToast: boolean) {
+  refreshSession(showToast: boolean) {
     saveConfig({
-      apiUrl: isDevelopEnv() ? this.data.apiUrl : undefined,
-      token: this.data.token
+      apiUrl: isDevelopEnv() ? this.data.apiUrl : undefined
     });
 
     this.setData({ testing: true });
-    return ensureAuth()
-      .then((authenticated) => {
-        const config = getConfig();
-        this.setData({ token: config.token });
-        if (!authenticated) {
-          return this.testConnection(showToast);
-        }
-        return fetchMe().then((response) => {
-          this.setData({ testing: false });
-          if (!response.ok || !response.data) {
-            if (showToast) {
-              wx.showToast({
-                title: response.error?.message || "连接失败",
-                icon: "none"
-              });
-            }
-            this.resetProfile();
-            return;
+    return hasValidSession()
+      .then((loggedIn) => {
+        if (!loggedIn) {
+          if (getConfig().token) {
+            clearToken();
           }
-          this.applyUser(response.data.user, showToast);
-        });
-      })
-      .catch(() => {
-        this.setData({ testing: false });
-        this.resetProfile();
-        if (showToast) {
-          wx.showToast({ title: "无法连接 API", icon: "none" });
-        }
-      });
-  },
-
-  testConnection(showToast: boolean) {
-    return fetchMe()
-      .then((response) => {
-        this.setData({ testing: false });
-        if (!response.ok || !response.data) {
-          if (showToast) {
-            wx.showToast({
-              title: response.error?.message || "连接失败",
-              icon: "none"
-            });
-          }
+          this.setData({ testing: false, loggedIn: false });
           this.resetProfile();
           return;
         }
-        this.applyUser(response.data.user, showToast);
+
+        return fetchMe().then((response) => {
+          this.setData({ testing: false });
+          if (!response.ok || !response.data) {
+            clearToken();
+            this.setData({ loggedIn: false });
+            this.resetProfile();
+            if (showToast) {
+              wx.showToast({
+                title: response.error?.message || "登录已过期",
+                icon: "none"
+              });
+            }
+            return;
+          }
+          this.applyUser(response.data.user, showToast);
+          this.loadPatList();
+        });
       })
       .catch(() => {
-        this.setData({ testing: false });
+        this.setData({ testing: false, loggedIn: false });
         this.resetProfile();
         if (showToast) {
           wx.showToast({ title: "无法连接 API", icon: "none" });
@@ -171,10 +143,10 @@ Page({
       timezone: user.timezone,
       initial: getInitial(user.displayName),
       avatarColor: avatarColor(user.displayName),
-      connected: true
+      loggedIn: true
     });
     if (showToast) {
-      wx.showToast({ title: "连接成功", icon: "success" });
+      wx.showToast({ title: "已登录", icon: "success" });
     }
   },
 
@@ -185,39 +157,155 @@ Page({
       timezone: "",
       initial: "?",
       avatarColor: "#007AFF",
-      connected: false
+      loggedIn: false,
+      patItems: [],
+      creatingPat: false,
+      newPatToken: ""
     });
   },
 
-  onIssuePat() {
-    saveConfig({
-      apiUrl: isDevelopEnv() ? this.data.apiUrl : undefined,
-      token: this.data.token
-    });
+  onLogout() {
+    clearToken();
+    this.resetProfile();
+    wx.showToast({ title: "已退出登录", icon: "none" });
+  },
 
-    this.setData({ issuing: true });
-    issuePat("Miniapp Local")
+  loadPatList() {
+    if (!this.data.loggedIn) {
+      return;
+    }
+    this.setData({ patLoading: true });
+    listApiTokens()
       .then((response) => {
-        this.setData({ issuing: false });
+        this.setData({ patLoading: false });
+        if (!response.ok || !response.data) {
+          return;
+        }
+        const patItems = response.data.items.map((item) => ({
+          id: item.id,
+          name: item.name,
+          createdAt: this.formatPatDate(item.createdAt),
+          lastUsedAt: item.lastUsedAt ? this.formatPatDate(item.lastUsedAt) : "未使用"
+        }));
+        this.setData({ patItems });
+      })
+      .catch(() => {
+        this.setData({ patLoading: false });
+      });
+  },
+
+  formatPatDate(value?: string): string {
+    if (!value) {
+      return "";
+    }
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      return value.slice(0, 10);
+    }
+    const month = `${date.getMonth() + 1}`.padStart(2, "0");
+    const day = `${date.getDate()}`.padStart(2, "0");
+    return `${date.getFullYear()}-${month}-${day}`;
+  },
+
+  onStartCreatePat() {
+    this.setData({ creatingPat: true, patName: "", newPatToken: "" });
+  },
+
+  onCancelCreatePat() {
+    this.setData({ creatingPat: false, patName: "" });
+  },
+
+  onPatNameInput(e: { detail: { value: string } }) {
+    this.setData({ patName: e.detail.value });
+  },
+
+  onConfirmCreatePat() {
+    const name = this.data.patName.trim();
+    if (!name) {
+      wx.showToast({ title: "请输入令牌名称", icon: "none" });
+      return;
+    }
+
+    this.setData({ patSubmitting: true });
+    createPatRequest(name)
+      .then((response) => {
+        this.setData({ patSubmitting: false, creatingPat: false, patName: "" });
         if (!response.ok || !response.data) {
           wx.showToast({
-            title: response.error?.message || "签发失败",
+            title: response.error?.message || "创建失败",
             icon: "none"
           });
           return;
         }
-        saveConfig({ token: response.data.token });
-        this.setData({ token: response.data.token });
-        wx.showModal({
-          title: "PAT 已签发",
-          content: "Token 已保存到本地。",
-          showCancel: false,
-          success: () => this.bootstrapConnection(true)
-        });
+        this.setData({ newPatToken: response.data.token });
+        this.loadPatList();
       })
       .catch(() => {
-        this.setData({ issuing: false });
+        this.setData({ patSubmitting: false });
         wx.showToast({ title: "网络错误", icon: "none" });
       });
+  },
+
+  onCopyPat() {
+    if (!this.data.newPatToken) {
+      return;
+    }
+    wx.setClipboardData({
+      data: this.data.newPatToken,
+      success: () => {
+        wx.showToast({ title: "已复制", icon: "success" });
+      }
+    });
+  },
+
+  onDismissPatReveal() {
+    this.setData({ newPatToken: "" });
+  },
+
+  onRevokePat(e: { currentTarget: { dataset: { id: string; name: string } } }) {
+    const { id, name } = e.currentTarget.dataset;
+    wx.showModal({
+      title: "吊销令牌",
+      content: `确定吊销「${name}」？使用此令牌的 CLI 将无法继续访问。`,
+      success: (result) => {
+        if (!result.confirm) {
+          return;
+        }
+        revokeApiToken(id).then((response) => {
+          if (!response.ok) {
+            wx.showToast({
+              title: response.error?.message || "吊销失败",
+              icon: "none"
+            });
+            return;
+          }
+          wx.showToast({ title: "已吊销", icon: "success" });
+          this.loadPatList();
+        });
+      }
+    });
+  },
+
+  onRevokeAllPats() {
+    wx.showModal({
+      title: "清理全部 CLI 令牌",
+      content: "将吊销当前账号下所有 CLI 令牌（开发环境常用）。确定继续？",
+      success: (result) => {
+        if (!result.confirm) {
+          return;
+        }
+        revokeAllApiTokens().then((response) => {
+          if (!response.ok) {
+            wx.showToast({
+              title: response.error?.message || "清理失败",
+              icon: "none"
+            });
+            return;
+          }
+          wx.showToast({ title: "已清理", icon: "success" });
+          this.loadPatList();
+        });
+      }
+    });
   }
 });

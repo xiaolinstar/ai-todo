@@ -1,4 +1,4 @@
-import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, extname, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import * as sass from "sass";
@@ -7,7 +7,6 @@ import ts from "typescript";
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const root = resolve(scriptDir, "..");
 const miniprogramRoot = resolve(root, "apps/miniapp/miniprogram");
-const checkOnly = process.argv.includes("--check");
 
 function walk(dir) {
   const files = [];
@@ -41,18 +40,15 @@ function transpileTs(file) {
       console.error(`  - ${ts.flattenDiagnosticMessageText(error.messageText, " ")}`);
     }
     process.exitCode = 1;
-    return;
-  }
-
-  if (!checkOnly) {
-    writeFileSync(file.replace(/\.ts$/, ".js"), result.outputText, "utf8");
   }
 }
 
 function compileScss(file) {
-  const result = sass.compile(file, { style: "expanded" });
-  if (!checkOnly) {
-    writeFileSync(file.replace(/\.scss$/, ".wxss"), result.css, "utf8");
+  try {
+    sass.compile(file, { style: "expanded" });
+  } catch (error) {
+    console.error(`Failed to compile ${relative(root, file)}: ${error.message}`);
+    process.exitCode = 1;
   }
 }
 
@@ -71,11 +67,11 @@ for (const file of walk(miniprogramRoot)) {
     tsCount += 1;
   } else if (extname(file) === ".scss") {
     compileScss(file);
+    if (process.exitCode) break;
     scssCount += 1;
   }
 }
 
 if (!process.exitCode) {
-  const mode = checkOnly ? "check ok" : "build ok";
-  console.log(`wechat miniprogram ${mode} (${tsCount} ts, ${scssCount} scss)`);
+  console.log(`wechat miniprogram check ok (${tsCount} ts, ${scssCount} scss)`);
 }

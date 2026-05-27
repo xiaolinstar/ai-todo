@@ -73,6 +73,16 @@ Run migrations after pulling:
 alembic upgrade head
 ```
 
+## Tests
+
+From the repository root (builds CLI and runs pytest):
+
+```bash
+pnpm test:api
+```
+
+Covers demo-seed import, CLI integration (contacts / reminders / calendar), and calendar API tests. Helpers: `tests/helpers/`.
+
 ## Production Deploy
 
 Docker + PostgreSQL，宿主机 **8082** → 容器 3100。HTTPS 由 [xiaolin-gateway](https://github.com/xiaolinstar/xiaolin-gateway) 反代 `https://wodi.games`。

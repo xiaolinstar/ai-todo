@@ -56,6 +56,26 @@ export interface MeResult {
   user: UserSummary;
 }
 
+export interface ApiTokenSummary {
+  id: string;
+  name: string;
+  scopes: string[];
+  createdAt?: string;
+  lastUsedAt?: string;
+}
+
+export interface CreateApiTokenResult {
+  id: string;
+  token: string;
+  name: string;
+  tokenType?: string;
+  scopes: string[];
+}
+
+export interface ApiTokenListResult {
+  items: ApiTokenSummary[];
+}
+
 export interface ContactListResult {
   items: ContactSummary[];
 }
@@ -177,12 +197,26 @@ export function createContact(input: {
   });
 }
 
-export function issuePat(name: string) {
-  return request<{ id: string; token: string; name: string; scopes: string[] }>(
-    "/v1/api-tokens",
-    {
-      method: "POST",
-      data: { name, scopes: ["read", "write"] }
-    }
-  );
+export function createPat(name: string) {
+  return request<CreateApiTokenResult>("/v1/api-tokens", {
+    method: "POST",
+    data: { name, scopes: ["read", "write", "contact:read", "contact:write"] }
+  });
+}
+
+export function listApiTokens() {
+  return request<ApiTokenListResult>("/v1/api-tokens");
+}
+
+export function revokeApiToken(tokenId: string) {
+  return request<{ id: string; revoked: boolean }>(`/v1/api-tokens/${tokenId}`, {
+    method: "DELETE"
+  });
+}
+
+export function revokeAllApiTokens() {
+  return request<{ revokedCount: number }>("/v1/api-tokens/revoke-all", {
+    method: "POST",
+    data: {}
+  });
 }

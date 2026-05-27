@@ -11,7 +11,6 @@ const miniprogramRoot = resolve(miniappRoot, "miniprogram");
 const appJsonPath = resolve(miniprogramRoot, "app.json");
 
 const PAGE_SOURCE_EXTS = [".ts", ".wxml", ".scss", ".json"];
-const GENERATED_EXTS = [".js", ".wxss"];
 
 function readJson(path) {
   return JSON.parse(readFileSync(path, "utf8"));
@@ -40,21 +39,6 @@ function assertSourceBundle(basePath, label, extensions) {
       fail(`${label} is missing ${relative(root, path)}`);
     }
   }
-}
-
-function assertNoLocalGeneratedFiles() {
-  const generated = [];
-  for (const file of walk(miniprogramRoot)) {
-    const ext = extname(file);
-    if (!GENERATED_EXTS.includes(ext)) continue;
-    generated.push(relative(root, file));
-  }
-  if (generated.length <= 0) return;
-
-  fail(
-    "Local generated miniapp .js/.wxss must be removed before DevTools compile (run pnpm clean:wechat):\n" +
-      generated.join("\n")
-  );
 }
 
 function assertNoTrackedGeneratedFiles() {
@@ -143,7 +127,6 @@ for (const file of walk(miniprogramRoot)) {
   }
 }
 
-assertNoLocalGeneratedFiles();
 assertNoTrackedGeneratedFiles();
 
 if (!process.exitCode) {

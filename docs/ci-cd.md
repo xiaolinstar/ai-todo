@@ -103,5 +103,5 @@ CD 部署前会执行 `scripts/ci/verify-deploy-manifest.mjs` 校验指纹未被
 pnpm typecheck && pnpm lint && pnpm typecheck:wechat && pnpm check:wechat
 cd apps/api && python3 -m ruff check src tests && python3 -m pytest -q
 pnpm --filter "./packages/*" --filter "@ai-todo/cli" -r build
-pnpm build:wechat
+pnpm build:wechat:check
 ```

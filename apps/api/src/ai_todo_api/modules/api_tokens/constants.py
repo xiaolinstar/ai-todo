@@ -1,0 +1,11 @@
+TOKEN_TYPE_SESSION = "session"
+TOKEN_TYPE_PAT = "pat"
+
+SESSION_TOKEN_NAME = "WeChat Session"
+DEV_SESSION_TOKEN_NAME = "WeChat Session (dev)"
+
+CLIENT_KIND_MINIAPP = "miniapp"
+CLIENT_KIND_CLI = "cli"
+CLIENT_KIND_WEB = "web"
+CLIENT_KIND_AGENT = "agent"
+CLIENT_KIND_API = "api"

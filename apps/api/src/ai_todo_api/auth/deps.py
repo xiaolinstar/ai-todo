@@ -7,6 +7,7 @@ from ai_todo_api.auth.service import ensure_dev_user
 from ai_todo_api.common.json_store import loads_json
 from ai_todo_api.config import settings
 from ai_todo_api.db.session import get_db
+from ai_todo_api.modules.api_tokens.constants import TOKEN_TYPE_SESSION
 from ai_todo_api.modules.api_tokens.service import resolve_token
 
 
@@ -75,6 +76,21 @@ def get_auth_context(
                 },
             )
 
+        if token.token_type == TOKEN_TYPE_SESSION and client_source == "cli":
+            raise HTTPException(
+                status_code=401,
+                detail={
+                    "ok": False,
+                    "error": {
+                        "code": "SESSION_TOKEN_NOT_ALLOWED",
+                        "message": (
+                            "CLI requires a Personal Access Token. "
+                            "Create one in the WeChat miniapp Mine tab."
+                        ),
+                    },
+                },
+            )
+
         scopes = tuple(loads_json(token.scopes))
         auth = AuthContext(
             user_id=user.id,
@@ -82,6 +98,7 @@ def get_auth_context(
             display_name=user.display_name,
             timezone=user.timezone,
             api_token_id=token.id,
+            token_type=token.token_type,
             scopes=scopes,
             client_source=client_source,
         )
@@ -98,6 +115,7 @@ def get_auth_context(
             display_name=user.display_name,
             timezone=user.timezone,
             api_token_id=None,
+            token_type=None,
             scopes=DEFAULT_SCOPES,
             client_source=client_source,
         )
@@ -126,6 +144,28 @@ def get_auth_context(
             ) from error
 
     return auth
+
+
+def get_auth_context_bearer_required(
+    request: Request,
+    db: Session = Depends(get_db),
+    authorization: str | None = Header(default=None),
+    client_source: str = Depends(get_client_source),
+) -> AuthContext:
+    """Like get_auth_context but never falls back to dev bypass (for PAT management)."""
+    bearer = _parse_bearer(authorization)
+    if not bearer:
+        raise HTTPException(
+            status_code=401,
+            detail={
+                "ok": False,
+                "error": {
+                    "code": "UNAUTHORIZED",
+                    "message": "Bearer token required.",
+                },
+            },
+        )
+    return get_auth_context(request, db, authorization, client_source)
 
 
 def get_current_user(auth: AuthContext = Depends(get_auth_context)) -> CurrentUser:

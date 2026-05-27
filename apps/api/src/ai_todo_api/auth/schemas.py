@@ -18,4 +18,17 @@ class WechatLoginInput(CamelModel):
 
 class WechatLoginResult(CamelModel):
     access_token: str
+    token_type: str = "session"
     user: UserSummary
+
+
+class DevIssuePatInput(CamelModel):
+    name: str = "CLI Local"
+
+
+class DevIssuePatResult(CamelModel):
+    id: str
+    token: str
+    name: str
+    token_type: str = "pat"
+    scopes: list[str]

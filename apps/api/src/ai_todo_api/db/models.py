@@ -51,6 +51,8 @@ class ApiTokenModel(Base):
         index=True,
     )
     name: Mapped[str] = mapped_column(String(255), nullable=False)
+    token_type: Mapped[str] = mapped_column(String(16), nullable=False, default="pat")
+    client_kind: Mapped[str] = mapped_column(String(16), nullable=False, default="api")
     token_hash: Mapped[str] = mapped_column(String(64), nullable=False, unique=True, index=True)
     scopes: Mapped[str] = mapped_column(Text, nullable=False)
     expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

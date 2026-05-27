@@ -8,7 +8,7 @@
 
 - 源码：**TypeScript + Sass + WXML + JSON**（每页面/组件 **四件套**）
 - 编译：**微信开发者工具** `typescript` / `sass` 插件（与 party-helper 一致）
-- **`.js` / `.wxss` 不提交 Git**（`apps/miniapp/.gitignore`）
+- **`.js` / `.wxss`**：由 DevTools 生成；IDE 中默认隐藏（`.vscode/settings.json`）
 - 工程根目录：`apps/miniapp`（DevTools 导入此目录）
 
 ## 本地开发

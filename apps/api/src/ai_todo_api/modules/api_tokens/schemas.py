@@ -21,6 +21,7 @@ class CreateApiTokenResult(CamelModel):
     id: str
     token: str
     name: str
+    token_type: str = "pat"
     scopes: list[str]
     expires_at: str | None = None
 
@@ -32,3 +33,7 @@ class ApiTokenListResult(CamelModel):
 class RevokeApiTokenResult(CamelModel):
     id: str
     revoked: bool = True
+
+
+class RevokeAllApiTokensResult(CamelModel):
+    revoked_count: int

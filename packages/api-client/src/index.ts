@@ -251,4 +251,11 @@ export class AiTodoClient {
       body: JSON.stringify(input)
     });
   }
+
+  issueDevPat(input: { name: string }): Promise<ApiResponse<CreateApiTokenResult>> {
+    return this.request<CreateApiTokenResult>("/v1/auth/dev/issue-pat", {
+      method: "POST",
+      body: JSON.stringify(input)
+    });
+  }
 }

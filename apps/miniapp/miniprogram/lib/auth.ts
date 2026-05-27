@@ -32,6 +32,14 @@ export function loginWithWechat(): Promise<import("./api").ApiResponse<WechatLog
   });
 }
 
+export function hasValidSession(): Promise<boolean> {
+  const { token } = getConfig();
+  if (!token) {
+    return Promise.resolve(false);
+  }
+  return fetchMe().then((response) => response.ok);
+}
+
 export function ensureAuth(): Promise<boolean> {
   const { token } = getConfig();
   if (token) {

@@ -67,3 +67,56 @@ def test_calendar_rejects_invalid_time_range(client: TestClient) -> None:
     )
     assert response.status_code == 400
     assert response.json()["error"]["code"] == "VALIDATION_ERROR"
+
+
+def test_calendar_list_filters_by_date_range(client: TestClient) -> None:
+    inside = client.post(
+        "/v1/calendar/events",
+        json={
+            "title": "范围内会议",
+            "startAt": "2026-05-26T09:30:00+08:00",
+            "endAt": "2026-05-26T10:00:00+08:00",
+            "location": "线上",
+        },
+    )
+    assert inside.status_code == 201
+    inside_id = inside.json()["data"]["calendarEvent"]["id"]
+
+    outside = client.post(
+        "/v1/calendar/events",
+        json={
+            "title": "范围外会议",
+            "startAt": "2026-06-02T09:30:00+08:00",
+            "endAt": "2026-06-02T10:00:00+08:00",
+        },
+    )
+    assert outside.status_code == 201
+
+    listed = client.get(
+        "/v1/calendar/events",
+        params={"from": "2026-05-26", "to": "2026-05-27"},
+    )
+    assert listed.status_code == 200
+    ids = {item["id"] for item in listed.json()["data"]["items"]}
+    assert inside_id in ids
+    assert outside.json()["data"]["calendarEvent"]["id"] not in ids
+
+
+def test_calendar_show_returns_detail(client: TestClient) -> None:
+    create = client.post(
+        "/v1/calendar/events",
+        json={
+            "title": "CLI 联调日程",
+            "startAt": "2026-05-29T14:00:00+08:00",
+            "endAt": "2026-05-29T15:00:00+08:00",
+            "location": "测试地点",
+        },
+    )
+    assert create.status_code == 201
+    event_id = create.json()["data"]["calendarEvent"]["id"]
+
+    detail = client.get(f"/v1/calendar/events/{event_id}")
+    assert detail.status_code == 200
+    event = detail.json()["data"]["calendarEvent"]
+    assert event["title"] == "CLI 联调日程"
+    assert event["location"] == "测试地点"

@@ -6,9 +6,10 @@ Global flags:
   --api-url <url>        API base URL (default: AI_TODO_API_URL or ~/.ai-todo/config.json)
 
 Auth (Personal Access Token, like OPENAI_API_KEY):
+  # Create a PAT in the WeChat miniapp Mine tab first, then:
   export AI_TODO_TOKEN=aitodo_xxx              # recommended for agents
   ai-todo login --token aitodo_xxx             # or save to ~/.ai-todo/config.json
-  ai-todo login --issue-pat [--name "My Agent"] # one-shot PAT for local dev
+  ai-todo login --issue-pat [--name "My Agent"] # local dev only (127.0.0.1)
   ai-todo whoami
   ai-todo logout                               # clears config file token only
 

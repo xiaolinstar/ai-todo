@@ -3,56 +3,77 @@
     <view class="profile-inner">
       <view class="avatar avatar-lg" style="background: {{avatarColor}};">{{initial}}</view>
       <view class="profile-text">
-        <view class="profile-name">{{userName || '未连接'}}</view>
-        <view wx:if="{{connected}}" class="cell-meta">{{userId}}</view>
-        <view wx:if="{{connected}}" class="cell-meta">{{timezone}}</view>
-        <view wx:else class="cell-meta">配置 API 后使用微信登录同步数据</view>
+        <view class="profile-name">{{userName || '未登录'}}</view>
+        <view wx:if="{{loggedIn}}" class="cell-meta">{{userId}}</view>
+        <view wx:if="{{loggedIn}}" class="cell-meta">{{timezone}}</view>
+        <view wx:else class="cell-meta">请先微信登录以同步你的提醒与日程</view>
       </view>
-      <view class="status-dot {{connected ? 'online' : ''}}"></view>
+      <view class="status-dot {{loggedIn ? 'online' : ''}}"></view>
     </view>
   </view>
 
-  <view wx:if="{{showDevControls}}" class="group-header">连接</view>
+  <view wx:if="{{showDevControls}}" class="group-header">开发环境</view>
   <view wx:if="{{showDevControls}}" class="form-group">
     <view class="form-row stack">
       <text class="form-label">API 地址</text>
-      <input class="form-input" placeholder="https://wodi.games" value="{{apiUrl}}" bindinput="onApiUrlInput" />
+      <input class="form-input" placeholder="http://127.0.0.1:3100" value="{{apiUrl}}" bindinput="onApiUrlInput" />
     </view>
+  </view>
+  <view wx:if="{{showDevControls}}" class="form-hint">develop 模式可改本地 API；其他 Tab 在未登录时仍可用 dev 旁路，但 PAT 管理需先微信登录。</view>
+  <view wx:if="{{showDevControls}}" class="todo-button todo-button-secondary" hover-class="todo-button-hover" bindtap="onSaveDevApiUrl">保存 API 地址</view>
+
+  <view class="group-header">登录</view>
+  <view class="form-hint" wx:if="{{!loggedIn}}">使用微信账号登录，获取会话并管理 CLI 访问令牌。</view>
+  <view class="form-hint" wx:else>会话有效。重新登录会刷新会话（旧会话失效）。</view>
+  <button class="todo-button todo-button-primary" hover-class="todo-button-hover" bindtap="onWechatLogin" loading="{{loggingIn}}" disabled="{{loggingIn}}">{{loggingIn ? '登录中…' : (loggedIn ? '重新微信登录' : '微信登录')}}</button>
+
+  <view wx:if="{{loggedIn}}" class="group-header">CLI / Agent 访问令牌</view>
+  <view wx:if="{{loggedIn}}" class="form-hint">仅供电脑 CLI 使用；与上方微信登录会话分开。新用户默认列表为空，需手动创建。</view>
+
+  <view wx:if="{{loggedIn && newPatToken}}" class="inset-group pat-reveal">
+    <view class="pat-reveal-title">请立即复制，只显示一次</view>
+    <text class="pat-token-text" selectable>{{newPatToken}}</text>
+    <view class="pat-reveal-actions">
+      <button class="todo-button todo-button-primary pat-action-btn" hover-class="todo-button-hover" bindtap="onCopyPat">复制到剪贴板</button>
+      <button class="todo-button todo-button-secondary pat-action-btn" hover-class="todo-button-hover" bindtap="onDismissPatReveal">我已保存</button>
+    </view>
+  </view>
+
+  <view wx:if="{{loggedIn && creatingPat}}" class="inset-group pat-create">
     <view class="form-row stack">
-      <text class="form-label">Access Token</text>
-      <input class="form-input" password placeholder="aitodo_xxx（可选，开发用）" value="{{token}}" bindinput="onTokenInput" />
+      <text class="form-label">令牌名称</text>
+      <input class="form-input" placeholder="例如：MacBook CLI" value="{{patName}}" bindinput="onPatNameInput" />
     </view>
-  </view>
-  <view wx:if="{{showDevControls}}" class="form-hint">开发环境：未配微信 AppID/Secret 时，「微信登录」会使用本地开发用户并签发 Token</view>
-  <view wx:else class="form-hint">当前使用生产 API：{{apiUrl}}。Access Token 会在微信登录后自动保存。</view>
-  <button class="todo-button todo-button-primary" hover-class="todo-button-hover" bindtap="onWechatLogin">{{loggingIn ? '登录中…' : '微信登录'}}</button>
-  <button wx:if="{{showDevControls}}" class="todo-button todo-button-secondary" hover-class="todo-button-hover" bindtap="onSave">保存并连接</button>
-
-  <view class="group-header">账号操作</view>
-  <view class="inset-group action-group">
-    <view class="settings-cell pressable" bindtap="onTestConnection" hover-class="list-cell-hover">
-      <text class="settings-label">测试连接</text>
-      <text class="settings-value">{{testing ? '检测中…' : (connected ? '已连接' : '未连接')}}</text>
-    </view>
-    <view wx:if="{{showDevControls}}" class="settings-cell pressable" bindtap="onIssuePat" hover-class="list-cell-hover">
-      <text class="settings-label">签发 PAT（开发）</text>
-      <text class="settings-value link-text">{{issuing ? '处理中…' : '创建'}}</text>
-    </view>
-    <view class="settings-cell pressable" bindtap="onClearToken" hover-class="list-cell-hover">
-      <text class="settings-label danger">清除 Token</text>
+    <view class="pat-reveal-actions">
+      <button class="todo-button todo-button-primary pat-action-btn" hover-class="todo-button-hover" bindtap="onConfirmCreatePat" disabled="{{patSubmitting}}">{{patSubmitting ? '创建中…' : '确认创建'}}</button>
+      <button class="todo-button todo-button-secondary pat-action-btn" hover-class="todo-button-hover" bindtap="onCancelCreatePat">取消</button>
     </view>
   </view>
 
-  <view wx:if="{{showDevControls}}" class="group-header">开发提示</view>
-  <view wx:if="{{showDevControls}}" class="inset-group tips-group">
-    <view class="settings-cell">
-      <text class="cell-meta">开发者工具 → 详情 → 勾选「不校验合法域名」</text>
+  <button wx:if="{{loggedIn && !creatingPat && !newPatToken}}" class="todo-button todo-button-secondary" hover-class="todo-button-hover" bindtap="onStartCreatePat">创建新令牌</button>
+
+  <view wx:if="{{loggedIn && showDevControls && patItems.length > 0}}" class="todo-button todo-button-secondary" hover-class="todo-button-hover" bindtap="onRevokeAllPats">清理全部 CLI 令牌（开发）</view>
+
+  <view wx:if="{{loggedIn}}" class="inset-group pat-list">
+    <view wx:if="{{patLoading}}" class="settings-cell">
+      <text class="cell-meta">加载令牌列表…</text>
     </view>
-    <view class="settings-cell">
-      <text class="cell-meta">服务端需配置 AI_TODO_WECHAT_APP_ID / SECRET</text>
+    <view wx:elif="{{patItems.length === 0}}" class="settings-cell">
+      <text class="cell-meta">暂无 CLI 令牌（正常）。需要时在上方创建。</text>
     </view>
-    <view class="settings-cell">
-      <text class="cell-meta">本地 dev 可留空 Token 并使用 allow_dev_auth</text>
+    <view wx:for="{{patItems}}" wx:key="id" class="pat-item">
+      <view class="pat-item-main">
+        <text class="settings-label">{{item.name}}</text>
+        <text class="cell-meta">创建于 {{item.createdAt}} · {{item.lastUsedAt}}</text>
+      </view>
+      <text class="pat-revoke pressable" bindtap="onRevokePat" data-id="{{item.id}}" data-name="{{item.name}}" hover-class="list-cell-hover">吊销</text>
+    </view>
+  </view>
+
+  <view wx:if="{{loggedIn}}" class="group-header">账号</view>
+  <view wx:if="{{loggedIn}}" class="inset-group action-group">
+    <view class="settings-cell pressable" bindtap="onLogout" hover-class="list-cell-hover">
+      <text class="settings-label danger">退出登录</text>
     </view>
   </view>
 </view>

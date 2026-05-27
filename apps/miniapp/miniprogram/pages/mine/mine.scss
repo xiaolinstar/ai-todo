@@ -68,3 +68,63 @@
 .todo-button {
   margin-bottom: 32rpx;
 }
+
+.pat-reveal,
+.pat-create {
+  margin-bottom: 24rpx;
+  padding: 28rpx;
+}
+
+.pat-reveal-title {
+  color: var(--todo-text-primary);
+  font-size: 30rpx;
+  font-weight: 600;
+  margin-bottom: 16rpx;
+}
+
+.pat-token-text {
+  display: block;
+  color: var(--todo-text-primary);
+  font-size: 24rpx;
+  line-height: 1.5;
+  word-break: break-all;
+  margin-bottom: 24rpx;
+}
+
+.pat-reveal-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.pat-action-btn {
+  margin-bottom: 0;
+}
+
+.pat-list {
+  margin-bottom: 32rpx;
+}
+
+.pat-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+  padding: 24rpx 28rpx;
+  border-top: var(--todo-separator);
+}
+
+.pat-item:first-child {
+  border-top: none;
+}
+
+.pat-item-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.pat-revoke {
+  flex-shrink: 0;
+  color: var(--todo-danger);
+  font-size: 28rpx;
+}

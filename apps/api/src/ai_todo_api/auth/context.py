@@ -11,6 +11,7 @@ class AuthContext:
     display_name: str
     timezone: str
     api_token_id: str | None
+    token_type: str | None
     scopes: tuple[str, ...]
     client_source: str
 

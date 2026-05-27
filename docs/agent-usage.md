@@ -15,29 +15,34 @@ pnpm dev:api
 
 ## 认证（Personal Access Token）
 
-Agent 场景推荐 **PAT + 环境变量**，与 `OPENAI_API_KEY` 相同模式——不在 CLI 里做 Token 生命周期管理。
+Agent 场景推荐 **PAT + 环境变量**，与 `OPENAI_API_KEY` 相同模式。
 
-**优先级**：`AI_TODO_TOKEN` 环境变量 > `~/.ai-todo/config.json` > 本地 dev 旁路（`AI_TODO_ALLOW_DEV_AUTH=true`）
+**获取 PAT（生产环境）**：微信小程序 → **我的 → CLI / Agent 访问令牌 → 创建新令牌**，复制后在本机配置：
+
+```bash
+export AI_TODO_TOKEN=aitodo_xxx
+export AI_TODO_API_URL=https://wodi.games   # 可选
+ai-todo login --token aitodo_xxx --api-url https://wodi.games
+ai-todo whoami --json
+```
+
+**优先级**：`AI_TODO_TOKEN` 环境变量 > `~/.ai-todo/config.json` > 本地 dev 旁路（`AI_TODO_ALLOW_DEV_AUTH=true`，仅 127.0.0.1）
 
 ```bash
 # 方式 1：环境变量（推荐，适合 Agent / CI）
 export AI_TODO_TOKEN=aitodo_xxx
-export AI_TODO_API_URL=http://127.0.0.1:3100   # 可选
 
 # 方式 2：本地配置文件
-ai-todo login --token aitodo_xxx --api-url http://127.0.0.1:3100
+ai-todo login --token aitodo_xxx --api-url https://wodi.games
 
-# 方式 3：本地开发一次性签发 PAT（需 dev 旁路或已有 Token）
+# 方式 3：本地开发一次性签发（仅 127.0.0.1 API）
 ai-todo login --issue-pat --name "My Agent"
-
-# 验证
-ai-todo whoami --json
 
 # 退出（仅清除配置文件中的 Token；环境变量需 unset AI_TODO_TOKEN）
 ai-todo logout
 ```
 
-**生产环境**（规划中）：在 Web 控制台或小程序设置页创建 PAT；或 OAuth 授权链接 / 扫码（类似 GitHub CLI `gh auth login`），CLI 收到 Token 后写入环境变量或配置文件。
+> 微信登录下发的是**会话 Token**（仅供小程序），不能用于 CLI。CLI 必须使用上述 PAT。
 
 未配置 Token 且 dev 旁路关闭时，CLI 会提示上述配置方式；401 响应同样会附带提示。
 
@@ -143,6 +148,20 @@ import { AI_TODO_AGENT_TOOLS, AI_TODO_AGENT_GUIDELINES } from "@ai-todo/agent-pr
 ## 安装 Skill（Cursor / Claude）
 
 将仓库内 `skills/ai-todo/` 链接或复制到 Agent 的 skills 目录，详见 `skills/ai-todo/SKILL.md`。
+
+## 本地验证（测试代替脚本灌数）
+
+不要用 shell 脚本批量写入演示数据。请使用 pytest 集成测试（会构建 CLI、启动内存 API、验证 contact / reminder / calendar 导入）：
+
+```bash
+pnpm test:api
+```
+
+相关用例：
+
+- `tests/test_demo_seed.py` — 经 HTTP API 导入并校验演示数据集
+- `tests/test_cli_integration.py` — 经 CLI 导入联系人、提醒、**日历**，并测试 `calendar show/update/delete`
+- `tests/test_calendar.py` — 日历 API CRUD、日期范围筛选、详情查询
 
 ## HTTP API 备选
 

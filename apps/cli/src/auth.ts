@@ -26,10 +26,10 @@ export function printAuthHint(reason: "missing" | "invalid" = "missing"): void {
           "  export AI_TODO_TOKEN=aitodo_xxx          # 推荐：写入 shell 配置或 Agent 环境",
           "  ai-todo login --token aitodo_xxx         # 或保存到 ~/.ai-todo/config.json",
           "",
-          "本地开发（无 Token 时）可启用 dev 旁路，或一次性签发 PAT：",
+          "本地开发（127.0.0.1）可一次性签发 PAT：",
           "  ai-todo login --issue-pat",
           "",
-          "生产环境请在 Web 控制台或小程序设置页创建 PAT（规划中）。"
+          "生产环境请在微信小程序「我的 → CLI / Agent 访问令牌」创建 PAT。"
         ]
       : [
           "未检测到 API Token。",
@@ -38,10 +38,10 @@ export function printAuthHint(reason: "missing" | "invalid" = "missing"): void {
           "  export AI_TODO_TOKEN=aitodo_xxx",
           "  ai-todo login --token aitodo_xxx",
           "",
-          "本地开发可一次性签发 PAT：",
+          "本地开发（127.0.0.1）可一次性签发 PAT：",
           "  ai-todo login --issue-pat",
           "",
-          `配置文件：${configPath()}`
+          "生产环境请在微信小程序「我的 → CLI / Agent 访问令牌」创建 PAT。"
         ];
 
   for (const line of lines) {

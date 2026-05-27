@@ -26,7 +26,7 @@ def test_wechat_login_creates_user_and_token(client: TestClient, monkeypatch) ->
     assert second.status_code == 200
     assert second.json()["data"]["user"]["id"] == body["data"]["user"]["id"]
 
-    token = body["data"]["accessToken"]
+    token = second.json()["data"]["accessToken"]
     me = client.get("/v1/me", headers={"Authorization": f"Bearer {token}"})
     assert me.status_code == 200
     assert me.json()["data"]["user"]["id"] == body["data"]["user"]["id"]

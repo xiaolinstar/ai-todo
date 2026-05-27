@@ -3,13 +3,18 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 from ai_todo_api.auth.context import AuthContext
-from ai_todo_api.auth.deps import get_auth_context, get_idempotency_key
+from ai_todo_api.auth.deps import (
+    get_auth_context_bearer_required,
+    get_client_source,
+    get_idempotency_key,
+)
 from ai_todo_api.auth.scopes import ForbiddenError, require_write
 from ai_todo_api.common.write import run_write
 from ai_todo_api.db.session import get_db
 from ai_todo_api.modules.api_tokens.schemas import (
     ApiTokenListResult,
     CreateApiTokenInput,
+    RevokeAllApiTokensResult,
     RevokeApiTokenResult,
 )
 from ai_todo_api.modules.api_tokens.service import ApiTokenNotFoundError, ApiTokenService
@@ -26,18 +31,19 @@ def _forbidden(message: str) -> JSONResponse:
 
 @router.get("")
 def list_api_tokens(
-    auth: AuthContext = Depends(get_auth_context),
+    auth: AuthContext = Depends(get_auth_context_bearer_required),
     db: Session = Depends(get_db),
 ) -> ApiResponse[ApiTokenListResult]:
-    items = ApiTokenService(db).list_tokens(auth.user_id)
+    items = ApiTokenService(db).list_pats(auth.user_id)
     return ApiResponse(data=ApiTokenListResult(items=items))
 
 
 @router.post("")
 def create_api_token(
     input_data: CreateApiTokenInput,
-    auth: AuthContext = Depends(get_auth_context),
+    auth: AuthContext = Depends(get_auth_context_bearer_required),
     db: Session = Depends(get_db),
+    client_source: str = Depends(get_client_source),
     idempotency_key: str | None = Depends(get_idempotency_key),
 ) -> JSONResponse:
     try:
@@ -47,7 +53,7 @@ def create_api_token(
 
     def handler() -> JSONResponse:
         try:
-            result = ApiTokenService(db).create(auth, input_data)
+            result = ApiTokenService(db).create(auth, input_data, client_kind=client_source)
         except ValueError as error:
             body = ErrorResponse(
                 error=ApiError(code="VALIDATION_ERROR", message=str(error)),
@@ -69,10 +75,38 @@ def create_api_token(
     )
 
 
+@router.post("/revoke-all")
+def revoke_all_api_tokens(
+    auth: AuthContext = Depends(get_auth_context_bearer_required),
+    db: Session = Depends(get_db),
+    idempotency_key: str | None = Depends(get_idempotency_key),
+) -> JSONResponse:
+    try:
+        require_write(auth)
+    except ForbiddenError as error:
+        return _forbidden(str(error))
+
+    def handler() -> JSONResponse:
+        count = ApiTokenService(db).revoke_all_pats(auth.user_id)
+        body = ApiResponse(data=RevokeAllApiTokensResult(revoked_count=count))
+        return JSONResponse(status_code=200, content=body.model_dump(by_alias=True))
+
+    return run_write(
+        db,
+        auth,
+        operation="revoke_all_api_tokens",
+        idempotency_key=idempotency_key,
+        target_type="api_token",
+        input_summary={},
+        handler=handler,
+        extract_target_ids=lambda _data: [],
+    )
+
+
 @router.delete("/{token_id}")
 def revoke_api_token(
     token_id: str,
-    auth: AuthContext = Depends(get_auth_context),
+    auth: AuthContext = Depends(get_auth_context_bearer_required),
     db: Session = Depends(get_db),
     idempotency_key: str | None = Depends(get_idempotency_key),
 ) -> JSONResponse:
@@ -83,7 +117,7 @@ def revoke_api_token(
 
     def handler() -> JSONResponse:
         try:
-            revoked_id = ApiTokenService(db).revoke(auth.user_id, token_id)
+            revoked_id = ApiTokenService(db).revoke_pat(auth.user_id, token_id)
         except ApiTokenNotFoundError:
             body = ErrorResponse(
                 error=ApiError(code="NOT_FOUND", message=f"API token {token_id} was not found."),

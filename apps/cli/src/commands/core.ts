@@ -56,7 +56,32 @@ async function issuePersonalAccessToken(
   apiUrl: string,
   name: string
 ): Promise<void> {
-  const response = await ctx.client.createApiToken({ name });
+  if (!isLocalDevApiUrl(apiUrl)) {
+    if (ctx.json) {
+      console.log(
+        JSON.stringify(
+          {
+            ok: false,
+            error: {
+              code: "PAT_CREATE_NOT_SUPPORTED",
+              message:
+                "Create a Personal Access Token in the WeChat miniapp Mine tab, then run ai-todo login --token …"
+            }
+          },
+          null,
+          2
+        )
+      );
+    } else {
+      console.error("生产/远程 API 不支持 CLI 直接签发 PAT。");
+      console.error("请在微信小程序「我的 → CLI / Agent 访问令牌」中创建，然后：");
+      console.error("  ai-todo login --token aitodo_xxx --api-url", apiUrl);
+    }
+    process.exitCode = 1;
+    return;
+  }
+
+  const response = await ctx.client.issueDevPat({ name });
 
   if (!response.ok) {
     if (ctx.json) {
@@ -64,8 +89,7 @@ async function issuePersonalAccessToken(
     } else {
       console.error(`[${response.error.code}] ${response.error.message}`);
       console.error("");
-      console.error("签发 PAT 需要已有授权（dev 旁路或有效 Token）。");
-      printAuthHint("missing");
+      console.error("签发 PAT 失败。请确认 API 已启动且 AI_TODO_ALLOW_DEV_AUTH=true。");
     }
     process.exitCode = 1;
     return;
@@ -196,3 +220,12 @@ export async function runToday(ctx: CliContext): Promise<void> {
 }
 
 declare const process: { exitCode?: number };
+
+function isLocalDevApiUrl(apiUrl: string): boolean {
+  try {
+    const hostname = new URL(apiUrl).hostname;
+    return hostname === "127.0.0.1" || hostname === "localhost";
+  } catch {
+    return false;
+  }
+}

@@ -13,12 +13,15 @@ from ai_todo_api.common.time import now_utc
 from ai_todo_api.config import settings
 from ai_todo_api.db.models import IdentityModel, UserModel
 from ai_todo_api.auth.service import ensure_dev_user
-from ai_todo_api.modules.api_tokens.service import create_token_for_user
+from ai_todo_api.modules.api_tokens.constants import (
+    DEV_SESSION_TOKEN_NAME,
+    SESSION_TOKEN_NAME,
+)
+from ai_todo_api.modules.api_tokens.service import create_session_token_for_user
 
 
 WECHAT_PROVIDER = "wechat"
 DEFAULT_WECHAT_DISPLAY_NAME = "微信用户"
-MINIAPP_TOKEN_NAME = "WeChat Miniapp"
 logger = logging.getLogger(__name__)
 
 
@@ -89,15 +92,16 @@ def _login_with_dev_user(session: Session) -> WechatLoginResult:
         display_name=settings.dev_user_display_name,
         timezone=settings.timezone,
     )
-    token = create_token_for_user(
+    token = create_session_token_for_user(
         session,
         user_id=user.id,
-        name=f"{MINIAPP_TOKEN_NAME} (dev)",
+        name=DEV_SESSION_TOKEN_NAME,
         scopes=list(DEFAULT_SCOPES),
         timezone=user.timezone,
     )
     return WechatLoginResult(
         access_token=token.token,
+        token_type=token.token_type,
         user=UserSummary(
             id=user.id,
             username=user.username,
@@ -109,10 +113,10 @@ def _login_with_dev_user(session: Session) -> WechatLoginResult:
 
 def _complete_wechat_login(session: Session, wechat_session: WechatSession) -> WechatLoginResult:
     user = _get_or_create_user(session, wechat_session, commit=False)
-    token = create_token_for_user(
+    token = create_session_token_for_user(
         session,
         user_id=user.id,
-        name=MINIAPP_TOKEN_NAME,
+        name=SESSION_TOKEN_NAME,
         scopes=list(DEFAULT_SCOPES),
         timezone=user.timezone,
         commit=False,
@@ -121,6 +125,7 @@ def _complete_wechat_login(session: Session, wechat_session: WechatSession) -> W
 
     return WechatLoginResult(
         access_token=token.token,
+        token_type=token.token_type,
         user=UserSummary(
             id=user.id,
             username=user.username,

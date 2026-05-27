@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     wechat_app_secret: str | None = Field(default=None)
     rate_limit_enabled: bool = Field(default=True)
     rate_limit_wechat_login_per_minute: int = Field(default=10, ge=1)
+    session_token_ttl_days: int = Field(default=30, ge=1)
 
 
 settings = Settings()

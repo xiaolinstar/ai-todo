@@ -22,7 +22,7 @@ ai-todo 与 party-helper 的业务差异：
 - **微信原生**（不使用 Taro / uni-app）
 - **TypeScript + Sass 为源码**（`.ts` / `.scss` / `.wxml` / `.json` 四件套）
 - **微信开发者工具编译**（`useCompilerPlugins: ["typescript", "sass"]`，与 party-helper 一致）
-- **`.js` / `.wxss` 为本地/CI 生成物，不提交 Git**（见 `apps/miniapp/.gitignore`）
+- **`.js` / `.wxss` 为 DevTools 本地编译产物**（源码为 `.ts` / `.scss`；IDE 默认隐藏，见 `.vscode/settings.json`）
 - **ES Module 编写、`require` 运行**：源码用 `import`，DevTools 编译后转为 CommonJS
 
 `project.config.json`：
@@ -132,10 +132,33 @@ apps/miniapp/
 
 ## 网络与配置
 
-- API 基址与 PAT 存 `wx.storage`（`lib/config.ts`）
+- API 基址与 Token 存 `wx.storage`（`lib/config.ts`）
 - 请求统一走 `lib/api.ts`，请求头含 `x-client-source: miniapp`
 - 本地开发：开发者工具勾选「不校验合法域名」；真机使用局域网 IP
-- MVP 可无 Token（后端 dev 旁路）；生产环境使用 PAT
+
+### 鉴权与环境（规划）
+
+| 环境 | API 地址 | Token | 「我的」页 UI |
+|------|----------|-------|----------------|
+| **develop**（开发者工具） | 可改 `http://127.0.0.1:3100` | 可选；后端 `allow_dev_auth` 时可无 Token | 显示 API / Token / 签发 PAT |
+| **trial / release** | 固定 `https://wodi.games`（代码内置） | **仅**微信登录后自动写入，用户不手填 | 只显示「微信登录」与连接状态 |
+
+生产用户流程：`wx.login` → `POST /v1/auth/wechat/login` → 保存 `accessToken` → 后续请求带 `Authorization: Bearer …`。  
+不需要、也不应要求用户配置域名或 Access Token。PAT 签发仅用于本地/Agent CLI 调试。
+
+### 为什么目录里只有 `.ts`，没有 `.js`？
+
+与 **party-helper** 一致：
+
+| 项 | 做法 |
+|----|------|
+| 源码 | 只维护 `.ts` / `.scss` / `.wxml` / `.json` |
+| CI / 本地检查 | `pnpm build:wechat:check` 仅在内存里验证编译，**不写** `.js`/`.wxss` |
+| 运行 | 微信开发者工具启用 TS/Sass 插件后自行编译 |
+| Git | 不强制忽略 `.js`/`.wxss`；`check:wechat` 仍禁止将生成物 **add 进仓库** |
+| Cursor / VS Code | `.vscode/settings.json` 隐藏上述生成物 |
+
+DevTools 编译时可能在磁盘上短暂出现 `.js`/`.wxss`，这是微信运行时的必要产物，**不应手改**。在 IDE 里看不到即可；若文件树仍显示，确认已启用 `explorer.excludeGitIgnore` 或重载窗口。
 
 ## 检查命令
 
@@ -157,8 +180,8 @@ pnpm typecheck:wechat     # 仅 tsc
 | 步骤 | 内容 |
 |------|------|
 | `typecheck:wechat` | TypeScript 严格类型检查（`tsc --noEmit`） |
-| `build:wechat:check` | 与 DevTools 相近的 ts→js、scss→wxss 编译验证（**不落盘**） |
-| `check-wechat-miniprogram.mjs` | 四件套完整性、JSON 合法性、tabBar 图标路径、禁止本地/跟踪的 `.js`/`.wxss` |
+| `build:wechat:check` | 与 DevTools 相近的 ts→js、scss→wxss 编译验证（**仅内存，不落盘**） |
+| `check-wechat-miniprogram.mjs` | 四件套完整性、JSON 合法性、tabBar 图标、禁止 Git 跟踪 `.js`/`.wxss` |
 
 **不包含**：Prettier / ESLint、WXML 格式统一、微信开发者工具专有 UI 校验。若 DevTools 仍有警告，请在工具内查看具体项；本地开发可在 `project.private.config.json` 中设置 `urlCheck: false`（见 `project.private.config.example.json`）。
 

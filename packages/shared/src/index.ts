@@ -87,8 +87,23 @@ export interface CreateApiTokenResult {
   id: string;
   token: string;
   name: string;
+  tokenType?: string;
   scopes: string[];
   expiresAt?: string;
+}
+
+export interface ApiTokenSummary {
+  id: string;
+  name: string;
+  scopes: string[];
+  expiresAt?: string;
+  lastUsedAt?: string;
+  revokedAt?: string;
+  createdAt: string;
+}
+
+export interface ApiTokenListResult {
+  items: ApiTokenSummary[];
 }
 
 export interface ReminderSummary {
