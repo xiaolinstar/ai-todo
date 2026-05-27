@@ -60,14 +60,14 @@ ai-todo today --json
 Agent 自行解析时间与标题，**不要**调用不存在的 `parse` 命令：
 
 ```bash
-# 先搜联系人（重名则向用户确认 contact_id）
+# 先搜联系人（重名则向用户确认 contact_id 或 handle）
 ai-todo contact search "王总" --json
 
 # 再创建提醒（关联联系人）
 ai-todo reminder create \
   --title "给客户王总发报价确认邮件" \
   --due "2026-05-21T10:00:00+08:00" \
-  --contact <contact_id> \
+  --contact <contact_id_or_handle> \
   --json
 ```
 
@@ -78,7 +78,7 @@ ai-todo reminder create \
 ```bash
 ai-todo calendar add \
   --title "产品评审" \
-  --contact <contact_id> \
+  --contact <contact_id_or_handle> \
   --start "2026-05-20T14:00:00+08:00" \
   --end "2026-05-20T15:00:00+08:00" \
   --location "会议室 A" \
@@ -105,9 +105,11 @@ ai-todo reminder delete rem_xxx --json
 | 创建日程 | `ai-todo calendar add --title … --start …` |
 | 更新日程 | `ai-todo calendar update <id> [--title …] [--start …]` |
 | 今日日程 | `ai-todo calendar today --json` |
+| 联系人列表 | `ai-todo contact list --json` |
 | 搜索联系人 | `ai-todo contact search "<q>"` |
-| 创建联系人 | `ai-todo contact add "<name>" --email …` |
-| 更新联系人 | `ai-todo contact update <id> [--name …] [--email …]` |
+| 查看联系人 | `ai-todo contact show <id_or_handle>` |
+| 创建联系人 | `ai-todo contact add "<name>" [--handle …] --email …` |
+| 更新联系人 | `ai-todo contact update <id_or_handle> [--handle …] [--name …] [--email …]` |
 
 完整列表：`ai-todo help`
 

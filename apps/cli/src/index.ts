@@ -89,6 +89,8 @@ async function main(): Promise<void> {
       const action = sub ?? "help";
       if (action === "add") {
         await contact.runContactAdd(ctx, argv);
+      } else if (action === "list") {
+        await contact.runContactList(ctx);
       } else if (action === "search") {
         await contact.runContactSearch(ctx, argv);
       } else if (action === "show") {
@@ -96,7 +98,7 @@ async function main(): Promise<void> {
       } else if (action === "update") {
         await contact.runContactUpdate(ctx, argv);
       } else {
-        console.error("Usage: ai-todo contact <add|search|show|update>");
+        console.error("Usage: ai-todo contact <add|list|search|show|update>");
         process.exitCode = 1;
       }
       break;

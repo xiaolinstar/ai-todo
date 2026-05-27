@@ -37,10 +37,11 @@ Calendar:
   ai-todo calendar delete <event_id>
 
 Contacts:
-  ai-todo contact add <name> [--email <v>] [--phone <v>] [--alias <v>]
+  ai-todo contact add <name> [--handle <handle>] [--email <v>] [--phone <v>] [--alias <v>]
+  ai-todo contact list
   ai-todo contact search <query>
-  ai-todo contact show <contact_id>
-  ai-todo contact update <contact_id> [--name <text>] [--email <v>] [--phone <v>]
+  ai-todo contact show <contact_id_or_handle>
+  ai-todo contact update <contact_id_or_handle> [--handle <handle>] [--name <text>] [--email <v>] [--phone <v>]
 
 Agents: see docs/agent-usage.md and skills/ai-todo/SKILL.md`);
 }

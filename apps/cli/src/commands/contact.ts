@@ -1,4 +1,4 @@
-import type { CreateContactInput } from "@ai-todo/shared";
+import type { ContactSummary, CreateContactInput } from "@ai-todo/shared";
 
 import type { CliContext } from "../context";
 import { handleApi, positionalAfter, readFlagValue } from "../context";
@@ -46,18 +46,25 @@ export async function runContactAdd(ctx: CliContext, argv: string[]): Promise<vo
 
 export async function runContactSearch(ctx: CliContext, argv: string[]): Promise<void> {
   const query = positionalAfter(argv, "contact", "search");
+  if (!query) {
+    console.error("Usage: ai-todo contact search <query>");
+    process.exitCode = 1;
+    return;
+  }
   await handleApi(ctx, await ctx.client.searchContacts(query), (data) => {
     if (ctx.json) {
       return;
     }
-    if (data.items.length === 0) {
-      console.log("未找到联系人");
+    renderContactList(data.items);
+  });
+}
+
+export async function runContactList(ctx: CliContext): Promise<void> {
+  await handleApi(ctx, await ctx.client.searchContacts(), (data) => {
+    if (ctx.json) {
       return;
     }
-    for (const contact of data.items) {
-      const email = contact.primaryEmail ? ` <${contact.primaryEmail}>` : "";
-      console.log(`- ${contact.displayName}${email} (@${contact.handle}, ${contact.id})`);
-    }
+    renderContactList(data.items);
   });
 }
 
@@ -74,6 +81,7 @@ export async function runContactShow(ctx: CliContext, argv: string[]): Promise<v
     }
     const c = data.contact;
     console.log(`${c.displayName} (@${c.handle}, ${c.id})`);
+    console.log(`标识来源：${c.handleSource === "generated" ? "自动生成" : "手动设置"}`);
     if (c.linkedUserId) {
       console.log(`平台用户：${c.linkedUserId}`);
     }
@@ -85,6 +93,17 @@ export async function runContactShow(ctx: CliContext, argv: string[]): Promise<v
     }
     if (c.aliases.length > 0) {
       console.log(`别名：${c.aliases.join(", ")}`);
+    }
+    if (c.methods.length > 0) {
+      console.log("联系方式：");
+      for (const method of c.methods) {
+        const primary = method.isPrimary ? "，主要" : "";
+        const label = method.label ? `，${method.label}` : "";
+        console.log(`- ${method.type}${label}${primary}：${method.value}`);
+      }
+    }
+    if (c.notes) {
+      console.log(`备注：${c.notes}`);
     }
   });
 }
@@ -138,6 +157,20 @@ export async function runContactUpdate(ctx: CliContext, argv: string[]): Promise
       }
     }
   );
+}
+
+function renderContactList(items: ContactSummary[]): void {
+  if (items.length === 0) {
+    console.log("未找到联系人");
+    return;
+  }
+
+  for (const contact of items) {
+    const email = contact.primaryEmail ? ` <${contact.primaryEmail}>` : "";
+    const phone = contact.primaryPhone ? ` ${contact.primaryPhone}` : "";
+    const company = contact.company ? ` · ${contact.company}` : "";
+    console.log(`- ${contact.displayName}${company}${email}${phone} (@${contact.handle}, ${contact.id})`);
+  }
 }
 
 declare const process: { exitCode?: number };
