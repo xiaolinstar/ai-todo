@@ -1,5 +1,3 @@
-from unittest.mock import patch
-
 from fastapi.testclient import TestClient
 from ai_todo_api.config import settings
 from ai_todo_api.auth.service import ensure_dev_user

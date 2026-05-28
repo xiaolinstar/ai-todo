@@ -71,7 +71,7 @@ def login_with_wechat_code(session: Session, code: str) -> WechatLoginResult:
 
     try:
         return _complete_wechat_login(session, wechat_session)
-    except IntegrityError as exc:
+    except IntegrityError:
         session.rollback()
         try:
             return _complete_wechat_login(session, wechat_session)

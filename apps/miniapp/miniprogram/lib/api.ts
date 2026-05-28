@@ -97,16 +97,30 @@ function buildHeaders(): Record<string, string> {
   return headers;
 }
 
+function createIdempotencyKey(): string {
+  const timestamp = Date.now().toString(36);
+  const random = `${Math.random().toString(36).slice(2)}${Math.random()
+    .toString(36)
+    .slice(2)}`.slice(0, 16);
+  return `miniapp-${timestamp}-${random}`;
+}
+
 export function request<T>(
   path: string,
   options: { method?: string; data?: object } = {}
 ): Promise<ApiResponse<T>> {
   return new Promise((resolve, reject) => {
+    const method = options.method || "GET";
+    const header = buildHeaders();
+    if (method.toUpperCase() !== "GET") {
+      header["Idempotency-Key"] = createIdempotencyKey();
+    }
+
     wx.request({
       url: buildUrl(path),
-      method: options.method || "GET",
+      method,
       data: options.data,
-      header: buildHeaders(),
+      header,
       success(res) {
         if (res.statusCode >= 400) {
           const body = res.data as ApiResponse<T> | undefined;
