@@ -22,15 +22,29 @@ from ai_todo_api.schemas import ApiResponse
 
 
 @asynccontextmanager
-async def lifespan(_: FastAPI):
+async def lifespan(application: FastAPI):
     if settings.allow_dev_auth:
-        with SessionLocal() as session:
-            ensure_dev_user(
-                session,
-                user_id=settings.dev_user_id,
-                display_name=settings.dev_user_display_name,
-                timezone=settings.timezone,
-            )
+        override = application.dependency_overrides.get(get_db)
+        if override is not None:
+            session_generator = override()
+            try:
+                session = next(session_generator)
+                ensure_dev_user(
+                    session,
+                    user_id=settings.dev_user_id,
+                    display_name=settings.dev_user_display_name,
+                    timezone=settings.timezone,
+                )
+            finally:
+                session_generator.close()
+        else:
+            with SessionLocal() as session:
+                ensure_dev_user(
+                    session,
+                    user_id=settings.dev_user_id,
+                    display_name=settings.dev_user_display_name,
+                    timezone=settings.timezone,
+                )
     yield
 
 

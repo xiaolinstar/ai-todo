@@ -12,7 +12,6 @@ from ai_todo_api.common.time import now_utc
 from ai_todo_api.config import settings
 from ai_todo_api.db.models import ApiTokenModel
 from ai_todo_api.modules.api_tokens.constants import (
-    CLIENT_KIND_CLI,
     CLIENT_KIND_MINIAPP,
     TOKEN_TYPE_PAT,
     TOKEN_TYPE_SESSION,

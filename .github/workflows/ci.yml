@@ -37,6 +37,19 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm typecheck
       - run: pnpm lint
+      - name: Verify deploy manifest tooling
+        run: |
+          TMP_DIR="$(mktemp -d)"
+          cd "$TMP_DIR"
+          API_IMAGE="${{ env.API_IMAGE_NAME }}@sha256:0000000000000000000000000000000000000000000000000000000000000000" \
+            API_IMAGE_DIGEST="sha256:0000000000000000000000000000000000000000000000000000000000000000" \
+            MINIAPP_ARTIFACT_SHA="0000000000000000000000000000000000000000000000000000000000000000" \
+            GITHUB_REPOSITORY="${{ github.repository }}" \
+            GITHUB_SHA="${{ github.sha }}" \
+            GITHUB_REF="${{ github.ref }}" \
+            GITHUB_RUN_ID="${{ github.run_id }}" \
+            node "$GITHUB_WORKSPACE/scripts/ci/write-deploy-manifest.mjs"
+          node "$GITHUB_WORKSPACE/scripts/ci/verify-deploy-manifest.mjs" deploy-manifest.json
 
   scan-miniapp:
     name: "1-scan · Miniapp typecheck"
@@ -73,6 +86,7 @@ jobs:
 
       - run: python -m pip install -e ".[dev]"
       - run: python -m ruff check src tests
+      - run: python scripts/check_alembic_migrations.py
 
   # ═══════════════════════════════════════════════════════════════════════════
   # Phase 2 · Build (compile / image; outputs become CD inputs)
@@ -185,12 +199,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: pnpm
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
           cache: pip
           cache-dependency-path: apps/api/pyproject.toml
 
+      - run: pnpm install --frozen-lockfile
+        working-directory: .
       - run: python -m pip install -e ".[dev]"
       - run: python -m pytest -q
 

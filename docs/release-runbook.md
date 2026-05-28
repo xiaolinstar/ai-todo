@@ -160,7 +160,9 @@ curl -sf https://wodi.games/v1/health/db
 2. PR → main（CI 绿）
 3. merge 后自动 SSH 部署
 4. curl https://wodi.games/v1/health
-5. 小程序 smoke test（微信登录 + 提醒列表）
+5. curl https://wodi.games/v1/health/db
+6. 查看服务器 `.deploy/current.json`，确认 `gitSha` / image digest / fingerprint 符合预期
+7. 小程序 smoke test（微信登录 + 提醒列表）
 ```
 
 ### Gateway 变更（域名/证书/路由）
@@ -184,11 +186,13 @@ curl -sf https://wodi.games/v1/health/db
 
 ### API
 
-```bash
-cd ~/AgentProjects/ai-todo
-git reset --hard <good-commit>
-bash apps/api/deploy/remote-deploy.sh
-```
+自动回滚：manifest 部署后如果 `/v1/health` 或 `/v1/health/db` 失败，部署脚本会读取上一版 `.deploy/current.json`，切回上一版 `gitSha` 与 API 镜像 digest，并重新健康检查。回滚成功后，`.deploy/current.json` 会标记为 `status: rolled_back`。
+
+手动回滚：触发 GitHub Actions 的 `CD` workflow，填写要回滚到的旧 `ci_run_id`。CD 会下载该次 CI 的 `deploy-manifest`，校验 fingerprint，并按旧镜像 digest 部署。
+
+应急方式（GitHub Actions 不可用时）：在服务器本地执行 `remote-deploy.sh`。这种方式会在服务器上 build，速度和可追溯性都弱于 manifest 部署。
+
+注意：应用回滚不会回滚 PostgreSQL volume 中已经执行过的 schema/data migration。数据库变更必须按向前兼容方式设计，避免“新版本迁移后旧版本无法启动”。迁移规范见 [database-migrations.md](./database-migrations.md)。
 
 ### 数据库备份
 
@@ -204,9 +208,13 @@ docker compose -f apps/api/docker-compose.prod.yml exec postgres \
 **服务器**
 
 - [ ] API health：`curl http://127.0.0.1:8082/v1/health`
+- [ ] DB health：`curl http://127.0.0.1:8082/v1/health/db`，确认 `status=ok`
 - [ ] Gateway health：`curl https://wodi.games/v1/health`
+- [ ] Gateway DB health：`curl https://wodi.games/v1/health/db`
+- [ ] `.deploy/current.json` 中的 `gitSha` / `apiDigest` / `fingerprint` 与本次 CI 一致
 - [ ] `.env.production` 中 `AI_TODO_ALLOW_DEV_AUTH=false`
 - [ ] 微信 AppID / AppSecret 正确
+- [ ] 若本次包含 Alembic migration，确认符合 expand/deploy/backfill/contract 策略
 
 **微信**
 
