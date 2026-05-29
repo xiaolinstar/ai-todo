@@ -67,8 +67,23 @@ CD 部署前会执行 `scripts/ci/verify-deploy-manifest.mjs` 校验指纹未被
 
 | 环境 | GitHub Environment | 触发方式 | Secrets |
 |------|-------------------|----------|---------|
-| **production** | `production` | `main` CI 成功后自动；或手动选 production | `DEPLOY_*`、`GHCR_DEPLOY_*` |
+| **production** | `production` | `main` CI 成功后自动；或手动 | `DEPLOY_*`、`GHCR_DEPLOY_*` |
 | **staging** | `staging` | 仅手动 workflow_dispatch，选择 staging | 在 Environment 中配置独立 `DEPLOY_*` |
+
+**未配置 `DEPLOY_*` 时**：CI 成功后的自动 CD **会跳过部署**（workflow 显示成功，并输出 notice），不会把整条流水线标红。当前若仍用手动 `docker compose` 发布，这是预期行为。
+
+**手动触发 CD**（workflow_dispatch）时若缺少 secrets，仍会 **失败并提示**，避免误以为已部署。
+
+启用自动 CD 前，在 GitHub `production` Environment 配置：
+
+```bash
+gh secret set DEPLOY_HOST --env production
+gh secret set DEPLOY_USER --env production
+gh secret set DEPLOY_SSH_KEY --env production
+# 可选
+gh secret set DEPLOY_PATH --env production
+gh secret set GHCR_DEPLOY_TOKEN --env production
+```
 
 手动 CD 参数：
 

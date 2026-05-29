@@ -98,25 +98,36 @@ jobs:
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.environment || 'production' }}
     steps:
-      - name: Ensure deploy secrets exist
+      - name: Check deploy configuration
+        id: deploy_config
         run: |
           missing=()
           [[ -z "${{ secrets.DEPLOY_HOST }}" ]] && missing+=("DEPLOY_HOST")
           [[ -z "${{ secrets.DEPLOY_USER }}" ]] && missing+=("DEPLOY_USER")
           [[ -z "${{ secrets.DEPLOY_SSH_KEY }}" ]] && missing+=("DEPLOY_SSH_KEY")
           if ((${#missing[@]} > 0)); then
-            echo "::error::Missing GitHub secrets in environment '${{ github.event.inputs.environment || 'production' }}' (or repository): ${missing[*]}"
-            echo "Configure via: gh secret set DEPLOY_HOST --env production"
-            exit 1
+            if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+              echo "::error::Missing GitHub secrets in environment '${{ github.event.inputs.environment || 'production' }}' (or repository): ${missing[*]}"
+              echo "Configure via: gh secret set DEPLOY_HOST --env production"
+              exit 1
+            fi
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::CD deploy skipped — DEPLOY_* secrets not configured in environment '${{ github.event.inputs.environment || 'production' }}'."
+            echo "Until CD is enabled, deploy manually on VPS (see docs/deploy.md): git pull && docker compose up -d --build"
+            echo "To enable auto deploy later: gh secret set DEPLOY_HOST --env production (and DEPLOY_USER, DEPLOY_SSH_KEY, optional DEPLOY_PATH, GHCR_DEPLOY_TOKEN)"
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Download verified manifest
+        if: steps.deploy_config.outputs.configured == 'true'
         uses: actions/download-artifact@v4
         with:
           name: cd-deploy-manifest
           path: manifest
 
       - name: Copy manifest to server
+        if: steps.deploy_config.outputs.configured == 'true'
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.DEPLOY_HOST }}
@@ -129,6 +140,7 @@ jobs:
           overwrite: true
 
       - name: Deploy (pull CI image, no build)
+        if: steps.deploy_config.outputs.configured == 'true'
         uses: appleboy/ssh-action@v1.2.0
         env:
           FINGERPRINT: ${{ needs.resolve-manifest.outputs.fingerprint }}
