@@ -108,7 +108,8 @@ docker compose up -d
 |--------|------|
 | `DEPLOY_HOST` | VPS IP |
 | `DEPLOY_USER` | SSH 用户名 |
-| `DEPLOY_SSH_KEY` | SSH 私钥 |
+| `DEPLOY_SSH_KEY` | SSH **私钥全文**（不是登录密码） |
+| `DEPLOY_PASSWORD` | 可选：SSH 登录密码（与私钥二选一） |
 | `DEPLOY_PATH` | 如 `~/AgentProjects/ai-todo` |
 
 验证：
