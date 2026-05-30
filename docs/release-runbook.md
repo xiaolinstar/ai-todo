@@ -110,7 +110,7 @@ docker compose up -d
 | `DEPLOY_USER` | SSH 用户名 |
 | `DEPLOY_SSH_KEY` | SSH **私钥全文**（不是登录密码） |
 | `DEPLOY_PASSWORD` | 可选：SSH 登录密码（与私钥二选一） |
-| `DEPLOY_PATH` | 如 `~/AgentProjects/ai-todo` |
+| `DEPLOY_PATH` | 可选；服务器仓库路径，默认 `$HOME/AgentProjects/ai-todo` |
 
 验证：
 
