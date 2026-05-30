@@ -10,18 +10,49 @@ REPO_ROOT="$(cd "$API_DIR/../.." && pwd)"
 DEPLOY_DIR="$REPO_ROOT/.deploy"
 CURRENT_DEPLOY_FILE="$DEPLOY_DIR/current.json"
 
-if ! command -v node >/dev/null 2>&1; then
-  echo "node is required to verify deploy-manifest fingerprint" >&2
+if ! command -v python3 >/dev/null 2>&1; then
+  echo "python3 is required to verify deploy-manifest fingerprint" >&2
   exit 1
 fi
 
-node "$REPO_ROOT/scripts/ci/verify-deploy-manifest.mjs" "$MANIFEST"
+python3 - "$MANIFEST" <<'PY'
+import hashlib
+import json
+import sys
+from pathlib import Path
 
-GIT_SHA="$(node -e "console.log(JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')).gitSha)" "$MANIFEST")"
-API_IMAGE="$(node -e "console.log(JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')).artifacts.api.image)" "$MANIFEST")"
-API_DIGEST="$(node -e "console.log(JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')).artifacts.api.digest)" "$MANIFEST")"
-FINGERPRINT="$(node -e "console.log(JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')).fingerprint)" "$MANIFEST")"
-RUN_ID="$(node -e "console.log(JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')).runId || '')" "$MANIFEST")"
+manifest = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+fingerprint = manifest.pop("fingerprint", None)
+if not isinstance(fingerprint, str):
+    print("manifest missing fingerprint", file=sys.stderr)
+    raise SystemExit(1)
+
+body = json.dumps(manifest, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+expected = f"sha256:{hashlib.sha256(body.encode('utf-8')).hexdigest()}"
+if fingerprint != expected:
+    print(f"fingerprint mismatch: got {fingerprint}, expected {expected}", file=sys.stderr)
+    raise SystemExit(1)
+
+if not (
+    manifest.get("gitSha")
+    and manifest.get("artifacts", {}).get("api", {}).get("image")
+    and manifest.get("artifacts", {}).get("api", {}).get("digest")
+):
+    print("manifest missing required fields (gitSha, artifacts.api)", file=sys.stderr)
+    raise SystemExit(1)
+
+print(
+    "manifest OK "
+    f"sha={manifest['gitSha']} "
+    f"image={manifest['artifacts']['api']['image']}"
+)
+PY
+
+GIT_SHA="$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['gitSha'])" "$MANIFEST")"
+API_IMAGE="$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['artifacts']['api']['image'])" "$MANIFEST")"
+API_DIGEST="$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['artifacts']['api']['digest'])" "$MANIFEST")"
+FINGERPRINT="$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['fingerprint'])" "$MANIFEST")"
+RUN_ID="$(python3 -c "import json,sys; print(json.load(open(sys.argv[1])).get('runId') or '')" "$MANIFEST")"
 
 echo "Deploy manifest OK"
 echo "  git_sha=${GIT_SHA}"
@@ -39,11 +70,11 @@ PREVIOUS_API_DIGEST=""
 PREVIOUS_FINGERPRINT=""
 PREVIOUS_RUN_ID=""
 if [[ -f "$CURRENT_DEPLOY_FILE" ]]; then
-  PREVIOUS_GIT_SHA="$(node -e "const v = JSON.parse(require('fs').readFileSync(process.argv[1], 'utf8')); console.log(v.gitSha || '')" "$CURRENT_DEPLOY_FILE")"
-  PREVIOUS_API_IMAGE="$(node -e "const v = JSON.parse(require('fs').readFileSync(process.argv[1], 'utf8')); console.log(v.apiImage || '')" "$CURRENT_DEPLOY_FILE")"
-  PREVIOUS_API_DIGEST="$(node -e "const v = JSON.parse(require('fs').readFileSync(process.argv[1], 'utf8')); console.log(v.apiDigest || '')" "$CURRENT_DEPLOY_FILE")"
-  PREVIOUS_FINGERPRINT="$(node -e "const v = JSON.parse(require('fs').readFileSync(process.argv[1], 'utf8')); console.log(v.fingerprint || '')" "$CURRENT_DEPLOY_FILE")"
-  PREVIOUS_RUN_ID="$(node -e "const v = JSON.parse(require('fs').readFileSync(process.argv[1], 'utf8')); console.log(v.ciRunId || '')" "$CURRENT_DEPLOY_FILE")"
+  PREVIOUS_GIT_SHA="$(python3 -c "import json,sys; print(json.load(open(sys.argv[1])).get('gitSha') or '')" "$CURRENT_DEPLOY_FILE")"
+  PREVIOUS_API_IMAGE="$(python3 -c "import json,sys; print(json.load(open(sys.argv[1])).get('apiImage') or '')" "$CURRENT_DEPLOY_FILE")"
+  PREVIOUS_API_DIGEST="$(python3 -c "import json,sys; print(json.load(open(sys.argv[1])).get('apiDigest') or '')" "$CURRENT_DEPLOY_FILE")"
+  PREVIOUS_FINGERPRINT="$(python3 -c "import json,sys; print(json.load(open(sys.argv[1])).get('fingerprint') or '')" "$CURRENT_DEPLOY_FILE")"
+  PREVIOUS_RUN_ID="$(python3 -c "import json,sys; print(json.load(open(sys.argv[1])).get('ciRunId') or '')" "$CURRENT_DEPLOY_FILE")"
 fi
 
 cd "$REPO_ROOT"
@@ -105,14 +136,21 @@ verify_deployed_api() {
 
   local health_db_json
   health_db_json="$(curl -sf "http://127.0.0.1:${PUBLISH_PORT}/v1/health/db")"
-  node -e "
-const response = JSON.parse(process.argv[1]);
-const data = response.data || {};
-if (!response.ok || data.status !== 'ok' || data.identitiesTable !== true || data.usersHasUsername !== true) {
-  console.error('health/db failed:', JSON.stringify(response));
-  process.exit(1);
-}
-" "$health_db_json"
+  python3 - "$health_db_json" <<'PY'
+import json
+import sys
+
+response = json.loads(sys.argv[1])
+data = response.get("data") or {}
+if not (
+    response.get("ok")
+    and data.get("status") == "ok"
+    and data.get("identitiesTable") is True
+    and data.get("usersHasUsername") is True
+):
+    print(f"health/db failed: {json.dumps(response, ensure_ascii=False)}", file=sys.stderr)
+    raise SystemExit(1)
+PY
 }
 
 write_deploy_record() {
@@ -126,36 +164,41 @@ write_deploy_record() {
   local rolled_back_from_git_sha="${8:-}"
   local rolled_back_from_api_image="${9:-}"
 
-  node -e "
-const fs = require('fs');
-const [
-  output,
-  gitSha,
-  apiImage,
-  apiDigest,
-  fingerprint,
-  ciRunId,
-  status,
-  rolledBackFromGitSha,
-  rolledBackFromApiImage
-] = process.argv.slice(1);
-const payload = {
-  gitSha,
-  apiImage,
-  apiDigest,
-  fingerprint,
-  ciRunId: ciRunId || null,
-  status,
-  deployedAt: new Date().toISOString()
-};
-if (rolledBackFromGitSha || rolledBackFromApiImage) {
-  payload.rolledBackFrom = {
-    gitSha: rolledBackFromGitSha || null,
-    apiImage: rolledBackFromApiImage || null
-  };
+  python3 - "$output" "$git_sha" "$api_image" "$api_digest" "$fingerprint" "$run_id" "$status" "$rolled_back_from_git_sha" "$rolled_back_from_api_image" <<'PY'
+import json
+import sys
+from datetime import UTC, datetime
+from pathlib import Path
+
+(
+    output,
+    git_sha,
+    api_image,
+    api_digest,
+    fingerprint,
+    ci_run_id,
+    status,
+    rolled_back_from_git_sha,
+    rolled_back_from_api_image,
+) = sys.argv[1:]
+
+payload = {
+    "gitSha": git_sha,
+    "apiImage": api_image,
+    "apiDigest": api_digest,
+    "fingerprint": fingerprint,
+    "ciRunId": ci_run_id or None,
+    "status": status,
+    "deployedAt": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
 }
-fs.writeFileSync(output, JSON.stringify(payload, null, 2) + '\n');
-" "$output" "$git_sha" "$api_image" "$api_digest" "$fingerprint" "$run_id" "$status" "$rolled_back_from_git_sha" "$rolled_back_from_api_image"
+if rolled_back_from_git_sha or rolled_back_from_api_image:
+    payload["rolledBackFrom"] = {
+        "gitSha": rolled_back_from_git_sha or None,
+        "apiImage": rolled_back_from_api_image or None,
+    }
+
+Path(output).write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
 }
 
 rollback_previous_deploy() {

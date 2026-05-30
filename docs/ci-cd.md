@@ -146,7 +146,7 @@ cat ~/.ssh/ai_todo_deploy.pub   # 追加到服务器 ~/.ssh/authorized_keys
 
 manifest 部署路径会在远端执行这些硬性检查：
 
-- `node` 与 `docker compose` 可用
+- `python3` 与 `docker compose` 可用
 - `.env.production` 存在
 - `AI_TODO_ALLOW_DEV_AUTH=false`
 - `AI_TODO_WECHAT_APP_ID` / `AI_TODO_WECHAT_APP_SECRET` 已填写
