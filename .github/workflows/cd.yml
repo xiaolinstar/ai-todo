@@ -184,6 +184,8 @@ jobs:
             export AI_TODO_DEPLOY_MANIFEST=/tmp/deploy-manifest.json
             DEPLOY_PATH="${DEPLOY_PATH:-$HOME/AgentProjects/ai-todo}"
             cd "$DEPLOY_PATH"
+            git fetch --prune origin main
+            git pull --ff-only origin main
             bash apps/api/deploy/remote-deploy.sh
 
       - name: Deploy (pull CI image, no build, password)
@@ -208,4 +210,6 @@ jobs:
             export AI_TODO_DEPLOY_MANIFEST=/tmp/deploy-manifest.json
             DEPLOY_PATH="${DEPLOY_PATH:-$HOME/AgentProjects/ai-todo}"
             cd "$DEPLOY_PATH"
+            git fetch --prune origin main
+            git pull --ff-only origin main
             bash apps/api/deploy/remote-deploy.sh
