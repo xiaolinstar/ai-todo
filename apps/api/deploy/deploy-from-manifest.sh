@@ -77,7 +77,21 @@ if ! grep -Eq '^AI_TODO_WECHAT_APP_SECRET=.+$' "$ENV_FILE"; then
 fi
 
 if [[ -n "${GHCR_DEPLOY_TOKEN:-}" ]]; then
-  echo "$GHCR_DEPLOY_TOKEN" | docker login ghcr.io -u "${GHCR_DEPLOY_USER:-github}" --password-stdin
+  GHCR_LOGIN_USER="${GHCR_DEPLOY_USER:-github}"
+  echo "$GHCR_DEPLOY_TOKEN" | docker login ghcr.io -u "$GHCR_LOGIN_USER" --password-stdin
+fi
+
+PULL_REGISTRY_MIRROR="$(grep -E '^AI_TODO_PULL_REGISTRY_MIRROR=' "$ENV_FILE" | tail -n1 | cut -d= -f2- | tr -d ' "'\''"' || true)"
+PULL_REGISTRY_MIRROR="${AI_TODO_PULL_REGISTRY_MIRROR:-${PULL_REGISTRY_MIRROR:-}}"
+CANONICAL_REGISTRY_HOST="${AI_TODO_CANONICAL_REGISTRY_HOST:-ghcr.io}"
+
+if [[ -n "${GHCR_DEPLOY_TOKEN:-}" && -n "$PULL_REGISTRY_MIRROR" ]]; then
+  echo "$GHCR_DEPLOY_TOKEN" | docker login "$PULL_REGISTRY_MIRROR" -u "${GHCR_LOGIN_USER:-github}" --password-stdin \
+    || echo "Warning: docker login $PULL_REGISTRY_MIRROR failed; mirror pull may still work for cached public layers." >&2
+fi
+
+if [[ -n "$PULL_REGISTRY_MIRROR" ]]; then
+  echo "Pull registry mirror enabled: $PULL_REGISTRY_MIRROR (canonical remains $CANONICAL_REGISTRY_HOST; digest-pinned)"
 fi
 
 COMPOSE_FILES=()
@@ -93,7 +107,17 @@ set_compose_files
 PUBLISH_PORT="$(grep -E '^AI_TODO_PUBLISH_PORT=' "$ENV_FILE" | cut -d= -f2- || true)"
 PUBLISH_PORT="${PUBLISH_PORT:-8082}"
 
-pull_image_with_retry() {
+rewrite_pull_ref() {
+  local canonical="$1"
+  local mirror="$2"
+  if [[ -z "$mirror" || "$canonical" != "${CANONICAL_REGISTRY_HOST}/"* ]]; then
+    echo "$canonical"
+    return 0
+  fi
+  echo "${mirror}/${canonical#${CANONICAL_REGISTRY_HOST}/}"
+}
+
+pull_with_retries() {
   local image="$1"
   local max_attempts="${AI_TODO_PULL_RETRIES:-5}"
   local attempt=1
@@ -106,24 +130,83 @@ pull_image_with_retry() {
     if (( attempt == max_attempts )); then
       break
     fi
-    echo "docker pull attempt ${attempt}/${max_attempts} failed; retrying in ${wait_seconds}s..." >&2
+    echo "docker pull attempt ${attempt}/${max_attempts} failed for ${image}; retrying in ${wait_seconds}s..." >&2
     sleep "$wait_seconds"
     attempt=$((attempt + 1))
     wait_seconds=$((wait_seconds * 2))
   done
 
-  echo "Failed to pull API image after ${max_attempts} attempts: $image" >&2
+  echo "Failed to pull after ${max_attempts} attempts: $image" >&2
   return 1
+}
+
+ensure_local_canonical_ref() {
+  local canonical="$1"
+  local pulled_ref="$2"
+
+  if [[ "$pulled_ref" == "$canonical" ]]; then
+    return 0
+  fi
+  if ! docker image inspect "$pulled_ref" >/dev/null 2>&1; then
+    echo "Pulled ref not found locally: $pulled_ref" >&2
+    return 1
+  fi
+  docker tag "$pulled_ref" "$canonical"
+  echo "Retagged local image to canonical ref: $canonical" >&2
+}
+
+verify_local_image_digest() {
+  local canonical="$1"
+  local expected_digest="$2"
+
+  if ! docker image inspect "$canonical" >/dev/null 2>&1; then
+    echo "Image not present locally: $canonical" >&2
+    return 1
+  fi
+
+  local repo_digests
+  repo_digests="$(docker image inspect "$canonical" --format '{{range .RepoDigests}}{{println .}}{{end}}')"
+  if [[ -n "$repo_digests" ]] && ! grep -Fq "$expected_digest" <<<"$repo_digests"; then
+    echo "Digest mismatch for $canonical (expected $expected_digest)" >&2
+    echo "RepoDigests:" >&2
+    echo "$repo_digests" >&2
+    return 1
+  fi
+  return 0
+}
+
+pull_api_image() {
+  local canonical="$1"
+  local expected_digest="$2"
+  local mirror="$PULL_REGISTRY_MIRROR"
+  local mirror_ref=""
+
+  if [[ -n "$mirror" ]]; then
+    mirror_ref="$(rewrite_pull_ref "$canonical" "$mirror")"
+    if [[ "$mirror_ref" != "$canonical" ]]; then
+      echo "Trying pull via mirror $mirror ..." >&2
+      if pull_with_retries "$mirror_ref" && ensure_local_canonical_ref "$canonical" "$mirror_ref"; then
+        if verify_local_image_digest "$canonical" "$expected_digest"; then
+          echo "Pull OK via mirror $mirror" >&2
+          return 0
+        fi
+      fi
+      echo "Mirror pull failed or digest mismatch; falling back to $CANONICAL_REGISTRY_HOST." >&2
+    fi
+  fi
+
+  echo "Trying pull via canonical registry $CANONICAL_REGISTRY_HOST ..." >&2
+  if ! pull_with_retries "$canonical"; then
+    return 1
+  fi
+  verify_local_image_digest "$canonical" "$expected_digest"
 }
 
 deploy_image() {
   local image="$1"
+  local digest="$2"
   export AI_TODO_API_IMAGE="$image"
-  if ! pull_image_with_retry "$image"; then
-    return 1
-  fi
-  if ! docker image inspect "$image" >/dev/null 2>&1; then
-    echo "Image not present locally after pull: $image" >&2
+  if ! pull_api_image "$image" "$digest"; then
     return 1
   fi
   docker compose "${COMPOSE_FILES[@]}" --env-file "$ENV_FILE" up -d --no-build --pull never
@@ -214,7 +297,7 @@ rollback_previous_deploy() {
   cd "$API_DIR"
   set_compose_files
 
-  deploy_image "$PREVIOUS_API_IMAGE"
+  deploy_image "$PREVIOUS_API_IMAGE" "$PREVIOUS_API_DIGEST"
   verify_deployed_api
 
   mkdir -p "$DEPLOY_DIR"
@@ -230,7 +313,7 @@ rollback_previous_deploy() {
     "$API_IMAGE"
 }
 
-if ! deploy_image "$API_IMAGE" || ! verify_deployed_api; then
+if ! deploy_image "$API_IMAGE" "$API_DIGEST" || ! verify_deployed_api; then
   echo "New deploy failed health checks; attempting automatic rollback." >&2
   if rollback_previous_deploy; then
     echo "Rollback OK; current deploy remains on previous version." >&2
