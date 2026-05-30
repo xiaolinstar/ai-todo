@@ -141,6 +141,7 @@ cat ~/.ssh/ai_todo_deploy.pub   # 追加到服务器 ~/.ssh/authorized_keys
 4. Docker Compose ≥ 2.20（支持 `image` + `--no-build` 部署）
 
 部署入口：`apps/api/deploy/remote-deploy.sh`  
+- CD 进入 `DEPLOY_PATH` 后会先 `git pull --ff-only origin main`，确保服务器部署脚本与 GitHub `main` 一致；若服务器目录有分叉或无法快进，会失败并停止部署。
 - 设置 `AI_TODO_DEPLOY_MANIFEST` → `deploy-from-manifest.sh`（拉 CI 镜像，**不** `--build`）  
 - 未设置 → 本地应急 `docker compose up -d --build`
 
