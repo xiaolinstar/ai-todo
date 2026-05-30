@@ -153,16 +153,14 @@ cat ~/.ssh/ai_todo_deploy.pub   # 追加到服务器 ~/.ssh/authorized_keys
    - 或将 `ghcr.io/xiaolinstar/ai-todo-api` 设为 public package  
 4. Docker Compose ≥ 2.20（支持 `image` + `--no-build` 部署）
 
-### 国内 VPS：GHCR 拉取加速（可选）
+### 国内 VPS：GHCR 拉取（可选镜像加速）
 
-manifest 与 `.deploy/current.json` **始终记录 canonical 地址** `ghcr.io/xiaolinstar/ai-todo-api@sha256:...`（CI 唯一发布源）。部署时可经南京大学 GHCR 镜像站加速 **pull 传输**，不改动 digest 与 fingerprint 校验链：
+默认 **直连 `ghcr.io`**（私有包 + `GHCR_DEPLOY_TOKEN`）。manifest 与 `.deploy/current.json` 始终记录 canonical 地址 `ghcr.io/...@sha256:...`。
 
 | 配置 | 说明 |
 |------|------|
-| `AI_TODO_PULL_REGISTRY_MIRROR=ghcr.nju.edu.cn` | `.env.production` 或 CD 环境变量；将 `ghcr.io` 替换为镜像 host 后 pull |
-| 失败回退 | 镜像站 pull 失败时自动回退直连 `ghcr.io` |
-| 私有包 | 仍 `docker login ghcr.io`（及镜像站）；凭据由 `GHCR_DEPLOY_TOKEN` 提供 |
-| 完整性 | pull 后校验 `RepoDigests` 含 manifest digest，并 retag 为 canonical `ghcr.io/...` 供 compose 使用 |
+| （默认，留空） | 私有 GHCR：`docker login ghcr.io` 后按 manifest digest pull |
+| `AI_TODO_PULL_REGISTRY_MIRROR=ghcr.nju.edu.cn` | 仅适用于 **public** GHCR 包；私有包无法使用公共缓存站 |
 
 参考：[NJU GHCR 镜像说明](https://doc.nju.edu.cn/books/e1654/page/ghcr)
 
