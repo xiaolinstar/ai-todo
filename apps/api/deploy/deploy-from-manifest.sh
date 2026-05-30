@@ -127,7 +127,10 @@ PUBLISH_PORT="${PUBLISH_PORT:-8082}"
 deploy_image() {
   local image="$1"
   export AI_TODO_API_IMAGE="$image"
-  docker compose "${COMPOSE_FILES[@]}" --env-file "$ENV_FILE" pull api
+  if ! docker compose "${COMPOSE_FILES[@]}" --env-file "$ENV_FILE" pull api; then
+    echo "Failed to pull API image: $image" >&2
+    return 1
+  fi
   docker compose "${COMPOSE_FILES[@]}" --env-file "$ENV_FILE" up -d --no-build
 }
 

@@ -114,7 +114,7 @@ CD 部署前会执行 `scripts/ci/verify-deploy-manifest.mjs` 校验指纹未被
 | `DEPLOY_SSH_KEY` | **SSH 私钥全文**（`-----BEGIN ... PRIVATE KEY-----`），**不是**登录密码 |
 | `DEPLOY_PASSWORD` | 可选：若不用密钥，填 SSH **登录密码**（二选一，优先密钥） |
 | `DEPLOY_PATH` | 可选：服务器上仓库路径，默认 `$HOME/AgentProjects/ai-todo` |
-| `GHCR_DEPLOY_TOKEN` | 可选：拉取 GHCR 镜像的 PAT |
+| `GHCR_DEPLOY_TOKEN` | 可选：自定义拉取 GHCR 镜像的 PAT；未配置时 CD 使用本次 workflow 的短期 `github.token` |
 
 若曾把服务器密码误填进 `DEPLOY_SSH_KEY`，请 **删除该 Secret**，改用 `DEPLOY_PASSWORD` 存密码，或按下方生成专用部署密钥。
 
