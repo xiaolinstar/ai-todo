@@ -88,7 +88,20 @@ Phase 4 · publish (仅 main push)
 }
 ```
 
-CD 部署前会执行 `scripts/ci/verify-deploy-manifest.mjs` 校验指纹未被篡改。
+CD 部署前会执行 `scripts/ci/verify_deploy_manifest.py` 校验指纹未被篡改（仅依赖 Python 标准库，VPS / Actions 均可直接调用，无需 pnpm）。
+
+`scripts/` 目录存放**可独立运行的检查与 CI/CD 工具**，刻意不经过 `package.json` 的 pnpm scripts 包装，以便在云原生环境（GitHub Actions、VPS、容器）中直接 `node scripts/...` 或 `python3 scripts/...` 调用，降低对 monorepo 工具链的依赖：
+
+| 脚本 | 用途 | 运行方式 |
+|------|------|----------|
+| `scripts/ci/write-deploy-manifest.mjs` | CI 发布 deploy-manifest | `node`（需 CI 环境变量） |
+| `scripts/ci/verify_deploy_manifest.py` | 校验 manifest 指纹 | `python3`（stdlib，VPS/CD 首选） |
+| `scripts/ci/verify-deploy-manifest.mjs` | 同上（Node 本地对照） | `node` |
+| `scripts/build-wechat-miniprogram.mjs` | 小程序 TS/SCSS 编译检查 | `node`（CI 直接调用） |
+| `scripts/check-wechat-miniprogram.mjs` | 小程序目录/JSON/图标静态检查 | `node`（CI 直接调用） |
+| `scripts/clean-wechat-miniprogram.mjs` | 清理本地生成物 | `node`（开发辅助） |
+
+`apps/api/scripts/` 为 API 容器与运维脚本（Alembic 守卫、数据库 URL、密码轮换等），由 Docker entrypoint 或 `python3 apps/api/scripts/...` 直接调用。
 
 `cd.yml` 需 `permissions.actions: read`，以便 `workflow_run` 触发的 CD 能下载 CI 上传的 `deploy-manifest` 制品。
 
@@ -212,5 +225,5 @@ API_IMAGE="ghcr.io/xiaolinstar/ai-todo-api@sha256:000000000000000000000000000000
   GITHUB_REF="refs/heads/main" \
   GITHUB_RUN_ID="0" \
   node /path/to/ai-todo/scripts/ci/write-deploy-manifest.mjs
-node /path/to/ai-todo/scripts/ci/verify-deploy-manifest.mjs deploy-manifest.json
+python3 /path/to/ai-todo/scripts/ci/verify_deploy_manifest.py deploy-manifest.json
 ```

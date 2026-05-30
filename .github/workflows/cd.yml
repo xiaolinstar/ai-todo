@@ -47,10 +47,9 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-python@v6
         with:
-          node-version: "24"
-          package-manager-cache: false
+          python-version: "3.11"
 
       - name: Resolve CI run id
         id: ci_run
@@ -75,14 +74,14 @@ jobs:
           path: manifest
 
       - name: Verify manifest fingerprint
-        run: node scripts/ci/verify-deploy-manifest.mjs manifest/deploy-manifest.json
+        run: python3 scripts/ci/verify_deploy_manifest.py manifest/deploy-manifest.json
 
       - name: Export manifest fields
         id: manifest
         run: |
-          SHA=$(node -e "console.log(JSON.parse(require('fs').readFileSync('manifest/deploy-manifest.json','utf8')).gitSha)")
-          IMG=$(node -e "console.log(JSON.parse(require('fs').readFileSync('manifest/deploy-manifest.json','utf8')).artifacts.api.image)")
-          FP=$(node -e "console.log(JSON.parse(require('fs').readFileSync('manifest/deploy-manifest.json','utf8')).fingerprint)")
+          SHA=$(python3 -c "import json; print(json.load(open('manifest/deploy-manifest.json'))['gitSha'])")
+          IMG=$(python3 -c "import json; print(json.load(open('manifest/deploy-manifest.json'))['artifacts']['api']['image'])")
+          FP=$(python3 -c "import json; print(json.load(open('manifest/deploy-manifest.json'))['fingerprint'])")
           echo "git_sha=$SHA" >> "$GITHUB_OUTPUT"
           echo "api_image=$IMG" >> "$GITHUB_OUTPUT"
           echo "fingerprint=$FP" >> "$GITHUB_OUTPUT"
@@ -178,6 +177,7 @@ jobs:
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           port: ${{ secrets.DEPLOY_PORT || 22 }}
           envs: FINGERPRINT,CI_RUN_ID,GHCR_DEPLOY_TOKEN,GHCR_DEPLOY_USER,DEPLOY_PATH
+          command_timeout: 15m
           script_stop: true
           script: |
             set -euo pipefail
@@ -204,6 +204,7 @@ jobs:
           password: ${{ secrets.DEPLOY_PASSWORD }}
           port: ${{ secrets.DEPLOY_PORT || 22 }}
           envs: FINGERPRINT,CI_RUN_ID,GHCR_DEPLOY_TOKEN,GHCR_DEPLOY_USER,DEPLOY_PATH
+          command_timeout: 15m
           script_stop: true
           script: |
             set -euo pipefail

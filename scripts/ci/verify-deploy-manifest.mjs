@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/** Verify deploy-manifest.json fingerprint (used in CD before deploy). */
+/** Verify deploy-manifest.json fingerprint (local Node对照; CD/VPS 首选 scripts/ci/verify_deploy_manifest.py). */
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 

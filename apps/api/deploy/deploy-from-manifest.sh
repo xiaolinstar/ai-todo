@@ -15,38 +15,7 @@ if ! command -v python3 >/dev/null 2>&1; then
   exit 1
 fi
 
-python3 - "$MANIFEST" <<'PY'
-import hashlib
-import json
-import sys
-from pathlib import Path
-
-manifest = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
-fingerprint = manifest.pop("fingerprint", None)
-if not isinstance(fingerprint, str):
-    print("manifest missing fingerprint", file=sys.stderr)
-    raise SystemExit(1)
-
-body = json.dumps(manifest, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
-expected = f"sha256:{hashlib.sha256(body.encode('utf-8')).hexdigest()}"
-if fingerprint != expected:
-    print(f"fingerprint mismatch: got {fingerprint}, expected {expected}", file=sys.stderr)
-    raise SystemExit(1)
-
-if not (
-    manifest.get("gitSha")
-    and manifest.get("artifacts", {}).get("api", {}).get("image")
-    and manifest.get("artifacts", {}).get("api", {}).get("digest")
-):
-    print("manifest missing required fields (gitSha, artifacts.api)", file=sys.stderr)
-    raise SystemExit(1)
-
-print(
-    "manifest OK "
-    f"sha={manifest['gitSha']} "
-    f"image={manifest['artifacts']['api']['image']}"
-)
-PY
+python3 "$REPO_ROOT/scripts/ci/verify_deploy_manifest.py" "$MANIFEST"
 
 GIT_SHA="$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['gitSha'])" "$MANIFEST")"
 API_IMAGE="$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['artifacts']['api']['image'])" "$MANIFEST")"
@@ -124,14 +93,40 @@ set_compose_files
 PUBLISH_PORT="$(grep -E '^AI_TODO_PUBLISH_PORT=' "$ENV_FILE" | cut -d= -f2- || true)"
 PUBLISH_PORT="${PUBLISH_PORT:-8082}"
 
+pull_image_with_retry() {
+  local image="$1"
+  local max_attempts="${AI_TODO_PULL_RETRIES:-5}"
+  local attempt=1
+  local wait_seconds=5
+
+  while (( attempt <= max_attempts )); do
+    if docker pull "$image"; then
+      return 0
+    fi
+    if (( attempt == max_attempts )); then
+      break
+    fi
+    echo "docker pull attempt ${attempt}/${max_attempts} failed; retrying in ${wait_seconds}s..." >&2
+    sleep "$wait_seconds"
+    attempt=$((attempt + 1))
+    wait_seconds=$((wait_seconds * 2))
+  done
+
+  echo "Failed to pull API image after ${max_attempts} attempts: $image" >&2
+  return 1
+}
+
 deploy_image() {
   local image="$1"
   export AI_TODO_API_IMAGE="$image"
-  if ! docker compose "${COMPOSE_FILES[@]}" --env-file "$ENV_FILE" pull api; then
-    echo "Failed to pull API image: $image" >&2
+  if ! pull_image_with_retry "$image"; then
     return 1
   fi
-  docker compose "${COMPOSE_FILES[@]}" --env-file "$ENV_FILE" up -d --no-build
+  if ! docker image inspect "$image" >/dev/null 2>&1; then
+    echo "Image not present locally after pull: $image" >&2
+    return 1
+  fi
+  docker compose "${COMPOSE_FILES[@]}" --env-file "$ENV_FILE" up -d --no-build --pull never
 }
 
 verify_deployed_api() {
