@@ -23,6 +23,7 @@ on:
 permissions:
   actions: read
   contents: read
+  packages: read
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -168,8 +169,8 @@ jobs:
         env:
           FINGERPRINT: ${{ needs.resolve-manifest.outputs.fingerprint }}
           CI_RUN_ID: ${{ needs.resolve-manifest.outputs.ci_run_id }}
-          GHCR_DEPLOY_TOKEN: ${{ secrets.GHCR_DEPLOY_TOKEN }}
-          GHCR_DEPLOY_USER: ${{ secrets.GHCR_DEPLOY_USER || github.repository_owner }}
+          GHCR_DEPLOY_TOKEN: ${{ secrets.GHCR_DEPLOY_TOKEN || github.token }}
+          GHCR_DEPLOY_USER: ${{ secrets.GHCR_DEPLOY_USER || github.actor }}
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
         with:
           host: ${{ secrets.DEPLOY_HOST }}
@@ -194,8 +195,8 @@ jobs:
         env:
           FINGERPRINT: ${{ needs.resolve-manifest.outputs.fingerprint }}
           CI_RUN_ID: ${{ needs.resolve-manifest.outputs.ci_run_id }}
-          GHCR_DEPLOY_TOKEN: ${{ secrets.GHCR_DEPLOY_TOKEN }}
-          GHCR_DEPLOY_USER: ${{ secrets.GHCR_DEPLOY_USER || github.repository_owner }}
+          GHCR_DEPLOY_TOKEN: ${{ secrets.GHCR_DEPLOY_TOKEN || github.token }}
+          GHCR_DEPLOY_USER: ${{ secrets.GHCR_DEPLOY_USER || github.actor }}
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
         with:
           host: ${{ secrets.DEPLOY_HOST }}
