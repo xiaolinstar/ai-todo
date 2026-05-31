@@ -5,6 +5,7 @@
 相关文档：
 
 - 部署细节：[deploy.md](./deploy.md)
+- 部署踩坑复盘：[deploy-troubleshooting.md](./deploy-troubleshooting.md)
 - 开发者手册：[developer-guide.md](./developer-guide.md)
 - 版本计划：[releases/versioning.md](./releases/versioning.md)
 - `0.1.0` 内测上线规划：[releases/v0.1.0-plan.md](./releases/v0.1.0-plan.md)

@@ -295,6 +295,8 @@ python3 -m venv .venv
 - 执行 **Test: Refresh Tests** 或 **Developer: Reload Window**。
 - 在终端验证：`cd apps/api && .venv/bin/python -m pytest -q` 应能收集并通过用例。
 
+生产部署与 CD 详见 [deploy.md](./deploy.md)、[ci-cd.md](./ci-cd.md)、[release-runbook.md](./release-runbook.md)。国内 VPS + GHCR 常见问题见 [deploy-troubleshooting.md](./deploy-troubleshooting.md)。部署成功后可在 VPS 查看 `.deploy/current.json` 中的 `deployMode`（`pull` / `server-build-fallback` 等）。
+
 生产部署后：
 
 ```bash

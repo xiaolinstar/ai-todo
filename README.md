@@ -67,7 +67,7 @@ API 默认监听在 `http://127.0.0.1:3100`。
 
 生产环境通过 **xiaolin-gateway** 提供 `https://wodi.games` 访问，API 宿主机端口为 **8082**。
 
-详见 [docs/deploy.md](docs/deploy.md) 了解 Docker 部署、网关路由、微信域名配置和 CI/CD 流程。**发布手册**：[docs/release-runbook.md](docs/release-runbook.md)。
+详见 [docs/deploy.md](docs/deploy.md) 了解 Docker 部署、网关路由、微信域名配置和 CI/CD 流程。**发布手册**：[docs/release-runbook.md](docs/release-runbook.md)。**部署踩坑复盘**（国内 VPS + GHCR）：[docs/deploy-troubleshooting.md](docs/deploy-troubleshooting.md)。
 
 ## 小程序开发
 
