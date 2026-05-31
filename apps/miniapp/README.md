@@ -23,6 +23,18 @@ pnpm check:wechat   # 提交前
 
 开发者工具下 API 默认 `http://127.0.0.1:3100`（见 `lib/config.ts`）。
 
+### AppID 配置
+
+仓库提交的 `project.config.json` 固定使用 `touristid`，避免把真实小程序 AppID 写入共享配置。
+
+本地需要微信登录、订阅消息或真机预览时，复制私有配置模板：
+
+```bash
+cp apps/miniapp/project.private.config.example.json apps/miniapp/project.private.config.json
+```
+
+然后把 `project.private.config.json` 中的 `appid` 改为你的真实小程序 AppID。该文件已加入 `.gitignore`，不会提交到 GitHub。
+
 ## 生产 / 体验版
 
 ### 1. 部署 API + Gateway
@@ -44,7 +56,7 @@ pnpm check:wechat   # 提交前
 
 | 项 | 位置 |
 |----|------|
-| AppID | `project.config.json` |
+| AppID | `project.private.config.json`（本地真实 AppID）；`project.config.json` 仅提交 `touristid` |
 | API 基址 | 代码默认 `https://wodi.games`（体验版/正式版） |
 | 登录 | 「我的」→ **微信登录** |
 

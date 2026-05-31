@@ -30,6 +30,7 @@ ai-todo 与 party-helper 的业务差异：
 ```json
 {
   "miniprogramRoot": "miniprogram/",
+  "appid": "touristid",
   "setting": {
     "useCompilerPlugins": ["typescript", "sass"],
     "es6": false
@@ -37,11 +38,27 @@ ai-todo 与 party-helper 的业务差异：
 }
 ```
 
+真实小程序 AppID 不写入共享的 `project.config.json`。本地开发使用
+`project.private.config.json` 覆盖：
+
+```json
+{
+  "appid": "wx-your-local-miniapp-appid",
+  "setting": {
+    "urlCheck": false
+  }
+}
+```
+
+`project.private.config.json` 已加入 `.gitignore`；提交到 GitHub 的只有
+`project.private.config.example.json` 模板。AppSecret、订阅消息模板 ID 等后端敏感或运行配置必须放在 API 环境变量中，不放入小程序工程配置。
+
 ## 目录结构
 
 ```text
 apps/miniapp/
   project.config.json       # 微信开发者工具工程根（miniprogramRoot 指向子目录）
+  project.private.config.example.json # 本地私有配置模板；真实 project.private.config.json 不提交
   tsconfig.json             # 小程序 TS 严格检查（noEmit）
   types/
     wechat-miniprogram.d.ts # 最小 wx 类型补充（可按需扩展）
