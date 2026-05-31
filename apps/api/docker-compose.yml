@@ -2,18 +2,74 @@ services:
   postgres:
     image: postgres:16-alpine
     environment:
-      POSTGRES_DB: ai_todo
-      POSTGRES_USER: ai_todo
-      POSTGRES_PASSWORD: ai_todo
+      POSTGRES_DB: ${POSTGRES_DB:-ai_todo}
+      POSTGRES_USER: ${POSTGRES_USER:-ai_todo}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ai_todo}
     ports:
       - "5432:5432"
     volumes:
       - ai_todo_postgres:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ai_todo -d ai_todo"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ai_todo} -d ${POSTGRES_DB:-ai_todo}"]
       interval: 5s
       timeout: 3s
       retries: 10
+
+  api:
+    build:
+      context: .
+      args:
+        PIP_INDEX_URL: ${PIP_INDEX_URL:-https://pypi.org/simple}
+    environment:
+      AI_TODO_HOST: 0.0.0.0
+      AI_TODO_PORT: ${AI_TODO_PORT:-3100}
+      POSTGRES_USER: ${POSTGRES_USER:-ai_todo}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ai_todo}
+      POSTGRES_DB: ${POSTGRES_DB:-ai_todo}
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      AI_TODO_DATABASE_URL: ${AI_TODO_DATABASE_URL:-}
+      AI_TODO_ALLOW_DEV_AUTH: ${AI_TODO_ALLOW_DEV_AUTH:-true}
+      AI_TODO_TIMEZONE: ${AI_TODO_TIMEZONE:-Asia/Shanghai}
+      AI_TODO_WECHAT_APP_ID: ${AI_TODO_WECHAT_APP_ID:-}
+      AI_TODO_WECHAT_APP_SECRET: ${AI_TODO_WECHAT_APP_SECRET:-}
+      AI_TODO_WECHAT_REMINDER_TEMPLATE_ID: ${AI_TODO_WECHAT_REMINDER_TEMPLATE_ID:-}
+      AI_TODO_RATE_LIMIT_ENABLED: ${AI_TODO_RATE_LIMIT_ENABLED:-true}
+      AI_TODO_RATE_LIMIT_WECHAT_LOGIN_PER_MINUTE: ${AI_TODO_RATE_LIMIT_WECHAT_LOGIN_PER_MINUTE:-10}
+    ports:
+      - "${AI_TODO_PUBLISH_PORT:-3100}:${AI_TODO_PORT:-3100}"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  worker:
+    profiles: ["notifications"]
+    build:
+      context: .
+      args:
+        PIP_INDEX_URL: ${PIP_INDEX_URL:-https://pypi.org/simple}
+    command: ["python", "-m", "ai_todo_api.modules.notifications.worker"]
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-ai_todo}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ai_todo}
+      POSTGRES_DB: ${POSTGRES_DB:-ai_todo}
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      AI_TODO_DATABASE_URL: ${AI_TODO_DATABASE_URL:-}
+      AI_TODO_ALLOW_DEV_AUTH: ${AI_TODO_ALLOW_DEV_AUTH:-true}
+      AI_TODO_TIMEZONE: ${AI_TODO_TIMEZONE:-Asia/Shanghai}
+      AI_TODO_WECHAT_APP_ID: ${AI_TODO_WECHAT_APP_ID:-}
+      AI_TODO_WECHAT_APP_SECRET: ${AI_TODO_WECHAT_APP_SECRET:-}
+      AI_TODO_WECHAT_REMINDER_TEMPLATE_ID: ${AI_TODO_WECHAT_REMINDER_TEMPLATE_ID:-}
+      AI_TODO_NOTIFICATION_WORKER_POLL_SECONDS: ${AI_TODO_NOTIFICATION_WORKER_POLL_SECONDS:-30}
+      AI_TODO_NOTIFICATION_WORKER_BATCH_SIZE: ${AI_TODO_NOTIFICATION_WORKER_BATCH_SIZE:-50}
+      AI_TODO_NOTIFICATION_MAX_ATTEMPTS: ${AI_TODO_NOTIFICATION_MAX_ATTEMPTS:-3}
+      AI_TODO_SKIP_MIGRATIONS: "true"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      api:
+        condition: service_healthy
 
 volumes:
   ai_todo_postgres:

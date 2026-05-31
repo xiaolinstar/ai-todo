@@ -4,23 +4,42 @@ FastAPI backend for ai-todo.
 
 ## Local Development
 
+Recommended local Docker Compose setup:
+
+```bash
+cd apps/api
+cp .env.local.example .env.local
+docker compose --env-file .env.local up -d --build
+curl http://127.0.0.1:3100/v1/health
+```
+
+This starts PostgreSQL and the API. The API container waits for the database and runs
+Alembic migrations automatically. To include the notification worker:
+
+```bash
+docker compose --env-file .env.local --profile notifications up -d --build
+```
+
+Optional Python-on-host workflow:
+
 ```bash
 cd apps/api
 python3 -m venv .venv
 . .venv/bin/activate
 python -m pip install -e ".[dev]"
-docker compose up -d postgres
+cp .env.local.example .env.local
+docker compose --env-file .env.local up -d postgres
 alembic upgrade head
 python -m ai_todo_api
 ```
 
 The API listens on `http://127.0.0.1:3100` by default.
 
-Configuration is read from `AI_TODO_*` environment variables. Copy `.env.example` for local
-PostgreSQL defaults.
+Configuration is read from `AI_TODO_*` environment variables. Copy `.env.local.example` for
+local Docker Compose defaults. `.env.example` is kept as the Python-on-host environment template.
 
 ```bash
-cp .env.example .env
+cp .env.local.example .env.local
 ```
 
 ## Authentication (MVP)
@@ -75,13 +94,65 @@ alembic upgrade head
 
 ## Tests
 
-From the repository root (builds CLI and runs pytest):
+### Run Tests
+
+From the repository root (builds CLI and runs pytest with coverage):
 
 ```bash
 pnpm test:api
 ```
 
-Covers demo-seed import, CLI integration (contacts / reminders / calendar), and calendar API tests. Helpers: `tests/helpers/`.
+Or run directly in the api directory:
+
+```bash
+cd apps/api
+.venv/bin/python -m pytest tests/ -v
+```
+
+### Test Coverage
+
+Tests run with `pytest-cov` and automatically generate coverage reports (87%+ coverage). To generate HTML report:
+
+```bash
+cd apps/api
+.venv/bin/python -m pytest tests/ --cov-report=html
+open htmlcov/index.html
+```
+
+### Test Structure
+
+Tests are organized by business module:
+
+```
+tests/
+├── auth/           # Authentication tests
+├── calendar/       # Calendar API tests
+├── cli/            # CLI integration tests
+├── contacts/       # Contacts API tests
+├── notifications/  # Notifications tests
+├── reminders/      # Reminders API tests
+├── helpers/        # Test utilities
+└── conftest.py     # Shared fixtures
+```
+
+### Run Specific Tests
+
+```bash
+# Run tests for a specific module
+.venv/bin/python -m pytest tests/reminders/ -v
+
+# Run a specific test file
+.venv/bin/python -m pytest tests/auth/test_auth.py -v
+
+# Run a specific test function
+.venv/bin/python -m pytest tests/reminders/test_reminder_crud.py::test_create_reminder -v
+```
+
+### Test Coverage Configuration
+
+Coverage is configured in `pyproject.toml` with the following exclusions:
+- Entry points (`main.py`, `__main__.py`, `preview.py`)
+- Configuration files (`config.py`)
 
 ## Production Deploy
 

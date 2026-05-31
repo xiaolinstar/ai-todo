@@ -8,8 +8,11 @@ dist/
 .env
 .env.*
 !.env.example
+!.env.local.example
 !.env.production.example
 coverage/
+.coverage
+htmlcov/
 *.log
 *.tsbuildinfo
 __pycache__/

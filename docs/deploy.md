@@ -227,16 +227,41 @@ AI_TODO_WECHAT_REMINDER_TEMPLATE_ID=你的模板ID
 
 **完整上线 checklist**：见 [docs/release-runbook.md](./release-runbook.md)。
 
-## 备选：内置 Caddy（无 xiaolin-gateway 时）
+## TLS 与证书
 
-若未使用 gateway，可启用 `docker-compose.tls.yml` + `deploy/Caddyfile`。当前生产环境推荐 gateway 方案，见上文。
+当前生产环境推荐：
+
+```text
+腾讯云免费证书（手动续约）
+  → xiaolin-gateway / Nginx 统一终止 HTTPS
+  → 反代到 ai-todo 宿主机 :8082
+```
+
+ai-todo API 容器本身只暴露 HTTP，由 gateway 负责 HTTPS、证书挂载和续约后的重载。证书到期前需要在腾讯云重新申请/下载免费证书，替换 xiaolin-gateway 中对应证书文件，然后重启 gateway：
+
+```bash
+cd ~/AgentProjects/xiaolin-gateway
+docker compose up -d
+```
+
+### 备选：内置 Caddy（当前不用）
+
+`docker-compose.tls.yml` 是可选 Caddy overlay，仅适用于不使用 xiaolin-gateway、希望由 ai-todo 仓库自己终止 HTTPS 的部署方式。
+
+当前项目使用 xiaolin-gateway + 腾讯云证书路线，因此默认不需要启用：
+
+```bash
+docker compose -f docker-compose.prod.yml -f docker-compose.tls.yml ...
+```
+
+除非未来迁移为 ai-todo 独立管理 HTTPS，否则可以忽略 `docker-compose.tls.yml`。
 
 ## 本地开发 vs 生产
 
 | 项 | 本地 | 生产 |
 |----|------|------|
-| Compose | `docker-compose.yml`（仅 Postgres） | `docker-compose.prod.yml` |
-| API 运行 | 宿主机 `pnpm dev:api`（:3100） | Docker 容器 → 宿主机 :8082 |
+| Compose | `docker-compose.yml`（Postgres + API，可选 worker） | `docker-compose.prod.yml` |
+| API 运行 | Docker 容器 → 宿主机 :3100；或可选宿主机 `pnpm dev:api` | Docker 容器 → 宿主机 :8082 |
 | HTTPS | 不需要 | xiaolin-gateway → `https://wodi.games` |
 | 合法域名 | 开发者工具跳过校验 | 公众平台配置 `wodi.games` |
 | 小程序 API | `http://127.0.0.1:3100` | `https://wodi.games`（代码默认） |
