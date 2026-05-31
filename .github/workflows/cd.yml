@@ -189,6 +189,8 @@ jobs:
           command_timeout: 10m
           script_stop: true
           script: |
+            # VPS 默认 shell 可能是 zsh；case/esac 等须用 bash 执行
+            bash <<'DEPLOY_EOF'
             set -euo pipefail
             echo "CD fingerprint=${FINGERPRINT} ci_run=${CI_RUN_ID} deploy_mode_input=${DEPLOY_MODE_INPUT}"
             export AI_TODO_DEPLOY_MANIFEST=/tmp/deploy-manifest.json
@@ -216,6 +218,7 @@ jobs:
             git fetch --prune origin main
             git pull --ff-only origin main
             bash apps/api/deploy/remote-deploy.sh
+            DEPLOY_EOF
 
       - name: Deploy to VPS (password)
         if: steps.deploy_config.outputs.configured == 'true' && steps.deploy_config.outputs.auth == 'password'
@@ -236,6 +239,7 @@ jobs:
           command_timeout: 10m
           script_stop: true
           script: |
+            bash <<'DEPLOY_EOF'
             set -euo pipefail
             echo "CD fingerprint=${FINGERPRINT} ci_run=${CI_RUN_ID} deploy_mode_input=${DEPLOY_MODE_INPUT}"
             export AI_TODO_DEPLOY_MANIFEST=/tmp/deploy-manifest.json
@@ -263,3 +267,4 @@ jobs:
             git fetch --prune origin main
             git pull --ff-only origin main
             bash apps/api/deploy/remote-deploy.sh
+            DEPLOY_EOF
