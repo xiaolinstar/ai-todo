@@ -189,36 +189,12 @@ jobs:
           command_timeout: 10m
           script_stop: true
           script: |
-            # VPS 默认 shell 可能是 zsh；case/esac 等须用 bash 执行
-            bash <<'DEPLOY_EOF'
-            set -euo pipefail
-            echo "CD fingerprint=${FINGERPRINT} ci_run=${CI_RUN_ID} deploy_mode_input=${DEPLOY_MODE_INPUT}"
-            export AI_TODO_DEPLOY_MANIFEST=/tmp/deploy-manifest.json
-            export AI_TODO_PULL_REGISTRY_MIRROR=ghcr.nju.edu.cn
-            export AI_TODO_PULL_RETRIES=2
-            export AI_TODO_PULL_TIMEOUT_SECONDS=180
-            export AI_TODO_PULL_SKIP_CANONICAL_FALLBACK=true
-            export AI_TODO_HEALTH_WAIT_SECONDS=90
-            case "${DEPLOY_MODE_INPUT}" in
-              server-build)
-                export AI_TODO_DEPLOY_MODE=server-build
-                export AI_TODO_DEPLOY_FALLBACK_SERVER_BUILD=false
-                ;;
-              pull)
-                export AI_TODO_DEPLOY_MODE=pull
-                export AI_TODO_DEPLOY_FALLBACK_SERVER_BUILD=false
-                ;;
-              *)
-                export AI_TODO_DEPLOY_MODE=pull
-                export AI_TODO_DEPLOY_FALLBACK_SERVER_BUILD=true
-                ;;
-            esac
             DEPLOY_PATH="${DEPLOY_PATH:-$HOME/AgentProjects/ai-todo}"
             cd "$DEPLOY_PATH"
             git fetch --prune origin main
             git pull --ff-only origin main
-            bash apps/api/deploy/remote-deploy.sh
-            DEPLOY_EOF
+            export AI_TODO_DEPLOY_MANIFEST=/tmp/deploy-manifest.json
+            bash apps/api/deploy/cd-bootstrap.sh
 
       - name: Deploy to VPS (password)
         if: steps.deploy_config.outputs.configured == 'true' && steps.deploy_config.outputs.auth == 'password'
@@ -239,32 +215,9 @@ jobs:
           command_timeout: 10m
           script_stop: true
           script: |
-            bash <<'DEPLOY_EOF'
-            set -euo pipefail
-            echo "CD fingerprint=${FINGERPRINT} ci_run=${CI_RUN_ID} deploy_mode_input=${DEPLOY_MODE_INPUT}"
-            export AI_TODO_DEPLOY_MANIFEST=/tmp/deploy-manifest.json
-            export AI_TODO_PULL_REGISTRY_MIRROR=ghcr.nju.edu.cn
-            export AI_TODO_PULL_RETRIES=2
-            export AI_TODO_PULL_TIMEOUT_SECONDS=180
-            export AI_TODO_PULL_SKIP_CANONICAL_FALLBACK=true
-            export AI_TODO_HEALTH_WAIT_SECONDS=90
-            case "${DEPLOY_MODE_INPUT}" in
-              server-build)
-                export AI_TODO_DEPLOY_MODE=server-build
-                export AI_TODO_DEPLOY_FALLBACK_SERVER_BUILD=false
-                ;;
-              pull)
-                export AI_TODO_DEPLOY_MODE=pull
-                export AI_TODO_DEPLOY_FALLBACK_SERVER_BUILD=false
-                ;;
-              *)
-                export AI_TODO_DEPLOY_MODE=pull
-                export AI_TODO_DEPLOY_FALLBACK_SERVER_BUILD=true
-                ;;
-            esac
             DEPLOY_PATH="${DEPLOY_PATH:-$HOME/AgentProjects/ai-todo}"
             cd "$DEPLOY_PATH"
             git fetch --prune origin main
             git pull --ff-only origin main
-            bash apps/api/deploy/remote-deploy.sh
-            DEPLOY_EOF
+            export AI_TODO_DEPLOY_MANIFEST=/tmp/deploy-manifest.json
+            bash apps/api/deploy/cd-bootstrap.sh
