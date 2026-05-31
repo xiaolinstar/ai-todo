@@ -15,6 +15,7 @@ RUN apt-get update \
   && rm -rf /var/lib/apt/lists/*
 
 COPY pyproject.toml ./
+COPY src ./src
 
 # 安装依赖并生成 wheel（用于缓存）
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel \
@@ -42,8 +43,7 @@ COPY --from=builder /wheels /wheels
 RUN pip install --no-cache-dir /wheels/*.whl \
   && rm -rf /wheels
 
-# 复制应用代码
-COPY src ./src
+# 复制应用配置和脚本（src 已包含在 wheel 包中）
 COPY alembic.ini ./
 COPY alembic ./alembic
 COPY scripts ./scripts
