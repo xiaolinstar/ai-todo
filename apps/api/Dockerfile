@@ -4,20 +4,25 @@ FROM python:3.11-slim AS builder
 WORKDIR /app
 
 # 国内服务器构建可传：--build-arg PIP_INDEX_URL=https://mirrors.cloud.tencent.com/pypi/simple
+# 国内 apt：--build-arg APT_MIRROR=mirrors.tencent.com（docker-compose.prod 默认）
 ARG PIP_INDEX_URL=https://pypi.org/simple
+ARG APT_MIRROR=
 ENV PIP_DEFAULT_TIMEOUT=120 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
     PIP_INDEX_URL=${PIP_INDEX_URL}
 
-# 安装编译依赖
-RUN apt-get update \
+RUN if [ -n "$APT_MIRROR" ]; then \
+      for f in /etc/apt/sources.list /etc/apt/sources.list.d/debian.sources; do \
+        [ -f "$f" ] && sed -i "s|deb.debian.org|${APT_MIRROR}|g; s|security.debian.org|${APT_MIRROR}|g" "$f" || true; \
+      done; \
+    fi \
+  && apt-get update \
   && apt-get install -y --no-install-recommends gcc libpq-dev \
   && rm -rf /var/lib/apt/lists/*
 
 COPY pyproject.toml ./
 COPY src ./src
 
-# 安装依赖并生成 wheel（用于缓存）
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel \
   && pip wheel --no-cache-dir --wheel-dir /wheels .
 
@@ -28,22 +33,24 @@ WORKDIR /app
 
 ENV PIP_DEFAULT_TIMEOUT=120
 ARG PIP_INDEX_URL=https://pypi.org/simple
+ARG APT_MIRROR=
 ENV PIP_INDEX_URL=${PIP_INDEX_URL}
 
-# 安装运行时依赖（仅保留必要的系统库）
-RUN apt-get update \
+RUN if [ -n "$APT_MIRROR" ]; then \
+      for f in /etc/apt/sources.list /etc/apt/sources.list.d/debian.sources; do \
+        [ -f "$f" ] && sed -i "s|deb.debian.org|${APT_MIRROR}|g; s|security.debian.org|${APT_MIRROR}|g" "$f" || true; \
+      done; \
+    fi \
+  && apt-get update \
   && apt-get install -y --no-install-recommends libpq5 \
   && rm -rf /var/lib/apt/lists/* \
   && useradd -m -u 1000 appuser
 
-# 从构建阶段复制预编译的 wheel 包
 COPY --from=builder /wheels /wheels
 
-# 安装应用依赖
 RUN pip install --no-cache-dir /wheels/*.whl \
   && rm -rf /wheels
 
-# 复制应用配置和脚本（src 已包含在 wheel 包中）
 COPY alembic.ini ./
 COPY alembic ./alembic
 COPY scripts ./scripts
@@ -51,7 +58,6 @@ COPY docker-entrypoint.sh /docker-entrypoint.sh
 
 RUN chmod +x /docker-entrypoint.sh
 
-# 使用非 root 用户运行（提高安全性）
 USER appuser
 
 ENV AI_TODO_HOST=0.0.0.0

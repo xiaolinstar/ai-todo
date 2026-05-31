@@ -173,6 +173,7 @@ ensure_local_canonical_ref() {
 verify_local_image_digest() {
   local canonical="$1"
   local expected_digest="$2"
+  local digest_hex="${expected_digest#sha256:}"
 
   if ! docker image inspect "$canonical" >/dev/null 2>&1; then
     echo "Image not present locally: $canonical" >&2
@@ -181,13 +182,32 @@ verify_local_image_digest() {
 
   local repo_digests
   repo_digests="$(docker image inspect "$canonical" --format '{{range .RepoDigests}}{{println .}}{{end}}')"
-  if [[ -n "$repo_digests" ]] && ! grep -Fq "$expected_digest" <<<"$repo_digests"; then
-    echo "Digest mismatch for $canonical (expected $expected_digest)" >&2
-    echo "RepoDigests:" >&2
-    echo "$repo_digests" >&2
+
+  if [[ -z "$repo_digests" ]]; then
+    # NJU 等镜像站拉取后 retag 到 ghcr.io@sha256:… 时，RepoDigests 可能为空；digest-pinned 即视为有效
+    if [[ "$canonical" == *"@sha256:${digest_hex}" ]]; then
+      echo "RepoDigests empty; trusting digest-pinned ref ${canonical}" >&2
+      return 0
+    fi
+    echo "No RepoDigests for $canonical" >&2
     return 1
   fi
-  return 0
+
+  if grep -Fq "sha256:${digest_hex}" <<<"$repo_digests"; then
+    return 0
+  fi
+
+  echo "Digest mismatch for $canonical (expected sha256:${digest_hex})" >&2
+  echo "RepoDigests:" >&2
+  echo "$repo_digests" >&2
+  return 1
+}
+
+api_image_already_present() {
+  local canonical="$1"
+  local expected_digest="$2"
+  docker image inspect "$canonical" >/dev/null 2>&1 \
+    && verify_local_image_digest "$canonical" "$expected_digest"
 }
 
 pull_api_image() {
@@ -195,6 +215,11 @@ pull_api_image() {
   local expected_digest="$2"
   local mirror="$PULL_REGISTRY_MIRROR"
   local mirror_ref=""
+
+  if api_image_already_present "$canonical" "$expected_digest"; then
+    echo "API image already present with expected digest; skipping pull." >&2
+    return 0
+  fi
 
   if [[ -n "$mirror" ]]; then
     mirror_ref="$(rewrite_pull_ref "$canonical" "$mirror")"
@@ -205,12 +230,13 @@ pull_api_image() {
           echo "Pull OK via mirror $mirror" >&2
           return 0
         fi
+        echo "Mirror pull OK but digest verify failed after retag; will not treat as success." >&2
       fi
       if [[ "${AI_TODO_PULL_SKIP_CANONICAL_FALLBACK:-true}" == "true" ]]; then
-        echo "Mirror pull failed; skipping canonical $CANONICAL_REGISTRY_HOST (fast-fail to server-build)." >&2
+        echo "Mirror path failed; skipping canonical $CANONICAL_REGISTRY_HOST (fast-fail to server-build)." >&2
         return 1
       fi
-      echo "Mirror pull failed or digest mismatch; falling back to $CANONICAL_REGISTRY_HOST." >&2
+      echo "Mirror path failed; falling back to $CANONICAL_REGISTRY_HOST." >&2
     fi
   fi
 
@@ -234,6 +260,7 @@ deploy_image() {
 deploy_server_build() {
   echo "Deploying via server-build (docker compose build on VPS)..." >&2
   unset AI_TODO_API_IMAGE
+  export APT_MIRROR="${APT_MIRROR:-mirrors.tencent.com}"
   docker compose "${COMPOSE_FILES[@]}" --env-file "$ENV_FILE" up -d --build
 }
 
@@ -316,6 +343,35 @@ deploy_previous_version() {
     return $?
   fi
   deploy_image "$PREVIOUS_API_IMAGE" "$PREVIOUS_API_DIGEST"
+}
+
+record_image_retention() {
+  local digest="$1"
+  local retention_file="${AI_TODO_IMAGE_RETENTION_FILE:-$DEPLOY_DIR/image-retention.json}"
+  local keep_count="${AI_TODO_IMAGE_RETENTION:-3}"
+  mkdir -p "$DEPLOY_DIR"
+  python3 - "$retention_file" "$digest" "$keep_count" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+digest = sys.argv[2]
+keep = max(int(sys.argv[3]), 1)
+data = {"digests": []}
+if path.exists():
+    data = json.loads(path.read_text(encoding="utf-8"))
+digests = [d for d in data.get("digests", []) if d != digest]
+digests.insert(0, digest)
+data["digests"] = digests[:keep]
+path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+}
+
+prune_old_api_images() {
+  if [[ -x "$SCRIPT_DIR/prune-container-images.sh" ]]; then
+    bash "$SCRIPT_DIR/prune-container-images.sh" || echo "Warning: image prune failed (non-fatal)." >&2
+  fi
 }
 
 write_deploy_record() {
@@ -429,5 +485,8 @@ write_deploy_record \
   "$RUN_ID" \
   "deployed" \
   "$DEPLOY_MODE_RECORD"
+
+record_image_retention "$API_DIGEST"
+prune_old_api_images
 
 echo "ai-todo API deploy OK (mode=${DEPLOY_MODE_RECORD}, health/db on 127.0.0.1:${PUBLISH_PORT})"

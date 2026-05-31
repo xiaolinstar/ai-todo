@@ -27,6 +27,7 @@ services:
       context: .
       args:
         PIP_INDEX_URL: ${PIP_INDEX_URL:-https://mirrors.cloud.tencent.com/pypi/simple}
+        APT_MIRROR: ${APT_MIRROR:-mirrors.tencent.com}
     environment:
       AI_TODO_HOST: 0.0.0.0
       AI_TODO_PORT: ${AI_TODO_PORT:-3100}
@@ -59,6 +60,7 @@ services:
       context: .
       args:
         PIP_INDEX_URL: ${PIP_INDEX_URL:-https://mirrors.cloud.tencent.com/pypi/simple}
+        APT_MIRROR: ${APT_MIRROR:-mirrors.tencent.com}
     command: ["python", "-m", "ai_todo_api.modules.notifications.worker"]
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-ai_todo}
