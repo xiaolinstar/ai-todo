@@ -41,6 +41,7 @@ services:
       AI_TODO_TIMEZONE: ${AI_TODO_TIMEZONE:-Asia/Shanghai}
       AI_TODO_WECHAT_APP_ID: ${AI_TODO_WECHAT_APP_ID:-}
       AI_TODO_WECHAT_APP_SECRET: ${AI_TODO_WECHAT_APP_SECRET:-}
+      AI_TODO_WECHAT_REMINDER_TEMPLATE_ID: ${AI_TODO_WECHAT_REMINDER_TEMPLATE_ID:-}
       AI_TODO_RATE_LIMIT_ENABLED: ${AI_TODO_RATE_LIMIT_ENABLED:-true}
       AI_TODO_RATE_LIMIT_WECHAT_LOGIN_PER_MINUTE: ${AI_TODO_RATE_LIMIT_WECHAT_LOGIN_PER_MINUTE:-10}
     ports:
@@ -48,6 +49,37 @@ services:
       - "${AI_TODO_PUBLISH_PORT:-8082}:${AI_TODO_PORT:-3100}"
     depends_on:
       postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  worker:
+    profiles: ["notifications"]
+    image: ${AI_TODO_API_IMAGE:-}
+    build:
+      context: .
+      args:
+        PIP_INDEX_URL: ${PIP_INDEX_URL:-https://mirrors.cloud.tencent.com/pypi/simple}
+    command: ["python", "-m", "ai_todo_api.modules.notifications.worker"]
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-ai_todo}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env.production}
+      POSTGRES_DB: ${POSTGRES_DB:-ai_todo}
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      AI_TODO_DATABASE_URL: ${AI_TODO_DATABASE_URL:-}
+      AI_TODO_ALLOW_DEV_AUTH: ${AI_TODO_ALLOW_DEV_AUTH:-false}
+      AI_TODO_TIMEZONE: ${AI_TODO_TIMEZONE:-Asia/Shanghai}
+      AI_TODO_WECHAT_APP_ID: ${AI_TODO_WECHAT_APP_ID:-}
+      AI_TODO_WECHAT_APP_SECRET: ${AI_TODO_WECHAT_APP_SECRET:-}
+      AI_TODO_WECHAT_REMINDER_TEMPLATE_ID: ${AI_TODO_WECHAT_REMINDER_TEMPLATE_ID:-}
+      AI_TODO_NOTIFICATION_WORKER_POLL_SECONDS: ${AI_TODO_NOTIFICATION_WORKER_POLL_SECONDS:-30}
+      AI_TODO_NOTIFICATION_WORKER_BATCH_SIZE: ${AI_TODO_NOTIFICATION_WORKER_BATCH_SIZE:-50}
+      AI_TODO_NOTIFICATION_MAX_ATTEMPTS: ${AI_TODO_NOTIFICATION_MAX_ATTEMPTS:-3}
+      AI_TODO_SKIP_MIGRATIONS: "true"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      api:
         condition: service_healthy
     restart: unless-stopped
 

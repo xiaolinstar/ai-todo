@@ -15,6 +15,7 @@ from ai_todo_api.config import settings
 from ai_todo_api.db.session import SessionLocal, get_db
 from ai_todo_api.modules.calendar.router import router as calendar_router
 from ai_todo_api.modules.contacts.router import router as contacts_router
+from ai_todo_api.modules.notifications.router import router as notifications_router
 from ai_todo_api.modules.reminders.router import router as reminders_router
 from ai_todo_api.modules.today.router import router as today_router
 from ai_todo_api.preview import preview_page
@@ -150,4 +151,5 @@ app.include_router(api_tokens_router)
 app.include_router(reminders_router)
 app.include_router(calendar_router)
 app.include_router(contacts_router)
+app.include_router(notifications_router)
 app.include_router(today_router)

@@ -21,6 +21,10 @@
         <view class="picker-inline">{{dueTime}}</view>
       </picker>
     </view>
+    <view wx:if="{{hasDue && notifyAvailable}}" class="form-row">
+      <text class="form-label">微信提醒</text>
+      <switch checked="{{notifyEnabled}}" bindchange="onNotifyToggle" color="#007AFF" />
+    </view>
     <view class="form-row">
       <text class="form-label">联系人</text>
       <button class="todo-button todo-button-ghost todo-button-sm pick-inline" size="mini" hover-class="todo-button-hover" bindtap="pickContact">

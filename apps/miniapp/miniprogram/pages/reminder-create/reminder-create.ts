@@ -1,6 +1,12 @@
-import { createReminder } from "../../lib/api";
+import {
+  createReminder,
+  fetchNotificationSettings,
+  recordWechatSubscriptionResult
+} from "../../lib/api";
 import type { ContactSummary } from "../../lib/api";
 import { combineDateTime, nowIsoTime, todayIsoDate } from "../../lib/format";
+
+const REMINDER_TEMPLATE_KEY = "reminder_due";
 
 Page({
   data: {
@@ -8,6 +14,9 @@ Page({
     hasDue: true,
     dueDate: "",
     dueTime: "",
+    notifyEnabled: true,
+    notifyAvailable: false,
+    reminderTemplateId: "",
     selectedContact: null as ContactSummary | null,
     submitting: false
   },
@@ -16,6 +25,18 @@ Page({
     this.setData({
       dueDate: todayIsoDate(),
       dueTime: nowIsoTime()
+    });
+    fetchNotificationSettings().then((response) => {
+      const settings = response.data?.settings;
+      if (!response.ok || !settings?.wechatReminderTemplateId) {
+        this.setData({ notifyAvailable: false, notifyEnabled: false });
+        return;
+      }
+      this.setData({
+        notifyAvailable: settings.wechatEnabled,
+        notifyEnabled: settings.wechatEnabled && settings.defaultReminderEnabled,
+        reminderTemplateId: settings.wechatReminderTemplateId
+      });
     });
   },
 
@@ -33,6 +54,10 @@ Page({
 
   onTimeChange(e: { detail: { value: string } }) {
     this.setData({ dueTime: e.detail.value });
+  },
+
+  onNotifyToggle(e: { detail: { value: boolean } }) {
+    this.setData({ notifyEnabled: e.detail.value });
   },
 
   pickContact() {
@@ -67,18 +92,71 @@ Page({
 
     this.setData({ submitting: true });
     createReminder(payload)
-      .then((response) => {
+      .then(async (response) => {
         this.setData({ submitting: false });
         if (!response.ok) {
           wx.showToast({ title: response.error?.message || "创建失败", icon: "none" });
           return;
         }
-        wx.showToast({ title: "已创建", icon: "success" });
+        await this.requestReminderNotification(response.data?.reminder.id);
         setTimeout(() => wx.navigateBack(), 500);
       })
       .catch(() => {
         this.setData({ submitting: false });
         wx.showToast({ title: "网络错误", icon: "none" });
       });
+  },
+
+  async requestReminderNotification(reminderId?: string) {
+    if (
+      !reminderId ||
+      !this.data.hasDue ||
+      !this.data.notifyEnabled ||
+      !this.data.notifyAvailable ||
+      !this.data.reminderTemplateId
+    ) {
+      wx.showToast({ title: "已创建", icon: "success" });
+      return;
+    }
+
+    const result = await requestSubscribeMessage(this.data.reminderTemplateId);
+    try {
+      await recordWechatSubscriptionResult({
+        templateKey: REMINDER_TEMPLATE_KEY,
+        templateId: this.data.reminderTemplateId,
+        result,
+        targetType: "reminder",
+        targetId: reminderId
+      });
+    } catch {
+      wx.showToast({ title: "已创建，提醒授权同步失败", icon: "none" });
+      return;
+    }
+
+    wx.showToast({
+      title: result === "accept" ? "已创建并开启提醒" : "已创建，未开启微信提醒",
+      icon: result === "accept" ? "success" : "none"
+    });
   }
 });
+
+function requestSubscribeMessage(
+  templateId: string
+): Promise<"accept" | "reject" | "ban" | "filter"> {
+  return new Promise((resolve) => {
+    wx.requestSubscribeMessage({
+      tmplIds: [templateId],
+      success(res) {
+        const value = res[templateId];
+        if (value === "accept" || value === "reject" || value === "ban" || value === "filter") {
+          resolve(value);
+          return;
+        }
+        resolve("reject");
+      },
+      fail() {
+        resolve("reject");
+      }
+    });
+  });
+}

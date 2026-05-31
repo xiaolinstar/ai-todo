@@ -14,6 +14,11 @@ declare const wx: {
     success?: (res: { statusCode: number; data: unknown }) => void;
     fail?: (err: unknown) => void;
   }): void;
+  requestSubscribeMessage(options: {
+    tmplIds: string[];
+    success?: (res: Record<string, "accept" | "reject" | "ban" | "filter" | string>) => void;
+    fail?: (err: unknown) => void;
+  }): void;
   navigateTo(options: {
     url: string;
     events?: Record<string, (data: unknown) => void>;

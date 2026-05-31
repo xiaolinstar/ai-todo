@@ -33,6 +33,7 @@ export interface ReminderSummary {
   title: string;
   status: string;
   dueAt?: string;
+  remindAt?: string;
   contacts?: ContactSummary[];
 }
 
@@ -78,6 +79,14 @@ export interface ApiTokenListResult {
 
 export interface ContactListResult {
   items: ContactSummary[];
+}
+
+export interface NotificationSettings {
+  wechatEnabled: boolean;
+  defaultReminderEnabled: boolean;
+  quietStart?: string;
+  quietEnd?: string;
+  wechatReminderTemplateId?: string;
 }
 
 function buildUrl(path: string): string {
@@ -175,6 +184,7 @@ export function completeReminder(reminderId: string) {
 export function createReminder(input: {
   title: string;
   dueAt?: string;
+  remindAt?: string;
   contactIds?: string[];
 }) {
   return request<{ reminder: ReminderSummary }>("/v1/reminders", {
@@ -233,4 +243,24 @@ export function revokeAllApiTokens() {
     method: "POST",
     data: {}
   });
+}
+
+export function fetchNotificationSettings() {
+  return request<{ settings: NotificationSettings }>("/v1/notifications/settings");
+}
+
+export function recordWechatSubscriptionResult(input: {
+  templateKey: string;
+  templateId: string;
+  result: "accept" | "reject" | "ban" | "filter";
+  targetType?: "reminder";
+  targetId?: string;
+}) {
+  return request<{ accepted: boolean; deliveryId?: string; status?: string; quotaRemaining: number }>(
+    "/v1/notifications/wechat/subscription-result",
+    {
+      method: "POST",
+      data: input
+    }
+  );
 }

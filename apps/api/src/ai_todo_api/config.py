@@ -16,9 +16,13 @@ class Settings(BaseSettings):
     allow_dev_auth: bool = Field(default=True)
     wechat_app_id: str | None = Field(default=None)
     wechat_app_secret: str | None = Field(default=None)
+    wechat_reminder_template_id: str | None = Field(default=None)
     rate_limit_enabled: bool = Field(default=True)
     rate_limit_wechat_login_per_minute: int = Field(default=10, ge=1)
     session_token_ttl_days: int = Field(default=30, ge=1)
+    notification_worker_poll_seconds: int = Field(default=30, ge=1)
+    notification_worker_batch_size: int = Field(default=50, ge=1)
+    notification_max_attempts: int = Field(default=3, ge=1)
 
 
 settings = Settings()

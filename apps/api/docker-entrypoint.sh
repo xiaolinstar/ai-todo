@@ -6,5 +6,7 @@ if [ -z "${AI_TODO_DATABASE_URL:-}" ]; then
 fi
 
 python /app/scripts/wait_for_db.py
-alembic upgrade head
+if [ "${AI_TODO_SKIP_MIGRATIONS:-false}" != "true" ]; then
+  alembic upgrade head
+fi
 exec "$@"

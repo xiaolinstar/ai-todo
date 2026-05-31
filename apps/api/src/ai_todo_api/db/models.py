@@ -266,3 +266,84 @@ class CalendarEventContactModel(Base):
     )
     role: Mapped[str] = mapped_column(String(32), nullable=False, default="participant")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class NotificationPreferenceModel(Base):
+    __tablename__ = "notification_preferences"
+
+    user_id: Mapped[str] = mapped_column(
+        String(64),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    wechat_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    default_reminder_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    quiet_start: Mapped[str | None] = mapped_column(String(8), nullable=True)
+    quiet_end: Mapped[str | None] = mapped_column(String(8), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class NotificationSubscriptionModel(Base):
+    __tablename__ = "notification_subscriptions"
+    __table_args__ = (
+        UniqueConstraint(
+            "user_id",
+            "provider",
+            "template_key",
+            "template_id",
+            name="uq_notification_subscriptions_user_template",
+        ),
+    )
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    user_id: Mapped[str] = mapped_column(
+        String(64),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    provider: Mapped[str] = mapped_column(String(32), nullable=False)
+    template_key: Mapped[str] = mapped_column(String(64), nullable=False)
+    template_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    quota_remaining: Mapped[int] = mapped_column(nullable=False, default=0)
+    last_request_result: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class NotificationDeliveryModel(Base):
+    __tablename__ = "notification_deliveries"
+    __table_args__ = (
+        UniqueConstraint(
+            "user_id",
+            "channel",
+            "target_type",
+            "target_id",
+            "template_key",
+            name="uq_notification_deliveries_target_template",
+        ),
+    )
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    user_id: Mapped[str] = mapped_column(
+        String(64),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    channel: Mapped[str] = mapped_column(String(32), nullable=False)
+    target_type: Mapped[str] = mapped_column(String(64), nullable=False)
+    target_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    template_key: Mapped[str] = mapped_column(String(64), nullable=False)
+    template_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    scheduled_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="pending", index=True)
+    provider_message_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    error_code: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    attempt_count: Mapped[int] = mapped_column(nullable=False, default=0)
+    next_attempt_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
