@@ -14,6 +14,7 @@ class UserModel(Base):
     id: Mapped[str] = mapped_column(String(64), primary_key=True)
     username: Mapped[str | None] = mapped_column(String(64), nullable=True, unique=True, index=True)
     display_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    avatar_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     timezone: Mapped[str] = mapped_column(String(64), nullable=False)
     locale: Mapped[str | None] = mapped_column(String(32), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

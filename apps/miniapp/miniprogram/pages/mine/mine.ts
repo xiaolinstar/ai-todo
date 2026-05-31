@@ -3,11 +3,20 @@ import {
   fetchMe,
   listApiTokens,
   revokeAllApiTokens,
-  revokeApiToken
+  revokeApiToken,
+  updateProfile
 } from "../../lib/api";
 import { hasValidSession, loginWithWechat } from "../../lib/auth";
 import { avatarColor, getInitial } from "../../lib/format";
-import { clearToken, getConfig, isDevelopEnv, saveConfig } from "../../lib/config";
+import {
+  clearToken,
+  clearProfileSetupSeen,
+  getConfig,
+  hasSeenProfileSetup,
+  isDevelopEnv,
+  markProfileSetupSeen,
+  saveConfig
+} from "../../lib/config";
 import { updateTabBarSelected } from "../../lib/tab-bar";
 
 interface PatItem {
@@ -22,12 +31,17 @@ Page({
     apiUrl: "",
     userName: "",
     userId: "",
+    avatarUrl: "",
+    showProfileSetup: false,
+    setupAvatarUrl: "",
+    setupNameInput: "",
     timezone: "",
     initial: "?",
     avatarColor: "#007AFF",
     loggedIn: false,
     testing: false,
     loggingIn: false,
+    profileSaving: false,
     showDevControls: false,
     patItems: [] as PatItem[],
     patLoading: false,
@@ -81,6 +95,7 @@ Page({
         }
         saveConfig({ token: response.data.accessToken });
         this.applyUser(response.data.user, true);
+        this.openProfileSetupIfNeeded();
         this.loadPatList();
       })
       .catch(() => {
@@ -134,14 +149,15 @@ Page({
   },
 
   applyUser(
-    user: { displayName: string; id: string; timezone: string },
+    user: { displayName: string; id: string; timezone: string; avatarUrl?: string },
     showToast: boolean
   ) {
     this.setData({
       userName: user.displayName,
       userId: user.id,
+      avatarUrl: user.avatarUrl || "",
       timezone: user.timezone,
-      initial: getInitial(user.displayName),
+      initial: user.avatarUrl ? getInitial(user.displayName) : "微",
       avatarColor: avatarColor(user.displayName),
       loggedIn: true
     });
@@ -154,12 +170,17 @@ Page({
     this.setData({
       userName: "",
       userId: "",
+      avatarUrl: "",
+      showProfileSetup: false,
+      setupAvatarUrl: "",
+      setupNameInput: "",
       timezone: "",
       initial: "?",
       avatarColor: "#007AFF",
       loggedIn: false,
       patItems: [],
       creatingPat: false,
+      profileSaving: false,
       newPatToken: ""
     });
   },
@@ -168,6 +189,101 @@ Page({
     clearToken();
     this.resetProfile();
     wx.showToast({ title: "已退出登录", icon: "none" });
+  },
+
+  onAuthButtonTap() {
+    if (this.data.loggedIn) {
+      this.onLogout();
+      return;
+    }
+    this.onWechatLogin();
+  },
+
+  openProfileSetup() {
+    if (!this.data.userId) {
+      return;
+    }
+    const setupNameInput =
+      !this.data.userName || this.data.userName === "微信用户"
+        ? this.data.userId
+        : this.data.userName;
+    this.setData({
+      showProfileSetup: true,
+      setupAvatarUrl: this.data.avatarUrl,
+      setupNameInput
+    });
+  },
+
+  openProfileSetupIfNeeded() {
+    if (!this.data.userId || hasSeenProfileSetup(this.data.userId)) {
+      return;
+    }
+    this.openProfileSetup();
+  },
+
+  onChooseSetupAvatar(e: { detail: { avatarUrl?: string } }) {
+    const avatarUrl = e.detail.avatarUrl || "";
+    if (!avatarUrl) return;
+    this.setData({ setupAvatarUrl: avatarUrl });
+  },
+
+  onSetupNameInput(e: { detail: { value: string } }) {
+    this.setData({ setupNameInput: e.detail.value });
+  },
+
+  onCancelProfileSetup() {
+    if (this.data.userId) {
+      markProfileSetupSeen(this.data.userId);
+    }
+    this.setData({ showProfileSetup: false });
+  },
+
+  onResetProfileSetupForDev() {
+    if (!this.data.userId) {
+      return;
+    }
+    clearProfileSetupSeen(this.data.userId);
+    this.openProfileSetup();
+  },
+
+  onSaveProfileSetup(e?: { detail?: { value?: { nickname?: string } } }) {
+    const submittedName = e?.detail?.value?.nickname;
+    const displayName =
+      typeof submittedName === "string"
+        ? submittedName.trim()
+        : this.data.setupNameInput.trim();
+    if (!displayName) {
+      wx.showToast({ title: "请输入昵称", icon: "none" });
+      return;
+    }
+    this.setData({ setupNameInput: displayName });
+    this.saveProfile(displayName, this.data.setupAvatarUrl || undefined, "资料已保存");
+  },
+
+  saveProfile(displayName: string, avatarUrl?: string, successTitle = "资料已保存") {
+    this.setData({ profileSaving: true });
+    updateProfile({
+      displayName,
+      avatarUrl
+    })
+      .then((response) => {
+        this.setData({ profileSaving: false });
+        if (!response.ok || !response.data) {
+          wx.showToast({
+            title: response.error?.message || "保存失败",
+            icon: "none"
+          });
+          return;
+        }
+        this.applyUser(response.data.user, false);
+        markProfileSetupSeen(response.data.user.id);
+        this.setData({ showProfileSetup: false });
+        wx.showToast({ title: successTitle, icon: "success" });
+      })
+      .catch(() => {
+        this.setData({ profileSaving: false });
+        wx.showToast({ title: "网络错误", icon: "none" });
+      });
   },
 
   loadPatList() {

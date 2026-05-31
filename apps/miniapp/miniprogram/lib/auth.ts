@@ -6,6 +6,7 @@ export interface WechatLoginResult {
   user: {
     id: string;
     displayName: string;
+    avatarUrl?: string;
     timezone: string;
   };
 }

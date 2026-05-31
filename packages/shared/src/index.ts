@@ -179,10 +179,20 @@ export interface UserSummary {
   id: EntityId;
   username?: string;
   displayName: string;
+  avatarUrl?: string;
   timezone: string;
 }
 
 export interface MeResult {
+  user: UserSummary;
+}
+
+export interface UpdateProfileInput {
+  displayName?: string;
+  avatarUrl?: string;
+}
+
+export interface UpdateProfileResult {
   user: UserSummary;
 }
 

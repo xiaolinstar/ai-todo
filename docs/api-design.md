@@ -131,9 +131,48 @@ GET /v1/me
 {
   "ok": true,
   "data": {
-    "id": "user_123",
-    "display_name": "星星",
-    "timezone": "Asia/Shanghai"
+    "user": {
+      "id": "user_123",
+      "username": null,
+      "displayName": "星星",
+      "avatarUrl": "https://example.com/avatar.jpg",
+      "timezone": "Asia/Shanghai"
+    }
+  }
+}
+```
+
+### 更新当前用户资料
+
+```http
+PATCH /v1/me/profile
+Authorization: Bearer aitodo_xxx
+```
+
+请求：
+
+```json
+{
+  "displayName": "xiaolinstar",
+  "avatarUrl": "wxfile://avatar"
+}
+```
+
+`displayName` 与 `avatarUrl` 均为可选字段；传空字符串 `avatarUrl` 表示清空头像。该接口供微信小程序头像昵称确认流程和 `ai-todo profile update` CLI 共用。
+
+响应：
+
+```json
+{
+  "ok": true,
+  "data": {
+    "user": {
+      "id": "user_123",
+      "username": null,
+      "displayName": "xiaolinstar",
+      "avatarUrl": "wxfile://avatar",
+      "timezone": "Asia/Shanghai"
+    }
   }
 }
 ```

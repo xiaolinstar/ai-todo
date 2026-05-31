@@ -21,7 +21,6 @@ from ai_todo_api.modules.api_tokens.service import create_session_token_for_user
 
 
 WECHAT_PROVIDER = "wechat"
-DEFAULT_WECHAT_DISPLAY_NAME = "微信用户"
 logger = logging.getLogger(__name__)
 
 
@@ -106,6 +105,7 @@ def _login_with_dev_user(session: Session) -> WechatLoginResult:
             id=user.id,
             username=user.username,
             display_name=user.display_name,
+            avatar_url=user.avatar_url,
             timezone=user.timezone,
         ),
     )
@@ -130,6 +130,7 @@ def _complete_wechat_login(session: Session, wechat_session: WechatSession) -> W
             id=user.id,
             username=user.username,
             display_name=user.display_name,
+            avatar_url=user.avatar_url,
             timezone=user.timezone,
         ),
     )
@@ -184,9 +185,10 @@ def _get_or_create_user(
             )
         return user
 
+    user_id = f"user_{uuid4().hex[:12]}"
     user = UserModel(
-        id=f"user_{uuid4().hex[:12]}",
-        display_name=DEFAULT_WECHAT_DISPLAY_NAME,
+        id=user_id,
+        display_name=user_id,
         timezone=settings.timezone,
         created_at=now,
         updated_at=now,

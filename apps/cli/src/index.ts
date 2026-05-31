@@ -25,6 +25,16 @@ async function main(): Promise<void> {
     case "whoami":
       await core.runWhoami(ctx);
       break;
+    case "profile": {
+      const action = sub ?? "help";
+      if (action === "update") {
+        await core.runProfileUpdate(ctx, argv);
+      } else {
+        console.error("Usage: ai-todo profile update --name <text> [--avatar-url <url>]");
+        process.exitCode = 1;
+      }
+      break;
+    }
     case "logout":
       await core.runLogout(ctx);
       break;

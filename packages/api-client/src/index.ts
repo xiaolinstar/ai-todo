@@ -27,6 +27,8 @@ import type {
   UpdateCalendarEventResult,
   UpdateContactInput,
   UpdateContactResult,
+  UpdateProfileInput,
+  UpdateProfileResult,
   UpdateReminderInput,
   UpdateReminderResult
 } from "@ai-todo/shared";
@@ -213,6 +215,13 @@ export class AiTodoClient {
 
   me(): Promise<ApiResponse<MeResult>> {
     return this.request<MeResult>("/v1/me");
+  }
+
+  updateProfile(input: UpdateProfileInput): Promise<ApiResponse<UpdateProfileResult>> {
+    return this.request<UpdateProfileResult>("/v1/me/profile", {
+      method: "PATCH",
+      body: JSON.stringify(input)
+    });
   }
 
   today(): Promise<ApiResponse<TodayResult>> {

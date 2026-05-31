@@ -70,6 +70,28 @@ def test_cli_whoami_with_dev_pat(cli_runner: CliRunner) -> None:
     assert body["data"]["user"]["id"] == "user_dev"
 
 
+def test_cli_profile_update(cli_runner: CliRunner, demo_suffix: str) -> None:
+    display_name = f"CLI User {demo_suffix}"
+    update = cli_runner.run(
+        "profile",
+        "update",
+        "--name",
+        display_name,
+        "--avatar-url",
+        "wxfile://cli-avatar",
+        json_output=True,
+    )
+    assert update.returncode == 0, update.stderr
+    body = update.json()
+    assert body["ok"] is True
+    assert body["data"]["user"]["displayName"] == display_name
+    assert body["data"]["user"]["avatarUrl"] == "wxfile://cli-avatar"
+
+    whoami = cli_runner.run("whoami", json_output=True)
+    assert whoami.returncode == 0, whoami.stderr
+    assert whoami.json()["data"]["user"]["displayName"] == display_name
+
+
 def test_cli_seeds_demo_dataset(cli_runner: CliRunner, demo_suffix: str) -> None:
     _seed_via_cli(cli_runner, demo_suffix)
 

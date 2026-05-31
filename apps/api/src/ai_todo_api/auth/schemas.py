@@ -5,10 +5,20 @@ class UserSummary(CamelModel):
     id: str
     username: str | None = None
     display_name: str
+    avatar_url: str | None = None
     timezone: str
 
 
 class MeResult(CamelModel):
+    user: UserSummary
+
+
+class UpdateProfileInput(CamelModel):
+    display_name: str | None = None
+    avatar_url: str | None = None
+
+
+class UpdateProfileResult(CamelModel):
     user: UserSummary
 
 

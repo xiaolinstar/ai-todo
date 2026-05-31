@@ -1,5 +1,6 @@
 const STORAGE_API_URL = "apiUrl";
 const STORAGE_TOKEN = "token";
+const PROFILE_SETUP_PREFIX = "profileSetupSeen:";
 
 /** 生产环境 API（经 xiaolin-gateway 反代，宿主机 :8082） */
 export const PRODUCTION_API_URL = "https://wodi.games";
@@ -54,4 +55,16 @@ export function saveConfig(patch: Partial<AppConfig>): void {
 
 export function clearToken(): void {
   wx.removeStorageSync(STORAGE_TOKEN);
+}
+
+export function hasSeenProfileSetup(userId: string): boolean {
+  return wx.getStorageSync(`${PROFILE_SETUP_PREFIX}${userId}`) === "1";
+}
+
+export function markProfileSetupSeen(userId: string): void {
+  wx.setStorageSync(`${PROFILE_SETUP_PREFIX}${userId}`, "1");
+}
+
+export function clearProfileSetupSeen(userId: string): void {
+  wx.removeStorageSync(`${PROFILE_SETUP_PREFIX}${userId}`);
 }

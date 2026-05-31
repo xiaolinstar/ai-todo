@@ -71,6 +71,17 @@ JSON 输出：
 }
 ```
 
+### profile update
+
+更新当前 CLI Token 对应用户的个人资料：
+
+```bash
+ai-todo profile update --name xiaolinstar
+ai-todo profile update --name xiaolinstar --avatar-url "wxfile://avatar"
+```
+
+该命令调用 `PATCH /v1/me/profile`，适合调试或 Agent 维护账户展示名。CLI 必须使用该用户自己的 PAT；微信小程序会话 Token 不用于 CLI。
+
 ### logout
 
 ```bash
@@ -414,6 +425,7 @@ ai-todo reminder create \
 ```bash
 ai-todo login
 ai-todo whoami
+ai-todo profile update
 ai-todo add
 ai-todo today
 ai-todo list

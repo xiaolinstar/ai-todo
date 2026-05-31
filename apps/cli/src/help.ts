@@ -15,6 +15,7 @@ Configuration (~/.ai-todo/settings.json):
 Auth:
   ai-todo login [--url <url>] [--token aitodo_xxx] [--issue-pat]
   ai-todo whoami
+  ai-todo profile update --name <text> [--avatar-url <url>]
   ai-todo logout
 
 Global flags (commands only):

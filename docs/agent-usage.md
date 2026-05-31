@@ -114,6 +114,7 @@ ai-todo reminder delete rem_xxx --json
 | 意图 | 命令 |
 |------|------|
 | 当前用户 | `ai-todo whoami --json` |
+| 更新当前用户资料 | `ai-todo profile update --name <text> [--avatar-url <url>] --json` |
 | 今日聚合 | `ai-todo today --json` |
 | 创建提醒 | `ai-todo reminder create --title … [--due …]` |
 | 提醒列表 | `ai-todo reminder list [--status pending]` |

@@ -15,6 +15,7 @@ export interface UserSummary {
   id: string;
   username?: string;
   displayName: string;
+  avatarUrl?: string;
   timezone: string;
 }
 
@@ -172,6 +173,13 @@ export function fetchCalendarByDate(date: string) {
 
 export function fetchMe() {
   return request<MeResult>("/v1/me");
+}
+
+export function updateProfile(input: { displayName?: string; avatarUrl?: string }) {
+  return request<MeResult>("/v1/me/profile", {
+    method: "PATCH",
+    data: input
+  });
 }
 
 export function completeReminder(reminderId: string) {

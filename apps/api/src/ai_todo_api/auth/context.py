@@ -9,6 +9,7 @@ class AuthContext:
     user_id: str
     username: str | None
     display_name: str
+    avatar_url: str | None
     timezone: str
     api_token_id: str | None
     token_type: str | None
@@ -21,6 +22,7 @@ class CurrentUser:
     id: str
     username: str | None
     display_name: str
+    avatar_url: str | None
     timezone: str
 
     @classmethod
@@ -29,5 +31,6 @@ class CurrentUser:
             id=auth.user_id,
             username=auth.username,
             display_name=auth.display_name,
+            avatar_url=auth.avatar_url,
             timezone=auth.timezone,
         )

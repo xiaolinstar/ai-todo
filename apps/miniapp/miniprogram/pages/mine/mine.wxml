@@ -1,7 +1,10 @@
 <view class="page page-with-tab mine-page">
   <view class="profile-card inset-group">
     <view class="profile-inner">
-      <view class="avatar avatar-lg" style="background: {{avatarColor}};">{{initial}}</view>
+      <view wx:if="{{avatarUrl}}" class="avatar avatar-lg avatar-image-wrap">
+        <image class="avatar-image" src="{{avatarUrl}}" mode="aspectFill" />
+      </view>
+      <view wx:else class="avatar avatar-lg" style="background: {{avatarColor}};">{{initial}}</view>
       <view class="profile-text">
         <view class="profile-name">{{userName || '未登录'}}</view>
         <view wx:if="{{loggedIn}}" class="cell-meta">{{userId}}</view>
@@ -21,11 +24,38 @@
   </view>
   <view wx:if="{{showDevControls}}" class="form-hint">develop 模式可改本地 API；其他 Tab 在未登录时仍可用 dev 旁路，但 PAT 管理需先微信登录。</view>
   <view wx:if="{{showDevControls}}" class="todo-button todo-button-secondary" hover-class="todo-button-hover" bindtap="onSaveDevApiUrl">保存 API 地址</view>
+  <view wx:if="{{showDevControls && loggedIn}}" class="todo-button todo-button-secondary" hover-class="todo-button-hover" bindtap="onResetProfileSetupForDev">重新设置头像昵称</view>
 
   <view class="group-header">登录</view>
-  <view class="form-hint" wx:if="{{!loggedIn}}">使用微信账号登录，获取会话并管理 CLI 访问令牌。</view>
-  <view class="form-hint" wx:else>会话有效。重新登录会刷新会话（旧会话失效）。</view>
-  <button class="todo-button todo-button-primary" hover-class="todo-button-hover" bindtap="onWechatLogin" loading="{{loggingIn}}" disabled="{{loggingIn}}">{{loggingIn ? '登录中…' : (loggedIn ? '重新微信登录' : '微信登录')}}</button>
+  <view class="form-hint" wx:if="{{!loggedIn}}">使用微信账号登录以同步你的提醒、日程和通讯录。登录成功后会弹出头像昵称确认。</view>
+  <view class="form-hint" wx:else>会话有效。退出后当前小程序会话将失效。</view>
+  <button class="todo-button {{loggedIn ? 'todo-button-secondary' : 'todo-button-primary'}}" hover-class="todo-button-hover" bindtap="onAuthButtonTap" loading="{{loggingIn}}" disabled="{{loggingIn}}">{{loggingIn ? '登录中…' : (loggedIn ? '微信退出登录' : '微信登录')}}</button>
+
+  <view wx:if="{{showProfileSetup}}" class="profile-setup-mask">
+    <view class="profile-setup-panel">
+      <view class="profile-setup-title">确认微信资料</view>
+      <view class="profile-setup-hint">选择微信头像和昵称，作为本小程序的账户信息。</view>
+      <form bindsubmit="onSaveProfileSetup">
+        <button class="setup-avatar-button" open-type="chooseAvatar" bindchooseavatar="onChooseSetupAvatar">
+          <image wx:if="{{setupAvatarUrl}}" class="setup-avatar-image" src="{{setupAvatarUrl}}" mode="aspectFill" />
+          <text wx:else>{{initial}}</text>
+        </button>
+        <input
+          class="setup-name-input"
+          name="nickname"
+          type="nickname"
+          placeholder="点击选择微信昵称"
+          value="{{setupNameInput}}"
+          bindinput="onSetupNameInput"
+          bindblur="onSetupNameInput"
+        />
+        <view class="profile-setup-actions">
+          <button class="profile-setup-action secondary" bindtap="onCancelProfileSetup">暂不设置</button>
+          <button class="profile-setup-action primary" form-type="submit" loading="{{profileSaving}}" disabled="{{profileSaving}}">{{profileSaving ? '保存中…' : '保存'}}</button>
+        </view>
+      </form>
+    </view>
+  </view>
 
   <view wx:if="{{loggedIn}}" class="group-header">CLI / Agent 访问令牌</view>
   <view wx:if="{{loggedIn}}" class="form-hint">仅供电脑 CLI 使用；与上方微信登录会话分开。新用户默认列表为空，需手动创建。</view>
@@ -70,10 +100,4 @@
     </view>
   </view>
 
-  <view wx:if="{{loggedIn}}" class="group-header">账号</view>
-  <view wx:if="{{loggedIn}}" class="inset-group action-group">
-    <view class="settings-cell pressable" bindtap="onLogout" hover-class="list-cell-hover">
-      <text class="settings-label danger">退出登录</text>
-    </view>
-  </view>
 </view>

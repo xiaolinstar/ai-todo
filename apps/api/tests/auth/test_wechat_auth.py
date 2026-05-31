@@ -21,7 +21,7 @@ def test_wechat_login_creates_user_and_token(client: TestClient, monkeypatch) ->
     body = first.json()
     assert body["ok"] is True
     assert body["data"]["accessToken"].startswith("aitodo_")
-    assert body["data"]["user"]["displayName"] == "微信用户"
+    assert body["data"]["user"]["displayName"] == body["data"]["user"]["id"]
 
     assert second.status_code == 200
     assert second.json()["data"]["user"]["id"] == body["data"]["user"]["id"]
@@ -123,7 +123,8 @@ def test_wechat_login_recovers_orphan_identity(client: TestClient, monkeypatch) 
         response = client.post("/v1/auth/wechat/login", json={"code": "code_orphan"})
 
     assert response.status_code == 200
-    assert response.json()["data"]["user"]["displayName"] == "微信用户"
+    user = response.json()["data"]["user"]
+    assert user["displayName"] == user["id"]
 
 
 def test_wechat_login_rejects_invalid_code(client: TestClient, monkeypatch) -> None:
