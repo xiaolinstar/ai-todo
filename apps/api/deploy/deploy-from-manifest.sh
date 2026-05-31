@@ -155,19 +155,35 @@ pull_with_retries() {
   return 1
 }
 
-ensure_local_canonical_ref() {
+# Image ref passed to docker compose after pull (may be mirror host; same digest as manifest).
+RESOLVED_API_IMAGE=""
+
+resolve_pulled_image_ref() {
   local canonical="$1"
   local pulled_ref="$2"
 
-  if [[ "$pulled_ref" == "$canonical" ]]; then
-    return 0
-  fi
   if ! docker image inspect "$pulled_ref" >/dev/null 2>&1; then
     echo "Pulled ref not found locally: $pulled_ref" >&2
     return 1
   fi
-  docker tag "$pulled_ref" "$canonical"
-  echo "Retagged local image to canonical ref: $canonical" >&2
+
+  if [[ "$pulled_ref" == "$canonical" ]]; then
+    RESOLVED_API_IMAGE="$canonical"
+    return 0
+  fi
+
+  local image_id
+  image_id="$(docker image inspect "$pulled_ref" --format '{{.Id}}')"
+  # docker tag src@sha256:x dst@sha256:x → "refusing to create a tag with a digest reference"
+  if docker tag "$image_id" "$canonical" 2>/dev/null; then
+    RESOLVED_API_IMAGE="$canonical"
+    echo "Retagged to canonical ref: $canonical" >&2
+    return 0
+  fi
+
+  RESOLVED_API_IMAGE="$pulled_ref"
+  echo "Using pulled ref for compose (same digest, mirror host): $pulled_ref" >&2
+  return 0
 }
 
 verify_local_image_digest() {
@@ -206,8 +222,26 @@ verify_local_image_digest() {
 api_image_already_present() {
   local canonical="$1"
   local expected_digest="$2"
-  docker image inspect "$canonical" >/dev/null 2>&1 \
-    && verify_local_image_digest "$canonical" "$expected_digest"
+  local mirror="$PULL_REGISTRY_MIRROR"
+  local mirror_ref=""
+
+  if docker image inspect "$canonical" >/dev/null 2>&1 \
+    && verify_local_image_digest "$canonical" "$expected_digest"; then
+    RESOLVED_API_IMAGE="$canonical"
+    return 0
+  fi
+
+  if [[ -n "$mirror" ]]; then
+    mirror_ref="$(rewrite_pull_ref "$canonical" "$mirror")"
+    if [[ "$mirror_ref" != "$canonical" ]] \
+      && docker image inspect "$mirror_ref" >/dev/null 2>&1 \
+      && verify_local_image_digest "$mirror_ref" "$expected_digest"; then
+      RESOLVED_API_IMAGE="$mirror_ref"
+      return 0
+    fi
+  fi
+
+  return 1
 }
 
 pull_api_image() {
@@ -216,8 +250,10 @@ pull_api_image() {
   local mirror="$PULL_REGISTRY_MIRROR"
   local mirror_ref=""
 
+  RESOLVED_API_IMAGE="$canonical"
+
   if api_image_already_present "$canonical" "$expected_digest"; then
-    echo "API image already present with expected digest; skipping pull." >&2
+    echo "API image already present with expected digest; skipping pull (${RESOLVED_API_IMAGE})." >&2
     return 0
   fi
 
@@ -225,12 +261,13 @@ pull_api_image() {
     mirror_ref="$(rewrite_pull_ref "$canonical" "$mirror")"
     if [[ "$mirror_ref" != "$canonical" ]]; then
       echo "Trying pull via mirror $mirror ..." >&2
-      if pull_with_retries "$mirror_ref" && ensure_local_canonical_ref "$canonical" "$mirror_ref"; then
-        if verify_local_image_digest "$canonical" "$expected_digest"; then
+      if pull_with_retries "$mirror_ref"; then
+        if verify_local_image_digest "$mirror_ref" "$expected_digest" \
+          && resolve_pulled_image_ref "$canonical" "$mirror_ref"; then
           echo "Pull OK via mirror $mirror" >&2
           return 0
         fi
-        echo "Mirror pull OK but digest verify failed after retag; will not treat as success." >&2
+        echo "Mirror pull finished but digest verify failed for ${mirror_ref}." >&2
       fi
       if [[ "${AI_TODO_PULL_SKIP_CANONICAL_FALLBACK:-true}" == "true" ]]; then
         echo "Mirror path failed; skipping canonical $CANONICAL_REGISTRY_HOST (fast-fail to server-build)." >&2
@@ -244,16 +281,21 @@ pull_api_image() {
   if ! pull_with_retries "$canonical"; then
     return 1
   fi
-  verify_local_image_digest "$canonical" "$expected_digest"
+  if verify_local_image_digest "$canonical" "$expected_digest"; then
+    RESOLVED_API_IMAGE="$canonical"
+    return 0
+  fi
+  return 1
 }
 
 deploy_image() {
   local image="$1"
   local digest="$2"
-  export AI_TODO_API_IMAGE="$image"
   if ! pull_api_image "$image" "$digest"; then
     return 1
   fi
+  export AI_TODO_API_IMAGE="${RESOLVED_API_IMAGE:-$image}"
+  echo "compose image=${AI_TODO_API_IMAGE}" >&2
   docker compose "${COMPOSE_FILES[@]}" --env-file "$ENV_FILE" up -d --no-build --pull never
 }
 
@@ -389,7 +431,7 @@ write_deploy_record() {
   python3 - "$output" "$git_sha" "$api_image" "$api_digest" "$fingerprint" "$run_id" "$status" "$deploy_mode" "$rolled_back_from_git_sha" "$rolled_back_from_api_image" <<'PY'
 import json
 import sys
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 (
@@ -413,7 +455,7 @@ payload = {
     "ciRunId": ci_run_id or None,
     "deployMode": deploy_mode or "pull",
     "status": status,
-    "deployedAt": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
+    "deployedAt": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
 }
 if rolled_back_from_git_sha or rolled_back_from_api_image:
     payload["rolledBackFrom"] = {
