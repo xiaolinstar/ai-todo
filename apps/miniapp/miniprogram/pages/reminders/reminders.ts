@@ -1,4 +1,4 @@
-import { completeReminder, fetchMe, fetchRemindersToday } from "../../lib/api";
+import { completeReminder, deleteReminder, fetchMe, fetchRemindersToday } from "../../lib/api";
 import type { ReminderSummary } from "../../lib/api";
 import {
   buildReminderSubline,
@@ -17,10 +17,14 @@ interface ReminderView extends ReminderSummary {
   isOverdue: boolean;
   completing: boolean;
   exiting: boolean;
+  deleting: boolean;
+  swipeX: number;
+  swiping: boolean;
 }
 
 const COMPLETE_HOLD_MS = 1200;
 const EXIT_ANIM_MS = 340;
+const SWIPE_OPEN_THRESHOLD_RATIO = 0.42;
 
 type TabKey = "pending" | "completed";
 
@@ -43,7 +47,10 @@ function enrichReminder(item: ReminderSummary): ReminderView {
       isOverdue
     }),
     completing: false,
-    exiting: false
+    exiting: false,
+    deleting: false,
+    swipeX: 0,
+    swiping: false
   };
 }
 
@@ -64,9 +71,14 @@ Page({
   },
 
   _completeTimers: {} as Record<string, ReturnType<typeof setTimeout>>,
+  _touchStartX: 0,
+  _touchStartY: 0,
+  _swipeItemId: "",
+  _deleteActionWidthPx: 86,
 
   onShow() {
     updateTabBarSelected(0);
+    this.updateDeleteActionWidth();
     this.loadReminders();
   },
 
@@ -140,6 +152,15 @@ Page({
     wx.switchTab({ url: "/pages/mine/mine" });
   },
 
+  updateDeleteActionWidth() {
+    try {
+      const systemInfo = wx.getSystemInfoSync();
+      this._deleteActionWidthPx = Math.round((systemInfo.windowWidth * 160) / 750);
+    } catch {
+      this._deleteActionWidthPx = 86;
+    }
+  },
+
   updateCounts(pending: ReminderView[], completed: ReminderView[]) {
     this.setData({
       pendingCount: pending.length,
@@ -154,6 +175,28 @@ Page({
     );
     this.setData({ pending });
     return pending;
+  },
+
+  patchReminderItem(id: string, patch: Partial<ReminderView>) {
+    const pending = this.data.pending.map((item: ReminderView) =>
+      item.id === id ? { ...item, ...patch } : item
+    );
+    const completed = this.data.completed.map((item: ReminderView) =>
+      item.id === id ? { ...item, ...patch } : item
+    );
+    this.setData({ pending, completed });
+    return { pending, completed };
+  },
+
+  closeOpenSwipes(exceptId = "") {
+    const closeItem = (item: ReminderView) =>
+      item.id === exceptId || item.swipeX === 0
+        ? item
+        : { ...item, swipeX: 0, swiping: false };
+    this.setData({
+      pending: this.data.pending.map(closeItem),
+      completed: this.data.completed.map(closeItem)
+    });
   },
 
   clearCompleteTimer(id: string) {
@@ -197,7 +240,7 @@ Page({
   onComplete(e: { currentTarget: { dataset: { id: string } } }) {
     const id = e.currentTarget.dataset.id;
     const item = this.data.pending.find((entry: ReminderView) => entry.id === id);
-    if (!item || item.completing || item.exiting) return;
+    if (!item || item.completing || item.exiting || item.deleting || item.swipeX < 0) return;
 
     this.patchPendingItem(id, { completing: true });
 
@@ -219,6 +262,99 @@ Page({
       })
       .catch(() => {
         this.revertCompletingItem(id);
+        wx.showToast({ title: "网络错误", icon: "none" });
+      });
+  },
+
+  onSwipeStart(e: {
+    currentTarget: { dataset: { id: string } };
+    touches: Array<{ clientX: number; clientY: number }>;
+  }) {
+    const touch = e.touches[0];
+    if (!touch) return;
+    const id = e.currentTarget.dataset.id;
+    this._touchStartX = touch.clientX;
+    this._touchStartY = touch.clientY;
+    this._swipeItemId = id;
+    this.closeOpenSwipes(id);
+    this.patchReminderItem(id, { swiping: true });
+  },
+
+  onSwipeMove(e: {
+    currentTarget: { dataset: { id: string } };
+    touches: Array<{ clientX: number; clientY: number }>;
+  }) {
+    const touch = e.touches[0];
+    const id = e.currentTarget.dataset.id;
+    if (!touch || id !== this._swipeItemId) return;
+
+    const deltaX = touch.clientX - this._touchStartX;
+    const deltaY = touch.clientY - this._touchStartY;
+    if (Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaY) > 8) return;
+
+    const swipeX = Math.max(-this._deleteActionWidthPx, Math.min(0, deltaX));
+    this.patchReminderItem(id, { swipeX, swiping: true });
+  },
+
+  onSwipeEnd(e: { currentTarget: { dataset: { id: string } } }) {
+    const id = e.currentTarget.dataset.id;
+    const item =
+      this.data.pending.find((entry: ReminderView) => entry.id === id) ||
+      this.data.completed.find((entry: ReminderView) => entry.id === id);
+    if (!item) return;
+
+    const shouldOpen =
+      Math.abs(item.swipeX) >= this._deleteActionWidthPx * SWIPE_OPEN_THRESHOLD_RATIO;
+    this.patchReminderItem(id, {
+      swipeX: shouldOpen ? -this._deleteActionWidthPx : 0,
+      swiping: false
+    });
+    this._swipeItemId = "";
+  },
+
+  onDeleteTap(e: { currentTarget: { dataset: { id: string } } }) {
+    const id = e.currentTarget.dataset.id;
+    const item =
+      this.data.pending.find((entry: ReminderView) => entry.id === id) ||
+      this.data.completed.find((entry: ReminderView) => entry.id === id);
+    if (!item || item.deleting || item.completing || item.exiting) return;
+
+    wx.showModal({
+      title: "删除提醒",
+      content: `确定删除“${item.title}”？`,
+      confirmText: "删除",
+      confirmColor: "#FF3B30",
+      success: (res) => {
+        if (!res.confirm) {
+          this.patchReminderItem(id, { swipeX: 0, swiping: false });
+          return;
+        }
+        this.deleteItem(id);
+      }
+    });
+  },
+
+  deleteItem(id: string) {
+    this.patchReminderItem(id, { deleting: true, exiting: true, swiping: false });
+    deleteReminder(id)
+      .then((response) => {
+        if (!response.ok) {
+          this.patchReminderItem(id, { deleting: false, exiting: false, swipeX: 0 });
+          wx.showToast({ title: response.error?.message || "删除失败", icon: "none" });
+          return;
+        }
+
+        setTimeout(() => {
+          const pending = this.data.pending.filter((entry: ReminderView) => entry.id !== id);
+          const completed = this.data.completed.filter((entry: ReminderView) => entry.id !== id);
+          this.setData({ pending, completed });
+          this.updateCounts(pending, completed);
+          this.clearCompleteTimer(id);
+          wx.showToast({ title: "已删除", icon: "success" });
+        }, EXIT_ANIM_MS);
+      })
+      .catch(() => {
+        this.patchReminderItem(id, { deleting: false, exiting: false, swipeX: 0 });
         wx.showToast({ title: "网络错误", icon: "none" });
       });
   }

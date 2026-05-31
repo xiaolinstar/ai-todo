@@ -181,6 +181,12 @@ export function completeReminder(reminderId: string) {
   });
 }
 
+export function deleteReminder(reminderId: string) {
+  return request<{ id: string; deleted: boolean }>(`/v1/reminders/${reminderId}`, {
+    method: "DELETE"
+  });
+}
+
 export function createReminder(input: {
   title: string;
   dueAt?: string;

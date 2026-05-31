@@ -53,6 +53,9 @@ declare const wx: {
   }): void;
   stopPullDownRefresh(): void;
   setNavigationBarTitle(options: { title: string }): void;
+  getSystemInfoSync(): {
+    windowWidth: number;
+  };
   getAccountInfoSync(): {
     miniProgram: {
       envVersion: "develop" | "trial" | "release";

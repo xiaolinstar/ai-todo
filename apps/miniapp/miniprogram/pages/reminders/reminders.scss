@@ -52,12 +52,69 @@
 }
 
 .reminder-row {
+  position: relative;
   max-height: 200rpx;
   transition:
     opacity 0.32s ease,
     transform 0.32s ease,
     max-height 0.34s ease,
     padding 0.34s ease;
+}
+
+.swipe-shell + .swipe-shell {
+  border-top: var(--todo-separator);
+}
+
+.reminder-swipe-content {
+  position: relative;
+  z-index: 1;
+  align-items: center;
+  width: 100%;
+  min-height: 112rpx;
+  box-sizing: border-box;
+  transition: transform 0.22s ease;
+}
+
+.reminder-swipe-content.swiping {
+  transition: none;
+}
+
+.swipe-actions {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: 160rpx;
+  padding-left: 12rpx;
+  padding-right: 28rpx;
+  box-sizing: border-box;
+  border-left: 1rpx solid rgba(255, 59, 48, 0.18);
+  background: rgba(255, 59, 48, 0.08);
+}
+
+.swipe-delete {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 120rpx;
+  height: calc(100% - 24rpx);
+  padding: 0;
+  border: none;
+  border-radius: 18rpx;
+  background: var(--todo-danger);
+  color: var(--todo-text-inverse);
+  font-size: 28rpx;
+  font-weight: 700;
+  line-height: 1;
+  box-shadow: -8rpx 0 16rpx rgba(0, 0, 0, 0.04);
+}
+
+.swipe-delete::after {
+  border: none;
 }
 
 .reminder-row.completing .cell-title {

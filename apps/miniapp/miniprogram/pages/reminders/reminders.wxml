@@ -48,27 +48,47 @@
       <view class="group-header">今天</view>
       <view class="inset-group reminder-list">
         <view
-          class="list-cell reminder-row {{item.completing ? 'completing' : ''}} {{item.exiting ? 'exiting' : ''}}"
+          class="swipe-shell reminder-row {{item.completing ? 'completing' : ''}} {{item.exiting ? 'exiting' : ''}}"
           wx:for="{{pending}}"
           wx:key="id"
+          data-id="{{item.id}}"
+          bindtouchstart="onSwipeStart"
+          bindtouchmove="onSwipeMove"
+          bindtouchend="onSwipeEnd"
+          bindtouchcancel="onSwipeEnd"
         >
-          <view
-            class="check-hit"
-            data-id="{{item.id}}"
-            bindtap="onComplete"
-            hover-class="check-hit-hover"
-          >
-            <view class="reminder-check {{item.completing ? 'checked popping' : ''}}">
-              <text wx:if="{{item.completing}}" class="check-mark">✓</text>
-            </view>
-          </view>
-          <view class="cell-body compact">
-            <view class="cell-title {{item.completing ? 'done' : ''}}">{{item.title}}</view>
-            <view
-              wx:if="{{item.subline}}"
-              class="cell-subline {{item.isOverdue && !item.completing ? 'overdue' : ''}}"
+          <view class="swipe-actions">
+            <button
+              class="swipe-delete"
+              data-id="{{item.id}}"
+              bindtap="onDeleteTap"
+              loading="{{item.deleting}}"
             >
-              {{item.subline}}
+              删除
+            </button>
+          </view>
+          <view
+            class="list-cell reminder-swipe-content {{item.swiping ? 'swiping' : ''}}"
+            style="transform: translateX({{item.swipeX}}px);"
+          >
+            <view
+              class="check-hit"
+              data-id="{{item.id}}"
+              bindtap="onComplete"
+              hover-class="check-hit-hover"
+            >
+              <view class="reminder-check {{item.completing ? 'checked popping' : ''}}">
+                <text wx:if="{{item.completing}}" class="check-mark">✓</text>
+              </view>
+            </view>
+            <view class="cell-body compact">
+              <view class="cell-title {{item.completing ? 'done' : ''}}">{{item.title}}</view>
+              <view
+                wx:if="{{item.subline}}"
+                class="cell-subline {{item.isOverdue && !item.completing ? 'overdue' : ''}}"
+              >
+                {{item.subline}}
+              </view>
             </view>
           </view>
         </view>
@@ -86,16 +106,40 @@
     </block>
     <block wx:else>
       <view class="group-header">已完成</view>
-      <view class="inset-group">
-        <view class="list-cell reminder-row" wx:for="{{completed}}" wx:key="id">
-          <view class="check-hit">
-            <view class="reminder-check checked static">
-              <text class="check-mark">✓</text>
-            </view>
+      <view class="inset-group reminder-list">
+        <view
+          class="swipe-shell reminder-row {{item.exiting ? 'exiting' : ''}}"
+          wx:for="{{completed}}"
+          wx:key="id"
+          data-id="{{item.id}}"
+          bindtouchstart="onSwipeStart"
+          bindtouchmove="onSwipeMove"
+          bindtouchend="onSwipeEnd"
+          bindtouchcancel="onSwipeEnd"
+        >
+          <view class="swipe-actions">
+            <button
+              class="swipe-delete"
+              data-id="{{item.id}}"
+              bindtap="onDeleteTap"
+              loading="{{item.deleting}}"
+            >
+              删除
+            </button>
           </view>
-          <view class="cell-body compact">
-            <view class="cell-title done">{{item.title}}</view>
-            <view wx:if="{{item.subline}}" class="cell-subline">{{item.subline}}</view>
+          <view
+            class="list-cell reminder-swipe-content {{item.swiping ? 'swiping' : ''}}"
+            style="transform: translateX({{item.swipeX}}px);"
+          >
+            <view class="check-hit">
+              <view class="reminder-check checked static">
+                <text class="check-mark">✓</text>
+              </view>
+            </view>
+            <view class="cell-body compact">
+              <view class="cell-title done">{{item.title}}</view>
+              <view wx:if="{{item.subline}}" class="cell-subline">{{item.subline}}</view>
+            </view>
           </view>
         </view>
       </view>
