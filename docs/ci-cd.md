@@ -143,31 +143,79 @@ cat ~/.ssh/ai_todo_deploy.pub   # 追加到服务器 ~/.ssh/authorized_keys
 
 - `environment`：`production` / `staging`
 - `ci_run_id`：指定某次 CI 的 run id（默认自动部署时使用触发 CD 的那次 CI run）
+- `deploy_mode`：VPS 部署策略（见下表）
+
+### VPS 部署策略（`deploy_mode`）
+
+| 模式 | 行为 | 适用场景 |
+|------|------|----------|
+| **auto**（默认） | 先 `docker pull` manifest 中的 digest 镜像；pull 失败则 **自动 server-build** | 生产自动 CD、国内 VPS |
+| **pull** | 仅 pull，不兜底 build | 网络稳定、需严格 digest 部署 |
+| **server-build** | 跳过 pull，在 VPS `docker compose build`（仍校验 manifest 指纹与 `gitSha`） | GHCR 长期不可达时的明确选择 |
+
+环境变量（CD SSH 脚本或服务器手动部署均可覆盖）：
+
+| 变量 | 默认 | 说明 |
+|------|------|------|
+| `AI_TODO_DEPLOY_MODE` | `pull` | `pull` / `server-build` |
+| `AI_TODO_DEPLOY_FALLBACK_SERVER_BUILD` | `true`（auto 时） | pull 失败后是否 server-build |
+| `AI_TODO_HEALTH_WAIT_SECONDS` | `90`（CD）/ `120`（脚本默认） | 启动后等待 health/db 的最长时间 |
+| `AI_TODO_PULL_RETRIES` | `2`（CD） | `docker pull` 重试次数 |
+| `AI_TODO_PULL_TIMEOUT_SECONDS` | `180`（CD） | 单次 pull 最长秒数（`timeout` 命令） |
+| `AI_TODO_PULL_SKIP_CANONICAL_FALLBACK` | `true`（CD） | 镜像站失败后是否跳过慢速 `ghcr.io` |
+| `AI_TODO_PULL_REGISTRY_MIRROR` | `ghcr.nju.edu.cn`（CD + 脚本默认） | public GHCR 的 NJU 加速；`none` 禁用 |
+
+CD workflow SSH **`command_timeout` 为 10m**：镜像站 pull 限时失败后尽快 **server-build**，避免长时间卡在跨境 `ghcr.io`。
+
+**无需为 CD 单独改 `.env.production`**：workflow 会通过 SSH 注入 `AI_TODO_PULL_REGISTRY_MIRROR=ghcr.nju.edu.cn` 等变量。仅在 **服务器手动** 执行 `remote-deploy.sh` / `deploy-from-manifest.sh` 且不走 CD 时，才建议在 `.env.production` 写上镜像站（或不写，使用脚本默认 `ghcr.nju.edu.cn`）。
+
+`.deploy/current.json` 会记录 `deployMode`：`pull`、`server-build` 或 `server-build-fallback`，回滚时按上一模式的策略恢复。
+
+## 私有 GitHub 仓库 + 公开 GHCR 包
+
+**可以。** 代码仓库可见性与容器包可见性是分开的：
+
+| 资源 | 推荐设置 | 说明 |
+|------|----------|------|
+| GitHub 仓库 `ai-todo` | **Private** | 源码与 Actions 日志仍受仓库权限保护 |
+| GHCR 包 `ghcr.io/<owner>/ai-todo-api` | **Public** | VPS 可匿名或弱认证拉取；可选用 [NJU GHCR 镜像](https://doc.nju.edu.cn/books/e1654/page/ghcr) 加速 |
+
+将容器包改为 Public 的步骤（需包 Owner 权限）：
+
+1. 打开 `https://github.com/users/<owner>/packages/container/ai-todo-api/settings`
+2. **Change visibility** → **Public**
+3. （可选）手动部署时在 VPS `.env.production` 设置 `AI_TODO_PULL_REGISTRY_MIRROR=ghcr.nju.edu.cn`；**CD 已自动注入，不必改**
+
+注意：
+
+- CI 仍用 `GITHUB_TOKEN` **push** 镜像（需 `packages: write`），与 VPS **pull** 权限无关。
+- 公开包意味着他人可 `docker pull` 该镜像（通常可接受运行时镜像；**Secrets 仍在 `.env.production`，不在镜像内**）。
+- 若保持 GHCR **Private**，VPS 仍需 `GHCR_DEPLOY_TOKEN`（`read:packages` PAT）或 CD 传入的 token；**无法**使用 NJU 等公共缓存站。
 
 ## VPS 前置条件（CD 路径）
 
 1. 仓库 clone 路径与 `DEPLOY_PATH` 一致  
 2. `.env.production` 已配置  
-3. **GHCR 拉取权限**（二选一）  
-   - GitHub Environment secret：`GHCR_DEPLOY_TOKEN`（推荐 read:packages PAT）+ 可选 `GHCR_DEPLOY_USER`  
-   - 或将 `ghcr.io/xiaolinstar/ai-todo-api` 设为 public package  
+3. **GHCR 拉取**（`deploy_mode` 为 `pull` / `auto` 时）  
+   - 公开包：可不配置 `GHCR_DEPLOY_TOKEN`（建议仍配置以应对 rate limit）  
+   - 私有包：`GHCR_DEPLOY_TOKEN`（`read:packages` PAT）+ 可选 `GHCR_DEPLOY_USER`  
 4. Docker Compose ≥ 2.20（支持 `image` + `--no-build` 部署）
 
 ### 国内 VPS：GHCR 拉取（可选镜像加速）
 
-默认 **直连 `ghcr.io`**（私有包 + `GHCR_DEPLOY_TOKEN`）。manifest 与 `.deploy/current.json` 始终记录 canonical 地址 `ghcr.io/...@sha256:...`。
+默认 **直连 `ghcr.io`**。manifest 与 `.deploy/current.json` 始终记录 canonical 地址 `ghcr.io/...@sha256:...`。
 
 | 配置 | 说明 |
 |------|------|
 | （默认，留空） | 私有 GHCR：`docker login ghcr.io` 后按 manifest digest pull |
-| `AI_TODO_PULL_REGISTRY_MIRROR=ghcr.nju.edu.cn` | 仅适用于 **public** GHCR 包；私有包无法使用公共缓存站 |
+| `AI_TODO_PULL_REGISTRY_MIRROR=ghcr.nju.edu.cn` | 仅适用于 **public** GHCR 包 |
 
 参考：[NJU GHCR 镜像说明](https://doc.nju.edu.cn/books/e1654/page/ghcr)
 
 部署入口：`apps/api/deploy/remote-deploy.sh`  
 - CD 进入 `DEPLOY_PATH` 后会先 `git pull --ff-only origin main`，确保服务器部署脚本与 GitHub `main` 一致；若服务器目录有分叉或无法快进，会失败并停止部署。
-- 设置 `AI_TODO_DEPLOY_MANIFEST` → `deploy-from-manifest.sh`（拉 CI 镜像，**不** `--build`）  
-- 未设置 → 本地应急 `docker compose up -d --build`
+- 设置 `AI_TODO_DEPLOY_MANIFEST` → `deploy-from-manifest.sh`（默认 pull；失败可 fallback server-build）  
+- 未设置 manifest → 本地应急 `docker compose up -d --build`
 
 manifest 部署路径会在远端执行这些硬性检查：
 
@@ -182,10 +230,10 @@ manifest 部署路径会在远端执行这些硬性检查：
 
 ### 回滚路径
 
-manifest 部署会在替换 API 后执行 `/v1/health` 与 `/v1/health/db` 检查。若新版本启动或健康检查失败，脚本会读取部署前的 `.deploy/current.json`，自动执行应用层回滚：
+manifest 部署会在替换 API 后**轮询** `/v1/health` 与 `/v1/health/db`（默认最多 120s，等待迁移完成）。若新版本启动或健康检查失败，脚本会读取部署前的 `.deploy/current.json`，自动执行应用层回滚：
 
 1. `git reset --hard <previous gitSha>`
-2. 使用上一版 `apiImage` digest 重新 `docker compose pull/up`
+2. 按上一版 `deployMode` 恢复：`pull` → 重新 pull digest；`server-build*` → `compose build`
 3. 重新执行 health/db 检查
 4. 成功后把 `.deploy/current.json` 写成 `status: rolled_back`
 

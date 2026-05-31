@@ -18,7 +18,7 @@
 ```text
 开发者 push main
     → CI（scan → build → test → publish deploy-manifest）
-    → CD 校验指纹后拉取 GHCR 镜像部署（VPS 不 build）
+    → CD 校验指纹后部署（默认 VPS docker pull；pull 失败则 server-build 兜底）
     → git pull + docker compose up --build（API 宿主机 :8082）
     → xiaolin-gateway 反代 https://wodi.games
     → curl https://wodi.games/v1/health
@@ -103,7 +103,7 @@ docker compose up -d
 
 ## 三、GitHub Actions（CI / CD）
 
-详见 [ci-cd.md](./ci-cd.md)。CI 产出 `deploy-manifest`（含 API 镜像 digest 指纹）；CD 仅消费该制品，不在服务器上重新 build API 镜像。
+详见 [ci-cd.md](./ci-cd.md)。CI 产出 `deploy-manifest`（含 API 镜像 digest 指纹）；CD 消费该制品并在 VPS 上 **优先 pull GHCR 镜像**（`deploy_mode=auto` 时 pull 失败会自动 `compose build`）。手动 CD 可选 `deploy_mode`：`auto` / `pull` / `server-build`。
 
 ### Secrets（ai-todo 仓库）
 
@@ -190,7 +190,7 @@ curl -sf https://wodi.games/v1/health/db
 
 ### API
 
-自动回滚：manifest 部署后如果 `/v1/health` 或 `/v1/health/db` 失败，部署脚本会读取上一版 `.deploy/current.json`，切回上一版 `gitSha` 与 API 镜像 digest，并重新健康检查。回滚成功后，`.deploy/current.json` 会标记为 `status: rolled_back`。
+自动回滚：manifest 部署后如果健康检查失败（含启动等待超时），脚本会读取上一版 `.deploy/current.json`，按上一版 `deployMode`（pull 或 server-build）恢复，并重新健康检查。回滚成功后，`.deploy/current.json` 会标记为 `status: rolled_back`。
 
 手动回滚：触发 GitHub Actions 的 `CD` workflow，填写要回滚到的旧 `ci_run_id`。CD 会下载该次 CI 的 `deploy-manifest`，校验 fingerprint，并按旧镜像 digest 部署。
 
@@ -215,7 +215,7 @@ docker compose -f apps/api/docker-compose.prod.yml exec postgres \
 - [ ] DB health：`curl http://127.0.0.1:8082/v1/health/db`，确认 `status=ok`
 - [ ] Gateway health：`curl https://wodi.games/v1/health`
 - [ ] Gateway DB health：`curl https://wodi.games/v1/health/db`
-- [ ] `.deploy/current.json` 中的 `gitSha` / `apiDigest` / `fingerprint` 与本次 CI 一致
+- [ ] `.deploy/current.json` 中的 `gitSha` / `apiDigest` / `fingerprint` / `deployMode` 与本次 CI 一致
 - [ ] `.env.production` 中 `AI_TODO_ALLOW_DEV_AUTH=false`
 - [ ] 微信 AppID / AppSecret 正确
 - [ ] 若本次包含 Alembic migration，确认符合 expand/deploy/backfill/contract 策略

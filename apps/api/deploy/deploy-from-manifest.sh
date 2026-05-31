@@ -38,12 +38,14 @@ PREVIOUS_API_IMAGE=""
 PREVIOUS_API_DIGEST=""
 PREVIOUS_FINGERPRINT=""
 PREVIOUS_RUN_ID=""
+PREVIOUS_DEPLOY_MODE="pull"
 if [[ -f "$CURRENT_DEPLOY_FILE" ]]; then
   PREVIOUS_GIT_SHA="$(python3 -c "import json,sys; print(json.load(open(sys.argv[1])).get('gitSha') or '')" "$CURRENT_DEPLOY_FILE")"
   PREVIOUS_API_IMAGE="$(python3 -c "import json,sys; print(json.load(open(sys.argv[1])).get('apiImage') or '')" "$CURRENT_DEPLOY_FILE")"
   PREVIOUS_API_DIGEST="$(python3 -c "import json,sys; print(json.load(open(sys.argv[1])).get('apiDigest') or '')" "$CURRENT_DEPLOY_FILE")"
   PREVIOUS_FINGERPRINT="$(python3 -c "import json,sys; print(json.load(open(sys.argv[1])).get('fingerprint') or '')" "$CURRENT_DEPLOY_FILE")"
   PREVIOUS_RUN_ID="$(python3 -c "import json,sys; print(json.load(open(sys.argv[1])).get('ciRunId') or '')" "$CURRENT_DEPLOY_FILE")"
+  PREVIOUS_DEPLOY_MODE="$(python3 -c "import json,sys; print(json.load(open(sys.argv[1])).get('deployMode') or 'pull')" "$CURRENT_DEPLOY_FILE")"
 fi
 
 cd "$REPO_ROOT"
@@ -82,7 +84,16 @@ if [[ -n "${GHCR_DEPLOY_TOKEN:-}" ]]; then
 fi
 
 PULL_REGISTRY_MIRROR="$(grep -E '^AI_TODO_PULL_REGISTRY_MIRROR=' "$ENV_FILE" | tail -n1 | cut -d= -f2- | tr -d ' "'\''"' || true)"
-PULL_REGISTRY_MIRROR="${AI_TODO_PULL_REGISTRY_MIRROR:-${PULL_REGISTRY_MIRROR:-}}"
+# Public GHCR 默认走 NJU 镜像；CD 可 export 覆盖。设为 "none" 可禁用镜像站。
+if [[ -n "${AI_TODO_PULL_REGISTRY_MIRROR:-}" ]]; then
+  if [[ "${AI_TODO_PULL_REGISTRY_MIRROR}" == "none" ]]; then
+    PULL_REGISTRY_MIRROR=""
+  else
+    PULL_REGISTRY_MIRROR="${AI_TODO_PULL_REGISTRY_MIRROR}"
+  fi
+else
+  PULL_REGISTRY_MIRROR="${PULL_REGISTRY_MIRROR:-ghcr.nju.edu.cn}"
+fi
 CANONICAL_REGISTRY_HOST="${AI_TODO_CANONICAL_REGISTRY_HOST:-ghcr.io}"
 
 if [[ -n "${GHCR_DEPLOY_TOKEN:-}" && -n "$PULL_REGISTRY_MIRROR" ]]; then
@@ -119,21 +130,25 @@ rewrite_pull_ref() {
 
 pull_with_retries() {
   local image="$1"
-  local max_attempts="${AI_TODO_PULL_RETRIES:-5}"
+  local max_attempts="${AI_TODO_PULL_RETRIES:-2}"
+  local per_pull_timeout="${AI_TODO_PULL_TIMEOUT_SECONDS:-180}"
   local attempt=1
-  local wait_seconds=5
+  local wait_seconds=3
 
   while (( attempt <= max_attempts )); do
-    if docker pull "$image"; then
+    if command -v timeout >/dev/null 2>&1; then
+      if timeout "$per_pull_timeout" docker pull "$image"; then
+        return 0
+      fi
+    elif docker pull "$image"; then
       return 0
     fi
     if (( attempt == max_attempts )); then
       break
     fi
-    echo "docker pull attempt ${attempt}/${max_attempts} failed for ${image}; retrying in ${wait_seconds}s..." >&2
+    echo "docker pull attempt ${attempt}/${max_attempts} failed for ${image} (timeout=${per_pull_timeout}s); retrying in ${wait_seconds}s..." >&2
     sleep "$wait_seconds"
     attempt=$((attempt + 1))
-    wait_seconds=$((wait_seconds * 2))
   done
 
   echo "Failed to pull after ${max_attempts} attempts: $image" >&2
@@ -191,6 +206,10 @@ pull_api_image() {
           return 0
         fi
       fi
+      if [[ "${AI_TODO_PULL_SKIP_CANONICAL_FALLBACK:-true}" == "true" ]]; then
+        echo "Mirror pull failed; skipping canonical $CANONICAL_REGISTRY_HOST (fast-fail to server-build)." >&2
+        return 1
+      fi
       echo "Mirror pull failed or digest mismatch; falling back to $CANONICAL_REGISTRY_HOST." >&2
     fi
   fi
@@ -212,11 +231,19 @@ deploy_image() {
   docker compose "${COMPOSE_FILES[@]}" --env-file "$ENV_FILE" up -d --no-build --pull never
 }
 
-verify_deployed_api() {
-  curl -sf "http://127.0.0.1:${PUBLISH_PORT}/v1/health" >/dev/null
+deploy_server_build() {
+  echo "Deploying via server-build (docker compose build on VPS)..." >&2
+  unset AI_TODO_API_IMAGE
+  docker compose "${COMPOSE_FILES[@]}" --env-file "$ENV_FILE" up -d --build
+}
 
-  local health_db_json
-  health_db_json="$(curl -sf "http://127.0.0.1:${PUBLISH_PORT}/v1/health/db")"
+# pull | server-build (auto fallback uses pull then server-build)
+DEPLOY_MODE="${AI_TODO_DEPLOY_MODE:-pull}"
+DEPLOY_FALLBACK_BUILD="${AI_TODO_DEPLOY_FALLBACK_SERVER_BUILD:-true}"
+DEPLOY_MODE_RECORD="$DEPLOY_MODE"
+
+assert_health_db_json() {
+  local health_db_json="$1"
   python3 - "$health_db_json" <<'PY'
 import json
 import sys
@@ -234,6 +261,63 @@ if not (
 PY
 }
 
+wait_for_deployed_api() {
+  local max_wait="${AI_TODO_HEALTH_WAIT_SECONDS:-120}"
+  local interval="${AI_TODO_HEALTH_POLL_SECONDS:-2}"
+  local elapsed=0
+  local health_db_json=""
+
+  echo "Waiting for API health (up to ${max_wait}s)..." >&2
+  while (( elapsed < max_wait )); do
+    if curl -sf "http://127.0.0.1:${PUBLISH_PORT}/v1/health" >/dev/null 2>&1; then
+      if health_db_json="$(curl -sf "http://127.0.0.1:${PUBLISH_PORT}/v1/health/db" 2>/dev/null)" \
+        && [[ -n "$health_db_json" ]]; then
+        if assert_health_db_json "$health_db_json"; then
+          return 0
+        fi
+      fi
+    fi
+    sleep "$interval"
+    elapsed=$((elapsed + interval))
+  done
+
+  echo "API not healthy within ${max_wait}s (127.0.0.1:${PUBLISH_PORT})" >&2
+  return 1
+}
+
+verify_deployed_api() {
+  wait_for_deployed_api
+}
+
+deploy_new_version() {
+  if [[ "$DEPLOY_MODE" == "server-build" ]]; then
+    deploy_server_build
+    return $?
+  fi
+
+  if deploy_image "$API_IMAGE" "$API_DIGEST"; then
+    return 0
+  fi
+
+  if [[ "${DEPLOY_FALLBACK_BUILD}" == "true" ]]; then
+    echo "docker pull deploy failed; falling back to server-build." >&2
+    DEPLOY_MODE_RECORD="server-build-fallback"
+    deploy_server_build
+    return $?
+  fi
+
+  return 1
+}
+
+deploy_previous_version() {
+  local mode="${1:-pull}"
+  if [[ "$mode" == "server-build" || "$mode" == "server-build-fallback" ]]; then
+    deploy_server_build
+    return $?
+  fi
+  deploy_image "$PREVIOUS_API_IMAGE" "$PREVIOUS_API_DIGEST"
+}
+
 write_deploy_record() {
   local output="$1"
   local git_sha="$2"
@@ -242,10 +326,11 @@ write_deploy_record() {
   local fingerprint="$5"
   local run_id="$6"
   local status="$7"
-  local rolled_back_from_git_sha="${8:-}"
-  local rolled_back_from_api_image="${9:-}"
+  local deploy_mode="${8:-pull}"
+  local rolled_back_from_git_sha="${9:-}"
+  local rolled_back_from_api_image="${10:-}"
 
-  python3 - "$output" "$git_sha" "$api_image" "$api_digest" "$fingerprint" "$run_id" "$status" "$rolled_back_from_git_sha" "$rolled_back_from_api_image" <<'PY'
+  python3 - "$output" "$git_sha" "$api_image" "$api_digest" "$fingerprint" "$run_id" "$status" "$deploy_mode" "$rolled_back_from_git_sha" "$rolled_back_from_api_image" <<'PY'
 import json
 import sys
 from datetime import UTC, datetime
@@ -259,6 +344,7 @@ from pathlib import Path
     fingerprint,
     ci_run_id,
     status,
+    deploy_mode,
     rolled_back_from_git_sha,
     rolled_back_from_api_image,
 ) = sys.argv[1:]
@@ -269,6 +355,7 @@ payload = {
     "apiDigest": api_digest,
     "fingerprint": fingerprint,
     "ciRunId": ci_run_id or None,
+    "deployMode": deploy_mode or "pull",
     "status": status,
     "deployedAt": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
 }
@@ -283,13 +370,18 @@ PY
 }
 
 rollback_previous_deploy() {
-  if [[ -z "$PREVIOUS_GIT_SHA" || -z "$PREVIOUS_API_IMAGE" ]]; then
+  if [[ -z "$PREVIOUS_GIT_SHA" ]]; then
     echo "No previous deploy record found; automatic rollback is unavailable." >&2
+    return 1
+  fi
+  if [[ "$PREVIOUS_DEPLOY_MODE" == "pull" && -z "$PREVIOUS_API_IMAGE" ]]; then
+    echo "No previous API image recorded; automatic rollback is unavailable." >&2
     return 1
   fi
 
   echo "Rolling back to previous deploy:"
   echo "  git_sha=${PREVIOUS_GIT_SHA}"
+  echo "  deploy_mode=${PREVIOUS_DEPLOY_MODE}"
   echo "  image=${PREVIOUS_API_IMAGE}"
 
   cd "$REPO_ROOT"
@@ -297,8 +389,9 @@ rollback_previous_deploy() {
   cd "$API_DIR"
   set_compose_files
 
-  deploy_image "$PREVIOUS_API_IMAGE" "$PREVIOUS_API_DIGEST"
-  verify_deployed_api
+  if ! deploy_previous_version "$PREVIOUS_DEPLOY_MODE" || ! verify_deployed_api; then
+    return 1
+  fi
 
   mkdir -p "$DEPLOY_DIR"
   write_deploy_record \
@@ -309,12 +402,15 @@ rollback_previous_deploy() {
     "$PREVIOUS_FINGERPRINT" \
     "$PREVIOUS_RUN_ID" \
     "rolled_back" \
+    "$PREVIOUS_DEPLOY_MODE" \
     "$GIT_SHA" \
     "$API_IMAGE"
 }
 
-if ! deploy_image "$API_IMAGE" "$API_DIGEST" || ! verify_deployed_api; then
-  echo "New deploy failed health checks; attempting automatic rollback." >&2
+echo "Deploy strategy: mode=${DEPLOY_MODE} fallback_server_build=${DEPLOY_FALLBACK_BUILD}" >&2
+
+if ! deploy_new_version || ! verify_deployed_api; then
+  echo "New deploy failed; attempting automatic rollback." >&2
   if rollback_previous_deploy; then
     echo "Rollback OK; current deploy remains on previous version." >&2
   else
@@ -331,6 +427,7 @@ write_deploy_record \
   "$API_DIGEST" \
   "$FINGERPRINT" \
   "$RUN_ID" \
-  "deployed"
+  "deployed" \
+  "$DEPLOY_MODE_RECORD"
 
-echo "ai-todo API deploy OK (manifest image, health/db on 127.0.0.1:${PUBLISH_PORT})"
+echo "ai-todo API deploy OK (mode=${DEPLOY_MODE_RECORD}, health/db on 127.0.0.1:${PUBLISH_PORT})"
