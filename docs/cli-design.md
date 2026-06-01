@@ -370,6 +370,13 @@ ai-todo contact show wangzong
 ai-todo contact update wangzong --company "新公司"
 ```
 
+### contact delete
+
+```bash
+ai-todo contact delete contact_123
+ai-todo contact delete wangzong
+```
+
 ### contact method add
 
 ```bash
@@ -436,6 +443,7 @@ ai-todo calendar add
 ai-todo contact add
 ai-todo contact search
 ai-todo contact show
+ai-todo contact delete
 ```
 
 暂缓：

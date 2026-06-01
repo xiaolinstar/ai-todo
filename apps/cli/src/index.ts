@@ -107,8 +107,10 @@ async function main(): Promise<void> {
         await contact.runContactShow(ctx, argv);
       } else if (action === "update") {
         await contact.runContactUpdate(ctx, argv);
+      } else if (action === "delete") {
+        await contact.runContactDelete(ctx, argv);
       } else {
-        console.error("Usage: ai-todo contact <add|list|search|show|update>");
+        console.error("Usage: ai-todo contact <add|list|search|show|update|delete>");
         process.exitCode = 1;
       }
       break;

@@ -89,3 +89,38 @@ def test_manual_contact_handle_must_be_unique(client: TestClient) -> None:
     assert first_response.status_code == 201
     assert second_response.status_code == 400
     assert second_response.json()["error"]["code"] == "VALIDATION_ERROR"
+
+
+def test_delete_contact_removes_it_from_list_and_show(client: TestClient) -> None:
+    create_response = client.post(
+        "/v1/contacts",
+        json={"displayName": "可删除联系人", "handle": "delete-me"},
+    )
+    assert create_response.status_code == 201
+    contact = create_response.json()["data"]["contact"]
+
+    delete_response = client.delete(f"/v1/contacts/{contact['id']}")
+    assert delete_response.status_code == 200
+    assert delete_response.json()["data"]["deleted"] is True
+
+    missing_response = client.get(f"/v1/contacts/{contact['id']}")
+    assert missing_response.status_code == 404
+
+    search_response = client.get("/v1/contacts", params={"q": "delete-me"})
+    assert search_response.status_code == 200
+    assert search_response.json()["data"]["items"] == []
+
+
+def test_contact_search_matches_normalized_handle(client: TestClient) -> None:
+    create_response = client.post(
+        "/v1/contacts",
+        json={"displayName": "Codex CLI Test", "handle": "codex-cli-test"},
+    )
+    assert create_response.status_code == 201
+    contact = create_response.json()["data"]["contact"]
+    assert contact["handle"] == "codexclitest"
+
+    search_response = client.get("/v1/contacts", params={"q": "codex-cli"})
+    assert search_response.status_code == 200
+    items = search_response.json()["data"]["items"]
+    assert any(item["id"] == contact["id"] for item in items)

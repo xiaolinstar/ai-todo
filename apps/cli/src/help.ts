@@ -49,6 +49,7 @@ Contacts:
   ai-todo contact search <query>
   ai-todo contact show <contact_id_or_handle>
   ai-todo contact update <contact_id_or_handle> [--handle <handle>] [--name <text>] [--email <v>] [--phone <v>]
+  ai-todo contact delete <contact_id_or_handle>
 
 Settings file: ${settingsPath()}
 

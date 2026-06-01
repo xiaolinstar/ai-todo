@@ -127,6 +127,7 @@ ai-todo reminder delete rem_xxx --json
 | 查看联系人 | `ai-todo contact show <id_or_handle>` |
 | 创建联系人 | `ai-todo contact add "<name>" [--handle …] --email …` |
 | 更新联系人 | `ai-todo contact update <id_or_handle> [--handle …] [--name …] [--email …]` |
+| 删除联系人 | `ai-todo contact delete <id_or_handle>` |
 
 完整列表：`ai-todo help`
 

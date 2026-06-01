@@ -162,6 +162,30 @@ def test_cli_calendar_show_update_delete(cli_runner: CliRunner, demo_suffix: str
     assert missing.returncode != 0 or missing.json()["ok"] is False
 
 
+def test_cli_contact_delete(cli_runner: CliRunner, demo_suffix: str) -> None:
+    create = cli_runner.run(
+        "contact",
+        "add",
+        f"Delete Contact {demo_suffix}",
+        "--handle",
+        f"delete-contact-{demo_suffix}",
+        json_output=True,
+    )
+    assert create.returncode == 0, create.stderr
+    contact_id = create.json()["data"]["contact"]["id"]
+
+    search = cli_runner.run("contact", "search", f"delete-contact-{demo_suffix}", json_output=True)
+    assert search.returncode == 0, search.stderr
+    assert any(item["id"] == contact_id for item in search.json()["data"]["items"])
+
+    delete = cli_runner.run("contact", "delete", contact_id, json_output=True)
+    assert delete.returncode == 0, delete.stderr
+    assert delete.json()["data"]["deleted"] is True
+
+    missing = cli_runner.run("contact", "show", contact_id, json_output=True)
+    assert missing.returncode != 0 or missing.json()["ok"] is False
+
+
 def test_cli_ignores_trailing_api_url_flag_on_delete(cli_runner: CliRunner, demo_suffix: str) -> None:
     """Legacy scripts may pass --api-url after positional args; must not corrupt IDs."""
     create = cli_runner.run(

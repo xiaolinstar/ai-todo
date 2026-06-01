@@ -159,6 +159,21 @@ export async function runContactUpdate(ctx: CliContext, argv: string[]): Promise
   );
 }
 
+export async function runContactDelete(ctx: CliContext, argv: string[]): Promise<void> {
+  const id = positionalAfter(argv, "contact", "delete");
+  if (!id) {
+    console.error("Usage: ai-todo contact delete <contact_id_or_handle>");
+    process.exitCode = 1;
+    return;
+  }
+
+  await handleApi(ctx, await ctx.client.deleteContact(id), (data) => {
+    if (!ctx.json) {
+      console.log(`已删除联系人：${data.id}`);
+    }
+  });
+}
+
 function renderContactList(items: ContactSummary[]): void {
   if (items.length === 0) {
     console.log("未找到联系人");

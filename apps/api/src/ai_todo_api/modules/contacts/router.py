@@ -12,6 +12,7 @@ from ai_todo_api.modules.contacts.schemas import (
     ContactListResult,
     CreateContactInput,
     CreateContactResult,
+    DeleteContactResult,
     UpdateContactInput,
     UpdateContactResult,
 )
@@ -125,4 +126,37 @@ def update_contact(
         input_summary={"contactId": contact_id, **input_data.model_dump(by_alias=True)},
         handler=handler,
         extract_target_ids=_contact_id_from_data,
+    )
+
+
+@router.delete("/{contact_id}")
+def delete_contact(
+    contact_id: str,
+    auth: AuthContext = Depends(get_auth_context),
+    db: Session = Depends(get_db),
+    idempotency_key: str | None = Depends(get_idempotency_key),
+) -> JSONResponse:
+    user = CurrentUser.from_auth(auth)
+    contact_service = ContactService(ContactRepository(db, user.id), user.id)
+
+    def handler() -> JSONResponse:
+        try:
+            deleted_id = contact_service.delete(contact_id)
+        except ContactNotFoundError:
+            body = ErrorResponse(
+                error=ApiError(code="CONTACT_NOT_FOUND", message=f"Contact {contact_id} was not found."),
+            )
+            return JSONResponse(status_code=404, content=body.model_dump(by_alias=True))
+        body = ApiResponse(data=DeleteContactResult(id=deleted_id))
+        return JSONResponse(status_code=200, content=body.model_dump(by_alias=True))
+
+    return run_write(
+        db,
+        auth,
+        operation="delete_contact",
+        idempotency_key=idempotency_key,
+        target_type="contact",
+        input_summary={"contactId": contact_id},
+        handler=handler,
+        extract_target_ids=lambda data: [data["id"]] if data.get("id") else [],
     )

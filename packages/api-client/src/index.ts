@@ -14,6 +14,7 @@ import type {
   CreateReminderInput,
   CreateReminderResult,
   DeleteCalendarEventResult,
+  DeleteContactResult,
   DeleteReminderResult,
   ListCalendarEventsParams,
   ListRemindersParams,
@@ -251,6 +252,12 @@ export class AiTodoClient {
     return this.request<UpdateContactResult>(`/v1/contacts/${encodeURIComponent(contactId)}`, {
       method: "PATCH",
       body: JSON.stringify(input)
+    });
+  }
+
+  deleteContact(contactId: string): Promise<ApiResponse<DeleteContactResult>> {
+    return this.request<DeleteContactResult>(`/v1/contacts/${encodeURIComponent(contactId)}`, {
+      method: "DELETE"
     });
   }
 

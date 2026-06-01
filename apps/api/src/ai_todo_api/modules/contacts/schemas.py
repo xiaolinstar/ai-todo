@@ -76,3 +76,8 @@ class UpdateContactInput(CamelModel):
 
 class UpdateContactResult(CamelModel):
     contact: ContactDetail
+
+
+class DeleteContactResult(CamelModel):
+    id: str
+    deleted: bool = True

@@ -176,6 +176,12 @@ class ContactService:
             raise ContactNotFoundError(contact_id)
         return contact_to_detail(contact)
 
+    def delete(self, contact_id: str) -> str:
+        contact = self._repository.get(contact_id)
+        if contact is None:
+            raise ContactNotFoundError(contact_id)
+        return self._repository.delete(contact)
+
 
 def _clean_optional(value: str | None) -> str | None:
     if value is None:

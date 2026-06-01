@@ -26,6 +26,12 @@ class ContactRepository:
         self._session.refresh(contact)
         return self.get(contact.id) or contact
 
+    def delete(self, contact: ContactModel) -> str:
+        contact_id = contact.id
+        self._session.delete(contact)
+        self._session.commit()
+        return contact_id
+
     def get(self, contact_ref: str) -> ContactModel | None:
         statement = (
             select(ContactModel)
@@ -78,11 +84,13 @@ class ContactRepository:
         normalized_query = normalize_text(query)
         if normalized_query:
             pattern = f"%{normalized_query}%"
+            normalized_handle_query = normalize_handle(query or "")
+            handle_pattern = f"%{normalized_handle_query}%" if normalized_handle_query else pattern
             statement = (
                 statement.outerjoin(ContactAliasModel)
                 .where(
                     or_(
-                        ContactModel.handle.ilike(pattern),
+                        ContactModel.handle.ilike(handle_pattern),
                         ContactModel.display_name.ilike(pattern),
                         ContactModel.nickname.ilike(pattern),
                         ContactModel.company.ilike(pattern),

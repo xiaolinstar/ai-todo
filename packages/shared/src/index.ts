@@ -78,6 +78,11 @@ export interface UpdateContactResult {
   contact: ContactDetail;
 }
 
+export interface DeleteContactResult {
+  id: EntityId;
+  deleted: boolean;
+}
+
 export interface CreateApiTokenInput {
   name: string;
   scopes?: string[];

@@ -41,6 +41,7 @@ Expect `ok: true` and `data.user.id` (dev: `user_dev`).
 | Search contact | `ai-todo contact search "…" --json` |
 | Add contact | `ai-todo contact add "…" [--email "…"] --json` |
 | Update contact | `ai-todo contact update <contact_id> [--name "…"] [--email "…"] --json` |
+| Delete contact | `ai-todo contact delete <contact_id_or_handle> --json` |
 
 Shorthand (human): `ai-todo add "title only"` creates a reminder without due date (shows in today).
 
