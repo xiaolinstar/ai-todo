@@ -28,7 +28,6 @@ interface PatItem {
 
 Page({
   data: {
-    apiUrl: "",
     userName: "",
     userId: "",
     avatarUrl: "",
@@ -55,7 +54,6 @@ Page({
     updateTabBarSelected(3);
     const config = getConfig();
     this.setData({
-      apiUrl: config.apiUrl,
       showDevControls: isDevelopEnv()
     });
     if (config.apiUrl) {
@@ -63,20 +61,7 @@ Page({
     }
   },
 
-  onApiUrlInput(e: { detail: { value: string } }) {
-    this.setData({ apiUrl: e.detail.value });
-  },
-
-  onSaveDevApiUrl() {
-    saveConfig({ apiUrl: this.data.apiUrl });
-    wx.showToast({ title: "已保存", icon: "success" });
-    this.refreshSession(true);
-  },
-
   onWechatLogin() {
-    if (isDevelopEnv()) {
-      saveConfig({ apiUrl: this.data.apiUrl });
-    }
     this.setData({ loggingIn: true });
     loginWithWechat()
       .then((response) => {
@@ -105,10 +90,6 @@ Page({
   },
 
   refreshSession(showToast: boolean) {
-    saveConfig({
-      apiUrl: isDevelopEnv() ? this.data.apiUrl : undefined
-    });
-
     this.setData({ testing: true });
     return hasValidSession()
       .then((loggedIn) => {

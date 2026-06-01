@@ -15,17 +15,6 @@
     </view>
   </view>
 
-  <view wx:if="{{showDevControls}}" class="group-header">开发环境</view>
-  <view wx:if="{{showDevControls}}" class="form-group">
-    <view class="form-row stack">
-      <text class="form-label">API 地址</text>
-      <input class="form-input" placeholder="http://127.0.0.1:3100" value="{{apiUrl}}" bindinput="onApiUrlInput" />
-    </view>
-  </view>
-  <view wx:if="{{showDevControls}}" class="form-hint">develop 模式可改本地 API；其他 Tab 在未登录时仍可用 dev 旁路，但 PAT 管理需先微信登录。</view>
-  <view wx:if="{{showDevControls}}" class="todo-button todo-button-secondary" hover-class="todo-button-hover" bindtap="onSaveDevApiUrl">保存 API 地址</view>
-  <view wx:if="{{showDevControls && loggedIn}}" class="todo-button todo-button-secondary" hover-class="todo-button-hover" bindtap="onResetProfileSetupForDev">重新设置头像昵称</view>
-
   <view class="group-header">登录</view>
   <view class="form-hint" wx:if="{{!loggedIn}}">使用微信账号登录以同步你的提醒、日程和通讯录。登录成功后会弹出头像昵称确认。</view>
   <view class="form-hint" wx:else>会话有效。退出后当前小程序会话将失效。</view>
@@ -81,6 +70,8 @@
   </view>
 
   <button wx:if="{{loggedIn && !creatingPat && !newPatToken}}" class="todo-button todo-button-secondary" hover-class="todo-button-hover" bindtap="onStartCreatePat">创建新令牌</button>
+
+  <view wx:if="{{loggedIn && showDevControls}}" class="todo-button todo-button-secondary" hover-class="todo-button-hover" bindtap="onResetProfileSetupForDev">重新设置头像昵称（开发）</view>
 
   <view wx:if="{{loggedIn && showDevControls && patItems.length > 0}}" class="todo-button todo-button-secondary" hover-class="todo-button-hover" bindtap="onRevokeAllPats">清理全部 CLI 令牌（开发）</view>
 
