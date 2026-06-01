@@ -19,6 +19,8 @@
 ```text
 开发者 push main
     → CI（scan → build → test → publish deploy-manifest）
+    → 小程序体验版人工上传/验收
+    → 手动触发 CD，填写 CI run id
     → CD 校验指纹后部署（默认 VPS docker pull；pull 失败则 server-build 兜底）
     → git pull + docker compose up --build（API 宿主机 :8082）
     → xiaolin-gateway 反代 https://wodi.games
@@ -34,7 +36,7 @@
 
 | 组件 | 发布方式 | 频率 |
 |------|----------|------|
-| API + Postgres | GitHub Actions → VPS Docker | 每次 merge `main` |
+| API + Postgres | 手动 GitHub Actions CD → VPS Docker | 版本确认发布时 |
 | xiaolin-gateway | xiaolin-gateway 仓库 CD | 域名/证书/路由变更时 |
 | 微信小程序 | 微信开发者工具上传 → 公众平台提审 | 功能变更时 |
 
@@ -104,7 +106,7 @@ docker compose up -d
 
 ## 三、GitHub Actions（CI / CD）
 
-详见 [ci-cd.md](./ci-cd.md)。CI 产出 `deploy-manifest`（含 API 镜像 digest 指纹）；CD 消费该制品并在 VPS 上 **优先 pull GHCR 镜像**（`deploy_mode=auto` 时 pull 失败会自动 `compose build`）。手动 CD 可选 `deploy_mode`：`auto` / `pull` / `server-build`。
+详见 [ci-cd.md](./ci-cd.md)。CI 产出 `deploy-manifest`（含 API 镜像 digest 指纹）；CD 仅手动触发，消费指定 CI run 的制品，并在 VPS 上 **优先 pull GHCR 镜像**（`deploy_mode=auto` 时 pull 失败会自动 `compose build`）。手动 CD 可选 `deploy_mode`：`auto` / `pull` / `server-build`。
 
 ### Secrets（ai-todo 仓库）
 
@@ -162,12 +164,13 @@ curl -sf https://wodi.games/v1/health/db
 
 ```text
 1. 本地 `pytest`（`apps/api`）、`pnpm typecheck`、`pnpm lint`、`pnpm check:wechat`
-2. PR → main（CI 绿）
-3. merge 后自动 SSH 部署
-4. curl https://wodi.games/v1/health
-5. curl https://wodi.games/v1/health/db
-6. 查看服务器 `.deploy/current.json`，确认 `gitSha` / image digest / fingerprint 符合预期
-7. 小程序 smoke test（微信登录 + 提醒列表）
+2. push/PR → main（CI 绿，记录 CI run id）
+3. 若涉及小程序，开发者工具上传体验版并完成真机 smoke test
+4. 手动触发 CD，填写该次 CI run id
+5. curl https://wodi.games/v1/health
+6. curl https://wodi.games/v1/health/db
+7. 查看服务器 `.deploy/current.json`，确认 `gitSha` / image digest / fingerprint 符合预期
+8. 生产 smoke test（微信登录 + CLI PAT + 提醒/联系人）
 ```
 
 ### Gateway 变更（域名/证书/路由）
