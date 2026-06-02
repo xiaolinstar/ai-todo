@@ -20,7 +20,7 @@
 开发者 push main
     → CI（scan → build → test → publish deploy-manifest）
     → 小程序体验版人工上传/验收
-    → 手动触发 CD，填写 CI run id
+    → 手动触发 CD，填写发布 tag，自动解析 tag 指向 commit 的成功 CI
     → CD 校验指纹后部署（默认 VPS docker pull；pull 失败则 server-build 兜底）
     → git pull + docker compose up --build（API 宿主机 :8082）
     → xiaolin-gateway 反代 https://wodi.games
@@ -164,9 +164,9 @@ curl -sf https://wodi.games/v1/health/db
 
 ```text
 1. 本地 `pytest`（`apps/api`）、`pnpm typecheck`、`pnpm lint`、`pnpm check:wechat`
-2. push/PR → main（CI 绿，记录 CI run id）
+2. push/PR → main（CI 绿，并生成 deploy-manifest）
 3. 若涉及小程序，开发者工具上传体验版并完成真机 smoke test
-4. 手动触发 CD，填写该次 CI run id
+4. 手动触发 CD：`Use workflow from` 选择 `main`，填写 `release_tag`（如 `v0.1.1`），`ci_run_id` 留空，`deploy_mode=auto`
 5. curl https://wodi.games/v1/health
 6. curl https://wodi.games/v1/health/db
 7. 查看服务器 `.deploy/current.json`，确认 `gitSha` / image digest / fingerprint 符合预期
@@ -196,7 +196,7 @@ curl -sf https://wodi.games/v1/health/db
 
 自动回滚：manifest 部署后如果健康检查失败（含启动等待超时），脚本会读取上一版 `.deploy/current.json`，按上一版 `deployMode`（pull 或 server-build）恢复，并重新健康检查。回滚成功后，`.deploy/current.json` 会标记为 `status: rolled_back`。
 
-手动回滚：触发 GitHub Actions 的 `CD` workflow，填写要回滚到的旧 `ci_run_id`。CD 会下载该次 CI 的 `deploy-manifest`，校验 fingerprint，并按旧镜像 digest 部署。
+手动回滚：触发 GitHub Actions 的 `CD` workflow，填写要回滚到的旧 `ci_run_id`。CD 会下载该次 CI 的 `deploy-manifest`，校验 fingerprint，并按旧镜像 digest 部署。日常发布不需要填写 `ci_run_id`，只填写 `release_tag`，CD 会自动解析 tag 指向 commit 的成功 CI。
 
 应急方式（GitHub Actions 不可用时）：在服务器本地执行 `remote-deploy.sh`。这种方式会在服务器上 build，速度和可追溯性都弱于 manifest 部署。
 
