@@ -1,51 +1,105 @@
 # ai-todo 版本计划
 
-ai-todo 发布记录采用语义化版本号，参考 Party Helper 的发布方式。
+ai-todo 采用 **组件独立 SemVer** + **Git release tag 驱动 CD** 的双轨模型。
 
-## 版本格式
+## 两层版本（核心模型）
 
-- Git tag 使用 `v` 前缀，例如 `v0.1.0`。
-- 微信小程序发布版本不使用 `v` 前缀，例如 `0.1.0`。
-- API、CLI、小程序在当前阶段共用同一产品版本号；必要时在发布说明中标明哪些端发生了变更。
+### L1：组件版本（各子项目独立发展）
 
-这样可以让 Git tag 更容易被识别为版本引用，同时保持微信小程序发布表单中的版本号简洁。
+每个可发布产物维护自己的语义化版本，**不要求**与 Git tag 或其他组件同号。
 
-## 当前阶段
+| 组件 | 版本源文件 | 运行时查询 |
+|------|------------|------------|
+| FastAPI 服务端 | `apps/api/pyproject.toml` | `GET /v1/health` → `data.apiVersion` |
+| ai-todo CLI | `apps/cli/package.json` | `ai-todo version` / `ai-todo version --json` |
+| 微信小程序 | `apps/miniapp/package.json` | 上传版本号 +（可选）关于页 |
+| 共享库 | `packages/*/package.json` | npm 包版本；随 API 契约变更单独递增 |
+| 未来（MCP、独立服务等） | 各自 `package.json` 或 `pyproject.toml` | 各自 health / `version` 子命令 |
 
-当前处于小范围内测阶段，主要面向本人和朋友测试。版本目标是“先能稳定运行”，不追求公开发布时的完整运营能力。
+递增规则（按**该组件**变更判断）：
 
-- `0.1.0`：第一个可内测运行版本。包含微信登录、提醒、日历、通讯录、CLI / Agent 访问、生产 API 部署和基础提醒触达服务端闭环。
-- `0.1.1`：内测修订候选版本。用于修复真实使用中发现的 UI、登录、列表、删除、表单和部署问题，不引入高风险大功能。
-- `0.1.2`：内测稳定打磨版本。重点收敛隐私授权登录、个人资料设置、创建提醒/日历表单体验、发布验收闭环和隐私合规门禁，不新增高风险隐私能力。
-- `0.1.3`：内测体验修订版本。重点优化应用内联系人创建体验，并让 CLI 联系人字段与小程序表单对齐，不新增高风险隐私能力。
-- `0.1.4`：编辑能力修订版本。重点补齐提醒、日历和通讯录的信息再编辑能力。
-- `0.2.0`：提醒体验增强版本。重点评估提醒详情、星标、撤销删除、通知触达联调和更清晰的今日视图。
-- `0.3.0`：Agent 体验增强版本。重点评估 MCP Server、更多 CLI 子命令、Agent 调用错误恢复和操作审计查看。
-- `1.0.0`：稳定公开版本。要求核心提醒/日历/联系人/登录/部署/回滚流程成熟，真实用户数据安全边界清晰。
+- **patch**：bug、文案、小 UI、测试、文档、无契约变更的配置。
+- **minor**：新能力、新命令/路由、向后兼容的字段扩展。
+- **major**：破坏性 API/CLI/数据迁移；内测阶段尽量避免。
 
-## 递增规则
+Monorepo 根目录 `package.json` 的 `version` 仅表示仓库工具链，**不代表**产品或 API 版本。
 
-- 补丁版本，例如 `0.1.1`：用于 bug 修复、文案调整、小范围 UI 优化、低风险发布打磨、体验版反馈修正。
-- 次版本，例如 `0.2.0`：用于明显产品能力新增、较大 UI 流程变化、新通知链路、数据模型扩展或 Agent 能力扩展。
-- 主版本 `1.0.0`：预留给稳定公开版本，要求核心功能、发布流程、回滚策略和隐私安全说明都相对成熟。
+### L2：Git release tag（CI/CD 现状保持不变）
 
-## 发布流程
-
-1. 在 `main` 分支完成发布候选版本并通过验证。
-2. 在 `docs/releases` 中新增或更新版本规划、发布说明。
-3. 提交发布说明。
-4. 创建带 `v` 前缀的 annotated Git tag。
-5. 推送 `main` 和对应 tag。
-6. 在微信开发者工具上传代码，微信小程序发布表单填写不带 `v` 的版本号。
-7. 内测阶段先发布为体验版，邀请测试成员验证；稳定后再提审正式版。
-8. 确认小程序体验版和服务端版本匹配后，手动触发 CD。日常发布填写 `release_tag`（如 `v0.1.1`），由 CD 自动解析 tag 指向 commit 的成功 CI；回滚时才填写旧 `ci_run_id`。
-
-示例：
+- Git 使用带 `v` 前缀的 annotated tag，例如 `v0.1.4`。
+- 生产 CD 继续只填 **`release_tag`**（如 `v0.1.4`），由 workflow 解析 tag → commit → 镜像；回滚仍可用 `ci_run_id`。
+- 部署后 `GET /v1/health` 返回 `releaseTag`、`gitSha`（构建身份，L2），与 `apiVersion`（L1）并存。
 
 ```bash
-git tag -a v0.1.0 -m "ai-todo v0.1.0"
+git tag -a v0.1.4 -m "release train v0.1.4"
 git push origin main
-git push origin v0.1.0
+git push origin v0.1.4
 ```
 
-只有当已发布版本需要长期 hotfix，而 `main` 会继续进行不兼容或高风险开发时，才创建 release 分支。当前阶段默认使用 `main` + tag 标记发布版本，CI 自动运行，生产 CD 手动触发。
+**`release_tag` 标识「哪次 commit 被部署」**，不强制 `api` / `cli` / `miniapp` 的 L1 数字相同。
+
+### L3：发布叙事（给人看的 release train）
+
+- `docs/releases/v0.1.4.md` 等描述「这一批交付什么能力」。
+- 标题可用 `v0.1.4`，正文必须写清 **本批各组件 L1 版本组合**（见 [compatibility.md](./compatibility.md)）。
+
+示例（v0.1.4）：
+
+| 字段 | 值 |
+|------|-----|
+| Git `releaseTag` | `v0.1.4` |
+| api | `0.1.3`（无 API 行为变更） |
+| cli | `0.1.4` |
+| miniapp | `0.1.4` |
+
+## 微信小程序版本号
+
+- 上传/体验版表单填写 **miniapp L1**（不带 `v`），例如 `0.1.4`。
+- `develop` / `trial` / `release` 由微信 `envVersion` 控制，与 L1 正交。
+
+## 兼容性关系
+
+客户端能否工作，以 [compatibility.md](./compatibility.md) 为准（最低 `api` + 推荐 `cli` / `miniapp`），而不是「所有端都叫 0.1.4」。
+
+可选增强（非必须）：
+
+- 请求头 `x-client-version`（CLI/小程序上报 L1，便于日志）。
+- OpenAPI / `docs/api-design.md` 作为 API 契约真源。
+
+## 路线图（产品叙事，非组件版本）
+
+当前处于小范围内测阶段，目标是「先能稳定运行」。
+
+- `0.1.0`：首个可内测运行版本（微信登录、提醒、日历、通讯录、CLI/Agent、生产 API）。
+- `0.1.1`：内测修订（UI、登录、列表、删除、部署）。
+- `0.1.2`：隐私授权登录、资料设置、创建表单、合规门禁。
+- `0.1.3`：应用内联系人创建；CLI 联系人字段对齐。
+- `0.1.4`：提醒/日历/联系人**再编辑**；列表左滑删除；CLI `reminder update` 对齐 API。
+- `0.2.0`：提醒体验增强（详情、星标、撤销删除、通知联调等）。
+- `0.3.0`：Agent 增强（MCP、更多 CLI、审计等）。
+- `1.0.0`：稳定公开版本。
+
+上述条目是 **release train 主题**；各组件 L1 仍按实际改动单独 bump。
+
+## 发布流程（修订）
+
+1. 在 `main` 完成候选功能并通过门禁（`pnpm test:api`、`pnpm check:wechat` 等）。
+2. **仅 bump 有变更的组件** L1 版本号。
+3. 更新 `docs/releases/vX.Y.Z.md`、追加 [compatibility.md](./compatibility.md) 一行。
+4. 提交并创建 Git tag `vX.Y.Z`（CD 仍用此 `release_tag`）。
+5. 推送 `main` 与 tag；手动触发 CD（`release_tag=vX.Y.Z`）。
+6. 微信小程序上传，版本号 = **miniapp L1**。
+7. 验收核对：
+
+```bash
+curl -sS "$API_URL/v1/health" | jq '.data | {apiVersion, releaseTag, gitSha}'
+ai-todo version --json
+```
+
+只有当 `main` 继续高风险开发且需长期 hotfix 已发布版本时，才考虑 release 分支。当前默认 `main` + tag。
+
+## 相关文档
+
+- [compatibility.md](./compatibility.md) — 已验证的组件版本组合
+- [release-runbook.md](../release-runbook.md) — CD 与回滚
+- [deploy.md](../deploy.md) — `releaseTag` / `gitSha` 注入说明

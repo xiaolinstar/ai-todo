@@ -121,6 +121,146 @@ def test_cli_seeds_demo_dataset(cli_runner: CliRunner, demo_suffix: str) -> None
     assert today.json()["ok"] is True
 
 
+def test_cli_reminder_show_update_delete(cli_runner: CliRunner, demo_suffix: str) -> None:
+    contact = cli_runner.run(
+        "contact",
+        "add",
+        f"Reminder Contact {demo_suffix}",
+        "--handle",
+        f"reminder-contact-{demo_suffix}",
+        "--email",
+        "reminder@example.com",
+        json_output=True,
+    )
+    assert contact.returncode == 0, contact.stderr
+    contact_id = contact.json()["data"]["contact"]["id"]
+
+    create = cli_runner.run(
+        "reminder",
+        "create",
+        "--title",
+        f"CLI Update {demo_suffix}",
+        "--due",
+        "2026-06-10T10:00:00+08:00",
+        "--contact",
+        contact_id,
+        json_output=True,
+    )
+    assert create.returncode == 0, create.stderr
+    reminder_id = create.json()["data"]["reminder"]["id"]
+
+    show = cli_runner.run("reminder", "show", reminder_id, json_output=True)
+    assert show.returncode == 0, show.stderr
+    shown = show.json()["data"]["reminder"]
+    assert shown["id"] == reminder_id
+    assert shown["contacts"][0]["id"] == contact_id
+
+    update = cli_runner.run(
+        "reminder",
+        "update",
+        reminder_id,
+        "--title",
+        f"CLI Updated {demo_suffix}",
+        "--notes",
+        "via cli update",
+        "--due",
+        "2026-06-11T11:00:00+08:00",
+        "--remind",
+        "2026-06-11T10:30:00+08:00",
+        json_output=True,
+    )
+    assert update.returncode == 0, update.stderr
+    updated = update.json()["data"]["reminder"]
+    assert updated["title"] == f"CLI Updated {demo_suffix}"
+    assert updated["notes"] == "via cli update"
+    assert updated["dueAt"] == "2026-06-11T11:00:00+08:00"
+    assert updated["remindAt"] == "2026-06-11T10:30:00+08:00"
+
+    second_contact = cli_runner.run(
+        "contact",
+        "add",
+        f"Reminder Contact B {demo_suffix}",
+        "--handle",
+        f"reminder-contact-b-{demo_suffix}",
+        json_output=True,
+    )
+    assert second_contact.returncode == 0, second_contact.stderr
+    second_id = second_contact.json()["data"]["contact"]["id"]
+
+    relink = cli_runner.run(
+        "reminder",
+        "update",
+        reminder_id,
+        "--contact",
+        second_id,
+        json_output=True,
+    )
+    assert relink.returncode == 0, relink.stderr
+    relinked = relink.json()["data"]["reminder"]["contacts"]
+    assert len(relinked) == 1
+    assert relinked[0]["id"] == second_id
+
+    clear_contacts = cli_runner.run(
+        "reminder",
+        "update",
+        reminder_id,
+        "--contact",
+        json_output=True,
+    )
+    assert clear_contacts.returncode == 0, clear_contacts.stderr
+    assert clear_contacts.json()["data"]["reminder"]["contacts"] == []
+
+    delete = cli_runner.run("reminder", "delete", reminder_id, json_output=True)
+    assert delete.returncode == 0, delete.stderr
+    assert delete.json()["data"]["deleted"] is True
+
+    missing = cli_runner.run("reminder", "show", reminder_id, json_output=True)
+    assert missing.returncode != 0 or missing.json()["ok"] is False
+
+
+def test_cli_contact_show_update(cli_runner: CliRunner, demo_suffix: str) -> None:
+    create = cli_runner.run(
+        "contact",
+        "add",
+        f"CLI Update Contact {demo_suffix}",
+        "--handle",
+        f"cli-update-contact-{demo_suffix}",
+        "--email",
+        "before@example.com",
+        "--company",
+        "Acme",
+        json_output=True,
+    )
+    assert create.returncode == 0, create.stderr
+    contact_id = create.json()["data"]["contact"]["id"]
+
+    show = cli_runner.run("contact", "show", contact_id, json_output=True)
+    assert show.returncode == 0, show.stderr
+    assert show.json()["data"]["contact"]["primaryEmail"] == "before@example.com"
+
+    update = cli_runner.run(
+        "contact",
+        "update",
+        contact_id,
+        "--name",
+        f"CLI Updated Contact {demo_suffix}",
+        "--email",
+        "after@example.com",
+        "--company",
+        "Beta",
+        json_output=True,
+    )
+    assert update.returncode == 0, update.stderr
+    updated = update.json()["data"]["contact"]
+    assert updated["displayName"] == f"CLI Updated Contact {demo_suffix}"
+    assert updated["primaryEmail"] == "after@example.com"
+    assert updated["company"] == "Beta"
+
+    show_after = cli_runner.run("contact", "show", contact_id, json_output=True)
+    assert show_after.returncode == 0, show_after.stderr
+    assert show_after.json()["data"]["contact"]["displayName"] == f"CLI Updated Contact {demo_suffix}"
+
+
 def test_cli_calendar_show_update_delete(cli_runner: CliRunner, demo_suffix: str) -> None:
     event = demo_calendar_events()[0]
     create = cli_runner.run(

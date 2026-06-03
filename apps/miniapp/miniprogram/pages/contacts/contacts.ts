@@ -1,9 +1,10 @@
-import { searchContacts } from "../../lib/api";
+import { deleteContact, searchContacts } from "../../lib/api";
 import type { ContactSummary } from "../../lib/api";
 import { avatarColor, getInitial } from "../../lib/format";
+import { SwipeListGesture, withSwipeRow, type SwipeListRowState } from "../../lib/swipe-list";
 import { updateTabBarSelected } from "../../lib/tab-bar";
 
-interface ContactView extends ContactSummary {
+interface ContactView extends ContactSummary, SwipeListRowState {
   subtitle: string;
   initial: string;
   avatarColor: string;
@@ -18,8 +19,34 @@ Page({
     items: [] as ContactView[]
   },
 
+  _swipeList: null as SwipeListGesture<ContactView> | null,
+
+  onLoad() {
+    this._swipeList = new SwipeListGesture<ContactView>({
+      getItems: () => this.data.items,
+      setItems: (items) => this.setData({ items }),
+      isDisabled: (item) => item.deleting || item.exiting,
+      getDeleteModal: (item) => ({
+        title: "删除联系人",
+        content: `确定删除“${item.displayName}”？`
+      }),
+      requestDelete: async (id) => {
+        const response = await deleteContact(id);
+        return {
+          ok: Boolean(response.ok),
+          message: response.error?.message
+        };
+      },
+      openEdit: (id) => {
+        wx.navigateTo({ url: `/pages/contact-edit/contact-edit?id=${encodeURIComponent(id)}` });
+      }
+    });
+    this._swipeList.updateDeleteActionWidth();
+  },
+
   onShow() {
     updateTabBarSelected(2);
+    this._swipeList?.updateDeleteActionWidth();
     this.loadContacts();
   },
 
@@ -55,14 +82,16 @@ Page({
         this.setData({
           loading: false,
           loaded: true,
-          items: response.data.items.map((item) => ({
-            ...item,
-            subtitle: [item.primaryEmail, item.primaryPhone, item.company]
-              .filter(Boolean)
-              .join(" · "),
-            initial: getInitial(item.displayName),
-            avatarColor: avatarColor(item.displayName)
-          }))
+          items: response.data.items.map((item) =>
+            withSwipeRow({
+              ...item,
+              subtitle: [item.primaryEmail, item.primaryPhone, item.company]
+                .filter(Boolean)
+                .join(" · "),
+              initial: getInitial(item.displayName),
+              avatarColor: avatarColor(item.displayName)
+            })
+          )
         });
       })
       .catch(() => {
@@ -70,14 +99,28 @@ Page({
       });
   },
 
-  onTapContact(e: { currentTarget: { dataset: { item: ContactSummary } } }) {
-    const item = e.currentTarget.dataset.item;
-    wx.showModal({
-      title: item.displayName,
-      content: [item.primaryEmail, item.primaryPhone].filter(Boolean).join("\n") || "暂无联系方式",
-      showCancel: false
-    });
+  onRowTouchStart(e: {
+    currentTarget: { dataset: { id: string } };
+    touches: Array<{ clientX: number; clientY: number }>;
+  }) {
+    this._swipeList?.onRowTouchStart(e);
   },
 
-  noop() {}
+  onSwipeMove(e: {
+    currentTarget: { dataset: { id: string } };
+    touches: Array<{ clientX: number; clientY: number }>;
+  }) {
+    this._swipeList?.onSwipeMove(e);
+  },
+
+  onRowTouchEnd(e: {
+    currentTarget: { dataset: { id: string } };
+    changedTouches?: Array<{ clientX: number; clientY: number }>;
+  }) {
+    this._swipeList?.onRowTouchEnd(e);
+  },
+
+  onDeleteTap(e: { currentTarget: { dataset: { id: string } } }) {
+    this._swipeList?.onDeleteTap(e);
+  }
 });

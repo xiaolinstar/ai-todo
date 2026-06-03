@@ -1,7 +1,13 @@
 import type { ReminderStatus } from "@ai-todo/shared";
 
 import type { CliContext } from "../context";
-import { handleApi, positionalAfter, readFlagValue, readRepeatedFlag } from "../context";
+import {
+  handleApi,
+  hasFlag,
+  positionalAfter,
+  readFlagValue,
+  readRepeatedFlag
+} from "../context";
 
 export async function runReminderCreate(ctx: CliContext, argv: string[]): Promise<void> {
   const title = readFlagValue(argv, "--title") ?? positionalAfter(argv, "add", "create");
@@ -76,8 +82,16 @@ export async function runReminderShow(ctx: CliContext, argv: string[]): Promise<
     if (r.dueAt) {
       console.log(`截止：${r.dueAt}`);
     }
+    if (r.remindAt) {
+      console.log(`通知：${r.remindAt}`);
+    }
     if (r.notes) {
       console.log(`备注：${r.notes}`);
+    }
+    if (r.contacts && r.contacts.length > 0) {
+      console.log(
+        `联系人：${r.contacts.map((c) => `${c.displayName} (@${c.handle})`).join(", ")}`
+      );
     }
   });
 }
@@ -100,23 +114,50 @@ export async function runReminderDone(ctx: CliContext, argv: string[]): Promise<
 export async function runReminderUpdate(ctx: CliContext, argv: string[]): Promise<void> {
   const id = positionalAfter(argv, "update");
   if (!id) {
-    console.error("Usage: ai-todo reminder update <reminder_id> [--title <text>]");
+    console.error(
+      "Usage: ai-todo reminder update <reminder_id> [--title <text>] [--notes <text>] [--due <iso>] [--remind <iso>] [--contact <contact_id_or_handle> ...]"
+    );
     process.exitCode = 1;
     return;
   }
   const title = readFlagValue(argv, "--title");
   const notes = readFlagValue(argv, "--notes");
-  if (!title && notes === undefined) {
-    console.error("Provide at least --title or --notes");
+  const due = readFlagValue(argv, "--due");
+  const remind = readFlagValue(argv, "--remind");
+  const contactIds = readRepeatedFlag(argv, "--contact");
+  const hasContacts = hasFlag(argv, "--contact");
+  const hasNotes = hasFlag(argv, "--notes");
+
+  if (
+    !title &&
+    notes === undefined &&
+    due === undefined &&
+    remind === undefined &&
+    !hasContacts
+  ) {
+    console.error("Provide at least one field to update");
     process.exitCode = 1;
     return;
   }
   await handleApi(
     ctx,
-    await ctx.client.updateReminder(id, { title, notes }),
+    await ctx.client.updateReminder(id, {
+      title,
+      notes: hasNotes ? notes : undefined,
+      dueAt: due,
+      remindAt: remind,
+      contactIds: hasContacts ? contactIds : undefined
+    }),
     (data) => {
       if (!ctx.json) {
-        console.log(`已更新提醒：${data.reminder.title} (${data.reminder.id})`);
+        const r = data.reminder;
+        console.log(`已更新提醒：${r.title} (${r.id})`);
+        if (r.dueAt) {
+          console.log(`截止：${r.dueAt}`);
+        }
+        if (r.remindAt) {
+          console.log(`通知：${r.remindAt}`);
+        }
       }
     }
   );

@@ -88,11 +88,10 @@ def assert_demo_dataset_present(client: TestClient, suffix: str) -> None:
     reminders = demo_reminders(suffix)
     events = demo_calendar_events()
 
-    list_contacts = client.get("/v1/contacts")
-    assert list_contacts.status_code == 200
-    handles = {item["handle"] for item in list_contacts.json()["data"]["items"]}
     for contact in contacts:
-        assert contact.handle in handles
+        detail = client.get(f"/v1/contacts/{contact.handle}")
+        assert detail.status_code == 200, detail.text
+        assert detail.json()["data"]["contact"]["handle"] == contact.handle
 
     list_reminders = client.get("/v1/reminders")
     assert list_reminders.status_code == 200

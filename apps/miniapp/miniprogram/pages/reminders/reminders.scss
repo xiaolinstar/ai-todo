@@ -72,7 +72,33 @@
   width: 100%;
   min-height: 112rpx;
   box-sizing: border-box;
-  transition: transform 0.22s ease;
+  background: var(--todo-surface);
+  transition:
+    transform 0.22s ease,
+    background 0.12s ease;
+}
+
+.reminder-swipe-content.reminder-row-pressed {
+  background: rgba(0, 122, 255, 0.08) !important;
+}
+
+.reminder-row-main {
+  display: flex;
+  flex: 1;
+  align-self: stretch;
+  align-items: center;
+  min-width: 0;
+  min-height: 64rpx;
+}
+
+.reminder-row-main .cell-body.compact {
+  flex: 1;
+  justify-content: center;
+  min-width: 0;
+}
+
+.check-hit-static {
+  pointer-events: none;
 }
 
 .reminder-swipe-content.swiping {
@@ -86,6 +112,7 @@
   bottom: 0;
   z-index: 0;
   display: flex;
+  visibility: hidden;
   align-items: center;
   justify-content: flex-start;
   width: 160rpx;
@@ -94,6 +121,15 @@
   box-sizing: border-box;
   border-left: 1rpx solid rgba(255, 59, 48, 0.18);
   background: rgba(255, 59, 48, 0.08);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s ease;
+}
+
+.swipe-shell.delete-visible .swipe-actions {
+  visibility: visible;
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .swipe-delete {

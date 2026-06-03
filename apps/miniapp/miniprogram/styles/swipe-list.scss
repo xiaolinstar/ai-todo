@@ -1,0 +1,113 @@
+.swipe-list {
+  overflow: hidden;
+}
+
+.swipe-row-shell {
+  position: relative;
+  max-height: 240rpx;
+  transition:
+    opacity 0.32s ease,
+    transform 0.32s ease,
+    max-height 0.34s ease,
+    padding 0.34s ease;
+}
+
+.swipe-row-shell + .swipe-row-shell {
+  border-top: var(--todo-separator);
+}
+
+.swipe-row-shell.exiting {
+  opacity: 0;
+  max-height: 0;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  transform: translateX(48rpx) scale(0.98);
+  pointer-events: none;
+}
+
+.swipe-row-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 112rpx;
+  box-sizing: border-box;
+  gap: 20rpx;
+  padding: 24rpx 28rpx;
+  background: var(--todo-surface);
+  transition:
+    transform 0.22s ease,
+    background 0.12s ease;
+}
+
+.swipe-row-content.row-pressed {
+  background: rgba(0, 122, 255, 0.08) !important;
+}
+
+.swipe-row-content.swiping {
+  transition: none;
+}
+
+.swipe-row-main {
+  display: flex;
+  flex: 1;
+  align-self: stretch;
+  align-items: center;
+  min-width: 0;
+  min-height: 64rpx;
+}
+
+.swipe-row-main .cell-body.compact {
+  flex: 1;
+  justify-content: center;
+  min-width: 0;
+}
+
+.swipe-actions {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 0;
+  display: flex;
+  visibility: hidden;
+  align-items: center;
+  justify-content: flex-start;
+  width: 160rpx;
+  padding-left: 12rpx;
+  padding-right: 28rpx;
+  box-sizing: border-box;
+  border-left: 1rpx solid rgba(255, 59, 48, 0.18);
+  background: rgba(255, 59, 48, 0.08);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s ease;
+}
+
+.swipe-row-shell.delete-visible .swipe-actions {
+  visibility: visible;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.swipe-delete {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 120rpx;
+  height: calc(100% - 24rpx);
+  padding: 0;
+  border: none;
+  border-radius: 18rpx;
+  background: var(--todo-danger);
+  color: var(--todo-text-inverse);
+  font-size: 28rpx;
+  font-weight: 700;
+  line-height: 1;
+  box-shadow: -8rpx 0 16rpx rgba(0, 0, 0, 0.04);
+}
+
+.swipe-delete::after {
+  border: none;
+}

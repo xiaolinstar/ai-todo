@@ -33,19 +33,40 @@
   </block>
 
   <block wx:else>
-    <view class="inset-group">
+    <view class="inset-group swipe-list">
       <view
-        class="list-cell contact-row-inner pressable"
+        class="swipe-row-shell {{item.deleteVisible ? 'delete-visible' : ''}} {{item.exiting ? 'exiting' : ''}}"
         wx:for="{{items}}"
         wx:key="id"
-        data-item="{{item}}"
-        bindtap="onTapContact"
-        hover-class="list-cell-hover"
       >
-        <view class="avatar" style="background: {{item.avatarColor}};">{{item.initial}}</view>
-        <view class="cell-body compact">
-          <view class="cell-title">{{item.displayName}}</view>
-          <view wx:if="{{item.subtitle}}" class="cell-subline">{{item.subtitle}}</view>
+        <view class="swipe-actions">
+          <button
+            class="swipe-delete"
+            data-id="{{item.id}}"
+            bindtap="onDeleteTap"
+            loading="{{item.deleting}}"
+          >
+            删除
+          </button>
+        </view>
+        <view
+          class="swipe-row-content contact-swipe-content {{item.swiping ? 'swiping' : ''}} {{item.pressing ? 'row-pressed' : ''}}"
+          style="transform: translateX({{item.swipeX}}px);"
+        >
+          <view class="avatar" style="background: {{item.avatarColor}};">{{item.initial}}</view>
+          <view
+            class="swipe-row-main"
+            data-id="{{item.id}}"
+            bindtouchstart="onRowTouchStart"
+            bindtouchmove="onSwipeMove"
+            bindtouchend="onRowTouchEnd"
+            bindtouchcancel="onRowTouchEnd"
+          >
+            <view class="cell-body compact">
+              <view class="cell-title">{{item.displayName}}</view>
+              <view wx:if="{{item.subtitle}}" class="cell-subline">{{item.subtitle}}</view>
+            </view>
+          </view>
         </view>
       </view>
     </view>

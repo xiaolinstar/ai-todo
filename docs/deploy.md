@@ -260,7 +260,7 @@ AI_TODO_WECHAT_REMINDER_TEMPLATE_ID=你的模板ID
 | `.deploy/current.json` | 当前 `gitSha`、镜像、`deployMode`、`fingerprint` |
 | `.deploy/image-retention.json` | 最近 N 个 digest（默认 3，供回滚与 prune） |
 
-部署成功后，`/v1/health` 会返回 `releaseTag` 与 `gitSha`；CD 会根据 `release_tag` 自动注入这些元信息，便于确认线上版本与发布 tag 一致。
+部署成功后，`/v1/health` 会返回 `apiVersion`（组件 L1，来自 `pyproject.toml`）、`releaseTag` 与 `gitSha`（Git/CD 构建身份）。CD 仍根据 `release_tag` 注入后两者；组件版本规则见 `docs/releases/versioning.md`。
 
 **CD Secrets（production Environment）：**
 

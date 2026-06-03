@@ -2,9 +2,31 @@ import type { CliContext } from "../context";
 import { handleApi, persistApiUrl, readFlagValue } from "../context";
 import { printAuthHint, resolveTokenSource } from "../auth";
 import { clearToken, resolveApiUrl, saveSettings, settingsPath } from "../settings";
+import { getCliVersion } from "../version";
 
 function readLoginUrl(argv: string[]): string | undefined {
   return readFlagValue(argv, "--url") ?? readFlagValue(argv, "--api-url");
+}
+
+export async function runVersion(ctx: CliContext): Promise<void> {
+  const cliVersion = getCliVersion();
+  if (ctx.json) {
+    console.log(
+      JSON.stringify(
+        {
+          ok: true,
+          component: "cli",
+          version: cliVersion,
+          apiUrl: ctx.apiUrl
+        },
+        null,
+        2
+      )
+    );
+    return;
+  }
+  console.log(`ai-todo CLI ${cliVersion}`);
+  console.log(`API: ${ctx.apiUrl}`);
 }
 
 export async function runLogin(ctx: CliContext, argv: string[]): Promise<void> {

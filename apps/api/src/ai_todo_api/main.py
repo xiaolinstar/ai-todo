@@ -20,6 +20,7 @@ from ai_todo_api.modules.reminders.router import router as reminders_router
 from ai_todo_api.modules.today.router import router as today_router
 from ai_todo_api.preview import preview_page
 from ai_todo_api.schemas import ApiResponse
+from ai_todo_api.version import get_api_version
 
 
 @asynccontextmanager
@@ -49,7 +50,7 @@ async def lifespan(application: FastAPI):
     yield
 
 
-app = FastAPI(title="ai-todo API", version="0.1.3", lifespan=lifespan)
+app = FastAPI(title="ai-todo API", version=get_api_version(), lifespan=lifespan)
 logger = logging.getLogger(__name__)
 
 
@@ -125,6 +126,7 @@ def healthcheck() -> ApiResponse[dict[str, str | None]]:
         data={
             "service": "ai-todo-api",
             "status": "ok",
+            "apiVersion": get_api_version(),
             "releaseTag": settings.release_tag,
             "gitSha": settings.git_sha,
         }

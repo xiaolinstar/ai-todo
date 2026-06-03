@@ -1,0 +1,44 @@
+<view class="page create-page">
+  <view wx:if="{{loading}}" class="meta">加载中…</view>
+  <block wx:else>
+    <view class="group-header">基础联系方式</view>
+    <view class="form-group">
+      <view class="form-row">
+        <text class="form-label">姓名</text>
+        <input class="form-input" placeholder="必填" value="{{displayName}}" bindinput="onDisplayNameInput" />
+      </view>
+      <view class="form-row">
+        <text class="form-label">邮箱</text>
+        <input class="form-input" placeholder="可选" value="{{email}}" type="text" bindinput="onEmailInput" />
+      </view>
+      <view class="form-row">
+        <text class="form-label">电话</text>
+        <input class="form-input" placeholder="可选" value="{{phone}}" type="number" bindinput="onPhoneInput" />
+      </view>
+    </view>
+
+    <view class="group-header">补充信息</view>
+    <view class="form-group">
+      <view class="form-row">
+        <text class="form-label">公司</text>
+        <input class="form-input" placeholder="可选" value="{{company}}" bindinput="onCompanyInput" />
+      </view>
+      <view class="form-row">
+        <text class="form-label">职位</text>
+        <input class="form-input" placeholder="可选" value="{{title}}" bindinput="onTitleInput" />
+      </view>
+      <view class="form-row" bindtap="toggleNotes">
+        <text class="form-label">备注</text>
+        <text class="form-value muted">{{notes ? '已填写' : '添加'}}</text>
+        <view class="form-disclosure {{notesExpanded ? 'expanded' : ''}}"></view>
+      </view>
+      <view wx:if="{{notesExpanded}}" class="form-row stack">
+        <textarea class="form-textarea" placeholder="可选" value="{{notes}}" maxlength="1000" auto-height bindinput="onNotesInput" />
+      </view>
+    </view>
+
+    <button class="todo-button todo-button-primary submit" loading="{{submitting}}" hover-class="todo-button-hover" bindtap="onSubmit">
+      保存联系人
+    </button>
+  </block>
+</view>

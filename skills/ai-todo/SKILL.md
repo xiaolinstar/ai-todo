@@ -19,8 +19,11 @@ description: Manage personal reminders, calendar events, and contacts via the ai
 ```bash
 ai-todo login --url https://wodi.games --token aitodo_xxx
 # or: export AI_TODO_TOKEN=aitodo_xxx
+ai-todo version --json
 ai-todo whoami --json
 ```
+
+Component versions are independent; see `docs/releases/versioning.md` and `compatibility.md`. Git `release_tag` (CD) may differ from `cli` / `miniapp` / `apiVersion`.
 
 Expect `ok: true` and `data.user.id` (dev: `user_dev`).
 
@@ -32,8 +35,10 @@ Expect `ok: true` and `data.user.id` (dev: `user_dev`).
 | Update current user profile | `ai-todo profile update --name "…" [--avatar-url "…"] --json` |
 | Create reminder | `ai-todo reminder create --title "…" [--due "…"] [--contact <id> ...] --json` |
 | List reminders | `ai-todo reminder list [--status pending] --json` |
+| Show reminder | `ai-todo reminder show <reminder_id> --json` |
+| Update reminder | `ai-todo reminder update <id> [--title "…"] [--notes "…"] [--due "…"] [--remind "…"] [--contact <id> ...] --json` |
 | Complete | `ai-todo reminder done <reminder_id> --json` |
-| Reschedule | `ai-todo reminder reschedule <id> --due "…" --json` |
+| Reschedule | `ai-todo reminder reschedule <id> --due "…" [--remind "…"] --json` |
 | Delete reminder | `ai-todo reminder delete <id> --json` |
 | Create event | `ai-todo calendar add --title "…" --start "…" [--end "…"] [--contact <id> ...] --json` |
 | Update event | `ai-todo calendar update <event_id> [--title "…"] [--start "…"] --json` |

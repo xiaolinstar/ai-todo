@@ -1,0 +1,49 @@
+<view class="page create-page">
+  <view wx:if="{{loading}}" class="meta">加载中…</view>
+  <block wx:else>
+    <view class="group-header">提醒详情</view>
+    <view class="form-group">
+      <view class="form-row">
+        <text class="form-label">标题</text>
+        <input class="form-input" placeholder="必填" value="{{title}}" bindinput="onTitleInput" />
+      </view>
+      <view class="form-row" bindtap="toggleNotes">
+        <text class="form-label">备注</text>
+        <text class="form-value muted">{{notes ? '已填写' : '添加'}}</text>
+        <view class="form-disclosure {{notesExpanded ? 'expanded' : ''}}"></view>
+      </view>
+      <view wx:if="{{notesExpanded}}" class="form-row stack">
+        <textarea class="form-textarea" placeholder="可选" value="{{notes}}" maxlength="1000" auto-height bindinput="onNotesInput" />
+      </view>
+      <view wx:if="{{!isCompleted}}" class="form-row">
+        <text class="form-label">截止时间</text>
+        <switch checked="{{hasDue}}" bindchange="onDueToggle" color="#007AFF" />
+      </view>
+      <view wx:if="{{!isCompleted && hasDue}}" class="form-row">
+        <text class="form-label">截止</text>
+        <view class="datetime-inline">
+          <picker mode="date" value="{{dueDate}}" bindchange="onDateChange">
+            <view class="picker-pill">{{dueDate}}</view>
+          </picker>
+          <picker mode="time" value="{{dueTime}}" bindchange="onTimeChange">
+            <view class="picker-pill">{{dueTime}}</view>
+          </picker>
+        </view>
+      </view>
+      <view class="form-row">
+        <text class="form-label">联系人</text>
+        <button class="todo-button todo-button-ghost todo-button-sm pick-inline" size="mini" hover-class="todo-button-hover" bindtap="pickContact">
+          {{selectedContact ? selectedContact.displayName : '选择'}}
+        </button>
+      </view>
+      <view wx:if="{{selectedContact}}" class="form-row">
+        <text class="form-label"></text>
+        <text class="chip-clear link-text" bindtap="clearContact">移除联系人</text>
+      </view>
+    </view>
+
+    <button class="todo-button todo-button-primary submit" loading="{{submitting}}" hover-class="todo-button-hover" bindtap="onSubmit">
+      保存提醒
+    </button>
+  </block>
+</view>

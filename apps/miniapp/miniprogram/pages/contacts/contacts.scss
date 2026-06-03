@@ -1,7 +1,13 @@
+@import "../../styles/swipe-list.scss";
+
 .contacts-page {
   padding-top: 8rpx;
 }
 
-.contact-row-inner {
+.contact-swipe-content {
   align-items: center;
+}
+
+.contact-swipe-content .avatar {
+  flex-shrink: 0;
 }

@@ -51,14 +51,42 @@
 
   <block wx:else>
     <view class="group-header">{{isToday ? '今日安排' : '全天'}}</view>
-    <view class="inset-group">
-      <view class="event-row" wx:for="{{events}}" wx:key="id">
-        <view class="event-accent" style="background: {{item.accentColor}};"></view>
-        <view class="cell-body compact">
-          <view class="cell-title">{{item.title}}</view>
-          <view class="cell-meta accent">{{item.timeLabel}}</view>
-          <view wx:if="{{item.location || item.contactNames}}" class="cell-subline">
-            {{item.location}}{{item.location && item.contactNames ? ' · ' : ''}}{{item.contactNames}}
+    <view class="inset-group swipe-list">
+      <view
+        class="swipe-row-shell {{item.deleteVisible ? 'delete-visible' : ''}} {{item.exiting ? 'exiting' : ''}}"
+        wx:for="{{events}}"
+        wx:key="id"
+      >
+        <view class="swipe-actions">
+          <button
+            class="swipe-delete"
+            data-id="{{item.id}}"
+            bindtap="onDeleteTap"
+            loading="{{item.deleting}}"
+          >
+            删除
+          </button>
+        </view>
+        <view
+          class="swipe-row-content calendar-swipe-content {{item.swiping ? 'swiping' : ''}} {{item.pressing ? 'row-pressed' : ''}}"
+          style="transform: translateX({{item.swipeX}}px);"
+        >
+          <view class="event-accent" style="background: {{item.accentColor}};"></view>
+          <view
+            class="swipe-row-main"
+            data-id="{{item.id}}"
+            bindtouchstart="onRowTouchStart"
+            bindtouchmove="onSwipeMove"
+            bindtouchend="onRowTouchEnd"
+            bindtouchcancel="onRowTouchEnd"
+          >
+            <view class="cell-body compact">
+              <view class="cell-title">{{item.title}}</view>
+              <view class="cell-meta accent">{{item.timeLabel}}</view>
+              <view wx:if="{{item.location || item.contactNames}}" class="cell-subline">
+                {{item.location}}{{item.location && item.contactNames ? ' · ' : ''}}{{item.contactNames}}
+              </view>
+            </view>
           </view>
         </view>
       </view>

@@ -14,6 +14,7 @@ Configuration (~/.ai-todo/settings.json):
 
 Auth:
   ai-todo login [--url <url>] [--token aitodo_xxx] [--issue-pat]
+  ai-todo version
   ai-todo whoami
   ai-todo profile update --name <text> [--avatar-url <url>]
   ai-todo logout
@@ -26,11 +27,11 @@ Today:
   ai-todo today
 
 Reminders (aliases: add, list, done, reschedule):
-  ai-todo reminder create --title <text> [--due <iso>] [--notes <text>]
+  ai-todo reminder create --title <text> [--due <iso>] [--remind <iso>] [--notes <text>] [--contact <id_or_handle> ...]
   ai-todo reminder list [--status pending|completed|cancelled] [--from YYYY-MM-DD] [--to YYYY-MM-DD]
   ai-todo reminder show <reminder_id>
   ai-todo reminder done <reminder_id>
-  ai-todo reminder update <reminder_id> [--title <text>] [--notes <text>]
+  ai-todo reminder update <reminder_id> [--title <text>] [--notes <text>] [--due <iso>] [--remind <iso>] [--contact <id_or_handle> ...]
   ai-todo reminder reschedule <reminder_id> --due <iso> [--remind <iso>]
   ai-todo reminder delete <reminder_id>
   ai-todo add <title>                    # shorthand create (title only)

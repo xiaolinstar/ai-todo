@@ -58,16 +58,18 @@ export function readFlagValue(argv: string[], flag: string): string | undefined 
 
 export function readRepeatedFlag(argv: string[], flag: string): string[] {
   const values: string[] = [];
-  for (let index = 0; index < argv.length; index += 1) {
-    if (argv[index] === flag && argv[index + 1]) {
-      values.push(argv[index + 1]);
+  const args = commandArgv(argv);
+  for (let index = 0; index < args.length; index += 1) {
+    const next = args[index + 1];
+    if (args[index] === flag && next && !next.startsWith("-")) {
+      values.push(next);
     }
   }
   return values;
 }
 
 export function hasFlag(argv: string[], flag: string): boolean {
-  return argv.includes(flag);
+  return commandArgv(argv).includes(flag);
 }
 
 export function positionalAfter(argv: string[], ...anchors: string[]): string | undefined {

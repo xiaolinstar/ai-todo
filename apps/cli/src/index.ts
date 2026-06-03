@@ -22,6 +22,9 @@ async function main(): Promise<void> {
     case "login":
       await core.runLogin(ctx, argv);
       break;
+    case "version":
+      await core.runVersion(ctx);
+      break;
     case "whoami":
       await core.runWhoami(ctx);
       break;

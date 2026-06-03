@@ -101,24 +101,34 @@ ai-todo calendar add \
   --json
 ```
 
-### 4. 完成 / 改期 / 删除
+### 4. 查看 / 更新 / 完成 / 改期 / 删除
 
 ```bash
+ai-todo reminder show rem_xxx --json
+ai-todo reminder update rem_xxx --title "新标题" --notes "备注" --json
+ai-todo reminder update rem_xxx --due "2026-05-22T09:00:00+08:00" --contact <contact_id_or_handle> --json
 ai-todo reminder done rem_xxx --json
-ai-todo reminder reschedule rem_xxx --due "2026-05-22T09:00:00+08:00" --json
+ai-todo reminder reschedule rem_xxx --due "2026-05-22T09:00:00+08:00" --remind "2026-05-22T08:30:00+08:00" --json
 ai-todo reminder delete rem_xxx --json
 ```
+
+`reminder update` 与 `reminder reschedule` 均可改 `dueAt` / `remindAt`；仅改时间时二者等价，`update` 还可同时改标题、备注与关联联系人。
 
 ## 命令索引
 
 | 意图 | 命令 |
 |------|------|
+| CLI / API 版本 | `ai-todo version --json`；API：`GET /v1/health` → `apiVersion` |
 | 当前用户 | `ai-todo whoami --json` |
 | 更新当前用户资料 | `ai-todo profile update --name <text> [--avatar-url <url>] --json` |
 | 今日聚合 | `ai-todo today --json` |
-| 创建提醒 | `ai-todo reminder create --title … [--due …]` |
+| 创建提醒 | `ai-todo reminder create --title … [--due …] [--contact …]` |
 | 提醒列表 | `ai-todo reminder list [--status pending]` |
+| 查看提醒 | `ai-todo reminder show <id>` |
+| 更新提醒 | `ai-todo reminder update <id> [--title …] [--notes …] [--due …] [--remind …] [--contact …]` |
 | 完成提醒 | `ai-todo reminder done <id>` |
+| 改期提醒 | `ai-todo reminder reschedule <id> --due … [--remind …]` |
+| 删除提醒 | `ai-todo reminder delete <id>` |
 | 创建日程 | `ai-todo calendar add --title … --start …` |
 | 更新日程 | `ai-todo calendar update <id> [--title …] [--start …]` |
 | 今日日程 | `ai-todo calendar today --json` |
@@ -173,7 +183,7 @@ pnpm test:api
 相关用例：
 
 - `tests/test_demo_seed.py` — 经 HTTP API 导入并校验演示数据集
-- `tests/test_cli_integration.py` — 经 CLI 导入联系人、提醒、**日历**，并测试 `calendar show/update/delete`
+- `tests/test_cli_integration.py` — 经 CLI 导入联系人、提醒、**日历**，并测试 `reminder/contact show/update` 与 `calendar show/update/delete`
 - `tests/test_calendar.py` — 日历 API CRUD、日期范围筛选、详情查询
 
 ## HTTP API 备选

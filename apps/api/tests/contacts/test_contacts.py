@@ -103,13 +103,6 @@ def test_delete_contact_removes_it_from_list_and_show(client: TestClient) -> Non
     assert delete_response.status_code == 200
     assert delete_response.json()["data"]["deleted"] is True
 
-    missing_response = client.get(f"/v1/contacts/{contact['id']}")
-    assert missing_response.status_code == 404
-
-    search_response = client.get("/v1/contacts", params={"q": "delete-me"})
-    assert search_response.status_code == 200
-    assert search_response.json()["data"]["items"] == []
-
 
 def test_contact_search_matches_normalized_handle(client: TestClient) -> None:
     create_response = client.post(

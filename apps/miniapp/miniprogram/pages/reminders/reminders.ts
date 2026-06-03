@@ -20,11 +20,15 @@ interface ReminderView extends ReminderSummary {
   deleting: boolean;
   swipeX: number;
   swiping: boolean;
+  pressing: boolean;
+  deleteVisible: boolean;
 }
 
 const COMPLETE_HOLD_MS = 1200;
 const EXIT_ANIM_MS = 340;
 const SWIPE_OPEN_THRESHOLD_RATIO = 0.42;
+const SWIPE_TRIGGER_PX = 28;
+const TAP_SLOP_PX = 12;
 
 type TabKey = "pending" | "completed";
 
@@ -50,8 +54,31 @@ function enrichReminder(item: ReminderSummary): ReminderView {
     exiting: false,
     deleting: false,
     swipeX: 0,
-    swiping: false
+    swiping: false,
+    pressing: false,
+    deleteVisible: false
   };
+}
+
+function isDeleteRevealed(swipeX: number): boolean {
+  return Math.abs(swipeX) >= SWIPE_TRIGGER_PX;
+}
+
+function touchPoint(e: { touches?: Array<{ clientX: number; clientY: number }> }): {
+  x: number;
+  y: number;
+} | null {
+  const touch = e.touches?.[0];
+  if (!touch) return null;
+  return { x: touch.clientX, y: touch.clientY };
+}
+
+function changedTouchPoint(e: {
+  changedTouches?: Array<{ clientX: number; clientY: number }>;
+}): { x: number; y: number } | null {
+  const touch = e.changedTouches?.[0];
+  if (!touch) return null;
+  return { x: touch.clientX, y: touch.clientY };
 }
 
 Page({
@@ -73,7 +100,9 @@ Page({
   _completeTimers: {} as Record<string, ReturnType<typeof setTimeout>>,
   _touchStartX: 0,
   _touchStartY: 0,
-  _swipeItemId: "",
+  _startSwipeX: 0,
+  _activeRowId: "",
+  _gestureSwipeActive: false,
   _deleteActionWidthPx: 86,
 
   onShow() {
@@ -152,6 +181,13 @@ Page({
     wx.switchTab({ url: "/pages/mine/mine" });
   },
 
+  findReminderItem(id: string): ReminderView | undefined {
+    return (
+      this.data.pending.find((entry: ReminderView) => entry.id === id) ||
+      this.data.completed.find((entry: ReminderView) => entry.id === id)
+    );
+  },
+
   updateDeleteActionWidth() {
     try {
       const systemInfo = wx.getSystemInfoSync();
@@ -188,11 +224,17 @@ Page({
     return { pending, completed };
   },
 
+  resetRowGesture() {
+    this._activeRowId = "";
+    this._gestureSwipeActive = false;
+    this._startSwipeX = 0;
+  },
+
   closeOpenSwipes(exceptId = "") {
     const closeItem = (item: ReminderView) =>
       item.id === exceptId || item.swipeX === 0
         ? item
-        : { ...item, swipeX: 0, swiping: false };
+        : { ...item, swipeX: 0, swiping: false, pressing: false, deleteVisible: false };
     this.setData({
       pending: this.data.pending.map(closeItem),
       completed: this.data.completed.map(closeItem)
@@ -240,9 +282,9 @@ Page({
   onComplete(e: { currentTarget: { dataset: { id: string } } }) {
     const id = e.currentTarget.dataset.id;
     const item = this.data.pending.find((entry: ReminderView) => entry.id === id);
-    if (!item || item.completing || item.exiting || item.deleting || item.swipeX < 0) return;
+    if (!item || item.completing || item.exiting || item.deleting) return;
 
-    this.patchPendingItem(id, { completing: true });
+    this.patchPendingItem(id, { completing: true, pressing: false });
 
     completeReminder(id)
       .then((response) => {
@@ -266,57 +308,114 @@ Page({
       });
   },
 
-  onSwipeStart(e: {
+  onRowTouchStart(e: {
     currentTarget: { dataset: { id: string } };
     touches: Array<{ clientX: number; clientY: number }>;
   }) {
-    const touch = e.touches[0];
-    if (!touch) return;
+    const point = touchPoint(e);
+    if (!point) return;
     const id = e.currentTarget.dataset.id;
-    this._touchStartX = touch.clientX;
-    this._touchStartY = touch.clientY;
-    this._swipeItemId = id;
+
+    const item = this.findReminderItem(id);
+    if (!item || item.completing || item.exiting || item.deleting) return;
+
+    this._activeRowId = id;
+    this._gestureSwipeActive = false;
+    this._touchStartX = point.x;
+    this._touchStartY = point.y;
+    this._startSwipeX = item.swipeX;
     this.closeOpenSwipes(id);
-    this.patchReminderItem(id, { swiping: true });
+    this.patchReminderItem(id, {
+      pressing: true,
+      swiping: false,
+      deleteVisible: isDeleteRevealed(item.swipeX)
+    });
   },
 
   onSwipeMove(e: {
     currentTarget: { dataset: { id: string } };
     touches: Array<{ clientX: number; clientY: number }>;
   }) {
-    const touch = e.touches[0];
+    const point = touchPoint(e);
     const id = e.currentTarget.dataset.id;
-    if (!touch || id !== this._swipeItemId) return;
+    if (!point || id !== this._activeRowId) return;
 
-    const deltaX = touch.clientX - this._touchStartX;
-    const deltaY = touch.clientY - this._touchStartY;
-    if (Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaY) > 8) return;
+    const deltaX = point.x - this._touchStartX;
+    const deltaY = point.y - this._touchStartY;
+    if (Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaY) > 10) return;
 
-    const swipeX = Math.max(-this._deleteActionWidthPx, Math.min(0, deltaX));
-    this.patchReminderItem(id, { swipeX, swiping: true });
+    const canSwipe =
+      this._gestureSwipeActive ||
+      this._startSwipeX !== 0 ||
+      Math.abs(deltaX) >= SWIPE_TRIGGER_PX;
+    if (!canSwipe) return;
+
+    this._gestureSwipeActive = true;
+    const swipeX = Math.max(
+      -this._deleteActionWidthPx,
+      Math.min(0, this._startSwipeX + deltaX)
+    );
+    this.patchReminderItem(id, {
+      swipeX,
+      swiping: true,
+      pressing: false,
+      deleteVisible: isDeleteRevealed(swipeX)
+    });
   },
 
-  onSwipeEnd(e: { currentTarget: { dataset: { id: string } } }) {
+  onRowTouchEnd(e: {
+    currentTarget: { dataset: { id: string } };
+    changedTouches?: Array<{ clientX: number; clientY: number }>;
+  }) {
     const id = e.currentTarget.dataset.id;
-    const item =
-      this.data.pending.find((entry: ReminderView) => entry.id === id) ||
-      this.data.completed.find((entry: ReminderView) => entry.id === id);
-    if (!item) return;
+    if (id !== this._activeRowId) {
+      this.resetRowGesture();
+      return;
+    }
 
-    const shouldOpen =
-      Math.abs(item.swipeX) >= this._deleteActionWidthPx * SWIPE_OPEN_THRESHOLD_RATIO;
+    const item = this.findReminderItem(id);
+    if (!item) {
+      this.resetRowGesture();
+      return;
+    }
+
+    const point = changedTouchPoint(e);
+    const moved = point
+      ? Math.hypot(point.x - this._touchStartX, point.y - this._touchStartY)
+      : 0;
+
+    let swipeX = item.swipeX;
+    if (this._gestureSwipeActive) {
+      const shouldOpen =
+        Math.abs(swipeX) >= this._deleteActionWidthPx * SWIPE_OPEN_THRESHOLD_RATIO;
+      swipeX = shouldOpen ? -this._deleteActionWidthPx : 0;
+    } else if (moved < TAP_SLOP_PX) {
+      swipeX = 0;
+      if (!isDeleteRevealed(this._startSwipeX) && !item.completing && !item.deleting) {
+        this.openReminderEdit(id);
+      }
+    } else {
+      swipeX = this._startSwipeX;
+    }
+
     this.patchReminderItem(id, {
-      swipeX: shouldOpen ? -this._deleteActionWidthPx : 0,
-      swiping: false
+      swipeX,
+      swiping: false,
+      pressing: false,
+      deleteVisible: isDeleteRevealed(swipeX)
     });
-    this._swipeItemId = "";
+    this.resetRowGesture();
+  },
+
+  openReminderEdit(id: string) {
+    const item = this.findReminderItem(id);
+    if (!item || item.completing || item.exiting || item.deleting) return;
+    wx.navigateTo({ url: `/pages/reminder-edit/reminder-edit?id=${encodeURIComponent(id)}` });
   },
 
   onDeleteTap(e: { currentTarget: { dataset: { id: string } } }) {
     const id = e.currentTarget.dataset.id;
-    const item =
-      this.data.pending.find((entry: ReminderView) => entry.id === id) ||
-      this.data.completed.find((entry: ReminderView) => entry.id === id);
+    const item = this.findReminderItem(id);
     if (!item || item.deleting || item.completing || item.exiting) return;
 
     wx.showModal({
@@ -326,7 +425,7 @@ Page({
       confirmColor: "#FF3B30",
       success: (res) => {
         if (!res.confirm) {
-          this.patchReminderItem(id, { swipeX: 0, swiping: false });
+          this.patchReminderItem(id, { swipeX: 0, swiping: false, deleteVisible: false });
           return;
         }
         this.deleteItem(id);
@@ -335,7 +434,12 @@ Page({
   },
 
   deleteItem(id: string) {
-    this.patchReminderItem(id, { deleting: true, exiting: true, swiping: false });
+    this.patchReminderItem(id, {
+      deleting: true,
+      exiting: true,
+      swiping: false,
+      deleteVisible: false
+    });
     deleteReminder(id)
       .then((response) => {
         if (!response.ok) {

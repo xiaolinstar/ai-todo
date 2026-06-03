@@ -33,6 +33,21 @@ export function combineDateTime(date: string, time: string): string {
   return `${date}T${time}:00+08:00`;
 }
 
+export function splitIsoDateTime(iso: string | undefined): { date: string; time: string } {
+  if (!iso) {
+    return { date: todayIsoDate(), time: nowIsoTime() };
+  }
+  const parsed = new Date(iso);
+  if (Number.isNaN(parsed.getTime())) {
+    return { date: todayIsoDate(), time: nowIsoTime() };
+  }
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return {
+    date: `${parsed.getFullYear()}-${pad(parsed.getMonth() + 1)}-${pad(parsed.getDate())}`,
+    time: `${pad(parsed.getHours())}:${pad(parsed.getMinutes())}`
+  };
+}
+
 const WEEKDAY_LABELS = ["日", "一", "二", "三", "四", "五", "六"];
 
 export interface WeekDayItem {
