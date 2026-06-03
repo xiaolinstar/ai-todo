@@ -1,0 +1,9 @@
+@import "../../styles/settings-page.scss";
+
+.notification-settings-page .form-hint-block {
+  margin: 0 0 24rpx;
+  padding: 0 8rpx;
+  color: var(--todo-text-secondary);
+  font-size: 24rpx;
+  line-height: 1.5;
+}

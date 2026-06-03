@@ -1,6 +1,6 @@
 {
   "name": "@ai-todo/miniapp",
   "private": true,
-  "version": "0.1.4",
+  "version": "0.2.0",
   "description": "WeChat native miniapp for ai-todo (TypeScript + Sass)"
 }

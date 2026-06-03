@@ -1,0 +1,27 @@
+@import "../../styles/settings-page.scss";
+
+.dev-settings-page .dev-card {
+  margin-bottom: 24rpx;
+  padding: 28rpx;
+  background: var(--todo-surface);
+  border-radius: var(--todo-radius-lg, 20rpx);
+}
+
+.dev-settings-page .dev-label {
+  color: var(--todo-text-primary);
+  font-size: 28rpx;
+  font-weight: 600;
+}
+
+.dev-settings-page .dev-value {
+  display: block;
+  margin-top: 12rpx;
+  color: var(--todo-text-secondary);
+  font-size: 24rpx;
+  line-height: 1.45;
+  word-break: break-all;
+}
+
+.dev-settings-page .dev-actions .todo-button + .todo-button {
+  margin-top: 16rpx;
+}

@@ -1,12 +1,11 @@
-import {
-  createPat as createPatRequest,
-  fetchMe,
-  listApiTokens,
-  revokeAllApiTokens,
-  revokeApiToken,
-  updateProfile
-} from "../../lib/api";
+import { fetchMe, updateProfile } from "../../lib/api";
 import { hasValidSession, loginWithWechat } from "../../lib/auth";
+import {
+  buildMineMenuSections,
+  navigateSettingsItem,
+  type SettingsMenuItem,
+  type SettingsMenuSection
+} from "../../lib/settings-menu";
 import { avatarColor, getInitial } from "../../lib/format";
 import {
   clearToken,
@@ -20,13 +19,6 @@ import {
 import { requirePrivacyAuthorization } from "../../lib/privacy";
 import { updateTabBarSelected } from "../../lib/tab-bar";
 
-interface PatItem {
-  id: string;
-  name: string;
-  createdAt: string;
-  lastUsedAt: string;
-}
-
 type PrivacyAuthorizationResolve = (result: {
   event: "agree" | "disagree";
   buttonId?: string;
@@ -37,6 +29,7 @@ Page({
     userName: "",
     userId: "",
     avatarUrl: "",
+    profileSubtitle: "微信登录以使用全部设置",
     showProfileSetup: false,
     showPrivacyAuthorization: false,
     setupAvatarUrl: "",
@@ -45,38 +38,37 @@ Page({
     initial: "?",
     avatarColor: "#007AFF",
     loggedIn: false,
-    testing: false,
     loggingIn: false,
     profileSaving: false,
     showDevControls: false,
-    patItems: [] as PatItem[],
-    patLoading: false,
-    creatingPat: false,
-    patName: "",
-    newPatToken: "",
-    patSubmitting: false
+    menuSections: [] as SettingsMenuSection[]
   },
 
   _privacyResolve: undefined as PrivacyAuthorizationResolve | undefined,
 
   onShow() {
     updateTabBarSelected(3);
-    const config = getConfig();
-    this.setData({
-      showDevControls: isDevelopEnv()
-    });
-    if (config.apiUrl) {
+    this.setData({ showDevControls: isDevelopEnv() });
+    if (getConfig().apiUrl) {
       this.refreshSession(false);
+    } else {
+      this.syncMenu();
     }
+  },
+
+  syncMenu() {
+    const { loggedIn, showDevControls } = this.data;
+    const profileSubtitle = loggedIn ? "" : "微信登录以使用全部设置";
+    this.setData({
+      menuSections: buildMineMenuSections(loggedIn, showDevControls),
+      profileSubtitle
+    });
   },
 
   onWechatLogin() {
     requirePrivacyAuthorization().then((authorized) => {
       if (!authorized) {
-        wx.showToast({
-          title: "需同意隐私指引后登录",
-          icon: "none"
-        });
+        wx.showToast({ title: "需同意隐私指引后登录", icon: "none" });
         return;
       }
       this.startWechatLogin();
@@ -103,7 +95,7 @@ Page({
         saveConfig({ token: response.data.accessToken });
         this.applyUser(response.data.user, true);
         this.openProfileSetupIfNeeded();
-        this.loadPatList();
+        this.syncMenu();
       })
       .catch(() => {
         this.setData({ loggingIn: false });
@@ -112,39 +104,34 @@ Page({
   },
 
   refreshSession(showToast: boolean) {
-    this.setData({ testing: true });
     return hasValidSession()
       .then((loggedIn) => {
         if (!loggedIn) {
           if (getConfig().token) {
             clearToken();
           }
-          this.setData({ testing: false, loggedIn: false });
           this.resetProfile();
+          this.syncMenu();
           return;
         }
 
         return fetchMe().then((response) => {
-          this.setData({ testing: false });
           if (!response.ok || !response.data) {
             clearToken();
-            this.setData({ loggedIn: false });
             this.resetProfile();
+            this.syncMenu();
             if (showToast) {
-              wx.showToast({
-                title: response.error?.message || "登录已过期",
-                icon: "none"
-              });
+              wx.showToast({ title: response.error?.message || "登录已过期", icon: "none" });
             }
             return;
           }
           this.applyUser(response.data.user, showToast);
-          this.loadPatList();
+          this.syncMenu();
         });
       })
       .catch(() => {
-        this.setData({ testing: false, loggedIn: false });
         this.resetProfile();
+        this.syncMenu();
         if (showToast) {
           wx.showToast({ title: "无法连接 API", icon: "none" });
         }
@@ -181,25 +168,44 @@ Page({
       initial: "?",
       avatarColor: "#007AFF",
       loggedIn: false,
-      patItems: [],
-      creatingPat: false,
-      profileSaving: false,
-      newPatToken: ""
+      profileSaving: false
     });
   },
 
   onLogout() {
-    clearToken();
-    this.resetProfile();
-    wx.showToast({ title: "已退出登录", icon: "none" });
+    wx.showModal({
+      title: "退出登录",
+      content: "退出后需重新微信登录。",
+      success: (result) => {
+        if (!result.confirm) return;
+        clearToken();
+        this.resetProfile();
+        this.syncMenu();
+        wx.showToast({ title: "已退出", icon: "none" });
+      }
+    });
   },
 
-  onAuthButtonTap() {
-    if (this.data.loggedIn) {
-      this.onLogout();
+  onProfileCardTap() {
+    if (!this.data.loggedIn) {
+      this.onWechatLogin();
       return;
     }
-    this.onWechatLogin();
+    wx.navigateTo({ url: "/pages/profile-settings/profile-settings" });
+  },
+
+  onMenuItemTap(e: { currentTarget: { dataset: { sectionId: string; itemId: string } } }) {
+    const { sectionId, itemId } = e.currentTarget.dataset;
+    const section = this.data.menuSections.find(
+      (s: SettingsMenuSection) => s.id === sectionId
+    );
+    const item = section?.items.find((i: SettingsMenuItem) => i.id === itemId);
+    if (!item) return;
+    if (item.requireLogin && !this.data.loggedIn) {
+      wx.showToast({ title: "请先微信登录", icon: "none" });
+      return;
+    }
+    navigateSettingsItem(item);
   },
 
   showPrivacyAuthorization(resolve: PrivacyAuthorizationResolve) {
@@ -224,18 +230,8 @@ Page({
     wx.showToast({ title: "已取消隐私授权", icon: "none" });
   },
 
-  onOpenProfileSettings() {
-    if (!this.data.loggedIn) {
-      wx.showToast({ title: "请先微信登录", icon: "none" });
-      return;
-    }
-    wx.navigateTo({ url: "/pages/profile-settings/profile-settings" });
-  },
-
   openProfileSetup() {
-    if (!this.data.userId) {
-      return;
-    }
+    if (!this.data.userId) return;
     const setupNameInput =
       !this.data.userName || this.data.userName === "微信用户"
         ? this.data.userId
@@ -271,14 +267,6 @@ Page({
     this.setData({ showProfileSetup: false });
   },
 
-  onResetProfileSetupForDev() {
-    if (!this.data.userId) {
-      return;
-    }
-    clearProfileSetupSeen(this.data.userId);
-    this.openProfileSetupIfNeeded();
-  },
-
   onSaveProfileSetup(e?: { detail?: { value?: { nickname?: string } } }) {
     const submittedName = e?.detail?.value?.nickname;
     const displayName =
@@ -295,166 +283,22 @@ Page({
 
   saveProfile(displayName: string, avatarUrl?: string, successTitle = "资料已保存") {
     this.setData({ profileSaving: true });
-    updateProfile({
-      displayName,
-      avatarUrl
-    })
+    updateProfile({ displayName, avatarUrl })
       .then((response) => {
         this.setData({ profileSaving: false });
         if (!response.ok || !response.data) {
-          wx.showToast({
-            title: response.error?.message || "保存失败",
-            icon: "none"
-          });
+          wx.showToast({ title: response.error?.message || "保存失败", icon: "none" });
           return;
         }
         this.applyUser(response.data.user, false);
         markProfileSetupSeen(response.data.user.id);
         this.setData({ showProfileSetup: false });
+        this.syncMenu();
         wx.showToast({ title: successTitle, icon: "success" });
       })
       .catch(() => {
         this.setData({ profileSaving: false });
         wx.showToast({ title: "网络错误", icon: "none" });
       });
-  },
-
-  loadPatList() {
-    if (!this.data.loggedIn) {
-      return;
-    }
-    this.setData({ patLoading: true });
-    listApiTokens()
-      .then((response) => {
-        this.setData({ patLoading: false });
-        if (!response.ok || !response.data) {
-          return;
-        }
-        const patItems = response.data.items.map((item) => ({
-          id: item.id,
-          name: item.name,
-          createdAt: this.formatPatDate(item.createdAt),
-          lastUsedAt: item.lastUsedAt ? this.formatPatDate(item.lastUsedAt) : "未使用"
-        }));
-        this.setData({ patItems });
-      })
-      .catch(() => {
-        this.setData({ patLoading: false });
-      });
-  },
-
-  formatPatDate(value?: string): string {
-    if (!value) {
-      return "";
-    }
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) {
-      return value.slice(0, 10);
-    }
-    const month = `${date.getMonth() + 1}`.padStart(2, "0");
-    const day = `${date.getDate()}`.padStart(2, "0");
-    return `${date.getFullYear()}-${month}-${day}`;
-  },
-
-  onStartCreatePat() {
-    this.setData({ creatingPat: true, patName: "", newPatToken: "" });
-  },
-
-  onCancelCreatePat() {
-    this.setData({ creatingPat: false, patName: "" });
-  },
-
-  onPatNameInput(e: { detail: { value: string } }) {
-    this.setData({ patName: e.detail.value });
-  },
-
-  onConfirmCreatePat() {
-    const name = this.data.patName.trim();
-    if (!name) {
-      wx.showToast({ title: "请输入令牌名称", icon: "none" });
-      return;
-    }
-
-    this.setData({ patSubmitting: true });
-    createPatRequest(name)
-      .then((response) => {
-        this.setData({ patSubmitting: false, creatingPat: false, patName: "" });
-        if (!response.ok || !response.data) {
-          wx.showToast({
-            title: response.error?.message || "创建失败",
-            icon: "none"
-          });
-          return;
-        }
-        this.setData({ newPatToken: response.data.token });
-        this.loadPatList();
-      })
-      .catch(() => {
-        this.setData({ patSubmitting: false });
-        wx.showToast({ title: "网络错误", icon: "none" });
-      });
-  },
-
-  onCopyPat() {
-    if (!this.data.newPatToken) {
-      return;
-    }
-    wx.setClipboardData({
-      data: this.data.newPatToken,
-      success: () => {
-        wx.showToast({ title: "已复制", icon: "success" });
-      }
-    });
-  },
-
-  onDismissPatReveal() {
-    this.setData({ newPatToken: "" });
-  },
-
-  onRevokePat(e: { currentTarget: { dataset: { id: string; name: string } } }) {
-    const { id, name } = e.currentTarget.dataset;
-    wx.showModal({
-      title: "吊销令牌",
-      content: `确定吊销「${name}」？使用此令牌的 CLI 将无法继续访问。`,
-      success: (result) => {
-        if (!result.confirm) {
-          return;
-        }
-        revokeApiToken(id).then((response) => {
-          if (!response.ok) {
-            wx.showToast({
-              title: response.error?.message || "吊销失败",
-              icon: "none"
-            });
-            return;
-          }
-          wx.showToast({ title: "已吊销", icon: "success" });
-          this.loadPatList();
-        });
-      }
-    });
-  },
-
-  onRevokeAllPats() {
-    wx.showModal({
-      title: "清理全部 CLI 令牌",
-      content: "将吊销当前账号下所有 CLI 令牌（开发环境常用）。确定继续？",
-      success: (result) => {
-        if (!result.confirm) {
-          return;
-        }
-        revokeAllApiTokens().then((response) => {
-          if (!response.ok) {
-            wx.showToast({
-              title: response.error?.message || "清理失败",
-              icon: "none"
-            });
-            return;
-          }
-          wx.showToast({ title: "已清理", icon: "success" });
-          this.loadPatList();
-        });
-      }
-    });
   }
 });

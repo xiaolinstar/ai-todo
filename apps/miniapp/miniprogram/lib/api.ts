@@ -413,8 +413,30 @@ export function revokeAllApiTokens() {
   });
 }
 
+export interface HealthResult {
+  service: string;
+  status: string;
+  apiVersion?: string;
+  releaseTag?: string;
+  gitSha?: string;
+}
+
+export function fetchHealth() {
+  return request<HealthResult>("/v1/health");
+}
+
 export function fetchNotificationSettings() {
   return request<{ settings: NotificationSettings }>("/v1/notifications/settings");
+}
+
+export function updateNotificationSettings(input: {
+  wechatEnabled?: boolean;
+  defaultReminderEnabled?: boolean;
+}) {
+  return request<{ settings: NotificationSettings }>("/v1/notifications/settings", {
+    method: "PUT",
+    data: input
+  });
 }
 
 export function recordWechatSubscriptionResult(input: {

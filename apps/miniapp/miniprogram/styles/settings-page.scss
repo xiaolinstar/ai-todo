@@ -1,0 +1,52 @@
+.settings-page {
+  padding-top: 8rpx;
+}
+
+.settings-page .inset-group .settings-cell + .settings-cell {
+  border-top: var(--todo-separator);
+}
+
+.settings-page .settings-cell {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 96rpx;
+  padding: 24rpx 28rpx;
+  background: var(--todo-surface);
+}
+
+.settings-page .settings-cell.stack {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12rpx;
+}
+
+.settings-page .settings-cell-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.settings-page .settings-label {
+  color: var(--todo-text-primary);
+  font-size: 30rpx;
+}
+
+.settings-page .cell-meta {
+  display: block;
+  margin-top: 8rpx;
+  color: var(--todo-text-secondary);
+  font-size: 24rpx;
+  line-height: 1.45;
+}
+
+.settings-page .settings-value {
+  color: var(--todo-text-secondary);
+  font-size: 28rpx;
+}
+
+.settings-hint {
+  padding: 0 28rpx 24rpx;
+  color: var(--todo-text-secondary);
+  font-size: 24rpx;
+  line-height: 1.5;
+}

@@ -1,0 +1,17 @@
+<view class="page settings-page dev-settings-page">
+  <view class="dev-card">
+    <text class="dev-label">API 地址</text>
+    <text class="dev-value">{{apiUrl}}</text>
+    <text class="dev-label" style="margin-top: 24rpx;">连接状态</text>
+    <text class="dev-value">{{apiStatus}}</text>
+  </view>
+  <view class="settings-hint">以下操作仅用于本地开发调试。</view>
+  <view class="dev-actions">
+    <button class="todo-button todo-button-secondary" hover-class="todo-button-hover" bindtap="onResetProfileSetup">
+      重新触发资料确认
+    </button>
+    <button class="todo-button todo-button-secondary" hover-class="todo-button-hover" bindtap="onRevokeAllPats">
+      清理全部 CLI 令牌
+    </button>
+  </view>
+</view>

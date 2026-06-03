@@ -1,3 +1,12 @@
+export function formatShortDate(iso: string | undefined): string {
+  if (!iso) return "";
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return iso.slice(0, 10);
+  const month = `${date.getMonth() + 1}`.padStart(2, "0");
+  const day = `${date.getDate()}`.padStart(2, "0");
+  return `${date.getFullYear()}-${month}-${day}`;
+}
+
 export function formatDateTime(iso: string | undefined): string {
   if (!iso) return "";
   const date = new Date(iso);

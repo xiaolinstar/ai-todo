@@ -1,0 +1,58 @@
+<view class="page settings-page agent-page">
+  <view class="form-hint-block">
+    在电脑终端使用 ai-todo CLI 或 Agent 时，需创建个人访问令牌（PAT）。与微信登录会话分开，令牌只显示一次请妥善保存。
+  </view>
+
+  <view wx:if="{{newPatToken}}" class="pat-reveal">
+    <view class="pat-reveal-title">请立即复制，只显示一次</view>
+    <text class="pat-token-text" selectable>{{newPatToken}}</text>
+    <view class="pat-reveal-actions">
+      <button class="todo-button todo-button-primary pat-action-btn" hover-class="todo-button-hover" bindtap="onCopyPat">复制到剪贴板</button>
+      <button class="todo-button todo-button-secondary pat-action-btn" hover-class="todo-button-hover" bindtap="onDismissPatReveal">我已保存</button>
+    </view>
+  </view>
+
+  <view wx:if="{{creatingPat}}" class="pat-create">
+    <view class="form-row stack">
+      <text class="form-label">令牌名称</text>
+      <input class="form-input" placeholder="例如：MacBook CLI" value="{{patName}}" bindinput="onPatNameInput" />
+    </view>
+    <view class="pat-reveal-actions">
+      <button class="todo-button todo-button-primary pat-action-btn" hover-class="todo-button-hover" bindtap="onConfirmCreatePat" disabled="{{patSubmitting}}">{{patSubmitting ? '创建中…' : '确认创建'}}</button>
+      <button class="todo-button todo-button-secondary pat-action-btn" hover-class="todo-button-hover" bindtap="onCancelCreatePat">取消</button>
+    </view>
+  </view>
+
+  <button
+    wx:if="{{!creatingPat && !newPatToken}}"
+    class="todo-button todo-button-secondary pat-create-btn"
+    hover-class="todo-button-hover"
+    bindtap="onStartCreatePat"
+  >
+    创建新令牌
+  </button>
+
+  <view class="inset-group pat-list">
+    <view wx:if="{{patLoading}}" class="settings-cell">
+      <text class="cell-meta">加载中…</text>
+    </view>
+    <view wx:elif="{{patItems.length === 0}}" class="settings-cell">
+      <text class="cell-meta">暂无令牌。点击上方按钮创建。</text>
+    </view>
+    <view wx:for="{{patItems}}" wx:key="id" class="pat-item">
+      <view class="pat-item-main">
+        <text class="settings-label">{{item.name}}</text>
+        <text class="cell-meta">创建 {{item.createdAt}} · {{item.lastUsedAt}}</text>
+      </view>
+      <text
+        class="pat-revoke pressable"
+        bindtap="onRevokePat"
+        data-id="{{item.id}}"
+        data-name="{{item.name}}"
+        hover-class="list-cell-hover"
+      >
+        吊销
+      </text>
+    </view>
+  </view>
+</view>

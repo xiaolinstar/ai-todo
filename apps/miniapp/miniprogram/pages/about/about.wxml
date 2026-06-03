@@ -1,0 +1,37 @@
+<view class="page settings-page about-page">
+  <view class="inset-group">
+    <view class="settings-cell stack">
+      <view class="settings-cell-main">
+        <text class="settings-label">小程序版本</text>
+        <text class="cell-meta">上传体验版时请填写相同版本号</text>
+      </view>
+      <text class="settings-value">{{miniappVersion}}</text>
+    </view>
+    <view class="settings-cell stack">
+      <view class="settings-cell-main">
+        <text class="settings-label">API 地址</text>
+      </view>
+      <text class="settings-value">{{apiUrl}}</text>
+    </view>
+    <view wx:if="{{loggedIn}}" class="settings-cell stack">
+      <view class="settings-cell-main">
+        <text class="settings-label">用户 ID</text>
+        <text class="cell-meta">供 CLI 或反馈问题时引用</text>
+      </view>
+      <text class="settings-value copy-row pressable" bindtap="onCopyUserId" hover-class="pressable-active">{{userId}}</text>
+    </view>
+    <view class="settings-cell stack">
+      <view class="settings-cell-main">
+        <text class="settings-label">API 服务</text>
+      </view>
+      <text class="settings-value">{{healthSummary}}</text>
+    </view>
+  </view>
+
+  <view class="settings-hint">
+    ai-todo 帮助你管理提醒、日历与应用内联系人，不读取系统通讯录或系统日历。
+  </view>
+  <view class="settings-hint">
+    在电脑端使用 CLI：于微信「我的」创建访问令牌，在终端执行 ai-todo login --token …。详细步骤见项目文档 agent-usage.md。
+  </view>
+</view>

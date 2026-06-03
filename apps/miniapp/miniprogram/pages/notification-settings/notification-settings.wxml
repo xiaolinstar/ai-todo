@@ -1,0 +1,46 @@
+<view class="page settings-page notification-settings-page">
+  <view wx:if="{{loading}}" class="settings-hint">加载中…</view>
+  <block wx:else>
+    <view class="form-hint-block">
+      开启后，在创建提醒时可选择微信通知（仍需在微信弹窗中授权）。编辑已有提醒不会重新弹出订阅。
+    </view>
+    <view class="inset-group">
+      <view class="settings-cell">
+        <view class="settings-cell-main">
+          <text class="settings-label">微信通知总开关</text>
+          <text class="cell-meta">关闭后创建提醒时不再提供微信提醒选项</text>
+        </view>
+        <switch
+          checked="{{wechatEnabled}}"
+          disabled="{{saving}}"
+          bindchange="onWechatEnabledChange"
+          color="#007AFF"
+        />
+      </view>
+      <view class="settings-cell">
+        <view class="settings-cell-main">
+          <text class="settings-label">新建提醒默认开启通知</text>
+          <text class="cell-meta">仅当总开关开启且服务端已配置模板时生效</text>
+        </view>
+        <switch
+          checked="{{defaultReminderEnabled}}"
+          disabled="{{saving || !wechatEnabled}}"
+          bindchange="onDefaultReminderChange"
+          color="#007AFF"
+        />
+      </view>
+      <view wx:if="{{quietHoursText}}" class="settings-cell stack">
+        <view class="settings-cell-main">
+          <text class="settings-label">免打扰时段</text>
+          <text class="cell-meta">{{quietHoursText}}（由服务端配置，暂不可在小程序修改）</text>
+        </view>
+      </view>
+      <view wx:if="{{!templateConfigured}}" class="settings-cell stack">
+        <view class="settings-cell-main">
+          <text class="settings-label">模板状态</text>
+          <text class="cell-meta">服务端尚未配置微信提醒模板，开关保存后仍无法推送。</text>
+        </view>
+      </view>
+    </view>
+  </block>
+</view>

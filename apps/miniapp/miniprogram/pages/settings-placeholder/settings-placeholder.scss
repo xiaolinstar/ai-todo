@@ -1,0 +1,36 @@
+@import "../../styles/settings-page.scss";
+
+.placeholder-page .placeholder-card {
+  margin-bottom: 24rpx;
+  padding: 32rpx 28rpx;
+  border-radius: var(--todo-radius-lg, 20rpx);
+  background: var(--todo-surface);
+}
+
+.placeholder-page .placeholder-lead {
+  color: var(--todo-text-primary);
+  font-size: 30rpx;
+  line-height: 1.5;
+}
+
+.placeholder-page .placeholder-badge {
+  display: inline-block;
+  margin-top: 20rpx;
+  padding: 8rpx 16rpx;
+  border-radius: 8rpx;
+  background: var(--todo-bg-page);
+  color: var(--todo-text-secondary);
+  font-size: 22rpx;
+}
+
+.placeholder-page .placeholder-list {
+  margin: 24rpx 0 0;
+  padding: 0 0 0 28rpx;
+  color: var(--todo-text-secondary);
+  font-size: 26rpx;
+  line-height: 1.55;
+}
+
+.placeholder-page .placeholder-list-item {
+  margin-bottom: 12rpx;
+}

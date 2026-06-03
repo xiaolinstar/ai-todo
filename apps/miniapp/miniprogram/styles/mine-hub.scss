@@ -1,0 +1,89 @@
+.mine-hub-page {
+  padding-top: 8rpx;
+  /* 继承 .page-with-tab 底部留白，另加退出按钮区域，避免被自定义 tabBar 遮挡 */
+  padding-bottom: calc(128rpx + 120rpx + env(safe-area-inset-bottom));
+}
+
+.mine-hub-page .profile-card {
+  margin-bottom: 16rpx;
+  overflow: hidden;
+}
+
+.mine-hub-page .profile-card.pressable-active {
+  opacity: 0.92;
+}
+
+.mine-hub-page .profile-inner {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  padding: 24rpx 28rpx;
+}
+
+.mine-hub-page .profile-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.mine-hub-page .profile-name {
+  color: var(--todo-text-primary);
+  font-size: 36rpx;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.mine-hub-page .profile-sub {
+  margin-top: 8rpx;
+  color: var(--todo-text-secondary);
+  font-size: 26rpx;
+  line-height: 1.4;
+}
+
+.mine-hub-page .menu-section {
+  margin-bottom: 20rpx;
+}
+
+.mine-hub-page .group-header {
+  margin-bottom: 8rpx;
+}
+
+.mine-hub-page .menu-group .settings-cell + .settings-cell {
+  border-top: var(--todo-separator);
+}
+
+.mine-hub-page .settings-cell {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 80rpx;
+  padding: 18rpx 28rpx;
+  background: var(--todo-surface);
+}
+
+.mine-hub-page .settings-label {
+  flex: 1;
+  min-width: 0;
+  color: var(--todo-text-primary);
+  font-size: 30rpx;
+}
+
+.mine-hub-page .chevron {
+  flex-shrink: 0;
+  margin-left: 12rpx;
+  color: var(--todo-text-subtle);
+  font-size: 36rpx;
+  font-weight: 300;
+  line-height: 1;
+}
+
+.mine-hub-page .login-block {
+  margin: 8rpx 0 32rpx;
+}
+
+.mine-hub-page .footer-actions {
+  margin-top: 8rpx;
+}
+
+.mine-hub-page .logout-btn {
+  margin-bottom: 0;
+}

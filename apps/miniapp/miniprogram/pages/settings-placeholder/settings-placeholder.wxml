@@ -1,0 +1,11 @@
+<view class="page settings-page placeholder-page">
+  <view class="placeholder-card">
+    <view class="placeholder-lead">{{lead}}</view>
+    <view wx:if="{{extraNote}}" class="placeholder-badge">{{extraNote}}</view>
+    <view wx:elif="{{plannedVersion}}" class="placeholder-badge">计划在 {{plannedVersion}} 完善</view>
+  </view>
+  <view class="settings-hint">规划中的能力：</view>
+  <view class="placeholder-list">
+    <view class="placeholder-list-item" wx:for="{{bullets}}" wx:key="*this">{{item}}</view>
+  </view>
+</view>
