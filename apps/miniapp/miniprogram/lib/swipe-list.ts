@@ -1,3 +1,5 @@
+import { TODO_MODAL_CONFIRM_DANGER } from "./design-tokens";
+
 export interface SwipeListRowState {
   id: string;
   swipeX: number;
@@ -208,7 +210,7 @@ export class SwipeListGesture<T extends SwipeListRowState> {
       title: modal.title,
       content: modal.content,
       confirmText: "删除",
-      confirmColor: "#FF3B30",
+      confirmColor: TODO_MODAL_CONFIRM_DANGER,
       success: (res) => {
         if (!res.confirm) {
           this.patchItem(id, { swipeX: 0, swiping: false, deleteVisible: false } as Partial<T>);

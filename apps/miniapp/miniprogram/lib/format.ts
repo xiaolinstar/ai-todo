@@ -1,3 +1,5 @@
+import { TODO_AVATAR_PALETTE, TODO_EVENT_ACCENT_PALETTE } from "./design-tokens";
+
 export function formatShortDate(iso: string | undefined): string {
   if (!iso) return "";
   const date = new Date(iso);
@@ -172,26 +174,17 @@ export function getInitial(name: string): string {
 }
 
 export function avatarColor(seed: string): string {
-  const palette = ["#007AFF", "#5856D6", "#AF52DE", "#FF2D55", "#FF3B30", "#FF9500", "#34C759"];
   let hash = 0;
   for (let index = 0; index < seed.length; index += 1) {
     hash = seed.charCodeAt(index) + ((hash << 5) - hash);
   }
-  return palette[Math.abs(hash) % palette.length];
+  return TODO_AVATAR_PALETTE[Math.abs(hash) % TODO_AVATAR_PALETTE.length];
 }
 
-export const EVENT_ACCENT_COLORS = [
-  "#FF3B30",
-  "#FF9500",
-  "#FFCC00",
-  "#34C759",
-  "#007AFF",
-  "#5856D6",
-  "#AF52DE"
-];
+export const EVENT_ACCENT_COLORS = [...TODO_EVENT_ACCENT_PALETTE];
 
 export function eventAccentColor(index: number): string {
-  return EVENT_ACCENT_COLORS[index % EVENT_ACCENT_COLORS.length];
+  return TODO_EVENT_ACCENT_PALETTE[index % TODO_EVENT_ACCENT_PALETTE.length];
 }
 
 export function nowIsoTime(): string {

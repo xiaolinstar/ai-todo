@@ -1,4 +1,5 @@
 import { completeReminder, deleteReminder, fetchMe, fetchRemindersToday } from "../../lib/api";
+import { TODO_MODAL_CONFIRM_DANGER } from "../../lib/design-tokens";
 import type { ReminderSummary } from "../../lib/api";
 import {
   buildReminderSubline,
@@ -422,7 +423,7 @@ Page({
       title: "删除提醒",
       content: `确定删除“${item.title}”？`,
       confirmText: "删除",
-      confirmColor: "#FF3B30",
+      confirmColor: TODO_MODAL_CONFIRM_DANGER,
       success: (res) => {
         if (!res.confirm) {
           this.patchReminderItem(id, { swipeX: 0, swiping: false, deleteVisible: false });

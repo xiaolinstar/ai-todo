@@ -1,63 +1,72 @@
-<view class="page page-with-tab mine-hub-page">
-  <view
-    class="profile-card inset-group pressable"
-    hover-class="pressable-active"
-    bindtap="onProfileCardTap"
-  >
-    <view class="profile-inner">
-      <view wx:if="{{avatarUrl}}" class="avatar avatar-lg avatar-image-wrap">
-        <image class="avatar-image" src="{{avatarUrl}}" mode="aspectFill" />
-      </view>
-      <view wx:else class="avatar avatar-lg" style="background: {{avatarColor}};">{{initial}}</view>
-      <view class="profile-text">
-        <view class="profile-name">{{userName || '未登录'}}</view>
-        <view wx:if="{{profileSubtitle}}" class="profile-sub">{{profileSubtitle}}</view>
-      </view>
-      <text wx:if="{{loggedIn}}" class="chevron">›</text>
-    </view>
-  </view>
-
-  <view wx:if="{{!loggedIn}}" class="login-block">
-    <button
-      class="todo-button todo-button-primary"
-      hover-class="todo-button-hover"
-      bindtap="onWechatLogin"
-      loading="{{loggingIn}}"
-      disabled="{{loggingIn}}"
-    >
-      {{loggingIn ? '登录中…' : '微信登录'}}
-    </button>
-  </view>
-
-  <view
-    class="menu-section"
-    wx:for="{{menuSections}}"
-    wx:key="id"
-    wx:for-item="section"
-  >
-    <view class="group-header">{{section.title}}</view>
-    <view class="inset-group menu-group">
+<view class="mine-page">
+  <scroll-view scroll-y class="mine-scroll" enhanced show-scrollbar="{{false}}">
+    <view class="mine-scroll-inner">
       <view
-        class="settings-cell pressable"
-        wx:for="{{section.items}}"
-        wx:key="id"
-        wx:for-item="item"
-        hover-class="list-cell-hover"
-        bindtap="onMenuItemTap"
-        data-section-id="{{section.id}}"
-        data-item-id="{{item.id}}"
+        class="profile-card inset-group pressable"
+        hover-class="pressable-active"
+        bindtap="onProfileCardTap"
       >
-        <text class="settings-label">{{item.label}}</text>
-        <text class="chevron">›</text>
+        <view class="profile-inner">
+          <view wx:if="{{avatarUrl}}" class="avatar avatar-lg avatar-image-wrap">
+            <image class="avatar-image" src="{{avatarUrl}}" mode="aspectFill" />
+          </view>
+          <view wx:else class="avatar avatar-lg" style="background: {{avatarColor}};">{{initial}}</view>
+          <view class="profile-text">
+            <view class="profile-name">{{userName || '未登录'}}</view>
+            <view wx:if="{{loggedIn}}" class="profile-username username-display username-display--truncate">{{userUsername}}</view>
+            <view wx:elif="{{profileSubtitle}}" class="profile-sub">{{profileSubtitle}}</view>
+          </view>
+          <text wx:if="{{loggedIn}}" class="chevron">›</text>
+        </view>
+      </view>
+
+      <view wx:if="{{!loggedIn}}" class="login-block">
+        <button
+          class="todo-button todo-button-primary"
+          hover-class="todo-button-hover"
+          bindtap="onWechatLogin"
+          loading="{{loggingIn}}"
+          disabled="{{loggingIn}}"
+        >
+          {{loggingIn ? '登录中…' : '微信登录'}}
+        </button>
+      </view>
+
+      <view
+        class="menu-section"
+        wx:for="{{menuSections}}"
+        wx:key="id"
+        wx:for-item="section"
+      >
+        <view class="group-header">{{section.title}}</view>
+        <view class="inset-group menu-group">
+          <view
+            class="settings-cell pressable"
+            wx:for="{{section.items}}"
+            wx:key="id"
+            wx:for-item="item"
+            hover-class="list-cell-hover"
+            bindtap="onMenuItemTap"
+            data-section-id="{{section.id}}"
+            data-item-id="{{item.id}}"
+          >
+            <text class="settings-label">{{item.label}}</text>
+            <text class="chevron">›</text>
+          </view>
+        </view>
+      </view>
+
+      <view wx:if="{{loggedIn}}" class="footer-actions">
+        <button
+          class="todo-button todo-button-secondary logout-btn"
+          hover-class="todo-button-hover"
+          bindtap="onLogout"
+        >
+          退出登录
+        </button>
       </view>
     </view>
-  </view>
-
-  <view wx:if="{{loggedIn}}" class="footer-actions">
-    <button class="todo-button todo-button-secondary logout-btn" hover-class="todo-button-hover" bindtap="onLogout">
-      退出登录
-    </button>
-  </view>
+  </scroll-view>
 
   <view wx:if="{{showProfileSetup}}" class="profile-setup-mask">
     <view class="profile-setup-panel">
@@ -79,7 +88,14 @@
         />
         <view class="profile-setup-actions">
           <button class="profile-setup-action secondary" bindtap="onCancelProfileSetup">暂不设置</button>
-          <button class="profile-setup-action primary" form-type="submit" loading="{{profileSaving}}" disabled="{{profileSaving}}">{{profileSaving ? '保存中…' : '保存'}}</button>
+          <button
+            class="profile-setup-action primary"
+            form-type="submit"
+            loading="{{profileSaving}}"
+            disabled="{{profileSaving}}"
+          >
+            {{profileSaving ? '保存中…' : '保存'}}
+          </button>
         </view>
       </form>
     </view>

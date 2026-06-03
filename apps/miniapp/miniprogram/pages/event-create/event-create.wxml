@@ -18,7 +18,7 @@
     </view>
     <view class="form-row">
       <text class="form-label">结束时间</text>
-      <switch checked="{{hasEnd}}" bindchange="onEndToggle" color="#007AFF" />
+      <switch checked="{{hasEnd}}" bindchange="onEndToggle" color="{{switchColor}}" />
     </view>
     <view wx:if="{{hasEnd}}" class="form-row">
       <text class="form-label">结束</text>

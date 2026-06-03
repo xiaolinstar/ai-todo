@@ -1,9 +1,11 @@
 import { createCalendarEvent } from "../../lib/api";
 import type { ContactSummary } from "../../lib/api";
 import { combineDateTime, nowIsoTime, todayIsoDate } from "../../lib/format";
+import { todoPageThemeData } from "../../lib/theme";
 
 Page({
   data: {
+    ...todoPageThemeData(),
     title: "",
     location: "",
     description: "",

@@ -1,9 +1,11 @@
 import { fetchCalendarEvent, updateCalendarEvent } from "../../lib/api";
 import type { ContactSummary } from "../../lib/api";
 import { combineDateTime, splitIsoDateTime } from "../../lib/format";
+import { todoPageThemeData } from "../../lib/theme";
 
 Page({
   data: {
+    ...todoPageThemeData(),
     eventId: "",
     loading: true,
     title: "",

@@ -8,7 +8,7 @@
   margin-bottom: 28rpx;
   padding: 6rpx;
   border-radius: 18rpx;
-  background: rgba(118, 118, 128, 0.12);
+  background: var(--todo-fill-neutral-12);
 }
 
 .segment {
@@ -20,8 +20,8 @@
   min-height: 72rpx;
   border-radius: 14rpx;
   color: var(--todo-text-muted);
-  font-size: 28rpx;
-  font-weight: 600;
+  font-size: var(--todo-font-size-lg);
+  font-weight: var(--todo-font-weight-semibold);
   transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -32,7 +32,7 @@
 
 .segment.active {
   background: var(--todo-surface);
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.08);
+  box-shadow: var(--todo-shadow-card-strong);
   color: var(--todo-text-primary);
 }
 
@@ -40,10 +40,10 @@
   min-width: 32rpx;
   padding: 2rpx 10rpx;
   border-radius: 999rpx;
-  background: rgba(var(--todo-primary-rgb), 0.12);
+  background: var(--todo-fill-primary-12);
   color: var(--todo-primary);
-  font-size: 22rpx;
-  font-weight: 700;
+  font-size: var(--todo-font-size-sm);
+  font-weight: var(--todo-font-weight-bold);
   line-height: 1.4;
 }
 
@@ -79,7 +79,7 @@
 }
 
 .reminder-swipe-content.reminder-row-pressed {
-  background: rgba(0, 122, 255, 0.08) !important;
+  background: var(--todo-fill-primary-08) !important;
 }
 
 .reminder-row-main {
@@ -119,8 +119,8 @@
   padding-left: 12rpx;
   padding-right: 28rpx;
   box-sizing: border-box;
-  border-left: 1rpx solid rgba(255, 59, 48, 0.18);
-  background: rgba(255, 59, 48, 0.08);
+  border-left: 1rpx solid var(--todo-fill-danger-18);
+  background: var(--todo-fill-danger-08);
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.12s ease;
@@ -143,10 +143,10 @@
   border-radius: 18rpx;
   background: var(--todo-danger);
   color: var(--todo-text-inverse);
-  font-size: 28rpx;
-  font-weight: 700;
+  font-size: var(--todo-font-size-lg);
+  font-weight: var(--todo-font-weight-bold);
   line-height: 1;
-  box-shadow: -8rpx 0 16rpx rgba(0, 0, 0, 0.04);
+  box-shadow: var(--todo-shadow-swipe);
 }
 
 .swipe-delete::after {
@@ -175,8 +175,8 @@
 }
 
 .check-mark {
-  font-size: 26rpx;
-  font-weight: 700;
+  font-size: var(--todo-font-size-base);
+  font-weight: var(--todo-font-weight-bold);
   line-height: 1;
 }
 

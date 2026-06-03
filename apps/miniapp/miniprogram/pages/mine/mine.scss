@@ -1,5 +1,10 @@
 @import "../../styles/mine-hub.scss";
 
+page {
+  height: 100%;
+  overflow: hidden;
+}
+
 .avatar-image-wrap {
   width: 120rpx;
   height: 120rpx;

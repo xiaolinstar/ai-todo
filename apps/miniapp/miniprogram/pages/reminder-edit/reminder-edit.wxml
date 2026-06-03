@@ -17,7 +17,7 @@
       </view>
       <view wx:if="{{!isCompleted}}" class="form-row">
         <text class="form-label">截止时间</text>
-        <switch checked="{{hasDue}}" bindchange="onDueToggle" color="#007AFF" />
+        <switch checked="{{hasDue}}" bindchange="onDueToggle" color="{{switchColor}}" />
       </view>
       <view wx:if="{{!isCompleted && hasDue}}" class="form-row">
         <text class="form-label">截止</text>

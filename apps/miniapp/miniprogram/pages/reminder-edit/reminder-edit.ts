@@ -1,9 +1,11 @@
 import { fetchReminder, updateReminder } from "../../lib/api";
 import type { ContactSummary } from "../../lib/api";
 import { combineDateTime, splitIsoDateTime } from "../../lib/format";
+import { todoPageThemeData } from "../../lib/theme";
 
 Page({
   data: {
+    ...todoPageThemeData(),
     reminderId: "",
     loading: true,
     isCompleted: false,

@@ -1,0 +1,19 @@
+/* 平台用户名：仅布局差异，颜色与字体全部走全局令牌 */
+.username-display {
+  color: var(--todo-text-subtle);
+  font-size: var(--todo-font-size-base);
+  font-weight: var(--todo-font-weight-regular);
+  line-height: var(--todo-line-height-normal);
+}
+
+.username-display--truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.form-row .username-display {
+  flex: 1;
+  min-width: 0;
+  text-align: right;
+}

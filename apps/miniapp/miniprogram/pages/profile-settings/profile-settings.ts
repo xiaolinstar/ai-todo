@@ -1,5 +1,6 @@
 import { fetchMe, updateProfile } from "../../lib/api";
 import { markProfileSetupSeen } from "../../lib/config";
+import { TODO_COLORS } from "../../lib/design-tokens";
 import { avatarColor, getInitial } from "../../lib/format";
 
 type PrivacyAuthorizationResolve = (result: {
@@ -10,10 +11,11 @@ type PrivacyAuthorizationResolve = (result: {
 Page({
   data: {
     userId: "",
+    userUsername: "",
     displayName: "",
     avatarUrl: "",
     initial: "微",
-    avatarColor: "#007AFF",
+    avatarColor: TODO_COLORS.primary,
     loading: true,
     saving: false,
     showPrivacyAuthorization: false
@@ -36,8 +38,10 @@ Page({
           return;
         }
         const user = response.data.user;
+        const userUsername = (user.username || "").trim() || user.id;
         this.setData({
           userId: user.id,
+          userUsername,
           displayName: user.displayName || user.id,
           avatarUrl: user.avatarUrl || "",
           initial: user.avatarUrl ? getInitial(user.displayName) : "微",

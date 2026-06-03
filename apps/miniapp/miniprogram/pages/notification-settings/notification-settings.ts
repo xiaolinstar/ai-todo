@@ -1,7 +1,10 @@
 import { fetchNotificationSettings, updateNotificationSettings } from "../../lib/api";
 
+import { todoPageThemeData } from "../../lib/theme";
+
 Page({
   data: {
+    ...todoPageThemeData(),
     loading: true,
     saving: false,
     wechatEnabled: false,

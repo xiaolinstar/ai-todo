@@ -1,0 +1,98 @@
+/**
+ * 语义化排版类：页面与组件只组合这些类或 var(--todo-font-*) / var(--todo-text-*)
+ */
+
+.todo-text-primary {
+  color: var(--todo-text-primary);
+}
+
+.todo-text-secondary {
+  color: var(--todo-text-secondary);
+}
+
+.todo-text-muted {
+  color: var(--todo-text-muted);
+}
+
+.todo-text-subtle {
+  color: var(--todo-text-subtle);
+}
+
+.todo-text-placeholder {
+  color: var(--todo-text-placeholder);
+}
+
+.todo-text-link {
+  color: var(--todo-link);
+}
+
+.todo-text-danger {
+  color: var(--todo-danger);
+}
+
+.todo-text-primary-brand {
+  color: var(--todo-primary);
+}
+
+.todo-type-caption {
+  font-size: var(--todo-font-size-xs);
+  font-weight: var(--todo-font-weight-regular);
+  line-height: var(--todo-line-height-normal);
+}
+
+.todo-type-footnote {
+  font-size: var(--todo-font-size-sm);
+  font-weight: var(--todo-font-weight-regular);
+  line-height: var(--todo-line-height-normal);
+}
+
+.todo-type-subhead {
+  font-size: var(--todo-font-size-md);
+  font-weight: var(--todo-font-weight-semibold);
+  line-height: var(--todo-line-height-normal);
+}
+
+.todo-type-body {
+  font-size: var(--todo-font-size-base);
+  font-weight: var(--todo-font-weight-regular);
+  line-height: var(--todo-line-height-normal);
+}
+
+.todo-type-callout {
+  font-size: var(--todo-font-size-lg);
+  font-weight: var(--todo-font-weight-regular);
+  line-height: var(--todo-line-height-relaxed);
+}
+
+.todo-type-headline {
+  font-size: var(--todo-font-size-xl);
+  font-weight: var(--todo-font-weight-medium);
+  line-height: var(--todo-line-height-normal);
+}
+
+.todo-type-title {
+  font-size: var(--todo-font-size-title);
+  font-weight: var(--todo-font-weight-semibold);
+  line-height: var(--todo-line-height-tight);
+}
+
+.todo-type-title-lg {
+  font-size: var(--todo-font-size-title-lg);
+  font-weight: var(--todo-font-weight-bold);
+  line-height: var(--todo-line-height-tight);
+}
+
+.todo-type-large-title {
+  font-size: var(--todo-font-size-display);
+  font-weight: var(--todo-font-weight-bold);
+  letter-spacing: -1rpx;
+  line-height: 1.1;
+}
+
+.todo-type-group-header {
+  color: var(--todo-text-subtle);
+  font-size: var(--todo-font-size-base);
+  font-weight: var(--todo-font-weight-regular);
+  letter-spacing: 0.5rpx;
+  text-transform: uppercase;
+}

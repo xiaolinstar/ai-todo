@@ -1,57 +1,69 @@
-.mine-hub-page {
-  padding-top: 8rpx;
-  /* 继承 .page-with-tab 底部留白，另加退出按钮区域，避免被自定义 tabBar 遮挡 */
-  padding-bottom: calc(128rpx + 120rpx + env(safe-area-inset-bottom));
+.mine-page {
+  height: 100vh;
+  background: var(--todo-bg-page);
 }
 
-.mine-hub-page .profile-card {
+.mine-scroll {
+  height: 100vh;
+}
+
+.mine-scroll-inner {
+  box-sizing: border-box;
+  padding: 8rpx 32rpx calc(var(--todo-tabbar-height) + 140rpx + env(safe-area-inset-bottom));
+}
+
+.mine-page .profile-card {
   margin-bottom: 16rpx;
   overflow: hidden;
 }
 
-.mine-hub-page .profile-card.pressable-active {
+.mine-page .profile-card.pressable-active {
   opacity: 0.92;
 }
 
-.mine-hub-page .profile-inner {
+.mine-page .profile-inner {
   display: flex;
   align-items: center;
   gap: 20rpx;
   padding: 24rpx 28rpx;
 }
 
-.mine-hub-page .profile-text {
+.mine-page .profile-text {
   flex: 1;
   min-width: 0;
 }
 
-.mine-hub-page .profile-name {
+.mine-page .profile-name {
   color: var(--todo-text-primary);
-  font-size: 36rpx;
-  font-weight: 700;
-  line-height: 1.3;
+  font-size: var(--todo-font-size-title);
+  font-weight: var(--todo-font-weight-bold);
+  line-height: var(--todo-line-height-tight);
 }
 
-.mine-hub-page .profile-sub {
+.mine-page .profile-username {
+  margin-top: 6rpx;
+}
+
+.mine-page .profile-sub {
   margin-top: 8rpx;
   color: var(--todo-text-secondary);
-  font-size: 26rpx;
-  line-height: 1.4;
+  font-size: var(--todo-font-size-base);
+  line-height: var(--todo-line-height-normal);
 }
 
-.mine-hub-page .menu-section {
+.mine-page .menu-section {
   margin-bottom: 20rpx;
 }
 
-.mine-hub-page .group-header {
+.mine-page .group-header {
   margin-bottom: 8rpx;
 }
 
-.mine-hub-page .menu-group .settings-cell + .settings-cell {
+.mine-page .menu-group .settings-cell + .settings-cell {
   border-top: var(--todo-separator);
 }
 
-.mine-hub-page .settings-cell {
+.mine-page .settings-cell {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -60,30 +72,31 @@
   background: var(--todo-surface);
 }
 
-.mine-hub-page .settings-label {
+.mine-page .settings-label {
   flex: 1;
   min-width: 0;
   color: var(--todo-text-primary);
-  font-size: 30rpx;
+  font-size: var(--todo-font-size-xl);
 }
 
-.mine-hub-page .chevron {
+.mine-page .chevron {
   flex-shrink: 0;
   margin-left: 12rpx;
   color: var(--todo-text-subtle);
-  font-size: 36rpx;
-  font-weight: 300;
+  font-size: var(--todo-font-size-title-lg);
+  font-weight: var(--todo-font-weight-light);
   line-height: 1;
 }
 
-.mine-hub-page .login-block {
-  margin: 8rpx 0 32rpx;
+.mine-page .login-block {
+  margin: 8rpx 0 24rpx;
 }
 
-.mine-hub-page .footer-actions {
+.mine-page .footer-actions {
   margin-top: 8rpx;
+  padding-bottom: 8rpx;
 }
 
-.mine-hub-page .logout-btn {
+.mine-page .logout-btn {
   margin-bottom: 0;
 }

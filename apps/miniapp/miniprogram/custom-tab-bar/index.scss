@@ -1,3 +1,5 @@
+@import "../styles/tokens.scss";
+
 .tab-bar {
   position: fixed;
   right: 0;
@@ -5,15 +7,15 @@
   left: 0;
   z-index: 99;
   padding-bottom: env(safe-area-inset-bottom);
-  background: #f9f9f9;
-  border-top: 1rpx solid rgba(60, 60, 67, 0.12);
+  background: var(--todo-tabbar-bg);
+  border-top: 1rpx solid var(--todo-border-subtle);
 }
 
 .tab-bar-inner {
   display: flex;
   align-items: flex-end;
   justify-content: space-around;
-  height: 112rpx;
+  height: var(--todo-tabbar-height);
   padding: 0 8rpx;
 }
 
@@ -30,19 +32,19 @@
 }
 
 .tab-item-hover {
-  background: rgba(0, 0, 0, 0.05);
+  background: var(--todo-fill-press-dark-05);
 }
 
 .tab-item.active .tab-text {
-  color: #007aff;
-  font-weight: 600;
+  color: var(--todo-primary);
+  font-weight: var(--todo-font-weight-semibold);
 }
 
 .tab-text {
   margin-top: 6rpx;
-  color: #8e8e93;
-  font-size: 20rpx;
-  line-height: 1.2;
+  color: var(--todo-text-subtle);
+  font-size: var(--todo-font-size-xs);
+  line-height: var(--todo-line-height-tight);
 }
 
 .tab-icon {
@@ -59,13 +61,18 @@
 .tab-icon.active.icon-contacts::after,
 .tab-icon.active.icon-mine::before,
 .tab-icon.active.icon-mine::after {
-  border-color: #007aff;
-  background: #007aff;
+  border-color: var(--todo-primary);
+  background: var(--todo-primary);
 }
 
-/* Reminder — checklist */
 .icon-reminder::before,
-.icon-reminder::after {
+.icon-reminder::after,
+.icon-calendar::before,
+.icon-calendar::after,
+.icon-contacts::before,
+.icon-contacts::after,
+.icon-mine::before,
+.icon-mine::after {
   content: "";
   position: absolute;
   box-sizing: border-box;
@@ -76,7 +83,7 @@
   left: 6rpx;
   width: 30rpx;
   height: 36rpx;
-  border: 3rpx solid #8e8e93;
+  border: 3rpx solid var(--todo-text-subtle);
   border-radius: 8rpx;
 }
 
@@ -86,16 +93,8 @@
   width: 18rpx;
   height: 3rpx;
   border-radius: 999rpx;
-  background: #8e8e93;
-  box-shadow: 0 8rpx 0 #8e8e93, 0 16rpx 0 #8e8e93;
-}
-
-/* Calendar */
-.icon-calendar::before,
-.icon-calendar::after {
-  content: "";
-  position: absolute;
-  box-sizing: border-box;
+  background: var(--todo-text-subtle);
+  box-shadow: 0 8rpx 0 var(--todo-text-subtle), 0 16rpx 0 var(--todo-text-subtle);
 }
 
 .icon-calendar::before {
@@ -103,7 +102,7 @@
   left: 4rpx;
   width: 36rpx;
   height: 32rpx;
-  border: 3rpx solid #8e8e93;
+  border: 3rpx solid var(--todo-text-subtle);
   border-radius: 8rpx;
 }
 
@@ -113,16 +112,12 @@
   width: 24rpx;
   height: 8rpx;
   border-radius: 4rpx 4rpx 0 0;
-  background: #8e8e93;
+  background: var(--todo-text-subtle);
 }
 
-/* Contacts */
 .icon-contacts::before,
 .icon-contacts::after {
-  content: "";
-  position: absolute;
-  box-sizing: border-box;
-  border: 3rpx solid #8e8e93;
+  border: 3rpx solid var(--todo-text-subtle);
   border-radius: 50%;
   background: transparent;
 }
@@ -141,20 +136,12 @@
   height: 18rpx;
 }
 
-/* Mine */
-.icon-mine::before,
-.icon-mine::after {
-  content: "";
-  position: absolute;
-  box-sizing: border-box;
-}
-
 .icon-mine::before {
   top: 2rpx;
   left: 12rpx;
   width: 20rpx;
   height: 20rpx;
-  border: 3rpx solid #8e8e93;
+  border: 3rpx solid var(--todo-text-subtle);
   border-radius: 50%;
 }
 
@@ -163,7 +150,7 @@
   left: 6rpx;
   width: 32rpx;
   height: 18rpx;
-  border: 3rpx solid #8e8e93;
+  border: 3rpx solid var(--todo-text-subtle);
   border-top: none;
   border-radius: 0 0 18rpx 18rpx;
 }
@@ -186,8 +173,8 @@
   height: 96rpx;
   margin-top: -36rpx;
   border-radius: 50%;
-  background: linear-gradient(180deg, #0a84ff 0%, #007aff 100%);
-  box-shadow: 0 10rpx 28rpx rgba(0, 122, 255, 0.38);
+  background: linear-gradient(180deg, var(--todo-primary-alt) 0%, var(--todo-primary) 100%);
+  box-shadow: var(--todo-shadow-tab-fab);
 }
 
 .tab-create-hover {
@@ -197,14 +184,14 @@
 
 .tab-create-icon {
   margin-top: -4rpx;
-  color: #ffffff;
-  font-size: 56rpx;
-  font-weight: 300;
+  color: var(--todo-text-inverse);
+  font-size: var(--todo-font-size-fab-icon);
+  font-weight: var(--todo-font-weight-light);
   line-height: 1;
 }
 
 .tab-create-label {
   margin-top: 4rpx;
-  color: #8e8e93;
-  font-size: 20rpx;
+  color: var(--todo-text-subtle);
+  font-size: var(--todo-font-size-xs);
 }

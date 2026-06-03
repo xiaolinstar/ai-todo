@@ -17,6 +17,7 @@ import {
   saveConfig
 } from "../../lib/config";
 import { requirePrivacyAuthorization } from "../../lib/privacy";
+import { TODO_COLORS } from "../../lib/design-tokens";
 import { updateTabBarSelected } from "../../lib/tab-bar";
 
 type PrivacyAuthorizationResolve = (result: {
@@ -28,6 +29,7 @@ Page({
   data: {
     userName: "",
     userId: "",
+    userUsername: "",
     avatarUrl: "",
     profileSubtitle: "微信登录以使用全部设置",
     showProfileSetup: false,
@@ -36,7 +38,7 @@ Page({
     setupNameInput: "",
     timezone: "",
     initial: "?",
-    avatarColor: "#007AFF",
+    avatarColor: TODO_COLORS.primary,
     loggedIn: false,
     loggingIn: false,
     profileSaving: false,
@@ -139,12 +141,20 @@ Page({
   },
 
   applyUser(
-    user: { displayName: string; id: string; timezone: string; avatarUrl?: string },
+    user: {
+      displayName: string;
+      id: string;
+      username?: string;
+      timezone: string;
+      avatarUrl?: string;
+    },
     showToast: boolean
   ) {
+    const userUsername = (user.username || "").trim() || user.id;
     this.setData({
       userName: user.displayName,
       userId: user.id,
+      userUsername,
       avatarUrl: user.avatarUrl || "",
       timezone: user.timezone,
       initial: user.avatarUrl ? getInitial(user.displayName) : "微",
@@ -160,13 +170,14 @@ Page({
     this.setData({
       userName: "",
       userId: "",
+      userUsername: "",
       avatarUrl: "",
       showProfileSetup: false,
       setupAvatarUrl: "",
       setupNameInput: "",
       timezone: "",
       initial: "?",
-      avatarColor: "#007AFF",
+      avatarColor: TODO_COLORS.primary,
       loggedIn: false,
       profileSaving: false
     });

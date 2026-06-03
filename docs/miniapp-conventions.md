@@ -65,7 +65,10 @@ apps/miniapp/
   miniprogram/
     app.json
     app.ts
-    app.scss                # 全局 design tokens + 通用组件类
+    app.scss                # 引入 tokens / typography，全局组件类
+    styles/
+      tokens.scss           # 颜色与字体令牌（唯一允许 hex 的 SCSS）
+      typography.scss       # 语义排版类
     sitemap.json
     lib/                    # 平台层：API、存储、格式化（无 WXML）
     pages/
@@ -99,21 +102,38 @@ apps/miniapp/
 
 ## 样式与设计 token
 
-全局 token 定义在 `miniprogram/app.scss` 的 `page { --todo-*: ... }` 中，命名空间使用 **`--todo-`**（party-helper 使用 `--party-`）。
+**完整规范见 [`docs/miniapp-design-tokens.md`](miniapp-design-tokens.md)。** 以下为摘要。
+
+### 单一来源（禁止硬编码）
+
+| 场景 | 文件 |
+|------|------|
+| 样式（颜色、字号、字重、字体族） | `miniprogram/styles/tokens.scss`（`--todo-*`） |
+| WXML 属性 / `wx.showModal` / TS 色板 | `miniprogram/lib/design-tokens.ts` |
+| 排版工具类 | `miniprogram/styles/typography.scss`（`.todo-text-*`、`.todo-type-*`） |
+
+修改色值时**必须**同时更新 `tokens.scss` 与 `design-tokens.ts`。页面与组件 SCSS 只使用 `var(--todo-*)` 或排版类，**不得**写 `#RRGGBB`、`rgb()`、`font-family` 字面量。
+
+自定义组件（如 `custom-tab-bar`）根节点加 class **`todo-theme`**，以注入与 `page` 相同的 CSS 变量。
 
 ### 颜色角色（与 party-helper 同模型）
 
 | 角色 | 用途 |
 |------|------|
-| `--todo-primary` | 主操作、链接（iOS 蓝 #007AFF） |
+| `--todo-primary` | 主操作、链接 |
 | `--todo-good` | 成功、完成态 |
 | `--todo-danger` | 逾期、删除、警示 |
-| `--todo-bg-page` | 分组背景（#F2F2F7） |
+| `--todo-fill-primary-*` / `--todo-fill-danger-*` | 半透明背景、按压 |
+| `--todo-bg-page` | 分组背景 |
 | `--todo-surface` | 卡片、面板 |
 | `--todo-text-primary` / `secondary` / `muted` / `subtle` | 文字层级 |
 | `--todo-border-subtle` / `--todo-border-card` | 分割线与卡片描边 |
 
 新增 UI 状态时，**先判断能否映射到已有角色**；不要为局部装饰随意加色值。详见 party-helper 的 `docs/ui-color-roles.md` 思路。
+
+### 字体
+
+全应用统一 `--todo-font-family-base`（系统无衬线）。用户名、ID 等**不单独改用等宽字体**，仅用 `--todo-text-subtle` 等颜色区分层级。字号使用 `--todo-font-size-*` 阶梯或 `.todo-type-*` 类。
 
 ### 布局类（复用 party-helper 模式）
 
@@ -220,6 +240,6 @@ pnpm typecheck:wechat     # 仅 tsc
 
 - [ ] `pages/<name>/<name>.{ts,wxml,scss,json}` 四文件齐全（**无** `.js`/`.wxss` 进 Git）
 - [ ] 已在 `app.json` `pages` 数组注册（Tab 页同时更新 `tabBar`）
-- [ ] 样式使用 `--todo-*` 与全局 layout 类，无随意 hex
+- [ ] 样式仅用 `var(--todo-*)` / `.todo-type-*`；WXML/TS 色值来自 `design-tokens.ts`
 - [ ] 业务调用经 `lib/`，页面无裸 `wx.request`
 - [ ] 运行 `pnpm check:wechat` 通过

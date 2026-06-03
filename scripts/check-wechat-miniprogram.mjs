@@ -127,7 +127,46 @@ for (const file of walk(miniprogramRoot)) {
   }
 }
 
+function assertNoHardcodedVisualTokens() {
+  const allowedScss = new Set([resolve(miniprogramRoot, "styles/tokens.scss")]);
+  const hexRe = /#[0-9a-fA-F]{3,8}\b/g;
+  const fontFamilyRe = /font-family\s*:/i;
+  for (const file of walk(miniprogramRoot)) {
+    if (extname(file) !== ".scss") continue;
+    if (allowedScss.has(file)) continue;
+    const source = readFileSync(file, "utf8");
+    const rel = relative(root, file);
+    if (hexRe.test(source)) {
+      fail(
+        `hardcoded hex color in ${rel} — use var(--todo-*) from styles/tokens.scss (see docs/miniapp-design-tokens.md)`
+      );
+    }
+    if (fontFamilyRe.test(source)) {
+      const hasLiteralStack = /font-family\s*:\s*(?!var\(--todo-font-family)/i.test(source);
+      if (hasLiteralStack) {
+        fail(
+          `hardcoded font-family in ${rel} — use var(--todo-font-family-base) (see docs/miniapp-design-tokens.md)`
+        );
+      }
+    }
+  }
+
+  const allowedTs = new Set([resolve(miniprogramRoot, "lib/design-tokens.ts")]);
+  const tsHexRe = /"#[0-9A-Fa-f]{3,8}"/;
+  for (const file of walk(miniprogramRoot)) {
+    if (extname(file) !== ".ts") continue;
+    if (allowedTs.has(file)) continue;
+    const source = readFileSync(file, "utf8");
+    if (tsHexRe.test(source)) {
+      fail(
+        `hardcoded color string in ${relative(root, file)} — import from lib/design-tokens.ts`
+      );
+    }
+  }
+}
+
 assertNoTrackedGeneratedFiles();
+assertNoHardcodedVisualTokens();
 
 if (!process.exitCode) {
   console.log("ai-todo wechat miniprogram static checks passed");

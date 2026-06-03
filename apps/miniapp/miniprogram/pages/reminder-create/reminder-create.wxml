@@ -15,7 +15,7 @@
     </view>
     <view class="form-row">
       <text class="form-label">截止时间</text>
-      <switch checked="{{hasDue}}" bindchange="onDueToggle" color="#007AFF" />
+      <switch checked="{{hasDue}}" bindchange="onDueToggle" color="{{switchColor}}" />
     </view>
     <view wx:if="{{hasDue}}" class="form-row">
       <text class="form-label">截止</text>
@@ -30,7 +30,7 @@
     </view>
     <view wx:if="{{hasDue && notifyAvailable}}" class="form-row">
       <text class="form-label">微信提醒</text>
-      <switch checked="{{notifyEnabled}}" bindchange="onNotifyToggle" color="#007AFF" />
+      <switch checked="{{notifyEnabled}}" bindchange="onNotifyToggle" color="{{switchColor}}" />
     </view>
     <view class="form-row">
       <text class="form-label">联系人</text>

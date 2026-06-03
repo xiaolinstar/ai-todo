@@ -6,10 +6,13 @@ import {
 import type { ContactSummary } from "../../lib/api";
 import { combineDateTime, nowIsoTime, todayIsoDate } from "../../lib/format";
 
+import { todoPageThemeData } from "../../lib/theme";
+
 const REMINDER_TEMPLATE_KEY = "reminder_due";
 
 Page({
   data: {
+    ...todoPageThemeData(),
     title: "",
     notes: "",
     notesExpanded: false,

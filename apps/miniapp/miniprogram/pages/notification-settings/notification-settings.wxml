@@ -14,7 +14,7 @@
           checked="{{wechatEnabled}}"
           disabled="{{saving}}"
           bindchange="onWechatEnabledChange"
-          color="#007AFF"
+          color="{{switchColor}}"
         />
       </view>
       <view class="settings-cell">
@@ -26,7 +26,7 @@
           checked="{{defaultReminderEnabled}}"
           disabled="{{saving || !wechatEnabled}}"
           bindchange="onDefaultReminderChange"
-          color="#007AFF"
+          color="{{switchColor}}"
         />
       </view>
       <view wx:if="{{quietHoursText}}" class="settings-cell stack">
