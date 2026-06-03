@@ -211,7 +211,6 @@ button::after {
   justify-content: center;
   width: 48rpx;
   height: 48rpx;
-  margin-top: 2rpx;
   border: 3rpx solid #c7c7cc;
   border-radius: 50%;
   color: var(--todo-text-inverse);
@@ -234,6 +233,9 @@ button::after {
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
+  align-self: stretch;
+  width: 72rpx;
+  min-height: 64rpx;
   padding: 12rpx;
   margin: -12rpx 0 -12rpx -12rpx;
   border-radius: 999rpx;

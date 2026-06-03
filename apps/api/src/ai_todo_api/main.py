@@ -120,8 +120,15 @@ def preview() -> str:
 
 
 @app.get("/v1/health")
-def healthcheck() -> ApiResponse[dict[str, str]]:
-    return ApiResponse(data={"service": "ai-todo-api", "status": "ok"})
+def healthcheck() -> ApiResponse[dict[str, str | None]]:
+    return ApiResponse(
+        data={
+            "service": "ai-todo-api",
+            "status": "ok",
+            "releaseTag": settings.release_tag,
+            "gitSha": settings.git_sha,
+        }
+    )
 
 
 @app.get("/v1/health/db")

@@ -290,6 +290,7 @@ jobs:
         env:
           FINGERPRINT: ${{ needs.resolve-manifest.outputs.fingerprint }}
           CI_RUN_ID: ${{ needs.resolve-manifest.outputs.ci_run_id }}
+          RELEASE_TAG: ${{ needs.resolve-manifest.outputs.release_tag }}
           GHCR_DEPLOY_TOKEN: ${{ secrets.GHCR_DEPLOY_TOKEN || github.token }}
           GHCR_DEPLOY_USER: ${{ secrets.GHCR_DEPLOY_USER || github.actor }}
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
@@ -299,7 +300,7 @@ jobs:
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           port: ${{ secrets.DEPLOY_PORT || 22 }}
-          envs: FINGERPRINT,CI_RUN_ID,GHCR_DEPLOY_TOKEN,GHCR_DEPLOY_USER,DEPLOY_PATH,DEPLOY_MODE_INPUT
+          envs: FINGERPRINT,CI_RUN_ID,RELEASE_TAG,GHCR_DEPLOY_TOKEN,GHCR_DEPLOY_USER,DEPLOY_PATH,DEPLOY_MODE_INPUT
           command_timeout: 10m
           script_stop: true
           script: |
@@ -308,6 +309,7 @@ jobs:
             git fetch --prune origin main
             git pull --ff-only origin main
             export AI_TODO_DEPLOY_MANIFEST=/tmp/deploy-manifest.json
+            export AI_TODO_RELEASE_TAG="$RELEASE_TAG"
             bash apps/api/deploy/cd-bootstrap.sh
 
       - name: Deploy to VPS (password)
@@ -316,6 +318,7 @@ jobs:
         env:
           FINGERPRINT: ${{ needs.resolve-manifest.outputs.fingerprint }}
           CI_RUN_ID: ${{ needs.resolve-manifest.outputs.ci_run_id }}
+          RELEASE_TAG: ${{ needs.resolve-manifest.outputs.release_tag }}
           GHCR_DEPLOY_TOKEN: ${{ secrets.GHCR_DEPLOY_TOKEN || github.token }}
           GHCR_DEPLOY_USER: ${{ secrets.GHCR_DEPLOY_USER || github.actor }}
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
@@ -325,7 +328,7 @@ jobs:
           username: ${{ secrets.DEPLOY_USER }}
           password: ${{ secrets.DEPLOY_PASSWORD }}
           port: ${{ secrets.DEPLOY_PORT || 22 }}
-          envs: FINGERPRINT,CI_RUN_ID,GHCR_DEPLOY_TOKEN,GHCR_DEPLOY_USER,DEPLOY_PATH,DEPLOY_MODE_INPUT
+          envs: FINGERPRINT,CI_RUN_ID,RELEASE_TAG,GHCR_DEPLOY_TOKEN,GHCR_DEPLOY_USER,DEPLOY_PATH,DEPLOY_MODE_INPUT
           command_timeout: 10m
           script_stop: true
           script: |
@@ -334,4 +337,5 @@ jobs:
             git fetch --prune origin main
             git pull --ff-only origin main
             export AI_TODO_DEPLOY_MANIFEST=/tmp/deploy-manifest.json
+            export AI_TODO_RELEASE_TAG="$RELEASE_TAG"
             bash apps/api/deploy/cd-bootstrap.sh

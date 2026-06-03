@@ -4,6 +4,7 @@
     "pages/calendar/calendar",
     "pages/contacts/contacts",
     "pages/mine/mine",
+    "pages/profile-settings/profile-settings",
     "pages/reminder-create/reminder-create",
     "pages/event-create/event-create",
     "pages/contact-picker/contact-picker"
@@ -49,6 +50,7 @@
     ]
   },
   "style": "v2",
+  "__usePrivacyCheck__": true,
   "lazyCodeLoading": "requiredComponents",
   "sitemapLocation": "sitemap.json"
 }

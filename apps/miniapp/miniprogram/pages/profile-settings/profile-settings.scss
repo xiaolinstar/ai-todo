@@ -1,0 +1,43 @@
+.profile-settings-page {
+  padding-top: 8rpx;
+}
+
+.profile-form {
+  margin-bottom: 32rpx;
+}
+
+.avatar-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 148rpx;
+  padding: 24rpx 28rpx;
+  background: var(--todo-surface);
+}
+
+.profile-avatar-button {
+  width: 112rpx;
+  height: 112rpx;
+  min-width: 112rpx;
+  min-height: 112rpx;
+  max-width: 112rpx;
+  max-height: 112rpx;
+  padding: 0;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--todo-primary);
+  color: var(--todo-text-inverse);
+  font-size: 42rpx;
+  font-weight: 700;
+}
+
+.profile-avatar-button::after {
+  border: none;
+}
+
+.profile-avatar-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+}

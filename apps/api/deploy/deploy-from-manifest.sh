@@ -22,9 +22,12 @@ API_IMAGE="$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['ar
 API_DIGEST="$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['artifacts']['api']['digest'])" "$MANIFEST")"
 FINGERPRINT="$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['fingerprint'])" "$MANIFEST")"
 RUN_ID="$(python3 -c "import json,sys; print(json.load(open(sys.argv[1])).get('runId') or '')" "$MANIFEST")"
+export AI_TODO_GIT_SHA="${AI_TODO_GIT_SHA:-$GIT_SHA}"
+export AI_TODO_RELEASE_TAG="${AI_TODO_RELEASE_TAG:-${RELEASE_TAG:-}}"
 
 echo "Deploy manifest OK"
 echo "  git_sha=${GIT_SHA}"
+echo "  release_tag=${AI_TODO_RELEASE_TAG:-}"
 echo "  image=${API_IMAGE}"
 echo "  digest=${API_DIGEST}"
 

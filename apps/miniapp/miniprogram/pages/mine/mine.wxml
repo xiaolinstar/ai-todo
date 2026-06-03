@@ -20,6 +20,17 @@
   <view class="form-hint" wx:else>会话有效。退出后当前小程序会话将失效。</view>
   <button class="todo-button {{loggedIn ? 'todo-button-secondary' : 'todo-button-primary'}}" hover-class="todo-button-hover" bindtap="onAuthButtonTap" loading="{{loggingIn}}" disabled="{{loggingIn}}">{{loggingIn ? '登录中…' : (loggedIn ? '微信退出登录' : '微信登录')}}</button>
 
+  <view wx:if="{{loggedIn}}" class="group-header">账户</view>
+  <view wx:if="{{loggedIn}}" class="inset-group account-group">
+    <view class="settings-cell pressable" hover-class="list-cell-hover" bindtap="onOpenProfileSettings">
+      <view class="settings-cell-main">
+        <text class="settings-label">个人资料</text>
+        <text class="cell-meta">头像与昵称</text>
+      </view>
+      <text class="settings-value">›</text>
+    </view>
+  </view>
+
   <view wx:if="{{showProfileSetup}}" class="profile-setup-mask">
     <view class="profile-setup-panel">
       <view class="profile-setup-title">确认微信资料</view>
@@ -45,6 +56,12 @@
       </form>
     </view>
   </view>
+
+  <privacy-authorization
+    visible="{{showPrivacyAuthorization}}"
+    bind:agree="onPrivacyAgree"
+    bind:disagree="onPrivacyDisagree"
+  />
 
   <view wx:if="{{loggedIn}}" class="group-header">CLI / Agent 访问令牌</view>
   <view wx:if="{{loggedIn}}" class="form-hint">仅供电脑 CLI 使用；与上方微信登录会话分开。新用户默认列表为空，需手动创建。</view>

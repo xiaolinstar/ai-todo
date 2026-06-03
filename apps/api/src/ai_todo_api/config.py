@@ -23,6 +23,8 @@ class Settings(BaseSettings):
     notification_worker_poll_seconds: int = Field(default=30, ge=1)
     notification_worker_batch_size: int = Field(default=50, ge=1)
     notification_max_attempts: int = Field(default=3, ge=1)
+    release_tag: str | None = Field(default=None)
+    git_sha: str | None = Field(default=None)
 
 
 settings = Settings()

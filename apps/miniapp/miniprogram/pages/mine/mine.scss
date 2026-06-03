@@ -67,6 +67,11 @@
   background: var(--todo-surface);
 }
 
+.settings-cell-main {
+  flex: 1;
+  min-width: 0;
+}
+
 .settings-label {
   color: var(--todo-text-primary);
   font-size: 30rpx;

@@ -1,0 +1,20 @@
+<view wx:if="{{visible}}" class="privacy-mask">
+  <view class="privacy-panel">
+    <view class="privacy-title">用户隐私保护提示</view>
+    <view class="privacy-content">
+      使用微信登录、提醒、日历、应用内联系人等功能前，请阅读并同意本小程序的隐私保护指引。我们会按指引用于账号登录、数据同步和账户资料展示。
+    </view>
+    <view class="privacy-link" bindtap="onOpenContract">查看隐私保护指引</view>
+    <view class="privacy-actions">
+      <button class="privacy-action secondary" bindtap="onDisagree">拒绝</button>
+      <button
+        id="privacy-agree"
+        class="privacy-action primary"
+        open-type="agreePrivacyAuthorization"
+        bindagreeprivacyauthorization="onAgree"
+      >
+        同意并继续
+      </button>
+    </view>
+  </view>
+</view>

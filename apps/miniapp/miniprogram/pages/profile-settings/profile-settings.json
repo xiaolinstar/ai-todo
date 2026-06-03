@@ -1,6 +1,5 @@
 {
-  "navigationBarTitleText": "",
-  "backgroundColor": "#f2f2f7",
+  "navigationBarTitleText": "个人资料",
   "usingComponents": {
     "privacy-authorization": "/components/privacy-authorization/privacy-authorization"
   }

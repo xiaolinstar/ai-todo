@@ -17,6 +17,7 @@ import {
   markProfileSetupSeen,
   saveConfig
 } from "../../lib/config";
+import { requirePrivacyAuthorization } from "../../lib/privacy";
 import { updateTabBarSelected } from "../../lib/tab-bar";
 
 interface PatItem {
@@ -26,12 +27,18 @@ interface PatItem {
   lastUsedAt: string;
 }
 
+type PrivacyAuthorizationResolve = (result: {
+  event: "agree" | "disagree";
+  buttonId?: string;
+}) => void;
+
 Page({
   data: {
     userName: "",
     userId: "",
     avatarUrl: "",
     showProfileSetup: false,
+    showPrivacyAuthorization: false,
     setupAvatarUrl: "",
     setupNameInput: "",
     timezone: "",
@@ -50,6 +57,8 @@ Page({
     patSubmitting: false
   },
 
+  _privacyResolve: undefined as PrivacyAuthorizationResolve | undefined,
+
   onShow() {
     updateTabBarSelected(3);
     const config = getConfig();
@@ -62,6 +71,19 @@ Page({
   },
 
   onWechatLogin() {
+    requirePrivacyAuthorization().then((authorized) => {
+      if (!authorized) {
+        wx.showToast({
+          title: "需同意隐私指引后登录",
+          icon: "none"
+        });
+        return;
+      }
+      this.startWechatLogin();
+    });
+  },
+
+  startWechatLogin() {
     this.setData({ loggingIn: true });
     loginWithWechat()
       .then((response) => {
@@ -180,6 +202,36 @@ Page({
     this.onWechatLogin();
   },
 
+  showPrivacyAuthorization(resolve: PrivacyAuthorizationResolve) {
+    this._privacyResolve = resolve;
+    this.setData({ showPrivacyAuthorization: true });
+  },
+
+  onPrivacyAgree() {
+    if (this._privacyResolve) {
+      this._privacyResolve({ event: "agree", buttonId: "privacy-agree" });
+      this._privacyResolve = undefined;
+    }
+    this.setData({ showPrivacyAuthorization: false });
+  },
+
+  onPrivacyDisagree() {
+    if (this._privacyResolve) {
+      this._privacyResolve({ event: "disagree", buttonId: "privacy-disagree" });
+      this._privacyResolve = undefined;
+    }
+    this.setData({ showPrivacyAuthorization: false });
+    wx.showToast({ title: "已取消隐私授权", icon: "none" });
+  },
+
+  onOpenProfileSettings() {
+    if (!this.data.loggedIn) {
+      wx.showToast({ title: "请先微信登录", icon: "none" });
+      return;
+    }
+    wx.navigateTo({ url: "/pages/profile-settings/profile-settings" });
+  },
+
   openProfileSetup() {
     if (!this.data.userId) {
       return;
@@ -224,7 +276,7 @@ Page({
       return;
     }
     clearProfileSetupSeen(this.data.userId);
-    this.openProfileSetup();
+    this.openProfileSetupIfNeeded();
   },
 
   onSaveProfileSetup(e?: { detail?: { value?: { nickname?: string } } }) {

@@ -169,7 +169,7 @@ curl -sf https://wodi.games/v1/health/db
 4. 手动触发 CD：`Use workflow from` 选择 `main`，填写 `release_tag`（如 `v0.1.1`），`ci_run_id` 留空，`deploy_mode=auto`
 5. curl https://wodi.games/v1/health
 6. curl https://wodi.games/v1/health/db
-7. 查看服务器 `.deploy/current.json`，确认 `gitSha` / image digest / fingerprint 符合预期
+7. 确认 `/v1/health` 的 `releaseTag` / `gitSha` 与发布 tag 一致；查看服务器 `.deploy/current.json`，确认 `gitSha` / image digest / fingerprint 符合预期
 8. 生产 smoke test（微信登录 + CLI PAT + 提醒/联系人）
 ```
 

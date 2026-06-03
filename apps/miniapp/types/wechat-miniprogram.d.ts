@@ -43,9 +43,21 @@ declare const wx: {
     content?: string;
     confirmText?: string;
     confirmColor?: string;
+    cancelText?: string;
     showCancel?: boolean;
     success?: (res: { confirm: boolean; cancel: boolean }) => void;
   }): void;
+  onNeedPrivacyAuthorization?: (
+    callback: (
+      resolve: (result: { event: "agree" | "disagree"; buttonId?: string }) => void,
+      eventInfo: unknown
+    ) => void
+  ) => void;
+  requirePrivacyAuthorize?: (options: {
+    success?: () => void;
+    fail?: (err: unknown) => void;
+  }) => void;
+  openPrivacyContract?: (options: { success?: () => void; fail?: (err: unknown) => void }) => void;
   setClipboardData(options: {
     data: string;
     success?: () => void;
@@ -72,4 +84,7 @@ declare function getCurrentPages(): Array<{
   route?: string;
   getTabBar?: () => { setData: (data: Record<string, unknown>) => void } | null;
   showAdd?: () => void;
+  showPrivacyAuthorization?: (
+    resolve: (result: { event: "agree" | "disagree"; buttonId?: string }) => void
+  ) => void;
 }>;

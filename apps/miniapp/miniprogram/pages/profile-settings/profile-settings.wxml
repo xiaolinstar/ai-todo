@@ -1,0 +1,36 @@
+<view class="page profile-settings-page">
+  <view class="group-header">账户资料</view>
+  <form bindsubmit="onSubmit">
+    <view class="inset-group profile-form">
+      <view class="avatar-row">
+        <text class="form-label">头像</text>
+        <button class="profile-avatar-button" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar">
+          <image wx:if="{{avatarUrl}}" class="profile-avatar-image" src="{{avatarUrl}}" mode="aspectFill" />
+          <text wx:else>{{initial}}</text>
+        </button>
+      </view>
+      <view class="form-row">
+        <text class="form-label">昵称</text>
+        <input
+          class="form-input"
+          name="nickname"
+          type="nickname"
+          placeholder="选择或输入昵称"
+          value="{{displayName}}"
+          bindinput="onNameInput"
+          bindblur="onNameInput"
+        />
+      </view>
+    </view>
+
+    <button class="todo-button todo-button-primary" form-type="submit" loading="{{saving}}" disabled="{{loading || saving}}">
+      {{saving ? '保存中…' : '保存资料'}}
+    </button>
+  </form>
+
+  <privacy-authorization
+    visible="{{showPrivacyAuthorization}}"
+    bind:agree="onPrivacyAgree"
+    bind:disagree="onPrivacyDisagree"
+  />
+</view>
