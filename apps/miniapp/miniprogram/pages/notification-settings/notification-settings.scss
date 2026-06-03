@@ -4,6 +4,23 @@
   margin: 0 0 24rpx;
   padding: 0 8rpx;
   color: var(--todo-text-secondary);
-  font-size: 24rpx;
-  line-height: 1.5;
+  font-size: var(--todo-font-size-md);
+  line-height: var(--todo-line-height-relaxed);
+}
+
+.notification-settings-page .picker-value {
+  color: var(--todo-text-secondary);
+  font-size: var(--todo-font-size-lg);
+}
+
+.notification-settings-page .status-block {
+  margin-top: 32rpx;
+}
+
+.notification-settings-page .cell-meta.status-danger {
+  color: var(--todo-danger);
+}
+
+.notification-settings-page .cell-meta.status-muted {
+  color: var(--todo-text-muted);
 }

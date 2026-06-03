@@ -9,6 +9,8 @@
     "pages/event-edit/event-edit",
     "pages/mine/mine",
     "pages/settings-placeholder/settings-placeholder",
+    "pages/settings-content-prefs/settings-content-prefs",
+    "pages/settings-security/settings-security",
     "pages/settings-agent/settings-agent",
     "pages/settings-dev/settings-dev",
     "pages/notification-settings/notification-settings",

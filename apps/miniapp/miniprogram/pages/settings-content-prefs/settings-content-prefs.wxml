@@ -1,0 +1,102 @@
+<view class="page settings-page content-prefs-page">
+  <view wx:if="{{loading}}" class="settings-hint">加载中…</view>
+  <block wx:else>
+    <view class="prefs-section">
+      <view class="prefs-section-title">提醒</view>
+      <view class="section-lead">新建提醒时的默认行为；微信渠道开关在「通知设置」。</view>
+      <view class="inset-group">
+        <view class="settings-cell">
+          <view class="settings-cell-main">
+            <text class="settings-label">默认开启微信通知</text>
+            <text class="cell-meta">需通知总开关已开启且已配置模板</text>
+          </view>
+          <switch
+            checked="{{defaultReminderEnabled}}"
+            disabled="{{savingReminder || !wechatEnabled}}"
+            bindchange="onDefaultReminderChange"
+            color="{{switchColor}}"
+          />
+        </view>
+      </view>
+    </view>
+
+    <view class="prefs-section">
+      <view class="prefs-section-title">日历</view>
+      <view class="section-lead">仅影响本机新建日程的默认选项。</view>
+      <view class="inset-group">
+        <view class="settings-cell">
+          <view class="settings-cell-main">
+            <text class="settings-label">新建日程默认带结束时间</text>
+          </view>
+          <switch
+            checked="{{defaultHasEnd}}"
+            disabled="{{savingCalendar}}"
+            bindchange="onDefaultHasEndChange"
+            color="{{switchColor}}"
+          />
+        </view>
+        <view wx:if="{{defaultHasEnd}}" class="settings-cell">
+          <view class="settings-cell-main">
+            <text class="settings-label">默认时长</text>
+          </view>
+          <picker
+            mode="selector"
+            range="{{durationLabels}}"
+            value="{{durationIndex}}"
+            disabled="{{savingCalendar}}"
+            bindchange="onDurationChange"
+          >
+            <view class="duration-picker">{{durationLabels[durationIndex]}}</view>
+          </picker>
+        </view>
+        <view class="settings-cell">
+          <view class="settings-cell-main">
+            <text class="settings-label">打开日历时选中今天</text>
+          </view>
+          <switch
+            checked="{{selectTodayOnOpen}}"
+            disabled="{{savingCalendar}}"
+            bindchange="onSelectTodayChange"
+            color="{{switchColor}}"
+          />
+        </view>
+      </view>
+    </view>
+
+    <view class="prefs-section">
+      <view class="prefs-section-title">通讯录</view>
+      <view class="section-lead">应用内联系人列表的展示习惯。</view>
+      <view class="inset-group">
+        <view class="settings-cell">
+          <view class="settings-cell-main">
+            <text class="settings-label">列表排序</text>
+          </view>
+          <picker
+            mode="selector"
+            range="{{sortLabels}}"
+            value="{{sortIndex}}"
+            disabled="{{savingContacts}}"
+            bindchange="onSortChange"
+          >
+            <view class="duration-picker">{{sortLabels[sortIndex]}}</view>
+          </picker>
+        </view>
+        <view class="settings-cell">
+          <view class="settings-cell-main">
+            <text class="settings-label">列表显示用户名</text>
+            <text class="cell-meta">handle，便于与平台用户对应</text>
+          </view>
+          <switch
+            checked="{{showHandleInList}}"
+            disabled="{{savingContacts}}"
+            bindchange="onShowHandleChange"
+            color="{{switchColor}}"
+          />
+        </view>
+      </view>
+      <view class="static-note">
+        handle 是你通讯录里的本地短名；关联平台用户时可与对方用户名一致，也可自行修改。
+      </view>
+    </view>
+  </block>
+</view>

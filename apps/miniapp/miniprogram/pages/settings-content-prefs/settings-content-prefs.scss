@@ -1,0 +1,36 @@
+@import "../../styles/settings-page.scss";
+
+.content-prefs-page .section-lead {
+  margin: 0 16rpx 12rpx;
+  color: var(--todo-text-subtle);
+  font-size: var(--todo-font-size-md);
+  line-height: var(--todo-line-height-relaxed);
+}
+
+.content-prefs-page .prefs-section {
+  margin-bottom: 32rpx;
+}
+
+.content-prefs-page .prefs-section-title {
+  margin: 0 16rpx 12rpx;
+  color: var(--todo-text-subtle);
+  font-size: var(--todo-font-size-base);
+  font-weight: var(--todo-font-weight-regular);
+  letter-spacing: 0.5rpx;
+  text-transform: uppercase;
+}
+
+.content-prefs-page .duration-picker {
+  flex: 1;
+  min-width: 0;
+  color: var(--todo-text-secondary);
+  font-size: var(--todo-font-size-lg);
+  text-align: right;
+}
+
+.content-prefs-page .static-note {
+  padding: 16rpx 28rpx 8rpx;
+  color: var(--todo-text-secondary);
+  font-size: var(--todo-font-size-md);
+  line-height: var(--todo-line-height-relaxed);
+}

@@ -1,0 +1,15 @@
+@import "../../styles/settings-page.scss";
+
+.security-page .settings-cell.pressable {
+  flex-direction: row;
+  align-items: center;
+}
+
+.security-page .chevron {
+  flex-shrink: 0;
+  margin-left: 12rpx;
+  color: var(--todo-text-subtle);
+  font-size: var(--todo-font-size-title-lg);
+  font-weight: var(--todo-font-weight-light);
+  line-height: 1;
+}

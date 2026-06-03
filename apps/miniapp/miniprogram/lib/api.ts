@@ -432,11 +432,29 @@ export function fetchNotificationSettings() {
 export function updateNotificationSettings(input: {
   wechatEnabled?: boolean;
   defaultReminderEnabled?: boolean;
+  quietStart?: string | null;
+  quietEnd?: string | null;
 }) {
   return request<{ settings: NotificationSettings }>("/v1/notifications/settings", {
     method: "PUT",
     data: input
   });
+}
+
+export interface NotificationDeliverySummary {
+  id: string;
+  targetType: string;
+  targetId: string;
+  templateKey: string;
+  scheduledAt: string;
+  status: string;
+  sentAt?: string;
+}
+
+export function fetchNotificationStatus(limit = 10) {
+  return request<{ items: NotificationDeliverySummary[] }>(
+    `/v1/notifications/status?limit=${limit}`
+  );
 }
 
 export function recordWechatSubscriptionResult(input: {

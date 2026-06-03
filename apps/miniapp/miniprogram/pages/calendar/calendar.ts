@@ -16,6 +16,7 @@ import {
   todayIsoDate,
   type WeekDayItem
 } from "../../lib/format";
+import { loadContentPrefs } from "../../lib/content-prefs";
 import { SwipeListGesture, withSwipeRow, type SwipeListRowState } from "../../lib/swipe-list";
 import { updateTabBarSelected } from "../../lib/tab-bar";
 
@@ -69,7 +70,12 @@ Page({
   onShow() {
     updateTabBarSelected(1);
     this._swipeList?.updateDeleteActionWidth();
-    this.loadEvents();
+    loadContentPrefs().then((prefs) => {
+      if (prefs.calendar.selectTodayOnOpen) {
+        this.setData({ selectedDate: todayIsoDate() });
+      }
+      this.loadEvents();
+    });
   },
 
   onPullDownRefresh() {

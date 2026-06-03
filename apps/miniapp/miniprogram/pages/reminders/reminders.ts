@@ -36,7 +36,9 @@ type TabKey = "pending" | "completed";
 function enrichReminder(item: ReminderSummary): ReminderView {
   const completed = item.status === "completed";
   const dueLabel = formatDateTime(item.dueAt);
-  const contactNames = (item.contacts || []).map((c) => c.displayName).join("、");
+  const contactNames = (item.contacts || [])
+    .map((c) => (c.handle ? c.handle : c.displayName))
+    .join("、");
   const isOverdue = isOverdueDueAt(item.dueAt, completed);
 
   return {

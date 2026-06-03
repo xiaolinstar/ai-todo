@@ -1,5 +1,6 @@
 import { createCalendarEvent } from "../../lib/api";
 import type { ContactSummary } from "../../lib/api";
+import { applyDefaultEventEnd, loadContentPrefs } from "../../lib/content-prefs";
 import { combineDateTime, nowIsoTime, todayIsoDate } from "../../lib/format";
 import { todoPageThemeData } from "../../lib/theme";
 
@@ -22,11 +23,15 @@ Page({
   onLoad() {
     const today = todayIsoDate();
     const time = nowIsoTime();
-    this.setData({
-      startDate: today,
-      startTime: time,
-      endDate: today,
-      endTime: time
+    loadContentPrefs().then((prefs) => {
+      const endDefaults = applyDefaultEventEnd(today, time, prefs.calendar);
+      this.setData({
+        startDate: today,
+        startTime: time,
+        hasEnd: endDefaults.hasEnd,
+        endDate: endDefaults.endDate,
+        endTime: endDefaults.endTime
+      });
     });
   },
 

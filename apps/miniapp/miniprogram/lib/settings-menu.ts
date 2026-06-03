@@ -39,47 +39,33 @@ const ALL_SECTIONS: SettingsMenuSection[] = [
         id: "security",
         label: "账号与安全",
         subtitle: "登录与会话",
-        route: { kind: "placeholder", slot: "security" },
+        route: { kind: "page", path: "/pages/settings-security/settings-security" },
         requireLogin: true
       }
     ]
   },
   {
-    id: "reminders",
+    id: "notifications",
     title: "提醒与通知",
     items: [
       {
         id: "notifications",
         label: "通知设置",
-        subtitle: "微信提醒开关",
+        subtitle: "微信提醒与免打扰",
         route: { kind: "page", path: "/pages/notification-settings/notification-settings" },
-        requireLogin: true
-      },
-      {
-        id: "reminder-prefs",
-        label: "提醒偏好",
-        subtitle: "新建提醒的默认项",
-        route: { kind: "placeholder", slot: "reminders" },
         requireLogin: true
       }
     ]
   },
   {
-    id: "data",
-    title: "日历与通讯录",
+    id: "content-prefs",
+    title: "使用偏好",
     items: [
       {
-        id: "calendar-prefs",
-        label: "日历偏好",
-        subtitle: "日程展示与默认值",
-        route: { kind: "placeholder", slot: "calendar" },
-        requireLogin: true
-      },
-      {
-        id: "contact-prefs",
-        label: "通讯录偏好",
-        subtitle: "联系人展示与录入",
-        route: { kind: "placeholder", slot: "contacts" },
+        id: "content-prefs",
+        label: "提醒、日历与通讯录",
+        subtitle: "默认行为与列表展示",
+        route: { kind: "page", path: "/pages/settings-content-prefs/settings-content-prefs" },
         requireLogin: true
       }
     ]

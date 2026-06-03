@@ -1,5 +1,10 @@
 import { deleteContact, searchContacts } from "../../lib/api";
 import type { ContactSummary } from "../../lib/api";
+import {
+  buildContactSubtitle,
+  loadContentPrefs,
+  sortContacts
+} from "../../lib/content-prefs";
 import { avatarColor, getInitial } from "../../lib/format";
 import { SwipeListGesture, withSwipeRow, type SwipeListRowState } from "../../lib/swipe-list";
 import { updateTabBarSelected } from "../../lib/tab-bar";
@@ -69,8 +74,8 @@ Page({
 
   loadContacts(query?: string) {
     this.setData({ loading: true, error: "" });
-    return searchContacts(query)
-      .then((response) => {
+    return Promise.all([searchContacts(query), loadContentPrefs()])
+      .then(([response, prefs]) => {
         if (!response.ok || !response.data) {
           this.setData({
             loading: false,
@@ -79,15 +84,14 @@ Page({
           });
           return;
         }
+        const sorted = sortContacts(response.data.items, prefs.contacts.sortMode);
         this.setData({
           loading: false,
           loaded: true,
-          items: response.data.items.map((item) =>
+          items: sorted.map((item) =>
             withSwipeRow({
               ...item,
-              subtitle: [item.primaryEmail, item.primaryPhone, item.company]
-                .filter(Boolean)
-                .join(" · "),
+              subtitle: buildContactSubtitle(item, prefs.contacts),
               initial: getInitial(item.displayName),
               avatarColor: avatarColor(item.displayName)
             })
