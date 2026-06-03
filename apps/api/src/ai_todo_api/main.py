@@ -49,7 +49,7 @@ async def lifespan(application: FastAPI):
     yield
 
 
-app = FastAPI(title="ai-todo API", version="0.1.2", lifespan=lifespan)
+app = FastAPI(title="ai-todo API", version="0.1.3", lifespan=lifespan)
 logger = logging.getLogger(__name__)
 
 
