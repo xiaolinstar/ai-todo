@@ -91,6 +91,8 @@ export function positionalAfter(argv: string[], ...anchors: string[]): string | 
       arg === "--phone" ||
       arg === "--alias" ||
       arg === "--handle" ||
+      arg === "--company" ||
+      arg === "--job-title" ||
       arg === "--contact" ||
       arg === "--name"
     ) {

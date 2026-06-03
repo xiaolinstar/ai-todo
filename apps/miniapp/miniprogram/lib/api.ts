@@ -230,6 +230,10 @@ export function searchContacts(query?: string) {
 
 export function createContact(input: {
   displayName: string;
+  nickname?: string;
+  company?: string;
+  title?: string;
+  notes?: string;
   methods?: Array<{ type: string; value: string; isPrimary?: boolean }>;
 }) {
   return request<{ contact: ContactSummary }>("/v1/contacts", {

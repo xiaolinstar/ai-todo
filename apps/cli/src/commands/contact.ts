@@ -7,7 +7,7 @@ export async function runContactAdd(ctx: CliContext, argv: string[]): Promise<vo
   const displayName = positionalAfter(argv, "contact", "add");
   if (!displayName) {
     console.error(
-      "Usage: ai-todo contact add <name> [--handle <handle>] [--email <v>] [--phone <v>]"
+      "Usage: ai-todo contact add <name> [--handle <handle>] [--email <v>] [--phone <v>] [--company <text>] [--job-title <text>] [--notes <text>]"
     );
     process.exitCode = 1;
     return;
@@ -18,6 +18,9 @@ export async function runContactAdd(ctx: CliContext, argv: string[]): Promise<vo
   const email = readFlagValue(argv, "--email");
   const phone = readFlagValue(argv, "--phone");
   const alias = readFlagValue(argv, "--alias");
+  const company = readFlagValue(argv, "--company");
+  const jobTitle = readFlagValue(argv, "--job-title");
+  const notes = readFlagValue(argv, "--notes");
 
   if (email) {
     methods.push({ type: "email", value: email, label: "work", isPrimary: true });
@@ -31,6 +34,9 @@ export async function runContactAdd(ctx: CliContext, argv: string[]): Promise<vo
     await ctx.client.createContact({
       displayName,
       handle,
+      company,
+      title: jobTitle,
+      notes,
       methods,
       aliases: alias ? [alias] : []
     }),
@@ -91,6 +97,12 @@ export async function runContactShow(ctx: CliContext, argv: string[]): Promise<v
     if (c.primaryPhone) {
       console.log(`电话：${c.primaryPhone}`);
     }
+    if (c.company) {
+      console.log(`公司：${c.company}`);
+    }
+    if (c.title) {
+      console.log(`职位：${c.title}`);
+    }
     if (c.aliases.length > 0) {
       console.log(`别名：${c.aliases.join(", ")}`);
     }
@@ -112,7 +124,7 @@ export async function runContactUpdate(ctx: CliContext, argv: string[]): Promise
   const id = positionalAfter(argv, "contact", "update");
   if (!id) {
     console.error(
-      "Usage: ai-todo contact update <contact_id_or_handle> [--handle <handle>] [--name <text>] [--email <v>] [--phone <v>] [--alias <v>] [--notes <text>]"
+      "Usage: ai-todo contact update <contact_id_or_handle> [--handle <handle>] [--name <text>] [--email <v>] [--phone <v>] [--company <text>] [--job-title <text>] [--alias <v>] [--notes <text>]"
     );
     process.exitCode = 1;
     return;
@@ -123,10 +135,14 @@ export async function runContactUpdate(ctx: CliContext, argv: string[]): Promise
   const email = readFlagValue(argv, "--email");
   const phone = readFlagValue(argv, "--phone");
   const alias = readFlagValue(argv, "--alias");
+  const company = readFlagValue(argv, "--company");
+  const jobTitle = readFlagValue(argv, "--job-title");
   const notes = readFlagValue(argv, "--notes");
+  const hasCompany = argv.includes("--company");
+  const hasJobTitle = argv.includes("--job-title");
   const hasNotes = argv.includes("--notes");
 
-  if (!displayName && !handle && !email && !phone && !alias && !hasNotes) {
+  if (!displayName && !handle && !email && !phone && !alias && !hasCompany && !hasJobTitle && !hasNotes) {
     console.error("Provide at least one field to update");
     process.exitCode = 1;
     return;
@@ -145,6 +161,8 @@ export async function runContactUpdate(ctx: CliContext, argv: string[]): Promise
     await ctx.client.updateContact(id, {
       displayName,
       handle,
+      company: hasCompany ? company : undefined,
+      title: hasJobTitle ? jobTitle : undefined,
       notes: hasNotes ? notes : undefined,
       methods: methods.length > 0 ? methods : undefined,
       aliases: alias ? [alias] : undefined

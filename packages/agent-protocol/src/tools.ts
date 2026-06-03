@@ -83,16 +83,16 @@ export const AI_TODO_AGENT_TOOLS: AgentToolSpec[] = [
   },
   {
     name: "ai_todo_contact_create",
-    description: "Create a contact with optional email, phone, alias.",
+    description: "Create a contact with optional email, phone, company, job title, notes, or alias.",
     command:
-      'ai-todo contact add "<name>" [--email "<email>"] [--phone "<phone>"] [--alias "<alias>"]',
+      'ai-todo contact add "<name>" [--email "<email>"] [--phone "<phone>"] [--company "<company>"] [--job-title "<title>"] [--notes "<text>"] [--alias "<alias>"]',
     jsonFlag: "--json"
   },
   {
     name: "ai_todo_contact_update",
-    description: "Update contact name, email, phone, alias, or notes.",
+    description: "Update contact name, email, phone, company, job title, alias, or notes.",
     command:
-      'ai-todo contact update <contact_id> [--name "<name>"] [--email "<email>"] [--phone "<phone>"]',
+      'ai-todo contact update <contact_id> [--name "<name>"] [--email "<email>"] [--phone "<phone>"] [--company "<company>"] [--job-title "<title>"] [--notes "<text>"]',
     jsonFlag: "--json"
   }
 ];

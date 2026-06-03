@@ -3,6 +3,7 @@
     "pages/reminders/reminders",
     "pages/calendar/calendar",
     "pages/contacts/contacts",
+    "pages/contact-create/contact-create",
     "pages/mine/mine",
     "pages/profile-settings/profile-settings",
     "pages/reminder-create/reminder-create",

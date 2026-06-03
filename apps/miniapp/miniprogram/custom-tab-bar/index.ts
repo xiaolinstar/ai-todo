@@ -72,18 +72,7 @@ Component({
             return;
           }
           if (res.tapIndex === 2) {
-            wx.switchTab({
-              url: "/pages/contacts/contacts",
-              success: () => {
-                setTimeout(() => {
-                  const pages = getCurrentPages();
-                  const contactsPage = pages[pages.length - 1] as {
-                    showAdd?: () => void;
-                  };
-                  contactsPage.showAdd?.();
-                }, 120);
-              }
-            });
+            wx.navigateTo({ url: "/pages/contact-create/contact-create" });
           }
         }
       });
