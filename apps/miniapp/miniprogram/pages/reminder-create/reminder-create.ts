@@ -11,6 +11,8 @@ const REMINDER_TEMPLATE_KEY = "reminder_due";
 Page({
   data: {
     title: "",
+    notes: "",
+    notesExpanded: false,
     hasDue: true,
     dueDate: "",
     dueTime: "",
@@ -42,6 +44,14 @@ Page({
 
   onTitleInput(e: { detail: { value: string } }) {
     this.setData({ title: e.detail.value });
+  },
+
+  onNotesInput(e: { detail: { value: string } }) {
+    this.setData({ notes: e.detail.value });
+  },
+
+  toggleNotes() {
+    this.setData({ notesExpanded: !this.data.notesExpanded });
   },
 
   onDueToggle(e: { detail: { value: boolean } }) {
@@ -82,7 +92,13 @@ Page({
       return;
     }
 
-    const payload: { title: string; dueAt?: string; contactIds?: string[] } = { title };
+    const payload: { title: string; notes?: string; dueAt?: string; contactIds?: string[] } = {
+      title
+    };
+    const notes = this.data.notes.trim();
+    if (notes) {
+      payload.notes = notes;
+    }
     if (this.data.hasDue) {
       payload.dueAt = combineDateTime(this.data.dueDate, this.data.dueTime);
     }

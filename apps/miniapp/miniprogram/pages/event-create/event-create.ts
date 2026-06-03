@@ -6,6 +6,8 @@ Page({
   data: {
     title: "",
     location: "",
+    description: "",
+    descriptionExpanded: false,
     startDate: "",
     startTime: "",
     endDate: "",
@@ -32,6 +34,14 @@ Page({
 
   onLocationInput(e: { detail: { value: string } }) {
     this.setData({ location: e.detail.value });
+  },
+
+  onDescriptionInput(e: { detail: { value: string } }) {
+    this.setData({ description: e.detail.value });
+  },
+
+  toggleDescription() {
+    this.setData({ descriptionExpanded: !this.data.descriptionExpanded });
   },
 
   onEndToggle(e: { detail: { value: boolean } }) {
@@ -81,6 +91,7 @@ Page({
       startAt: string;
       endAt?: string;
       location?: string;
+      description?: string;
       contactIds?: string[];
     } = {
       title,
@@ -94,6 +105,11 @@ Page({
     const location = this.data.location.trim();
     if (location) {
       payload.location = location;
+    }
+
+    const description = this.data.description.trim();
+    if (description) {
+      payload.description = description;
     }
 
     if (this.data.selectedContact) {

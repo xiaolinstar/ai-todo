@@ -5,21 +5,28 @@
       <text class="form-label">标题</text>
       <input class="form-input" placeholder="必填" value="{{title}}" bindinput="onTitleInput" />
     </view>
+    <view class="form-row" bindtap="toggleNotes">
+      <text class="form-label">备注</text>
+      <text class="form-value muted">{{notes ? '已填写' : '添加'}}</text>
+      <view class="form-disclosure {{notesExpanded ? 'expanded' : ''}}"></view>
+    </view>
+    <view wx:if="{{notesExpanded}}" class="form-row stack">
+      <textarea class="form-textarea" placeholder="可选" value="{{notes}}" maxlength="1000" auto-height bindinput="onNotesInput" />
+    </view>
     <view class="form-row">
       <text class="form-label">截止时间</text>
       <switch checked="{{hasDue}}" bindchange="onDueToggle" color="#007AFF" />
     </view>
     <view wx:if="{{hasDue}}" class="form-row">
-      <text class="form-label">日期</text>
-      <picker mode="date" value="{{dueDate}}" bindchange="onDateChange">
-        <view class="picker-inline">{{dueDate}}</view>
-      </picker>
-    </view>
-    <view wx:if="{{hasDue}}" class="form-row">
-      <text class="form-label">时间</text>
-      <picker mode="time" value="{{dueTime}}" bindchange="onTimeChange">
-        <view class="picker-inline">{{dueTime}}</view>
-      </picker>
+      <text class="form-label">截止</text>
+      <view class="datetime-inline">
+        <picker mode="date" value="{{dueDate}}" bindchange="onDateChange">
+          <view class="picker-pill">{{dueDate}}</view>
+        </picker>
+        <picker mode="time" value="{{dueTime}}" bindchange="onTimeChange">
+          <view class="picker-pill">{{dueTime}}</view>
+        </picker>
+      </view>
     </view>
     <view wx:if="{{hasDue && notifyAvailable}}" class="form-row">
       <text class="form-label">微信提醒</text>

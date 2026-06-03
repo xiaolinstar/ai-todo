@@ -450,12 +450,51 @@ button::after {
   text-align: right;
 }
 
+.form-value {
+  flex: 1;
+  min-width: 0;
+  color: var(--todo-primary);
+  font-size: 30rpx;
+  text-align: right;
+}
+
+.form-value.muted {
+  color: var(--todo-text-subtle);
+}
+
+.form-disclosure {
+  flex-shrink: 0;
+  width: 14rpx;
+  height: 14rpx;
+  margin-left: 16rpx;
+  border-right: 3rpx solid var(--todo-text-subtle);
+  border-bottom: 3rpx solid var(--todo-text-subtle);
+  transform: rotate(45deg);
+  transition: transform 160ms ease;
+}
+
+.form-disclosure.expanded {
+  transform: rotate(225deg);
+}
+
 .form-row.stack .form-input {
   width: 100%;
   padding: 16rpx 20rpx;
   border-radius: 12rpx;
   background: var(--todo-surface-muted);
   text-align: left;
+}
+
+.form-textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 132rpx;
+  padding: 16rpx 20rpx;
+  border-radius: 12rpx;
+  background: var(--todo-surface-muted);
+  color: var(--todo-text-primary);
+  font-size: 30rpx;
+  line-height: 1.5;
 }
 
 .form-hint {
@@ -470,6 +509,27 @@ button::after {
   color: var(--todo-primary);
   font-size: 30rpx;
   text-align: right;
+}
+
+.datetime-inline {
+  display: flex;
+  flex: 1;
+  justify-content: flex-end;
+  gap: 12rpx;
+  min-width: 0;
+}
+
+.picker-pill {
+  box-sizing: border-box;
+  min-width: 132rpx;
+  padding: 10rpx 16rpx;
+  border-radius: 10rpx;
+  background: var(--todo-surface-muted);
+  color: var(--todo-primary);
+  font-size: 28rpx;
+  line-height: 1.2;
+  text-align: center;
+  white-space: nowrap;
 }
 
 /* Buttons */

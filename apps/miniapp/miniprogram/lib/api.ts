@@ -44,6 +44,7 @@ export interface CalendarEventSummary {
   startAt: string;
   endAt?: string;
   location?: string;
+  description?: string;
   contacts?: ContactSummary[];
 }
 
@@ -197,6 +198,7 @@ export function deleteReminder(reminderId: string) {
 
 export function createReminder(input: {
   title: string;
+  notes?: string;
   dueAt?: string;
   remindAt?: string;
   contactIds?: string[];
@@ -212,6 +214,7 @@ export function createCalendarEvent(input: {
   startAt: string;
   endAt?: string;
   location?: string;
+  description?: string;
   contactIds?: string[];
 }) {
   return request<{ calendarEvent: CalendarEventSummary }>("/v1/calendar/events", {

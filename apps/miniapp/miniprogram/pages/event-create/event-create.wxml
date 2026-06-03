@@ -1,41 +1,47 @@
 <view class="page create-page">
-  <view class="group-header">日程详情</view>
+  <view class="group-header">日历详情</view>
   <view class="form-group">
     <view class="form-row">
       <text class="form-label">标题</text>
       <input class="form-input" placeholder="必填" value="{{title}}" bindinput="onTitleInput" />
     </view>
     <view class="form-row">
-      <text class="form-label">开始日期</text>
-      <picker mode="date" value="{{startDate}}" bindchange="onStartDateChange">
-        <view class="picker-inline">{{startDate}}</view>
-      </picker>
-    </view>
-    <view class="form-row">
-      <text class="form-label">开始时间</text>
-      <picker mode="time" value="{{startTime}}" bindchange="onStartTimeChange">
-        <view class="picker-inline">{{startTime}}</view>
-      </picker>
+      <text class="form-label">开始</text>
+      <view class="datetime-inline">
+        <picker mode="date" value="{{startDate}}" bindchange="onStartDateChange">
+          <view class="picker-pill">{{startDate}}</view>
+        </picker>
+        <picker mode="time" value="{{startTime}}" bindchange="onStartTimeChange">
+          <view class="picker-pill">{{startTime}}</view>
+        </picker>
+      </view>
     </view>
     <view class="form-row">
       <text class="form-label">结束时间</text>
       <switch checked="{{hasEnd}}" bindchange="onEndToggle" color="#007AFF" />
     </view>
     <view wx:if="{{hasEnd}}" class="form-row">
-      <text class="form-label">结束日期</text>
-      <picker mode="date" value="{{endDate}}" bindchange="onEndDateChange">
-        <view class="picker-inline">{{endDate}}</view>
-      </picker>
-    </view>
-    <view wx:if="{{hasEnd}}" class="form-row">
-      <text class="form-label">结束时刻</text>
-      <picker mode="time" value="{{endTime}}" bindchange="onEndTimeChange">
-        <view class="picker-inline">{{endTime}}</view>
-      </picker>
+      <text class="form-label">结束</text>
+      <view class="datetime-inline">
+        <picker mode="date" value="{{endDate}}" bindchange="onEndDateChange">
+          <view class="picker-pill">{{endDate}}</view>
+        </picker>
+        <picker mode="time" value="{{endTime}}" bindchange="onEndTimeChange">
+          <view class="picker-pill">{{endTime}}</view>
+        </picker>
+      </view>
     </view>
     <view class="form-row">
       <text class="form-label">地点</text>
       <input class="form-input" placeholder="可选" value="{{location}}" bindinput="onLocationInput" />
+    </view>
+    <view class="form-row" bindtap="toggleDescription">
+      <text class="form-label">描述</text>
+      <text class="form-value muted">{{description ? '已填写' : '添加'}}</text>
+      <view class="form-disclosure {{descriptionExpanded ? 'expanded' : ''}}"></view>
+    </view>
+    <view wx:if="{{descriptionExpanded}}" class="form-row stack">
+      <textarea class="form-textarea" placeholder="可选" value="{{description}}" maxlength="1000" auto-height bindinput="onDescriptionInput" />
     </view>
     <view class="form-row">
       <text class="form-label">联系人</text>
@@ -50,6 +56,6 @@
   </view>
 
   <button class="todo-button todo-button-primary submit" loading="{{submitting}}" hover-class="todo-button-hover" bindtap="onSubmit">
-    创建日程
+    创建日历
   </button>
 </view>

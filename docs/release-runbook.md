@@ -9,6 +9,7 @@
 - 开发者手册：[developer-guide.md](./developer-guide.md)
 - 版本计划：[releases/versioning.md](./releases/versioning.md)
 - `0.1.0` 内测上线规划：[releases/v0.1.0-plan.md](./releases/v0.1.0-plan.md)
+- `0.1.2` 内测稳定打磨规划：[releases/v0.1.2-plan.md](./releases/v0.1.2-plan.md)
 - 小程序开发：[../apps/miniapp/README.md](../apps/miniapp/README.md)
 - 网关配置：[xiaolin-gateway](https://github.com/xiaolinstar/xiaolin-gateway)
 
