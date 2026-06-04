@@ -1,10 +1,11 @@
+import { loadAccountDay } from "../../lib/account-day";
 import {
   createReminder,
   fetchNotificationSettings,
   recordWechatSubscriptionResult
 } from "../../lib/api";
 import type { ContactSummary } from "../../lib/api";
-import { combineDateTime, nowIsoTime, todayIsoDate } from "../../lib/format";
+import { combineDateTime } from "../../lib/format";
 
 import { todoPageThemeData } from "../../lib/theme";
 
@@ -23,13 +24,17 @@ Page({
     notifyAvailable: false,
     reminderTemplateId: "",
     selectedContact: null as ContactSummary | null,
+    accountTimezone: "",
     submitting: false
   },
 
   onLoad() {
-    this.setData({
-      dueDate: todayIsoDate(),
-      dueTime: nowIsoTime()
+    loadAccountDay().then(({ today, timezone, nowTime }) => {
+      this.setData({
+        accountTimezone: timezone,
+        dueDate: today,
+        dueTime: nowTime
+      });
     });
     fetchNotificationSettings().then((response) => {
       const settings = response.data?.settings;
@@ -103,7 +108,11 @@ Page({
       payload.notes = notes;
     }
     if (this.data.hasDue) {
-      payload.dueAt = combineDateTime(this.data.dueDate, this.data.dueTime);
+      payload.dueAt = combineDateTime(
+        this.data.dueDate,
+        this.data.dueTime,
+        this.data.accountTimezone || undefined
+      );
     }
     if (this.data.selectedContact) {
       payload.contactIds = [this.data.selectedContact.id];

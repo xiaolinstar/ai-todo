@@ -160,6 +160,8 @@ Authorization: Bearer aitodo_xxx
 
 `displayName` 与 `avatarUrl` 均为可选字段；传空字符串 `avatarUrl` 表示清空头像。该接口供微信小程序头像昵称确认流程和 `ai-todo profile update` CLI 共用。
 
+`timezone` 可选，合法 IANA；小程序「我的 → 时区」可修改。`username` 与跨用户建联见 [platform-identity.md](./product/platform-identity.md)，**未开放**。
+
 响应：
 
 ```json

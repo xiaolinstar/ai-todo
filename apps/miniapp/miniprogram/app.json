@@ -16,6 +16,7 @@
     "pages/notification-settings/notification-settings",
     "pages/about/about",
     "pages/profile-settings/profile-settings",
+    "pages/settings-timezone/settings-timezone",
     "pages/reminder-create/reminder-create",
     "pages/event-create/event-create",
     "pages/contact-picker/contact-picker"

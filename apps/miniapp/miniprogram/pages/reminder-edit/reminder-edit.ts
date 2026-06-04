@@ -1,3 +1,4 @@
+import { loadAccountDay } from "../../lib/account-day";
 import { fetchReminder, updateReminder } from "../../lib/api";
 import type { ContactSummary } from "../../lib/api";
 import { combineDateTime, splitIsoDateTime } from "../../lib/format";
@@ -16,6 +17,7 @@ Page({
     dueDate: "",
     dueTime: "",
     selectedContact: null as ContactSummary | null,
+    accountTimezone: "",
     submitting: false
   },
 
@@ -27,8 +29,8 @@ Page({
       return;
     }
     this.setData({ reminderId });
-    fetchReminder(reminderId)
-      .then((response) => {
+    Promise.all([loadAccountDay(), fetchReminder(reminderId)])
+      .then(([account, response]) => {
         if (!response.ok || !response.data) {
           this.setData({ loading: false });
           wx.showToast({ title: response.error?.message || "加载失败", icon: "none" });
@@ -37,9 +39,11 @@ Page({
         const reminder = response.data.reminder;
         const isCompleted = reminder.status === "completed";
         const hasDue = Boolean(reminder.dueAt);
-        const { date, time } = splitIsoDateTime(reminder.dueAt);
+        const tz = account.timezone;
+        const { date, time } = splitIsoDateTime(reminder.dueAt, tz);
         this.setData({
           loading: false,
+          accountTimezone: tz,
           isCompleted,
           title: reminder.title || "",
           notes: reminder.notes || "",
@@ -115,7 +119,11 @@ Page({
 
     if (!this.data.isCompleted) {
       payload.dueAt = this.data.hasDue
-        ? combineDateTime(this.data.dueDate, this.data.dueTime)
+        ? combineDateTime(
+            this.data.dueDate,
+            this.data.dueTime,
+            this.data.accountTimezone || undefined
+          )
         : null;
     }
 

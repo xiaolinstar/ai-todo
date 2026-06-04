@@ -31,8 +31,8 @@ const ALL_SECTIONS: SettingsMenuSection[] = [
       {
         id: "timezone",
         label: "时区",
-        subtitle: "查看账户时区",
-        route: { kind: "placeholder", slot: "timezone" },
+        subtitle: "提醒与日历按此时区显示",
+        route: { kind: "page", path: "/pages/settings-timezone/settings-timezone" },
         requireLogin: true
       },
       {

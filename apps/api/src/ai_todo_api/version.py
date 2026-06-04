@@ -12,5 +12,14 @@ _PYPROJECT = Path(__file__).resolve().parents[2] / "pyproject.toml"
 
 @lru_cache(maxsize=1)
 def get_api_version() -> str:
-    with _PYPROJECT.open("rb") as handle:
-        return tomllib.load(handle)["project"]["version"]
+    for candidate in (_PYPROJECT, Path("/app/pyproject.toml")):
+        if candidate.is_file():
+            with candidate.open("rb") as handle:
+                return tomllib.load(handle)["project"]["version"]
+
+    try:
+        from importlib.metadata import version
+
+        return version("ai-todo-api")
+    except Exception:
+        return "0.0.0"

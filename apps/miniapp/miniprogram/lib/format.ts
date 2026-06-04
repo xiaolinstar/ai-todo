@@ -9,48 +9,137 @@ export function formatShortDate(iso: string | undefined): string {
   return `${date.getFullYear()}-${month}-${day}`;
 }
 
-export function formatDateTime(iso: string | undefined): string {
+interface ZonedParts {
+  year: number;
+  month: number;
+  day: number;
+  hour: number;
+  minute: number;
+}
+
+function zonedParts(instant: Date, timeZone: string): ZonedParts | null {
+  try {
+    const parts = new Intl.DateTimeFormat("en-GB", {
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false
+    }).formatToParts(instant);
+    const pick = (type: string) => parts.find((p) => p.type === type)?.value;
+    const year = Number(pick("year"));
+    const month = Number(pick("month"));
+    const day = Number(pick("day"));
+    const hour = Number(pick("hour"));
+    const minute = Number(pick("minute"));
+    if ([year, month, day, hour, minute].some((n) => Number.isNaN(n))) {
+      return null;
+    }
+    return { year, month, day, hour, minute };
+  } catch {
+    return null;
+  }
+}
+
+/** Wall clock in `timeZone` → UTC epoch ms. */
+function wallClockToUtcMillis(date: string, time: string, timeZone: string): number {
+  const [y, m, d] = date.split("-").map((v) => parseInt(v, 10));
+  const [hh, mm] = time.split(":").map((v) => parseInt(v, 10));
+  let utc = Date.UTC(y, m - 1, d, hh, mm);
+  for (let attempt = 0; attempt < 6; attempt += 1) {
+    const got = zonedParts(new Date(utc), timeZone);
+    if (!got) break;
+    if (got.year === y && got.month === m && got.day === d && got.hour === hh && got.minute === mm) {
+      return utc;
+    }
+    const deltaMinutes =
+      (got.day - d) * 24 * 60 + (got.hour - hh) * 60 + (got.minute - mm);
+    utc -= deltaMinutes * 60 * 1000;
+  }
+  return utc;
+}
+
+export function formatDateTime(iso: string | undefined, timeZone?: string): string {
   if (!iso) return "";
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return iso;
+  if (timeZone) {
+    const parts = zonedParts(date, timeZone);
+    if (parts) {
+      const pad = (n: number) => String(n).padStart(2, "0");
+      return `${parts.month}月${parts.day}日 ${pad(parts.hour)}:${pad(parts.minute)}`;
+    }
+  }
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${date.getMonth() + 1}月${date.getDate()}日 ${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
-export function formatClock(iso: string | undefined): string {
+export function formatClock(iso: string | undefined, timeZone?: string): string {
   if (!iso) return "";
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return "";
+  if (timeZone) {
+    const parts = zonedParts(date, timeZone);
+    if (parts) {
+      const pad = (n: number) => String(n).padStart(2, "0");
+      return `${pad(parts.hour)}:${pad(parts.minute)}`;
+    }
+  }
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
-export function formatTimeRange(startAt: string, endAt?: string): string {
-  const start = formatDateTime(startAt);
+export function formatTimeRange(startAt: string, endAt?: string, timeZone?: string): string {
+  const start = formatDateTime(startAt, timeZone);
   if (!endAt) return start;
-  const end = formatDateTime(endAt);
+  const end = formatDateTime(endAt, timeZone);
   return `${start} - ${end.split(" ").pop()}`;
 }
 
-export function formatEventTimeRange(startAt: string, endAt?: string): string {
-  const start = formatClock(startAt);
+export function formatEventTimeRange(startAt: string, endAt?: string, timeZone?: string): string {
+  const start = formatClock(startAt, timeZone);
   if (!start) return "";
   if (!endAt) return start;
-  const end = formatClock(endAt);
+  const end = formatClock(endAt, timeZone);
   return end ? `${start} – ${end}` : start;
 }
 
-export function combineDateTime(date: string, time: string): string {
-  return `${date}T${time}:00+08:00`;
+export function combineDateTime(date: string, time: string, timeZone?: string): string {
+  if (!timeZone) {
+    return `${date}T${time}:00+08:00`;
+  }
+  const ms = wallClockToUtcMillis(date, time, timeZone);
+  return new Date(ms).toISOString();
 }
 
-export function splitIsoDateTime(iso: string | undefined): { date: string; time: string } {
+export function splitIsoDateTime(
+  iso: string | undefined,
+  timeZone?: string
+): { date: string; time: string } {
   if (!iso) {
-    return { date: todayIsoDate(), time: nowIsoTime() };
+    return {
+      date: timeZone ? todayIsoDateInTimezone(timeZone) : todayIsoDate(),
+      time: timeZone ? nowIsoTimeInTimezone(timeZone) : nowIsoTime()
+    };
   }
   const parsed = new Date(iso);
   if (Number.isNaN(parsed.getTime())) {
-    return { date: todayIsoDate(), time: nowIsoTime() };
+    return {
+      date: timeZone ? todayIsoDateInTimezone(timeZone) : todayIsoDate(),
+      time: timeZone ? nowIsoTimeInTimezone(timeZone) : nowIsoTime()
+    };
+  }
+  if (timeZone) {
+    const parts = zonedParts(parsed, timeZone);
+    if (parts) {
+      const pad = (n: number) => String(n).padStart(2, "0");
+      return {
+        date: `${parts.year}-${pad(parts.month)}-${pad(parts.day)}`,
+        time: `${pad(parts.hour)}:${pad(parts.minute)}`
+      };
+    }
   }
   const pad = (n: number) => String(n).padStart(2, "0");
   return {
@@ -83,6 +172,31 @@ export function todayIsoDate(): string {
   return toIsoDate(new Date());
 }
 
+/** Calendar date (YYYY-MM-DD) for an IANA timezone; falls back to device local. */
+export function todayIsoDateInTimezone(timezone: string): string {
+  const tz = (timezone || "").trim();
+  if (!tz) {
+    return todayIsoDate();
+  }
+  try {
+    const parts = new Intl.DateTimeFormat("en-CA", {
+      timeZone: tz,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit"
+    }).formatToParts(new Date());
+    const year = parts.find((p) => p.type === "year")?.value;
+    const month = parts.find((p) => p.type === "month")?.value;
+    const day = parts.find((p) => p.type === "day")?.value;
+    if (year && month && day) {
+      return `${year}-${month}-${day}`;
+    }
+  } catch {
+    // invalid IANA id
+  }
+  return todayIsoDate();
+}
+
 export function formatIsoDateLabel(isoDate: string): string {
   const date = parseIsoDate(isoDate);
   return `${date.getMonth() + 1}月${date.getDate()}日`;
@@ -98,11 +212,11 @@ export function formatWeekdayLong(isoDate: string): string {
   return `星期${WEEKDAY_LABELS[date.getDay()]}`;
 }
 
-export function buildWeekStrip(isoDate: string): WeekDayItem[] {
+export function buildWeekStrip(isoDate: string, accountToday?: string): WeekDayItem[] {
   const anchor = parseIsoDate(isoDate);
   const start = new Date(anchor);
   start.setDate(anchor.getDate() - anchor.getDay());
-  const today = todayIsoDate();
+  const today = accountToday || todayIsoDate();
   const items: WeekDayItem[] = [];
 
   for (let index = 0; index < 7; index += 1) {
@@ -127,8 +241,9 @@ export function shiftIsoDate(isoDate: string, days: number): string {
   return toIsoDate(date);
 }
 
-export function isTodayIsoDate(isoDate: string): boolean {
-  return isoDate === todayIsoDate();
+export function isTodayIsoDate(isoDate: string, accountToday?: string): boolean {
+  const today = accountToday || todayIsoDate();
+  return isoDate === today;
 }
 
 export function isOverdueDueAt(dueAt: string | undefined, completed: boolean): boolean {
@@ -191,4 +306,16 @@ export function nowIsoTime(): string {
   const now = new Date();
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+}
+
+export function nowIsoTimeInTimezone(timeZone: string): string {
+  const parts = zonedParts(new Date(), timeZone);
+  if (!parts) return nowIsoTime();
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${pad(parts.hour)}:${pad(parts.minute)}`;
+}
+
+/** Live clock label in account timezone, e.g. `19:57`. */
+export function formatNowClock(timeZone: string): string {
+  return nowIsoTimeInTimezone(timeZone);
 }

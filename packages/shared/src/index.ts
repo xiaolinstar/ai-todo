@@ -195,6 +195,7 @@ export interface MeResult {
 export interface UpdateProfileInput {
   displayName?: string;
   avatarUrl?: string;
+  timezone?: string;
 }
 
 export interface UpdateProfileResult {

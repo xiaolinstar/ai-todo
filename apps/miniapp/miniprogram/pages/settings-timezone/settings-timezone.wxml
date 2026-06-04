@@ -1,0 +1,29 @@
+<view class="page settings-timezone-page">
+  <view class="group-header">账户时区</view>
+  <view class="inset-group">
+    <picker mode="selector" range="{{timezoneLabels}}" value="{{timezoneIndex}}" bindchange="onTimezoneChange">
+      <view class="form-row picker-row">
+        <text class="form-label">时区</text>
+        <text class="form-value">{{timezoneLabel}}</text>
+        <view class="form-disclosure"></view>
+      </view>
+    </picker>
+    <view class="form-row clock-row">
+      <text class="form-label">当前时刻</text>
+      <text class="form-value emphasis">{{nowClock}}</text>
+    </view>
+    <view class="form-row clock-row">
+      <text class="form-label">账户今天</text>
+      <text class="form-value">{{accountToday}}</text>
+    </view>
+  </view>
+  <text class="hint">提醒、日历的日期与时刻均按此时区显示；与手机本地时区可能不同（本机今天：{{deviceToday}}）。</text>
+  <button
+    class="todo-button todo-button-primary"
+    loading="{{saving}}"
+    disabled="{{loading || saving}}"
+    bindtap="onSave"
+  >
+    {{saving ? '保存中…' : '保存'}}
+  </button>
+</view>

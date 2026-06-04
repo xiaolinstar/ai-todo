@@ -1,7 +1,8 @@
+import { loadAccountDay } from "../../lib/account-day";
 import { createCalendarEvent } from "../../lib/api";
 import type { ContactSummary } from "../../lib/api";
 import { applyDefaultEventEnd, loadContentPrefs } from "../../lib/content-prefs";
-import { combineDateTime, nowIsoTime, todayIsoDate } from "../../lib/format";
+import { combineDateTime } from "../../lib/format";
 import { todoPageThemeData } from "../../lib/theme";
 
 Page({
@@ -17,17 +18,17 @@ Page({
     endTime: "",
     hasEnd: false,
     selectedContact: null as ContactSummary | null,
+    accountTimezone: "",
     submitting: false
   },
 
   onLoad() {
-    const today = todayIsoDate();
-    const time = nowIsoTime();
-    loadContentPrefs().then((prefs) => {
-      const endDefaults = applyDefaultEventEnd(today, time, prefs.calendar);
+    Promise.all([loadAccountDay(), loadContentPrefs()]).then(([{ today, timezone, nowTime }, prefs]) => {
+      const endDefaults = applyDefaultEventEnd(today, nowTime, prefs.calendar);
       this.setData({
+        accountTimezone: timezone,
         startDate: today,
-        startTime: time,
+        startTime: nowTime,
         hasEnd: endDefaults.hasEnd,
         endDate: endDefaults.endDate,
         endTime: endDefaults.endTime
@@ -102,11 +103,19 @@ Page({
       contactIds?: string[];
     } = {
       title,
-      startAt: combineDateTime(this.data.startDate, this.data.startTime)
+      startAt: combineDateTime(
+        this.data.startDate,
+        this.data.startTime,
+        this.data.accountTimezone || undefined
+      )
     };
 
     if (this.data.hasEnd) {
-      payload.endAt = combineDateTime(this.data.endDate, this.data.endTime);
+      payload.endAt = combineDateTime(
+        this.data.endDate,
+        this.data.endTime,
+        this.data.accountTimezone || undefined
+      );
     }
 
     const location = this.data.location.trim();

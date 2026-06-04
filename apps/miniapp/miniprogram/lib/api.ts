@@ -244,7 +244,11 @@ export function fetchMe() {
   return request<MeResult>("/v1/me");
 }
 
-export function updateProfile(input: { displayName?: string; avatarUrl?: string }) {
+export function updateProfile(input: {
+  displayName?: string;
+  avatarUrl?: string;
+  timezone?: string;
+}) {
   return request<MeResult>("/v1/me/profile", {
     method: "PATCH",
     data: input

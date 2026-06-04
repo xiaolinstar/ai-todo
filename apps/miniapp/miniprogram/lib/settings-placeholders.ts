@@ -8,13 +8,8 @@ export interface PlaceholderMeta {
 export const PLACEHOLDER_META: Record<string, PlaceholderMeta> = {
   timezone: {
     title: "时区",
-    lead: "用于展示提醒与日程的本地时间。",
-    bullets: [
-      "查看与修改账户时区",
-      "与服务端日程计算对齐",
-      "计划在后续小版本开放"
-    ],
-    plannedVersion: "0.2.x"
+    lead: "请从「我的」进入时区设置页。",
+    bullets: ["已迁移至独立页面"]
   },
   security: {
     title: "账号与安全",

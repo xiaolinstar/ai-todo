@@ -1,4 +1,4 @@
-import { completeReminder, deleteReminder, fetchMe, fetchRemindersToday } from "../../lib/api";
+import { completeReminder, deleteReminder, fetchToday } from "../../lib/api";
 import { TODO_MODAL_CONFIRM_DANGER } from "../../lib/design-tokens";
 import type { ReminderSummary } from "../../lib/api";
 import {
@@ -7,7 +7,7 @@ import {
   formatIsoDateLabel,
   formatWeekdayLong,
   isOverdueDueAt,
-  todayIsoDate
+  todayIsoDateInTimezone
 } from "../../lib/format";
 import { updateTabBarSelected } from "../../lib/tab-bar";
 
@@ -33,9 +33,9 @@ const TAP_SLOP_PX = 12;
 
 type TabKey = "pending" | "completed";
 
-function enrichReminder(item: ReminderSummary): ReminderView {
+function enrichReminder(item: ReminderSummary, timeZone: string): ReminderView {
   const completed = item.status === "completed";
-  const dueLabel = formatDateTime(item.dueAt);
+  const dueLabel = formatDateTime(item.dueAt, timeZone);
   const contactNames = (item.contacts || [])
     .map((c) => (c.handle ? c.handle : c.displayName))
     .join("、");
@@ -126,21 +126,19 @@ Page({
 
   loadReminders() {
     this.setData({ loading: true, error: "" });
-    const date = todayIsoDate();
-
-    return Promise.all([fetchRemindersToday(), fetchMe()])
-      .then(([remindersRes, meRes]) => {
-        if (!remindersRes.ok || !remindersRes.data) {
+    return fetchToday()
+      .then((todayRes) => {
+        if (!todayRes.ok || !todayRes.data) {
           this.setData({
             loading: false,
             loaded: true,
-            error: remindersRes.error?.message || "加载失败，请在「我的」页检查 API 地址"
+            error: todayRes.error?.message || "加载失败，请在「我的」页检查 API 地址"
           });
           return;
         }
 
-        const timezone = meRes.ok && meRes.data ? meRes.data.user.timezone : "";
-        const items = remindersRes.data.items.map(enrichReminder);
+        const { date, timezone, reminders: rawReminders } = todayRes.data;
+        const items = rawReminders.map((item) => enrichReminder(item, timezone));
         const animating = this.data.pending.filter(
           (item: ReminderView) => item.completing || item.exiting
         );
@@ -261,10 +259,13 @@ Page({
     const item = this.data.pending.find((entry: ReminderView) => entry.id === id);
     if (!item) return;
 
-    const completedItem: ReminderView = enrichReminder({
-      ...item,
-      status: "completed"
-    });
+    const completedItem: ReminderView = enrichReminder(
+      {
+        ...item,
+        status: "completed"
+      },
+      this.data.timezone
+    );
 
     const pending = this.data.pending.filter((entry: ReminderView) => entry.id !== id);
     const completed = [

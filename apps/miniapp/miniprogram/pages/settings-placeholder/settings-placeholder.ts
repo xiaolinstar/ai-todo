@@ -1,4 +1,5 @@
 import { fetchMe } from "../../lib/api";
+import { todayIsoDate, todayIsoDateInTimezone } from "../../lib/format";
 import { getPlaceholderMeta } from "../../lib/settings-placeholders";
 
 Page({
@@ -21,11 +22,17 @@ Page({
     });
     if (slot === "timezone") {
       fetchMe().then((response) => {
-        if (response.ok && response.data?.user.timezone) {
-          this.setData({
-            extraNote: `当前账户时区：${response.data.user.timezone}`
-          });
+        if (!response.ok || !response.data?.user.timezone) {
+          return;
         }
+        const timezone = response.data.user.timezone;
+        const accountToday = todayIsoDateInTimezone(timezone);
+        const localToday = todayIsoDate();
+        let extraNote = `当前账户时区：${timezone}`;
+        if (accountToday !== localToday) {
+          extraNote += `\n账户「今天」：${accountToday}；本机「今天」：${localToday}`;
+        }
+        this.setData({ extraNote });
       });
     }
   }

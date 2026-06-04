@@ -62,6 +62,7 @@ def update_profile(
             user_id=user.id,
             display_name=body.display_name,
             avatar_url=body.avatar_url,
+            timezone=body.timezone,
         )
     except ValueError as exc:
         raise HTTPException(

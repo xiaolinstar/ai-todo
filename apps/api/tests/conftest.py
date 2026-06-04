@@ -108,6 +108,16 @@ def cli_runner(live_api_url: str, dev_pat_token: str) -> CliRunner:
 
 
 @pytest.fixture(autouse=True)
+def isolate_db(request: pytest.FixtureRequest) -> Generator[None, None, None]:
+    if "live_api_url" in request.fixturenames:
+        yield
+        return
+    Base.metadata.drop_all(bind=engine)
+    Base.metadata.create_all(bind=engine)
+    yield
+
+
+@pytest.fixture(autouse=True)
 def reset_wechat_login_rate_limiter() -> Generator[None, None, None]:
     from ai_todo_api.auth import rate_limit as rate_limit_module
     from ai_todo_api.common.rate_limit import SlidingWindowRateLimiter

@@ -77,8 +77,9 @@ git push origin v0.1.4
 - `0.1.4`：提醒/日历/联系人**再编辑**；列表左滑删除；CLI `reminder update` 对齐 API。
 - `0.2.0`：内测体验增强。P0 完善「我的」与通知/关于设置；P1 提醒与今日呈现；星标/撤销删除等推迟。
 - `0.2.1`：使用偏好（提醒/日历/通讯录合一）、通知渠道分工、账号与安全文案、提醒列表 P1。
-- `0.2.2`：时区与平台用户名、按用户名关联联系人。
-- `0.3.0`：Agent 增强（MCP、更多 CLI、审计等）。
+- `0.2.2`：账户时区切换与全站按账户时区显示；平台 username/建联推迟（见 [v0.2.2-plan.md](./v0.2.2-plan.md)、[platform-identity.md](../product/platform-identity.md)）。
+- `0.3.0`：CLI 访问令牌生命周期、加密存储后可 reveal、小程序令牌 UI、`ai-todo token`（见 [v0.3.0-plan.md](./v0.3.0-plan.md)）。
+- `0.3.x`：MCP、审计只读、提醒 P2 等（原 Agent 增强剩余项）。
 - `1.0.0`：稳定公开版本。
 
 上述条目是 **release train 主题**；各组件 L1 仍按实际改动单独 bump。

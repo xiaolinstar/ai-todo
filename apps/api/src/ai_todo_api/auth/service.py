@@ -1,3 +1,4 @@
+from ai_todo_api.auth.timezone_util import validate_timezone
 from ai_todo_api.common.time import now_utc
 from ai_todo_api.db.models import UserModel
 from sqlalchemy import select
@@ -40,6 +41,7 @@ def update_user_profile(
     user_id: str,
     display_name: str | None,
     avatar_url: str | None,
+    timezone: str | None,
 ) -> UserModel:
     user = get_user(session, user_id)
     if user is None:
@@ -54,6 +56,9 @@ def update_user_profile(
     if avatar_url is not None:
         cleaned_avatar = avatar_url.strip()
         user.avatar_url = cleaned_avatar or None
+
+    if timezone is not None:
+        user.timezone = validate_timezone(timezone)
 
     user.updated_at = now_utc()
     session.add(user)

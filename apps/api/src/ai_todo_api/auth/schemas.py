@@ -16,6 +16,7 @@ class MeResult(CamelModel):
 class UpdateProfileInput(CamelModel):
     display_name: str | None = None
     avatar_url: str | None = None
+    timezone: str | None = None
 
 
 class UpdateProfileResult(CamelModel):

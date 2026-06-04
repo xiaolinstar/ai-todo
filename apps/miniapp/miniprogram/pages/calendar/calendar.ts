@@ -1,8 +1,8 @@
+import { loadAccountDay } from "../../lib/account-day";
 import {
   deleteCalendarEvent,
   fetchCalendarByDate,
   fetchCalendarToday,
-  fetchMe,
   type CalendarEventSummary
 } from "../../lib/api";
 import {
@@ -13,7 +13,6 @@ import {
   formatMonthYear,
   formatWeekdayLong,
   isTodayIsoDate,
-  todayIsoDate,
   type WeekDayItem
 } from "../../lib/format";
 import { loadContentPrefs } from "../../lib/content-prefs";
@@ -44,7 +43,6 @@ Page({
   _swipeList: null as SwipeListGesture<EventView> | null,
 
   onLoad() {
-    this.setData({ selectedDate: todayIsoDate() });
     this._swipeList = new SwipeListGesture<EventView>({
       getItems: () => this.data.events,
       setItems: (events) => this.setData({ events }),
@@ -71,8 +69,11 @@ Page({
     updateTabBarSelected(1);
     this._swipeList?.updateDeleteActionWidth();
     loadContentPrefs().then((prefs) => {
-      if (prefs.calendar.selectTodayOnOpen) {
-        this.setData({ selectedDate: todayIsoDate() });
+      const openToday = prefs.calendar.selectTodayOnOpen;
+      if (openToday) {
+        return loadAccountDay().then(({ today }) => {
+          this.setData({ selectedDate: today }, () => this.loadEvents());
+        });
       }
       this.loadEvents();
     });
@@ -83,44 +84,45 @@ Page({
   },
 
   loadEvents() {
-    const selectedDate = this.data.selectedDate || todayIsoDate();
     this.setData({ loading: true, error: "" });
 
-    const eventsRequest = isTodayIsoDate(selectedDate)
-      ? fetchCalendarToday()
-      : fetchCalendarByDate(selectedDate);
+    return loadAccountDay()
+      .then(({ timezone, today: accountToday }) => {
+        const selectedDate = this.data.selectedDate || accountToday;
 
-    return Promise.all([eventsRequest, fetchMe()])
-      .then(([eventsRes, meRes]) => {
-        if (!eventsRes.ok || !eventsRes.data) {
+        const eventsRequest = isTodayIsoDate(selectedDate, accountToday)
+          ? fetchCalendarToday()
+          : fetchCalendarByDate(selectedDate);
+
+        return eventsRequest.then((eventsRes) => {
+          if (!eventsRes.ok || !eventsRes.data) {
+            this.setData({
+              loading: false,
+              loaded: true,
+              error: eventsRes.error?.message || "加载失败，请在「我的」页检查 API 地址"
+            });
+            return;
+          }
+
           this.setData({
             loading: false,
             loaded: true,
-            error: eventsRes.error?.message || "加载失败，请在「我的」页检查 API 地址"
+            selectedDate,
+            dateLabel: formatIsoDateLabel(selectedDate),
+            monthLabel: formatMonthYear(selectedDate),
+            weekdayLabel: formatWeekdayLong(selectedDate),
+            isToday: isTodayIsoDate(selectedDate, accountToday),
+            timezone,
+            weekDays: buildWeekStrip(selectedDate, accountToday),
+            events: eventsRes.data.items.map((item, index) =>
+              withSwipeRow({
+                ...item,
+                timeLabel: formatEventTimeRange(item.startAt, item.endAt, timezone),
+                contactNames: (item.contacts || []).map((c) => c.displayName).join("、"),
+                accentColor: eventAccentColor(index)
+              })
+            )
           });
-          return;
-        }
-
-        const timezone = meRes.ok && meRes.data ? meRes.data.user.timezone : "";
-
-        this.setData({
-          loading: false,
-          loaded: true,
-          selectedDate,
-          dateLabel: formatIsoDateLabel(selectedDate),
-          monthLabel: formatMonthYear(selectedDate),
-          weekdayLabel: formatWeekdayLong(selectedDate),
-          isToday: isTodayIsoDate(selectedDate),
-          timezone,
-          weekDays: buildWeekStrip(selectedDate),
-          events: eventsRes.data.items.map((item, index) =>
-            withSwipeRow({
-              ...item,
-              timeLabel: formatEventTimeRange(item.startAt, item.endAt),
-              contactNames: (item.contacts || []).map((c) => c.displayName).join("、"),
-              accentColor: eventAccentColor(index)
-            })
-          )
         });
       })
       .catch(() => {
@@ -139,7 +141,7 @@ Page({
   },
 
   goToday() {
-    this.setData({ selectedDate: todayIsoDate() }, () => this.loadEvents());
+    this.setData({ selectedDate: "" }, () => this.loadEvents());
   },
 
   goMine() {

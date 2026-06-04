@@ -1,3 +1,4 @@
+import { loadAccountDay } from "../../lib/account-day";
 import { fetchCalendarEvent, updateCalendarEvent } from "../../lib/api";
 import type { ContactSummary } from "../../lib/api";
 import { combineDateTime, splitIsoDateTime } from "../../lib/format";
@@ -18,6 +19,7 @@ Page({
     endTime: "",
     hasEnd: false,
     selectedContact: null as ContactSummary | null,
+    accountTimezone: "",
     submitting: false
   },
 
@@ -29,18 +31,20 @@ Page({
       return;
     }
     this.setData({ eventId });
-    fetchCalendarEvent(eventId)
-      .then((response) => {
+    Promise.all([loadAccountDay(), fetchCalendarEvent(eventId)])
+      .then(([account, response]) => {
         if (!response.ok || !response.data) {
           this.setData({ loading: false });
           wx.showToast({ title: response.error?.message || "加载失败", icon: "none" });
           return;
         }
         const event = response.data.calendarEvent;
-        const start = splitIsoDateTime(event.startAt);
-        const end = splitIsoDateTime(event.endAt);
+        const tz = account.timezone;
+        const start = splitIsoDateTime(event.startAt, tz);
+        const end = splitIsoDateTime(event.endAt, tz);
         this.setData({
           loading: false,
+          accountTimezone: tz,
           title: event.title || "",
           location: event.location || "",
           description: event.description || "",
@@ -126,8 +130,18 @@ Page({
       contactIds: string[];
     } = {
       title,
-      startAt: combineDateTime(this.data.startDate, this.data.startTime),
-      endAt: this.data.hasEnd ? combineDateTime(this.data.endDate, this.data.endTime) : null,
+      startAt: combineDateTime(
+        this.data.startDate,
+        this.data.startTime,
+        this.data.accountTimezone || undefined
+      ),
+      endAt: this.data.hasEnd
+        ? combineDateTime(
+            this.data.endDate,
+            this.data.endTime,
+            this.data.accountTimezone || undefined
+          )
+        : null,
       location: this.data.location.trim(),
       description: this.data.description.trim(),
       contactIds: this.data.selectedContact ? [this.data.selectedContact.id] : []
