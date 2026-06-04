@@ -78,6 +78,7 @@ git push origin v0.1.4
 - `0.2.0`：内测体验增强。P0 完善「我的」与通知/关于设置；P1 提醒与今日呈现；星标/撤销删除等推迟。
 - `0.2.1`：使用偏好（提醒/日历/通讯录合一）、通知渠道分工、账号与安全文案、提醒列表 P1。
 - `0.2.2`：账户时区切换与全站按账户时区显示；平台 username/建联推迟（见 [v0.2.2-plan.md](./v0.2.2-plan.md)、[platform-identity.md](../product/platform-identity.md)）。
+- `0.2.3`：CD 六步扩展（发布后拨测/黑盒 → 失败回滚 → 回滚复验 → 发布报告）；换域仅 **xiaolin-gateway** 运维（见 [v0.2.3-plan.md](./v0.2.3-plan.md)、[v0.2.3-cd-pipeline-plan.md](./v0.2.3-cd-pipeline-plan.md)）。
 - `0.3.0`：CLI 访问令牌生命周期、加密存储后可 reveal、小程序令牌 UI、`ai-todo token`（见 [v0.3.0-plan.md](./v0.3.0-plan.md)）。
 - `0.3.x`：MCP、审计只读、提醒 P2 等（原 Agent 增强剩余项）。
 - `1.0.0`：稳定公开版本。

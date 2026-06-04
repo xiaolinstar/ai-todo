@@ -8,6 +8,7 @@
 - 部署踩坑复盘：[deploy-troubleshooting.md](./deploy-troubleshooting.md)
 - 开发者手册：[developer-guide.md](./developer-guide.md)
 - 版本计划：[releases/versioning.md](./releases/versioning.md)
+- CI/CD（含 CD Secrets）：[ci-cd.md](./ci-cd.md)
 - `0.1.0` 内测上线规划：[releases/v0.1.0-plan.md](./releases/v0.1.0-plan.md)
 - `0.1.2` 内测稳定打磨规划：[releases/v0.1.2-plan.md](./releases/v0.1.2-plan.md)
 - 小程序开发：[../apps/miniapp/README.md](../apps/miniapp/README.md)
@@ -22,10 +23,9 @@
     → CI（scan → build → test → publish deploy-manifest）
     → 小程序体验版人工上传/验收
     → 手动触发 CD，填写发布 tag，自动解析 tag 指向 commit 的成功 CI
-    → CD 校验指纹后部署（默认 VPS docker pull；pull 失败则 server-build 兜底）
-    → git pull + docker compose up --build（API 宿主机 :8082）
+    → CD：校验 manifest → 部署（VPS 本机 health）→ 公网拨测（CD_PUBLIC_API_URL）
+    → 拨测失败则自动回滚 + 回滚后复验 → 发布报告（artifact + Summary）
     → xiaolin-gateway 反代 https://wodi.games
-    → curl https://wodi.games/v1/health
 
 微信用户打开小程序
     → wx.request https://wodi.games/v1/...

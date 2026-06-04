@@ -1,35 +1,50 @@
 #!/usr/bin/env bash
 # Deploy API using CI-published deploy-manifest.json (image digest fingerprint).
+# Rollback after CD post-deploy verify: deploy-from-manifest.sh --rollback-to-previous
 set -euo pipefail
-
-MANIFEST="${1:?Usage: deploy-from-manifest.sh /path/to/deploy-manifest.json}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 API_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 REPO_ROOT="$(cd "$API_DIR/../.." && pwd)"
 DEPLOY_DIR="$REPO_ROOT/.deploy"
 CURRENT_DEPLOY_FILE="$DEPLOY_DIR/current.json"
+PREVIOUS_SUCCESS_FILE="$DEPLOY_DIR/previous-success.json"
+
+ROLLBACK_ONLY=0
+if [[ "${1:-}" == "--rollback-to-previous" ]]; then
+  ROLLBACK_ONLY=1
+  shift
+fi
 
 if ! command -v python3 >/dev/null 2>&1; then
   echo "python3 is required to verify deploy-manifest fingerprint" >&2
   exit 1
 fi
 
-python3 "$REPO_ROOT/scripts/ci/verify_deploy_manifest.py" "$MANIFEST"
+GIT_SHA=""
+API_IMAGE=""
+API_DIGEST=""
+FINGERPRINT=""
+RUN_ID=""
 
-GIT_SHA="$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['gitSha'])" "$MANIFEST")"
-API_IMAGE="$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['artifacts']['api']['image'])" "$MANIFEST")"
-API_DIGEST="$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['artifacts']['api']['digest'])" "$MANIFEST")"
-FINGERPRINT="$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['fingerprint'])" "$MANIFEST")"
-RUN_ID="$(python3 -c "import json,sys; print(json.load(open(sys.argv[1])).get('runId') or '')" "$MANIFEST")"
-export AI_TODO_GIT_SHA="${AI_TODO_GIT_SHA:-$GIT_SHA}"
-export AI_TODO_RELEASE_TAG="${AI_TODO_RELEASE_TAG:-${RELEASE_TAG:-}}"
+if [[ "$ROLLBACK_ONLY" -eq 0 ]]; then
+  MANIFEST="${1:?Usage: deploy-from-manifest.sh /path/to/deploy-manifest.json}"
+  python3 "$REPO_ROOT/scripts/ci/verify_deploy_manifest.py" "$MANIFEST"
 
-echo "Deploy manifest OK"
-echo "  git_sha=${GIT_SHA}"
-echo "  release_tag=${AI_TODO_RELEASE_TAG:-}"
-echo "  image=${API_IMAGE}"
-echo "  digest=${API_DIGEST}"
+  GIT_SHA="$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['gitSha'])" "$MANIFEST")"
+  API_IMAGE="$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['artifacts']['api']['image'])" "$MANIFEST")"
+  API_DIGEST="$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['artifacts']['api']['digest'])" "$MANIFEST")"
+  FINGERPRINT="$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['fingerprint'])" "$MANIFEST")"
+  RUN_ID="$(python3 -c "import json,sys; print(json.load(open(sys.argv[1])).get('runId') or '')" "$MANIFEST")"
+  export AI_TODO_GIT_SHA="${AI_TODO_GIT_SHA:-$GIT_SHA}"
+  export AI_TODO_RELEASE_TAG="${AI_TODO_RELEASE_TAG:-${RELEASE_TAG:-}}"
+
+  echo "Deploy manifest OK"
+  echo "  git_sha=${GIT_SHA}"
+  echo "  release_tag=${AI_TODO_RELEASE_TAG:-}"
+  echo "  image=${API_IMAGE}"
+  echo "  digest=${API_DIGEST}"
+fi
 
 if ! docker compose version >/dev/null 2>&1; then
   echo "docker compose v2 is required on the deploy host" >&2
@@ -42,7 +57,7 @@ PREVIOUS_API_DIGEST=""
 PREVIOUS_FINGERPRINT=""
 PREVIOUS_RUN_ID=""
 PREVIOUS_DEPLOY_MODE="pull"
-if [[ -f "$CURRENT_DEPLOY_FILE" ]]; then
+if [[ "$ROLLBACK_ONLY" -eq 0 && -f "$CURRENT_DEPLOY_FILE" ]]; then
   PREVIOUS_GIT_SHA="$(python3 -c "import json,sys; print(json.load(open(sys.argv[1])).get('gitSha') or '')" "$CURRENT_DEPLOY_FILE")"
   PREVIOUS_API_IMAGE="$(python3 -c "import json,sys; print(json.load(open(sys.argv[1])).get('apiImage') or '')" "$CURRENT_DEPLOY_FILE")"
   PREVIOUS_API_DIGEST="$(python3 -c "import json,sys; print(json.load(open(sys.argv[1])).get('apiDigest') or '')" "$CURRENT_DEPLOY_FILE")"
@@ -51,9 +66,11 @@ if [[ -f "$CURRENT_DEPLOY_FILE" ]]; then
   PREVIOUS_DEPLOY_MODE="$(python3 -c "import json,sys; print(json.load(open(sys.argv[1])).get('deployMode') or 'pull')" "$CURRENT_DEPLOY_FILE")"
 fi
 
-cd "$REPO_ROOT"
-git fetch origin
-git reset --hard "$GIT_SHA"
+if [[ "$ROLLBACK_ONLY" -eq 0 ]]; then
+  cd "$REPO_ROOT"
+  git fetch origin
+  git reset --hard "$GIT_SHA"
+fi
 
 cd "$API_DIR"
 
@@ -471,6 +488,9 @@ PY
 }
 
 rollback_previous_deploy() {
+  local rolled_back_from_git_sha="${1:-$GIT_SHA}"
+  local rolled_back_from_api_image="${2:-$API_IMAGE}"
+
   if [[ -z "$PREVIOUS_GIT_SHA" ]]; then
     echo "No previous deploy record found; automatic rollback is unavailable." >&2
     return 1
@@ -504,15 +524,94 @@ rollback_previous_deploy() {
     "$PREVIOUS_RUN_ID" \
     "rolled_back" \
     "$PREVIOUS_DEPLOY_MODE" \
-    "$GIT_SHA" \
-    "$API_IMAGE"
+    "$rolled_back_from_git_sha" \
+    "$rolled_back_from_api_image"
 }
+
+write_previous_success_snapshot() {
+  if [[ -z "$PREVIOUS_GIT_SHA" ]]; then
+    rm -f "$PREVIOUS_SUCCESS_FILE"
+    echo "No prior deploy snapshot (first deploy); skipped previous-success.json" >&2
+    return 0
+  fi
+
+  mkdir -p "$DEPLOY_DIR"
+  python3 - "$PREVIOUS_SUCCESS_FILE" "$PREVIOUS_GIT_SHA" "$PREVIOUS_API_IMAGE" "$PREVIOUS_API_DIGEST" "$PREVIOUS_FINGERPRINT" "$PREVIOUS_RUN_ID" "$PREVIOUS_DEPLOY_MODE" <<'PY'
+import json
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+
+output, git_sha, api_image, api_digest, fingerprint, run_id, deploy_mode = sys.argv[1:9]
+payload = {
+    "gitSha": git_sha,
+    "apiImage": api_image,
+    "apiDigest": api_digest,
+    "fingerprint": fingerprint,
+    "ciRunId": run_id or None,
+    "deployMode": deploy_mode or "pull",
+    "recordedAt": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+}
+Path(output).write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+  echo "Wrote previous deploy snapshot: $PREVIOUS_SUCCESS_FILE" >&2
+}
+
+load_previous_success_snapshot() {
+  if [[ ! -f "$PREVIOUS_SUCCESS_FILE" ]]; then
+    echo "Missing $PREVIOUS_SUCCESS_FILE — cannot rollback to pre-deploy version." >&2
+    return 1
+  fi
+
+  PREVIOUS_GIT_SHA="$(python3 -c "import json,sys; print(json.load(open(sys.argv[1])).get('gitSha') or '')" "$PREVIOUS_SUCCESS_FILE")"
+  PREVIOUS_API_IMAGE="$(python3 -c "import json,sys; print(json.load(open(sys.argv[1])).get('apiImage') or '')" "$PREVIOUS_SUCCESS_FILE")"
+  PREVIOUS_API_DIGEST="$(python3 -c "import json,sys; print(json.load(open(sys.argv[1])).get('apiDigest') or '')" "$PREVIOUS_SUCCESS_FILE")"
+  PREVIOUS_FINGERPRINT="$(python3 -c "import json,sys; print(json.load(open(sys.argv[1])).get('fingerprint') or '')" "$PREVIOUS_SUCCESS_FILE")"
+  PREVIOUS_RUN_ID="$(python3 -c "import json,sys; print(json.load(open(sys.argv[1])).get('ciRunId') or '')" "$PREVIOUS_SUCCESS_FILE")"
+  PREVIOUS_DEPLOY_MODE="$(python3 -c "import json,sys; print(json.load(open(sys.argv[1])).get('deployMode') or 'pull')" "$PREVIOUS_SUCCESS_FILE")"
+}
+
+run_rollback_to_previous_success() {
+  local failed_git_sha=""
+  local failed_api_image=""
+
+  if [[ -f "$CURRENT_DEPLOY_FILE" ]]; then
+    failed_git_sha="$(python3 -c "import json,sys; print(json.load(open(sys.argv[1])).get('gitSha') or '')" "$CURRENT_DEPLOY_FILE")"
+    failed_api_image="$(python3 -c "import json,sys; print(json.load(open(sys.argv[1])).get('apiImage') or '')" "$CURRENT_DEPLOY_FILE")"
+  fi
+
+  cd "$API_DIR"
+  ENV_FILE="${ENV_FILE:-.env.production}"
+  PUBLISH_PORT="$(grep -E '^AI_TODO_PUBLISH_PORT=' "$ENV_FILE" | cut -d= -f2- || true)"
+  PUBLISH_PORT="${PUBLISH_PORT:-8082}"
+  set_compose_files
+
+  if ! load_previous_success_snapshot; then
+    exit 1
+  fi
+
+  if ! rollback_previous_deploy "$failed_git_sha" "$failed_api_image"; then
+    echo "CD rollback-to-previous failed." >&2
+    exit 1
+  fi
+
+  echo "CD rollback-to-previous OK (health/db on 127.0.0.1:${PUBLISH_PORT})"
+}
+
+if [[ "$ROLLBACK_ONLY" -eq 1 ]]; then
+  if [[ $# -gt 0 ]]; then
+    echo "rollback mode accepts no manifest path (got: $*)" >&2
+    exit 1
+  fi
+  run_rollback_to_previous_success
+  exit 0
+fi
 
 echo "Deploy strategy: mode=${DEPLOY_MODE} fallback_server_build=${DEPLOY_FALLBACK_BUILD}" >&2
 
 if ! deploy_new_version || ! verify_deployed_api; then
   echo "New deploy failed; attempting automatic rollback." >&2
-  if rollback_previous_deploy; then
+  if rollback_previous_deploy "$GIT_SHA" "$API_IMAGE"; then
     echo "Rollback OK; current deploy remains on previous version." >&2
   else
     echo "Rollback failed or unavailable; manual intervention required." >&2
@@ -521,6 +620,7 @@ if ! deploy_new_version || ! verify_deployed_api; then
 fi
 
 mkdir -p "$DEPLOY_DIR"
+write_previous_success_snapshot
 write_deploy_record \
   "$CURRENT_DEPLOY_FILE" \
   "$GIT_SHA" \

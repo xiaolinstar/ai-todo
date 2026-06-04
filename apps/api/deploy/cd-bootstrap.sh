@@ -3,7 +3,11 @@
 # Expects deploy secrets/env from ssh-action (FINGERPRINT, CI_RUN_ID, DEPLOY_MODE_INPUT, …).
 set -euo pipefail
 
-echo "CD fingerprint=${FINGERPRINT:-} ci_run=${CI_RUN_ID:-} deploy_mode_input=${DEPLOY_MODE_INPUT:-auto}"
+echo "CD action=${AI_TODO_CD_ACTION:-deploy} fingerprint=${FINGERPRINT:-} ci_run=${CI_RUN_ID:-} deploy_mode_input=${DEPLOY_MODE_INPUT:-auto}"
+
+if [[ "${AI_TODO_CD_ACTION:-deploy}" == "rollback" ]]; then
+  exec bash "$SCRIPT_DIR/deploy-from-manifest.sh" --rollback-to-previous
+fi
 
 export AI_TODO_DEPLOY_MANIFEST="${AI_TODO_DEPLOY_MANIFEST:-/tmp/deploy-manifest.json}"
 export AI_TODO_PULL_REGISTRY_MIRROR="${AI_TODO_PULL_REGISTRY_MIRROR:-ghcr.nju.edu.cn}"

@@ -219,6 +219,11 @@ jobs:
           path: manifest/deploy-manifest.json
           retention-days: 7
 
+      - name: Staging environment notice
+        if: github.event.inputs.environment == 'staging'
+        run: |
+          echo "::warning::GitHub Environment 'staging' is not configured in this repository (only 'production' exists). CD will use repository-level secrets and may target the same host as production. Create Environment staging with separate DEPLOY_* / CD_PUBLIC_API_URL before relying on staging."
+
   deploy:
     name: Deploy API from manifest
     needs: [resolve-manifest]
@@ -310,6 +315,7 @@ jobs:
             git pull --ff-only origin main
             export AI_TODO_DEPLOY_MANIFEST=/tmp/deploy-manifest.json
             export AI_TODO_RELEASE_TAG="$RELEASE_TAG"
+            export AI_TODO_CD_ACTION=deploy
             bash apps/api/deploy/cd-bootstrap.sh
 
       - name: Deploy to VPS (password)
@@ -338,4 +344,183 @@ jobs:
             git pull --ff-only origin main
             export AI_TODO_DEPLOY_MANIFEST=/tmp/deploy-manifest.json
             export AI_TODO_RELEASE_TAG="$RELEASE_TAG"
+            export AI_TODO_CD_ACTION=deploy
             bash apps/api/deploy/cd-bootstrap.sh
+
+  post-deploy-verify:
+    name: Post-deploy verify (public API)
+    needs: [resolve-manifest, deploy]
+    if: needs.deploy.result == 'success'
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || 'production' }}
+    outputs:
+      verify_error: ${{ steps.verify.outputs.error }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/download-artifact@v7
+        with:
+          name: cd-deploy-manifest
+          path: manifest
+
+      - name: Run post-deploy smoke / black-box checks
+        id: verify
+        env:
+          CD_PUBLIC_API_URL: ${{ secrets.CD_PUBLIC_API_URL }}
+          CD_SMOKE_PAT: ${{ secrets.CD_SMOKE_PAT }}
+          RELEASE_TAG: ${{ needs.resolve-manifest.outputs.release_tag }}
+        run: |
+          mkdir -p cd-report
+          set +e
+          python3 scripts/cd/post-deploy-verify.py \
+            --expect-git-sha "${{ needs.resolve-manifest.outputs.git_sha }}" \
+            --release-tag "${{ needs.resolve-manifest.outputs.release_tag }}" \
+            --json-out cd-report/verify-result.json
+          ec=$?
+          if [[ -f cd-report/verify-result.json ]]; then
+            err="$(python3 -c "import json; print(json.load(open('cd-report/verify-result.json')).get('error') or '')")"
+            echo "error=$err" >> "$GITHUB_OUTPUT"
+          fi
+          exit "$ec"
+
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: cd-verify-result
+          path: cd-report/
+          retention-days: 14
+
+  rollback:
+    name: Rollback to previous deploy
+    needs: [resolve-manifest, deploy, post-deploy-verify]
+    if: needs.deploy.result == 'success' && needs.post-deploy-verify.result == 'failure'
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || 'production' }}
+    steps:
+      - name: Check deploy configuration
+        id: deploy_config
+        run: |
+          missing=()
+          [[ -z "${{ secrets.DEPLOY_HOST }}" ]] && missing+=("DEPLOY_HOST")
+          [[ -z "${{ secrets.DEPLOY_USER }}" ]] && missing+=("DEPLOY_USER")
+          has_key=0
+          has_password=0
+          [[ -n "${{ secrets.DEPLOY_SSH_KEY }}" ]] && has_key=1
+          [[ -n "${{ secrets.DEPLOY_PASSWORD }}" ]] && has_password=1
+          if [[ $has_key -eq 0 && $has_password -eq 0 ]]; then
+            missing+=("DEPLOY_SSH_KEY or DEPLOY_PASSWORD")
+          fi
+          if ((${#missing[@]} > 0)); then
+            echo "::error::Missing deploy secrets for rollback: ${missing[*]}" >&2
+            exit 1
+          fi
+          if [[ $has_key -eq 1 ]]; then
+            echo "auth=ssh_key" >> "$GITHUB_OUTPUT"
+          else
+            echo "auth=password" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Rollback on VPS (SSH key)
+        if: steps.deploy_config.outputs.auth == 'ssh_key'
+        uses: appleboy/ssh-action@v1.2.0
+        env:
+          GHCR_DEPLOY_TOKEN: ${{ secrets.GHCR_DEPLOY_TOKEN || github.token }}
+          GHCR_DEPLOY_USER: ${{ secrets.GHCR_DEPLOY_USER || github.actor }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: ${{ secrets.DEPLOY_PORT || 22 }}
+          envs: GHCR_DEPLOY_TOKEN,GHCR_DEPLOY_USER,DEPLOY_PATH
+          command_timeout: 10m
+          script_stop: true
+          script: |
+            DEPLOY_PATH="${DEPLOY_PATH:-$HOME/AgentProjects/ai-todo}"
+            cd "$DEPLOY_PATH"
+            git fetch --prune origin main
+            git pull --ff-only origin main
+            export AI_TODO_CD_ACTION=rollback
+            bash apps/api/deploy/cd-bootstrap.sh
+
+      - name: Rollback on VPS (password)
+        if: steps.deploy_config.outputs.auth == 'password'
+        uses: appleboy/ssh-action@v1.2.0
+        env:
+          GHCR_DEPLOY_TOKEN: ${{ secrets.GHCR_DEPLOY_TOKEN || github.token }}
+          GHCR_DEPLOY_USER: ${{ secrets.GHCR_DEPLOY_USER || github.actor }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          password: ${{ secrets.DEPLOY_PASSWORD }}
+          port: ${{ secrets.DEPLOY_PORT || 22 }}
+          envs: GHCR_DEPLOY_TOKEN,GHCR_DEPLOY_USER,DEPLOY_PATH
+          command_timeout: 10m
+          script_stop: true
+          script: |
+            DEPLOY_PATH="${DEPLOY_PATH:-$HOME/AgentProjects/ai-todo}"
+            cd "$DEPLOY_PATH"
+            git fetch --prune origin main
+            git pull --ff-only origin main
+            export AI_TODO_CD_ACTION=rollback
+            bash apps/api/deploy/cd-bootstrap.sh
+
+  post-rollback-verify:
+    name: Post-rollback verify (public API)
+    needs: [resolve-manifest, deploy, post-deploy-verify, rollback]
+    if: needs.rollback.result == 'success'
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || 'production' }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Verify API after rollback
+        env:
+          CD_PUBLIC_API_URL: ${{ secrets.CD_PUBLIC_API_URL }}
+          CD_SMOKE_PAT: ${{ secrets.CD_SMOKE_PAT }}
+        run: |
+          mkdir -p cd-report
+          python3 scripts/cd/post-deploy-verify.py \
+            --skip-git-sha-check \
+            --json-out cd-report/verify-after-rollback.json
+
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: cd-verify-after-rollback
+          path: cd-report/
+          retention-days: 14
+
+  release-report:
+    name: Release report
+    needs: [resolve-manifest, deploy, post-deploy-verify, rollback, post-rollback-verify]
+    if: ${{ always() && !cancelled() }}
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || 'production' }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Write release report
+        env:
+          CD_ENVIRONMENT: ${{ github.event.inputs.environment || 'production' }}
+          CD_RELEASE_TAG: ${{ needs.resolve-manifest.outputs.release_tag }}
+          CD_GIT_SHA: ${{ needs.resolve-manifest.outputs.git_sha }}
+          CD_FINGERPRINT: ${{ needs.resolve-manifest.outputs.fingerprint }}
+          CD_CI_RUN_ID: ${{ needs.resolve-manifest.outputs.ci_run_id }}
+          CD_PUBLIC_API_URL: ${{ secrets.CD_PUBLIC_API_URL }}
+          CD_STEP_RESOLVE_MANIFEST: ${{ needs.resolve-manifest.result }}
+          CD_STEP_DEPLOY: ${{ needs.deploy.result }}
+          CD_STEP_POST_DEPLOY_VERIFY: ${{ needs.post-deploy-verify.result }}
+          CD_STEP_ROLLBACK: ${{ needs.rollback.result }}
+          CD_STEP_POST_ROLLBACK_VERIFY: ${{ needs.post-rollback-verify.result }}
+          CD_VERIFY_ERROR: ${{ needs.post-deploy-verify.outputs.verify_error }}
+          CD_REPORT_DIR: cd-report
+        run: node scripts/cd/write-release-report.mjs
+
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: cd-release-report
+          path: cd-report/
+          retention-days: 30
