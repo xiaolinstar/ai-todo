@@ -72,8 +72,11 @@ async function main() {
     resolve_manifest: process.env.CD_STEP_RESOLVE_MANIFEST,
     deploy: process.env.CD_STEP_DEPLOY,
     post_deploy_verify: process.env.CD_STEP_POST_DEPLOY_VERIFY,
+    publish_accepted: process.env.CD_STEP_PUBLISH_ACCEPTED,
+    deploy_failed: process.env.CD_STEP_DEPLOY_FAILED,
     rollback: process.env.CD_STEP_ROLLBACK,
     post_rollback_verify: process.env.CD_STEP_POST_ROLLBACK_VERIFY,
+    release_not_adopted: process.env.CD_STEP_RELEASE_NOT_ADOPTED,
   };
 
   const outcome = deriveOutcome(needs);
@@ -92,8 +95,11 @@ async function main() {
       resolveManifest: stepResult("resolve_manifest", needs),
       deploy: stepResult("deploy", needs),
       postDeployVerify: stepResult("post_deploy_verify", needs),
+      publishAccepted: stepResult("publish_accepted", needs),
+      deployFailed: stepResult("deploy_failed", needs),
       rollback: stepResult("rollback", needs),
       postRollbackVerify: stepResult("post_rollback_verify", needs),
+      releaseNotAdopted: stepResult("release_not_adopted", needs),
     },
     verifyError: process.env.CD_VERIFY_ERROR || null,
     finishedAt,
