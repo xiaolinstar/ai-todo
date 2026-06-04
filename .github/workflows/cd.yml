@@ -349,7 +349,7 @@ jobs:
 
   post-deploy-verify:
     name: 3 · Verify (public API)
-    needs: [deploy]
+    needs: [resolve-manifest, deploy]
     if: needs.deploy.result == 'success'
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.environment || 'production' }}
@@ -413,7 +413,7 @@ jobs:
   rollback:
     name: 4b · Rollback
     needs: [deploy, post-deploy-verify]
-    if: needs.deploy.result == 'success' && needs.post-deploy-verify.result == 'failure'
+    if: ${{ always() && needs.deploy.result == 'success' && needs.post-deploy-verify.result == 'failure' }}
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.environment || 'production' }}
     steps:
@@ -489,7 +489,7 @@ jobs:
   post-rollback-verify:
     name: 5b · Verify after rollback
     needs: [rollback]
-    if: needs.rollback.result == 'success'
+    if: ${{ needs.rollback.result == 'success' }}
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.environment || 'production' }}
     steps:
@@ -515,7 +515,7 @@ jobs:
   release-not-adopted:
     name: 6b · Outcome not adopted
     needs: [rollback, post-rollback-verify]
-    if: needs.rollback.result == 'success' && needs.post-rollback-verify.result == 'success'
+    if: ${{ needs.rollback.result == 'success' && needs.post-rollback-verify.result == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - name: Rolled back to previous version
