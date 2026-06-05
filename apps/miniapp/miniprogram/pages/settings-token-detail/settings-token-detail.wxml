@@ -7,53 +7,16 @@
 
       <block wx:else>
         <view class="inset-group subpage-group">
-          <view class="subpage-cell stack">
-            <view class="token-heading">
+          <view class="subpage-cell">
+            <view class="subpage-cell-main">
               <text class="subpage-label">{{name}}</text>
-              <text class="token-status {{statusClass}}">{{statusLabel}}</text>
-            </view>
-            <text class="token-hint">{{tokenHint}}</text>
-          </view>
-        </view>
-
-        <view class="subpage-section">
-          <view class="group-header">生命周期</view>
-          <view class="inset-group subpage-group">
-            <view class="subpage-cell">
-              <text class="subpage-label">创建时间</text>
-              <text class="subpage-value">{{createdAt}}</text>
-            </view>
-            <view class="subpage-cell">
-              <text class="subpage-label">最后使用</text>
-              <text class="subpage-value">{{lastUsedAt}}</text>
-            </view>
-            <view class="subpage-cell">
-              <text class="subpage-label">到期时间</text>
-              <text class="subpage-value">{{expiresAt}}</text>
-            </view>
-            <view class="subpage-cell">
-              <text class="subpage-label">空闲失效</text>
-              <text class="subpage-value">{{maxIdleDays}}</text>
+              <text class="subpage-meta">{{tokenHint}} · 到期 {{expiresAt}}</text>
             </view>
           </view>
-        </view>
-
-        <view class="subpage-section">
-          <view class="group-header">权限</view>
-          <view class="inset-group subpage-group">
-            <view class="subpage-cell stack">
-              <text class="subpage-label">范围</text>
-              <text class="subpage-meta">{{scopes}}</text>
-            </view>
-          </view>
-        </view>
-
-        <view class="subpage-section">
-          <view class="inset-group subpage-group">
-            <view class="subpage-cell stack">
-              <text class="subpage-label">登录命令模板</text>
-              <text class="subpage-meta">如果完整令牌已丢失，请吊销后重新创建。</text>
-              <text class="command-template" selectable>{{commandTemplate}}</text>
+          <view wx:if="{{!isActive}}" class="subpage-cell">
+            <view class="subpage-cell-main">
+              <text class="subpage-label">失效原因</text>
+              <text class="subpage-meta">{{inactiveSummary}}</text>
             </view>
           </view>
         </view>
@@ -67,14 +30,13 @@
               <text class="subpage-chevron">›</text>
             </view>
             <view
-              wx:if="{{!revoked}}"
+              wx:if="{{isActive}}"
               class="subpage-cell pressable"
               hover-class="list-cell-hover"
               bindtap="onRevoke"
             >
               <view class="subpage-cell-main">
                 <text class="subpage-label danger">{{revoking ? '吊销中…' : '吊销此令牌'}}</text>
-                <text class="subpage-meta">电脑端工具将无法继续使用此令牌</text>
               </view>
               <text class="subpage-chevron">›</text>
             </view>

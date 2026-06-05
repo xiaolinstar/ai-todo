@@ -3,11 +3,11 @@
     <view class="mine-subpage-inner">
       <view class="subpage-section">
         <view class="group-header">操作</view>
-        <view class="inset-group menu-group">
+        <view class="inset-group subpage-group">
           <view class="subpage-cell pressable" hover-class="list-cell-hover" bindtap="onCreateToken">
             <view class="subpage-cell-main">
-              <text class="subpage-label">新建令牌</text>
-              <text class="subpage-meta">完整令牌仅创建时显示一次</text>
+              <text class="subpage-label">{{quickCreating ? '创建中…' : '新建令牌'}}</text>
+              <text class="subpage-meta">选择用途即可快速创建，也可自定义名称</text>
             </view>
             <text class="subpage-chevron">›</text>
           </view>
@@ -23,59 +23,57 @@
 
       <view class="subpage-section">
         <view class="group-header">有效令牌 · {{activePatCount}}</view>
-        <view class="inset-group token-group">
+        <view class="inset-group subpage-group">
           <view wx:if="{{patLoading}}" class="subpage-cell">
             <text class="subpage-meta">加载中…</text>
           </view>
-          <view wx:elif="{{activePatItems.length === 0}}" class="subpage-cell empty-cell">
+          <view wx:elif="{{activePatItems.length === 0}}" class="subpage-cell pressable" hover-class="list-cell-hover" bindtap="onCreateToken">
             <view class="subpage-cell-main">
               <text class="subpage-label">暂无有效令牌</text>
-              <text class="subpage-meta">需要连接电脑端工具时再创建。</text>
+              <text class="subpage-meta">点此处或上方「新建令牌」连接电脑端工具</text>
             </view>
+            <text class="subpage-chevron">›</text>
           </view>
-          <view wx:for="{{activePatItems}}" wx:key="id" class="token-cell">
-            <view class="token-main pressable" hover-class="list-cell-hover" bindtap="onOpenDetail" data-id="{{item.id}}">
-              <view class="token-row">
-                <text class="token-name">{{item.name}}</text>
-                <text class="token-status {{item.statusClass}}">{{item.statusLabel}}</text>
-              </view>
-              <text class="token-hint">{{item.tokenHint}}</text>
-              <text class="subpage-meta">最后使用 {{item.lastUsedAt}} · {{item.maxIdleDays}}</text>
-              <text class="subpage-meta">到期 {{item.expiresAt}}</text>
+          <view
+            wx:for="{{activePatItems}}"
+            wx:key="id"
+            class="subpage-cell pressable"
+            hover-class="list-cell-hover"
+            bindtap="onOpenDetail"
+            data-id="{{item.id}}"
+          >
+            <view class="subpage-cell-main">
+              <text class="subpage-label">{{item.name}}</text>
+              <text class="subpage-meta">{{item.tokenHint}} · 到期 {{item.expiresAt}}</text>
             </view>
-            <text
-              class="token-action pressable"
-              bindtap="onRevokePat"
-              data-id="{{item.id}}"
-              data-name="{{item.name}}"
-              hover-class="list-cell-hover"
-            >
-              吊销
-            </text>
+            <text class="subpage-chevron">›</text>
           </view>
         </view>
       </view>
 
-      <view wx:if="{{inactivePatItems.length > 0}}" class="subpage-section">
-        <view class="group-header">历史 · {{inactivePatCount}}</view>
-        <view class="inset-group token-group">
+      <view wx:if="{{inactivePatCount > 0}}" class="subpage-section">
+        <view class="group-header">已失效令牌 · {{inactivePatCount}}</view>
+        <view class="inset-group subpage-group">
           <view class="subpage-cell pressable" hover-class="list-cell-hover" bindtap="onToggleInactive">
             <view class="subpage-cell-main">
-              <text class="subpage-label">已失效令牌</text>
-              <text class="subpage-meta">{{inactivePatCount}} 个已过期、久未使用失效或已吊销</text>
+              <text class="subpage-label">{{showInactive ? '收起列表' : '查看已失效令牌'}}</text>
             </view>
             <text class="subpage-chevron">{{showInactive ? '⌃' : '⌄'}}</text>
           </view>
           <block wx:if="{{showInactive}}">
-            <view wx:for="{{inactivePatItems}}" wx:key="id" class="token-cell inactive">
-              <view class="token-main pressable" hover-class="list-cell-hover" bindtap="onOpenDetail" data-id="{{item.id}}">
-                <view class="token-row">
-                  <text class="token-name">{{item.name}}</text>
-                  <text class="token-status {{item.statusClass}}">{{item.statusLabel}}</text>
-                </view>
-                <text class="token-hint">{{item.tokenHint}}</text>
-                <text class="subpage-meta">创建 {{item.createdAt}} · 最后使用 {{item.lastUsedAt}}</text>
+            <view
+              wx:for="{{inactivePatItems}}"
+              wx:key="id"
+              class="subpage-cell pressable inactive"
+              hover-class="list-cell-hover"
+              bindtap="onOpenDetail"
+              data-id="{{item.id}}"
+            >
+              <view class="subpage-cell-main">
+                <text class="subpage-label">{{item.name}}</text>
+                <text class="subpage-meta">{{item.tokenHint}} · 到期 {{item.expiresAt}}</text>
               </view>
+              <text class="subpage-chevron">›</text>
             </view>
           </block>
         </view>

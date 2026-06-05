@@ -2,23 +2,11 @@ import { ApiTokenSummary, listApiTokens, revokeApiToken } from "../../lib/api";
 import { getConfig } from "../../lib/config";
 import { TODO_MODAL_CONFIRM_DANGER } from "../../lib/design-tokens";
 import { formatShortDate } from "../../lib/format";
-
-const STATUS_LABELS: Record<string, string> = {
-  active: "有效",
-  expired: "已过期",
-  revoked: "已吊销",
-  idle_revoked: "久未使用失效"
-};
-
-function statusClass(status: string): string {
-  if (status === "active") return "status-active";
-  if (status === "idle_revoked") return "status-warning";
-  return "status-muted";
-}
-
-function formatDate(value?: string): string {
-  return value ? formatShortDate(value) : "-";
-}
+import {
+  buildTokenInactiveSummary,
+  isActiveTokenStatus,
+  normalizeApiTokenSummary
+} from "../../lib/token-status";
 
 Page({
   data: {
@@ -28,15 +16,9 @@ Page({
     found: false,
     name: "",
     tokenHint: "aitodo_****",
-    status: "",
-    statusLabel: "",
-    statusClass: "",
-    createdAt: "-",
-    lastUsedAt: "未使用",
+    isActive: true,
+    inactiveSummary: "",
     expiresAt: "永不过期",
-    maxIdleDays: "不限制空闲",
-    scopes: "",
-    revoked: false,
     commandTemplate: ""
   },
 
@@ -58,12 +40,12 @@ Page({
           wx.showToast({ title: response.error?.message || "加载失败", icon: "none" });
           return;
         }
-        const token = response.data.items.find((item) => item.id === this.data.tokenId);
-        if (!token) {
+        const raw = response.data.items.find((item) => item.id === this.data.tokenId);
+        if (!raw) {
           this.setData({ found: false });
           return;
         }
-        this.applyToken(token);
+        this.applyToken(normalizeApiTokenSummary(raw));
       })
       .catch(() => {
         this.setData({ loading: false });
@@ -73,19 +55,14 @@ Page({
 
   applyToken(token: ApiTokenSummary) {
     const apiUrl = getConfig().apiUrl;
+    const isActive = isActiveTokenStatus(token.status);
     this.setData({
       found: true,
       name: token.name,
       tokenHint: token.tokenHint || "aitodo_****",
-      status: token.status,
-      statusLabel: STATUS_LABELS[token.status] || token.status,
-      statusClass: statusClass(token.status),
-      createdAt: formatDate(token.createdAt),
-      lastUsedAt: token.lastUsedAt ? formatShortDate(token.lastUsedAt) : "未使用",
+      isActive,
+      inactiveSummary: isActive ? "" : buildTokenInactiveSummary(token),
       expiresAt: token.expiresAt ? formatShortDate(token.expiresAt) : "永不过期",
-      maxIdleDays: token.maxIdleDays ? `${token.maxIdleDays} 天未用失效` : "不限制空闲",
-      scopes: token.scopes.join(", "),
-      revoked: token.status === "revoked",
       commandTemplate: `ai-todo login --url ${apiUrl} --token <创建时复制的完整令牌>`
     });
   },
@@ -98,7 +75,7 @@ Page({
   },
 
   onRevoke() {
-    if (this.data.revoked || this.data.revoking) return;
+    if (!this.data.isActive || this.data.revoking) return;
     wx.showModal({
       title: "吊销令牌",
       content: `确定吊销「${this.data.name}」？电脑端工具将无法继续使用此令牌。`,

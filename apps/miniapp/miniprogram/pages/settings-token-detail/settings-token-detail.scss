@@ -1,40 +1,6 @@
 @import "../../styles/mine-subpage.scss";
 
-.token-detail-page .token-heading {
-  display: flex;
+.token-detail-page .subpage-cell.pressable {
+  flex-direction: row;
   align-items: center;
-  gap: 12rpx;
-}
-
-.token-detail-page .token-status {
-  flex-shrink: 0;
-  padding: 4rpx 12rpx;
-  border-radius: 999rpx;
-  font-size: var(--todo-font-size-sm);
-  line-height: var(--todo-line-height-normal);
-}
-
-.token-detail-page .status-active {
-  color: var(--todo-primary);
-  background: var(--todo-fill-primary-12);
-}
-
-.token-detail-page .status-warning {
-  color: var(--todo-warning);
-  background: rgba(var(--todo-warning-rgb), 0.16);
-}
-
-.token-detail-page .status-muted {
-  color: var(--todo-text-secondary);
-  background: var(--todo-surface-muted);
-}
-
-.token-detail-page .token-hint,
-.token-detail-page .command-template {
-  display: block;
-  margin-top: 12rpx;
-  color: var(--todo-text-primary);
-  font-size: var(--todo-font-size-md);
-  line-height: var(--todo-line-height-relaxed);
-  word-break: break-all;
 }

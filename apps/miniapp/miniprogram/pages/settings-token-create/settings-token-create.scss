@@ -5,6 +5,15 @@
   align-items: center;
 }
 
+.token-create-page .subpage-cell.pressable {
+  flex-direction: row;
+  align-items: center;
+}
+
+.token-create-page .create-hint {
+  margin-bottom: 16rpx;
+}
+
 .token-create-page .preset-check {
   flex-shrink: 0;
   margin-left: 12rpx;

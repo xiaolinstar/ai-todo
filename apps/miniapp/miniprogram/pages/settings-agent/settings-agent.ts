@@ -1,36 +1,24 @@
-import {
-  listApiTokens,
-  revokeApiToken
-} from "../../lib/api";
-import { TODO_MODAL_CONFIRM_DANGER } from "../../lib/design-tokens";
+import { createPat, listApiTokens } from "../../lib/api";
+import { getConfig } from "../../lib/config";
 import { formatShortDate } from "../../lib/format";
+import {
+  TOKEN_PRESETS,
+  buildLoginCommand,
+  defaultTokenName,
+  expiresAtFromDays,
+  findTokenPreset
+} from "../../lib/token-presets";
+import {
+  isActiveTokenStatus,
+  normalizeApiTokenSummary
+} from "../../lib/token-status";
 
 interface PatItem {
   id: string;
   name: string;
   tokenHint: string;
   status: string;
-  statusLabel: string;
-  statusClass: string;
-  createdAt: string;
-  lastUsedAt: string;
   expiresAt: string;
-  maxIdleDays: string;
-  revoked: boolean;
-  expired: boolean;
-}
-
-const STATUS_LABELS: Record<string, string> = {
-  active: "有效",
-  expired: "已过期",
-  revoked: "已吊销",
-  idle_revoked: "久未使用失效"
-};
-
-function statusClass(status: string): string {
-  if (status === "active") return "status-active";
-  if (status === "idle_revoked") return "status-warning";
-  return "status-muted";
 }
 
 Page({
@@ -41,7 +29,8 @@ Page({
     activePatCount: 0,
     inactivePatCount: 0,
     showInactive: false,
-    patLoading: false
+    patLoading: false,
+    quickCreating: false
   },
 
   onShow() {
@@ -57,26 +46,25 @@ Page({
           wx.showToast({ title: response.error?.message || "加载失败", icon: "none" });
           return;
         }
-        const patItems = response.data.items.map((item) => ({
-          id: item.id,
-          name: item.name,
-          tokenHint: item.tokenHint || "aitodo_****",
-          status: item.status,
-          statusLabel: STATUS_LABELS[item.status] || item.status,
-          statusClass: statusClass(item.status),
-          createdAt: item.createdAt ? formatShortDate(item.createdAt) : "-",
-          lastUsedAt: item.lastUsedAt ? formatShortDate(item.lastUsedAt) : "未使用",
-          expiresAt: item.expiresAt ? formatShortDate(item.expiresAt) : "永不过期",
-          maxIdleDays: item.maxIdleDays ? `${item.maxIdleDays} 天未用失效` : "不限制空闲",
-          revoked: item.status === "revoked",
-          expired: item.status === "expired" || item.status === "idle_revoked"
-        }));
+        const patItems = response.data.items.map((raw) => {
+          const item = normalizeApiTokenSummary(raw);
+          return {
+            id: item.id,
+            name: item.name,
+            tokenHint: item.tokenHint || "aitodo_****",
+            status: item.status,
+            expiresAt: item.expiresAt ? formatShortDate(item.expiresAt) : "永不过期"
+          };
+        });
+        const activePatItems = patItems.filter((item) => isActiveTokenStatus(item.status));
+        const inactivePatItems = patItems.filter((item) => !isActiveTokenStatus(item.status));
         this.setData({
-          activePatItems: patItems.filter((item) => item.status === "active"),
-          inactivePatItems: patItems.filter((item) => item.status !== "active"),
+          activePatItems,
+          inactivePatItems,
           totalPatCount: patItems.length,
-          activePatCount: patItems.filter((item) => item.status === "active").length,
-          inactivePatCount: patItems.filter((item) => item.status !== "active").length
+          activePatCount: activePatItems.length,
+          inactivePatCount: inactivePatItems.length,
+          showInactive: inactivePatItems.length > 0 && activePatItems.length === 0
         });
       })
       .catch(() => {
@@ -86,13 +74,72 @@ Page({
   },
 
   onCreateToken() {
-    wx.navigateTo({ url: "/pages/settings-token-create/settings-token-create" });
+    if (this.data.quickCreating) return;
+    wx.showActionSheet({
+      itemList: [
+        ...TOKEN_PRESETS.map((item) => item.actionLabel),
+        "自定义名称和选项"
+      ],
+      success: (result) => {
+        if (result.tapIndex >= TOKEN_PRESETS.length) {
+          wx.navigateTo({ url: "/pages/settings-token-create/settings-token-create" });
+          return;
+        }
+        const preset = TOKEN_PRESETS[result.tapIndex];
+        const suggestedName = defaultTokenName();
+        wx.showModal({
+          title: "快速新建",
+          content: `将创建「${suggestedName}」${preset.label}令牌。创建后会自动复制登录命令。`,
+          confirmText: "创建",
+          success: (modalResult) => {
+            if (!modalResult.confirm) return;
+            this.quickCreate(preset.id, suggestedName);
+          }
+        });
+      }
+    });
+  },
+
+  quickCreate(presetId: string, name: string) {
+    const preset = findTokenPreset(presetId);
+    this.setData({ quickCreating: true });
+    createPat({
+      name,
+      expiresAt: expiresAtFromDays(preset.ttlDays),
+      maxIdleDays: preset.maxIdleDays
+    })
+      .then((response) => {
+        this.setData({ quickCreating: false });
+        if (!response.ok || !response.data) {
+          wx.showToast({ title: response.error?.message || "创建失败", icon: "none" });
+          return;
+        }
+        const token = response.data.token;
+        const apiUrl = getConfig().apiUrl;
+        const loginCommand = buildLoginCommand(apiUrl, token);
+        wx.navigateTo({
+          url: "/pages/settings-token-create/settings-token-create",
+          success: (navResult) => {
+            navResult.eventChannel.emit("created", {
+              token,
+              name: response.data!.name,
+              tokenHint: response.data!.tokenHint || `aitodo_****${token.slice(-4)}`,
+              loginCommand
+            });
+          }
+        });
+        this.loadPatList();
+      })
+      .catch(() => {
+        this.setData({ quickCreating: false });
+        wx.showToast({ title: "网络错误", icon: "none" });
+      });
   },
 
   onOpenHelp() {
     wx.showModal({
       title: "CLI 配置",
-      content: "新建令牌后复制登录命令，在电脑终端执行即可连接 ai-todo。完整令牌只在创建成功时显示一次。",
+      content: "点「新建令牌」选择用途即可快速创建。创建后复制登录命令，在电脑终端执行 ai-todo login。完整令牌只在创建成功时显示一次。",
       showCancel: false
     });
   },
@@ -104,24 +151,5 @@ Page({
   onOpenDetail(e: { currentTarget: { dataset: { id: string } } }) {
     const { id } = e.currentTarget.dataset;
     wx.navigateTo({ url: `/pages/settings-token-detail/settings-token-detail?id=${encodeURIComponent(id)}` });
-  },
-
-  onRevokePat(e: { currentTarget: { dataset: { id: string; name: string } } }) {
-    const { id, name } = e.currentTarget.dataset;
-    wx.showModal({
-      title: "吊销令牌",
-      content: `确定吊销「${name}」？`,
-      success: (result) => {
-        if (!result.confirm) return;
-        revokeApiToken(id).then((response) => {
-          if (!response.ok) {
-            wx.showToast({ title: response.error?.message || "吊销失败", icon: "none" });
-            return;
-          }
-          wx.showToast({ title: "已吊销", icon: "success" });
-          this.loadPatList();
-        });
-      }
-    });
   }
 });

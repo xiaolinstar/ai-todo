@@ -1,91 +1,11 @@
 @import "../../styles/mine-subpage.scss";
 
-.agent-page .menu-group .subpage-cell + .subpage-cell,
-.agent-page .token-group .subpage-cell + .token-cell,
-.agent-page .token-group .token-cell + .token-cell,
-.agent-page .token-group .subpage-cell + .subpage-cell {
-  border-top: var(--todo-separator);
-}
-
-.agent-page .token-name {
-  color: var(--todo-text-primary);
-  font-size: var(--todo-font-size-xl);
-  line-height: var(--todo-line-height-normal);
-}
-
-.agent-page .token-cell {
-  display: flex;
-  align-items: stretch;
-  background: var(--todo-surface);
-}
-
-.agent-page .token-main {
-  flex: 1;
-  min-width: 0;
-  padding: 20rpx 0 20rpx 28rpx;
-}
-
-.agent-page .token-row {
-  display: flex;
+.agent-page .subpage-cell.pressable {
+  flex-direction: row;
   align-items: center;
-  gap: 12rpx;
 }
 
-.agent-page .token-name {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.agent-page .token-hint {
-  display: block;
-  margin-top: 6rpx;
-  color: var(--todo-text-primary);
-  font-size: var(--todo-font-size-md);
-  line-height: var(--todo-line-height-normal);
-  word-break: break-all;
-}
-
-.agent-page .token-status {
-  flex-shrink: 0;
-  padding: 4rpx 12rpx;
-  border-radius: 999rpx;
-  font-size: var(--todo-font-size-sm);
-  line-height: var(--todo-line-height-normal);
-}
-
-.agent-page .status-active {
-  color: var(--todo-primary);
-  background: var(--todo-fill-primary-12);
-}
-
-.agent-page .status-warning {
-  color: var(--todo-warning);
-  background: rgba(var(--todo-warning-rgb), 0.16);
-}
-
-.agent-page .status-muted {
+.agent-page .subpage-cell.inactive .subpage-label,
+.agent-page .subpage-cell.inactive .subpage-meta {
   color: var(--todo-text-secondary);
-  background: var(--todo-surface-muted);
-}
-
-.agent-page .token-cell.inactive .token-name,
-.agent-page .token-cell.inactive .token-hint {
-  color: var(--todo-text-secondary);
-}
-
-.agent-page .token-action {
-  display: flex;
-  align-items: center;
-  flex-shrink: 0;
-  padding: 0 28rpx 0 16rpx;
-  color: var(--todo-danger);
-  font-size: var(--todo-font-size-lg);
-}
-
-.agent-page .danger-button {
-  margin-bottom: 0;
-  color: var(--todo-danger);
 }
