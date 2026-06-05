@@ -98,29 +98,16 @@ page {
 }
 
 .profile-setup-actions {
-  display: flex;
-  gap: 20rpx;
   margin-top: 32rpx;
 }
 
-.profile-setup-action {
-  flex: 1;
+.profile-setup-dismiss {
   height: 76rpx;
   border-radius: 16rpx;
-  font-size: 30rpx;
-  font-weight: 600;
-}
-
-.profile-setup-action.primary {
-  background: var(--todo-primary);
-  color: var(--todo-text-inverse);
-}
-
-.profile-setup-action.secondary {
   background: var(--todo-bg-page);
   color: var(--todo-text-secondary);
-}
-
-.profile-setup-action::after {
-  border: none;
+  font-size: 30rpx;
+  font-weight: 600;
+  line-height: 76rpx;
+  text-align: center;
 }

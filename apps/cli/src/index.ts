@@ -6,6 +6,7 @@ import * as calendar from "./commands/calendar";
 import * as contact from "./commands/contact";
 import * as core from "./commands/core";
 import * as reminder from "./commands/reminder";
+import * as token from "./commands/token";
 
 const argv = process.argv.slice(2);
 const command = argv[0] ?? "help";
@@ -41,6 +42,22 @@ async function main(): Promise<void> {
     case "logout":
       await core.runLogout(ctx);
       break;
+    case "token": {
+      const action = sub ?? "help";
+      if (action === "list") {
+        await token.runTokenList(ctx);
+      } else if (action === "create") {
+        await token.runTokenCreate(ctx, argv);
+      } else if (action === "revoke") {
+        await token.runTokenRevoke(ctx, argv);
+      } else if (action === "revoke-all") {
+        await token.runTokenRevokeAll(ctx);
+      } else {
+        console.error("Usage: ai-todo token <list|create|revoke|revoke-all>");
+        process.exitCode = 1;
+      }
+      break;
+    }
     case "today":
       await core.runToday(ctx);
       break;

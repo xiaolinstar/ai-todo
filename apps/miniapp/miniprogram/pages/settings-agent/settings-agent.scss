@@ -1,76 +1,91 @@
-@import "../../styles/settings-page.scss";
+@import "../../styles/mine-subpage.scss";
 
-.agent-page .form-hint-block {
-  margin-bottom: 24rpx;
-  padding: 0 8rpx;
-  color: var(--todo-text-secondary);
-  font-size: 24rpx;
-  line-height: 1.5;
-}
-
-.agent-page .pat-reveal,
-.agent-page .pat-create {
-  margin-bottom: 24rpx;
-  padding: 28rpx;
-  background: var(--todo-surface);
-  border-radius: var(--todo-radius-lg, 20rpx);
-}
-
-.agent-page .pat-reveal-title {
-  color: var(--todo-text-primary);
-  font-size: 30rpx;
-  font-weight: 600;
-  margin-bottom: 16rpx;
-}
-
-.agent-page .pat-token-text {
-  display: block;
-  color: var(--todo-text-primary);
-  font-size: 24rpx;
-  line-height: 1.5;
-  word-break: break-all;
-  margin-bottom: 24rpx;
-}
-
-.agent-page .pat-reveal-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 16rpx;
-}
-
-.agent-page .pat-action-btn {
-  margin-bottom: 0;
-}
-
-.agent-page .pat-list {
-  margin-bottom: 24rpx;
-}
-
-.agent-page .pat-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16rpx;
-  padding: 24rpx 28rpx;
+.agent-page .menu-group .subpage-cell + .subpage-cell,
+.agent-page .token-group .subpage-cell + .token-cell,
+.agent-page .token-group .token-cell + .token-cell,
+.agent-page .token-group .subpage-cell + .subpage-cell {
   border-top: var(--todo-separator);
+}
+
+.agent-page .token-name {
+  color: var(--todo-text-primary);
+  font-size: var(--todo-font-size-xl);
+  line-height: var(--todo-line-height-normal);
+}
+
+.agent-page .token-cell {
+  display: flex;
+  align-items: stretch;
   background: var(--todo-surface);
 }
 
-.agent-page .pat-item:first-child {
-  border-top: none;
-}
-
-.agent-page .pat-item-main {
+.agent-page .token-main {
   flex: 1;
   min-width: 0;
+  padding: 20rpx 0 20rpx 28rpx;
 }
 
-.agent-page .pat-revoke {
+.agent-page .token-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.agent-page .token-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.agent-page .token-hint {
+  display: block;
+  margin-top: 6rpx;
+  color: var(--todo-text-primary);
+  font-size: var(--todo-font-size-md);
+  line-height: var(--todo-line-height-normal);
+  word-break: break-all;
+}
+
+.agent-page .token-status {
   flex-shrink: 0;
-  color: var(--todo-danger);
-  font-size: 28rpx;
+  padding: 4rpx 12rpx;
+  border-radius: 999rpx;
+  font-size: var(--todo-font-size-sm);
+  line-height: var(--todo-line-height-normal);
 }
 
-.agent-page .pat-create-btn {
-  margin-bottom: 16rpx;
+.agent-page .status-active {
+  color: var(--todo-primary);
+  background: var(--todo-fill-primary-12);
+}
+
+.agent-page .status-warning {
+  color: var(--todo-warning);
+  background: rgba(var(--todo-warning-rgb), 0.16);
+}
+
+.agent-page .status-muted {
+  color: var(--todo-text-secondary);
+  background: var(--todo-surface-muted);
+}
+
+.agent-page .token-cell.inactive .token-name,
+.agent-page .token-cell.inactive .token-hint {
+  color: var(--todo-text-secondary);
+}
+
+.agent-page .token-action {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  padding: 0 28rpx 0 16rpx;
+  color: var(--todo-danger);
+  font-size: var(--todo-font-size-lg);
+}
+
+.agent-page .danger-button {
+  margin-bottom: 0;
+  color: var(--todo-danger);
 }

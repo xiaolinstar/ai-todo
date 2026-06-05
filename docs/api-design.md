@@ -193,7 +193,8 @@ POST /v1/api-tokens
 {
   "name": "MacBook Codex",
   "scopes": ["read", "write", "contact:read"],
-  "expires_at": "2026-08-19T00:00:00+08:00"
+  "expiresAt": "2026-08-19T00:00:00+08:00",
+  "maxIdleDays": 90
 }
 ```
 
@@ -205,8 +206,11 @@ POST /v1/api-tokens
   "data": {
     "id": "token_123",
     "token": "aitodo_xxx",
+    "tokenHint": "aitodo_****abcd",
     "name": "MacBook Codex",
-    "scopes": ["read", "write", "contact:read"]
+    "scopes": ["read", "write", "contact:read"],
+    "expiresAt": "2026-08-19T00:00:00+08:00",
+    "maxIdleDays": 90
   }
 }
 ```
@@ -217,10 +221,18 @@ POST /v1/api-tokens
 GET /v1/api-tokens
 ```
 
+列表返回 `tokenHint`、`status`（`active` / `expired` / `idle_revoked` / `revoked`）、`expiresAt`、`lastUsedAt`、`maxIdleDays`。服务端不返回历史明文 token。
+
 ### 吊销 CLI Token
 
 ```http
 DELETE /v1/api-tokens/{token_id}
+```
+
+批量吊销：
+
+```http
+POST /v1/api-tokens/revoke-all
 ```
 
 ## Reminder 接口

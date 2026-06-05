@@ -70,8 +70,13 @@ export interface ApiTokenSummary {
   id: string;
   name: string;
   scopes: string[];
+  tokenHint?: string;
+  status: "active" | "expired" | "revoked" | "idle_revoked";
+  expiresAt?: string;
+  maxIdleDays?: number;
   createdAt?: string;
   lastUsedAt?: string;
+  revokedAt?: string;
 }
 
 export interface CreateApiTokenResult {
@@ -80,6 +85,9 @@ export interface CreateApiTokenResult {
   name: string;
   tokenType?: string;
   scopes: string[];
+  tokenHint?: string;
+  expiresAt?: string;
+  maxIdleDays?: number;
 }
 
 export interface ApiTokenListResult {
@@ -393,10 +401,15 @@ export function createContact(input: {
   });
 }
 
-export function createPat(name: string) {
+export function createPat(input: { name: string; expiresAt?: string; maxIdleDays?: number }) {
   return request<CreateApiTokenResult>("/v1/api-tokens", {
     method: "POST",
-    data: { name, scopes: ["read", "write", "contact:read", "contact:write"] }
+    data: {
+      name: input.name,
+      expiresAt: input.expiresAt,
+      maxIdleDays: input.maxIdleDays,
+      scopes: ["read", "write", "contact:read", "contact:write"]
+    }
   });
 }
 

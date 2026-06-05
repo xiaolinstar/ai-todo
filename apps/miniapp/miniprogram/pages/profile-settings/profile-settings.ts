@@ -21,6 +21,8 @@ Page({
     showPrivacyAuthorization: false
   },
 
+  _savedDisplayName: "",
+  _savedAvatarUrl: "",
   _privacyResolve: undefined as PrivacyAuthorizationResolve | undefined,
 
   onLoad() {
@@ -39,13 +41,17 @@ Page({
         }
         const user = response.data.user;
         const userUsername = (user.username || "").trim() || user.id;
+        const displayName = user.displayName || user.id;
+        const avatarUrl = user.avatarUrl || "";
+        this._savedDisplayName = displayName;
+        this._savedAvatarUrl = avatarUrl;
         this.setData({
           userId: user.id,
           userUsername,
-          displayName: user.displayName || user.id,
-          avatarUrl: user.avatarUrl || "",
-          initial: user.avatarUrl ? getInitial(user.displayName) : "微",
-          avatarColor: avatarColor(user.displayName || user.id)
+          displayName,
+          avatarUrl,
+          initial: avatarUrl ? getInitial(displayName) : "微",
+          avatarColor: avatarColor(displayName || user.id)
         });
       })
       .catch(() => {
@@ -56,8 +62,10 @@ Page({
 
   onChooseAvatar(e: { detail: { avatarUrl?: string } }) {
     const avatarUrl = e.detail.avatarUrl || "";
-    if (!avatarUrl) return;
-    this.setData({ avatarUrl });
+    if (!avatarUrl || avatarUrl === this.data.avatarUrl) return;
+    this.setData({ avatarUrl }, () => {
+      this.persistProfile();
+    });
   },
 
   showPrivacyAuthorization(resolve: PrivacyAuthorizationResolve) {
@@ -91,19 +99,35 @@ Page({
     });
   },
 
-  onSubmit(e?: { detail?: { value?: { nickname?: string } } }) {
-    const submittedName = e?.detail?.value?.nickname;
-    const displayName =
-      typeof submittedName === "string" ? submittedName.trim() : this.data.displayName.trim();
+  onNameBlur() {
+    const displayName = this.data.displayName.trim();
     if (!displayName) {
       wx.showToast({ title: "请输入昵称", icon: "none" });
+      this.setData({ displayName: this._savedDisplayName });
+      return;
+    }
+    if (displayName !== this.data.displayName) {
+      this.setData({ displayName });
+    }
+    this.persistProfile();
+  },
+
+  persistProfile() {
+    if (this.data.loading || this.data.saving) return;
+    const displayName = this.data.displayName.trim();
+    const avatarUrl = this.data.avatarUrl || "";
+    if (!displayName) return;
+    if (
+      displayName === this._savedDisplayName &&
+      avatarUrl === this._savedAvatarUrl
+    ) {
       return;
     }
 
     this.setData({ saving: true, displayName });
     updateProfile({
       displayName,
-      avatarUrl: this.data.avatarUrl || undefined
+      avatarUrl: avatarUrl || undefined
     })
       .then((response) => {
         this.setData({ saving: false });
@@ -111,9 +135,10 @@ Page({
           wx.showToast({ title: response.error?.message || "保存失败", icon: "none" });
           return;
         }
+        this._savedDisplayName = displayName;
+        this._savedAvatarUrl = avatarUrl;
         markProfileSetupSeen(response.data.user.id);
-        wx.showToast({ title: "已保存", icon: "success" });
-        setTimeout(() => wx.navigateBack(), 500);
+        wx.showToast({ title: "已更新", icon: "success" });
       })
       .catch(() => {
         this.setData({ saving: false });

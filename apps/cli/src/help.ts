@@ -19,6 +19,12 @@ Auth:
   ai-todo profile update --name <text> [--avatar-url <url>]
   ai-todo logout
 
+Access tokens:
+  ai-todo token list
+  ai-todo token create --name <text> [--expires-at <iso>] [--max-idle-days <days>] [--scopes read,write]
+  ai-todo token revoke <token_id>
+  ai-todo token revoke-all
+
 Global flags (commands only):
   --json                 Output API JSON (recommended for agents)
   --idempotency-key <uuid>   Recommended for agent write retries

@@ -1,6 +1,6 @@
-@import "../../styles/settings-page.scss";
+@import "../../styles/mine-subpage.scss";
 
-.about-page .copy-row {
-  color: var(--todo-primary);
-  font-size: 26rpx;
+.about-page .subpage-cell.pressable {
+  flex-direction: row;
+  align-items: center;
 }

@@ -1,11 +1,19 @@
-<view class="page settings-page placeholder-page">
-  <view class="placeholder-card">
-    <view class="placeholder-lead">{{lead}}</view>
-    <view wx:if="{{extraNote}}" class="placeholder-badge">{{extraNote}}</view>
-    <view wx:elif="{{plannedVersion}}" class="placeholder-badge">计划在 {{plannedVersion}} 完善</view>
-  </view>
-  <view class="settings-hint">规划中的能力：</view>
-  <view class="placeholder-list">
-    <view class="placeholder-list-item" wx:for="{{bullets}}" wx:key="*this">{{item}}</view>
-  </view>
+<view class="mine-subpage placeholder-page">
+  <scroll-view scroll-y class="mine-subpage-scroll" enhanced show-scrollbar="{{false}}">
+    <view class="mine-subpage-inner">
+      <view class="inset-group subpage-card">
+        <view class="subpage-card-inner">
+          <view class="placeholder-lead">{{lead}}</view>
+          <view wx:if="{{extraNote}}" class="placeholder-badge">{{extraNote}}</view>
+          <view wx:elif="{{plannedVersion}}" class="placeholder-badge">计划在 {{plannedVersion}} 完善</view>
+        </view>
+      </view>
+      <view class="group-header">规划中的能力</view>
+      <view class="inset-group subpage-group">
+        <view class="subpage-cell" wx:for="{{bullets}}" wx:key="*this">
+          <text class="subpage-meta">{{item}}</text>
+        </view>
+      </view>
+    </view>
+  </scroll-view>
 </view>

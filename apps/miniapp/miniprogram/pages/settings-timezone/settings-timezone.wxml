@@ -1,29 +1,27 @@
-<view class="page settings-timezone-page">
-  <view class="group-header">账户时区</view>
-  <view class="inset-group">
-    <picker mode="selector" range="{{timezoneLabels}}" value="{{timezoneIndex}}" bindchange="onTimezoneChange">
-      <view class="form-row picker-row">
-        <text class="form-label">时区</text>
-        <text class="form-value">{{timezoneLabel}}</text>
-        <view class="form-disclosure"></view>
+<view class="mine-subpage settings-timezone-page">
+  <scroll-view scroll-y class="mine-subpage-scroll" enhanced show-scrollbar="{{false}}">
+    <view class="mine-subpage-inner">
+      <view class="group-header">账户时区</view>
+      <view class="inset-group subpage-group">
+        <picker mode="selector" range="{{timezoneLabels}}" value="{{timezoneIndex}}" disabled="{{loading || saving}}" bindchange="onTimezoneChange">
+          <view class="subpage-cell picker-row">
+            <view class="subpage-cell-main">
+              <text class="subpage-label">时区</text>
+              <text class="subpage-meta">提醒和日历按此时区显示</text>
+            </view>
+            <text class="subpage-value">{{timezoneLabel}}</text>
+            <view class="form-disclosure"></view>
+          </view>
+        </picker>
+        <view class="subpage-cell clock-row">
+          <text class="subpage-label">当前时刻</text>
+          <text class="subpage-value emphasis">{{nowClock}}</text>
+        </view>
+        <view class="subpage-cell clock-row">
+          <text class="subpage-label">账户今天</text>
+          <text class="subpage-value">{{accountToday}}</text>
+        </view>
       </view>
-    </picker>
-    <view class="form-row clock-row">
-      <text class="form-label">当前时刻</text>
-      <text class="form-value emphasis">{{nowClock}}</text>
     </view>
-    <view class="form-row clock-row">
-      <text class="form-label">账户今天</text>
-      <text class="form-value">{{accountToday}}</text>
-    </view>
-  </view>
-  <text class="hint">提醒、日历的日期与时刻均按此时区显示；与手机本地时区可能不同（本机今天：{{deviceToday}}）。</text>
-  <button
-    class="todo-button todo-button-primary"
-    loading="{{saving}}"
-    disabled="{{loading || saving}}"
-    bindtap="onSave"
-  >
-    {{saving ? '保存中…' : '保存'}}
-  </button>
+  </scroll-view>
 </view>

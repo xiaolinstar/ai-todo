@@ -1,58 +1,85 @@
-<view class="page settings-page agent-page">
-  <view class="form-hint-block">
-    在电脑终端使用 ai-todo CLI 或 Agent 时，需创建个人访问令牌（PAT）。与微信登录会话分开，令牌只显示一次请妥善保存。
-  </view>
-
-  <view wx:if="{{newPatToken}}" class="pat-reveal">
-    <view class="pat-reveal-title">请立即复制，只显示一次</view>
-    <text class="pat-token-text" selectable>{{newPatToken}}</text>
-    <view class="pat-reveal-actions">
-      <button class="todo-button todo-button-primary pat-action-btn" hover-class="todo-button-hover" bindtap="onCopyPat">复制到剪贴板</button>
-      <button class="todo-button todo-button-secondary pat-action-btn" hover-class="todo-button-hover" bindtap="onDismissPatReveal">我已保存</button>
-    </view>
-  </view>
-
-  <view wx:if="{{creatingPat}}" class="pat-create">
-    <view class="form-row stack">
-      <text class="form-label">令牌名称</text>
-      <input class="form-input" placeholder="例如：MacBook CLI" value="{{patName}}" bindinput="onPatNameInput" />
-    </view>
-    <view class="pat-reveal-actions">
-      <button class="todo-button todo-button-primary pat-action-btn" hover-class="todo-button-hover" bindtap="onConfirmCreatePat" disabled="{{patSubmitting}}">{{patSubmitting ? '创建中…' : '确认创建'}}</button>
-      <button class="todo-button todo-button-secondary pat-action-btn" hover-class="todo-button-hover" bindtap="onCancelCreatePat">取消</button>
-    </view>
-  </view>
-
-  <button
-    wx:if="{{!creatingPat && !newPatToken}}"
-    class="todo-button todo-button-secondary pat-create-btn"
-    hover-class="todo-button-hover"
-    bindtap="onStartCreatePat"
-  >
-    创建新令牌
-  </button>
-
-  <view class="inset-group pat-list">
-    <view wx:if="{{patLoading}}" class="settings-cell">
-      <text class="cell-meta">加载中…</text>
-    </view>
-    <view wx:elif="{{patItems.length === 0}}" class="settings-cell">
-      <text class="cell-meta">暂无令牌。点击上方按钮创建。</text>
-    </view>
-    <view wx:for="{{patItems}}" wx:key="id" class="pat-item">
-      <view class="pat-item-main">
-        <text class="settings-label">{{item.name}}</text>
-        <text class="cell-meta">创建 {{item.createdAt}} · {{item.lastUsedAt}}</text>
+<view class="mine-subpage agent-page">
+  <scroll-view scroll-y class="mine-subpage-scroll" enhanced show-scrollbar="{{false}}">
+    <view class="mine-subpage-inner">
+      <view class="subpage-section">
+        <view class="group-header">操作</view>
+        <view class="inset-group menu-group">
+          <view class="subpage-cell pressable" hover-class="list-cell-hover" bindtap="onCreateToken">
+            <view class="subpage-cell-main">
+              <text class="subpage-label">新建令牌</text>
+              <text class="subpage-meta">完整令牌仅创建时显示一次</text>
+            </view>
+            <text class="subpage-chevron">›</text>
+          </view>
+          <view class="subpage-cell pressable" hover-class="list-cell-hover" bindtap="onOpenHelp">
+            <view class="subpage-cell-main">
+              <text class="subpage-label">CLI 配置方法</text>
+              <text class="subpage-meta">复制登录命令后在电脑终端执行</text>
+            </view>
+            <text class="subpage-chevron">›</text>
+          </view>
+        </view>
       </view>
-      <text
-        class="pat-revoke pressable"
-        bindtap="onRevokePat"
-        data-id="{{item.id}}"
-        data-name="{{item.name}}"
-        hover-class="list-cell-hover"
-      >
-        吊销
-      </text>
+
+      <view class="subpage-section">
+        <view class="group-header">有效令牌 · {{activePatCount}}</view>
+        <view class="inset-group token-group">
+          <view wx:if="{{patLoading}}" class="subpage-cell">
+            <text class="subpage-meta">加载中…</text>
+          </view>
+          <view wx:elif="{{activePatItems.length === 0}}" class="subpage-cell empty-cell">
+            <view class="subpage-cell-main">
+              <text class="subpage-label">暂无有效令牌</text>
+              <text class="subpage-meta">需要连接电脑端工具时再创建。</text>
+            </view>
+          </view>
+          <view wx:for="{{activePatItems}}" wx:key="id" class="token-cell">
+            <view class="token-main pressable" hover-class="list-cell-hover" bindtap="onOpenDetail" data-id="{{item.id}}">
+              <view class="token-row">
+                <text class="token-name">{{item.name}}</text>
+                <text class="token-status {{item.statusClass}}">{{item.statusLabel}}</text>
+              </view>
+              <text class="token-hint">{{item.tokenHint}}</text>
+              <text class="subpage-meta">最后使用 {{item.lastUsedAt}} · {{item.maxIdleDays}}</text>
+              <text class="subpage-meta">到期 {{item.expiresAt}}</text>
+            </view>
+            <text
+              class="token-action pressable"
+              bindtap="onRevokePat"
+              data-id="{{item.id}}"
+              data-name="{{item.name}}"
+              hover-class="list-cell-hover"
+            >
+              吊销
+            </text>
+          </view>
+        </view>
+      </view>
+
+      <view wx:if="{{inactivePatItems.length > 0}}" class="subpage-section">
+        <view class="group-header">历史 · {{inactivePatCount}}</view>
+        <view class="inset-group token-group">
+          <view class="subpage-cell pressable" hover-class="list-cell-hover" bindtap="onToggleInactive">
+            <view class="subpage-cell-main">
+              <text class="subpage-label">已失效令牌</text>
+              <text class="subpage-meta">{{inactivePatCount}} 个已过期、久未使用失效或已吊销</text>
+            </view>
+            <text class="subpage-chevron">{{showInactive ? '⌃' : '⌄'}}</text>
+          </view>
+          <block wx:if="{{showInactive}}">
+            <view wx:for="{{inactivePatItems}}" wx:key="id" class="token-cell inactive">
+              <view class="token-main pressable" hover-class="list-cell-hover" bindtap="onOpenDetail" data-id="{{item.id}}">
+                <view class="token-row">
+                  <text class="token-name">{{item.name}}</text>
+                  <text class="token-status {{item.statusClass}}">{{item.statusLabel}}</text>
+                </view>
+                <text class="token-hint">{{item.tokenHint}}</text>
+                <text class="subpage-meta">创建 {{item.createdAt}} · 最后使用 {{item.lastUsedAt}}</text>
+              </view>
+            </view>
+          </block>
+        </view>
+      </view>
     </view>
-  </view>
+  </scroll-view>
 </view>

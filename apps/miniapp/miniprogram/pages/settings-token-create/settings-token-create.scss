@@ -1,0 +1,24 @@
+@import "../../styles/mine-subpage.scss";
+
+.token-create-page .preset-cell {
+  flex-direction: row;
+  align-items: center;
+}
+
+.token-create-page .preset-check {
+  flex-shrink: 0;
+  margin-left: 12rpx;
+  color: var(--todo-primary);
+  font-size: var(--todo-font-size-title);
+  line-height: 1;
+}
+
+.token-create-page .token-secret,
+.token-create-page .token-command {
+  display: block;
+  margin-top: 12rpx;
+  color: var(--todo-text-primary);
+  font-size: var(--todo-font-size-md);
+  line-height: var(--todo-line-height-relaxed);
+  word-break: break-all;
+}

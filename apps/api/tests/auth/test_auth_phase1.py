@@ -128,11 +128,14 @@ def test_revoke_all_pats(client: TestClient, monkeypatch) -> None:
     )
 
     listed = client.get("/v1/api-tokens", headers=headers)
-    assert len(listed.json()["data"]["items"]) == 2
+    listed_items = listed.json()["data"]["items"]
+    assert len([item for item in listed_items if item["status"] == "active"]) == 2
 
     revoked = client.post("/v1/api-tokens/revoke-all", headers=headers)
     assert revoked.status_code == 200
     assert revoked.json()["data"]["revokedCount"] == 2
 
     listed_after = client.get("/v1/api-tokens", headers=headers)
-    assert listed_after.json()["data"]["items"] == []
+    after_items = listed_after.json()["data"]["items"]
+    assert len([item for item in after_items if item["status"] == "active"]) == 0
+    assert len([item for item in after_items if item["status"] == "revoked"]) >= 2

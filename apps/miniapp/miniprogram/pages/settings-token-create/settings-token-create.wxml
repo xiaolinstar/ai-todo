@@ -1,0 +1,111 @@
+<view class="mine-subpage token-create-page">
+  <scroll-view scroll-y class="mine-subpage-scroll" enhanced show-scrollbar="{{false}}">
+    <view class="mine-subpage-inner">
+      <block wx:if="{{createdToken}}">
+        <view class="inset-group subpage-group">
+          <view class="subpage-cell stack">
+            <view class="subpage-cell-main">
+              <text class="subpage-label">{{createdName}}</text>
+              <text class="subpage-meta">仅显示一次 · ID：{{createdId}}</text>
+            </view>
+          </view>
+          <view class="subpage-cell stack">
+            <text class="subpage-label">访问令牌</text>
+            <text class="token-secret" selectable>{{createdToken}}</text>
+          </view>
+          <view class="subpage-cell stack">
+            <text class="subpage-label">登录命令</text>
+            <text class="token-command" selectable>{{loginCommand}}</text>
+          </view>
+        </view>
+
+        <view class="subpage-section">
+          <view class="inset-group subpage-group">
+            <view class="subpage-cell pressable" hover-class="list-cell-hover" bindtap="onCopyCommand">
+              <view class="subpage-cell-main">
+                <text class="subpage-label">复制登录命令</text>
+              </view>
+              <text class="subpage-chevron">›</text>
+            </view>
+            <view class="subpage-cell pressable" hover-class="list-cell-hover" bindtap="onCopyToken">
+              <view class="subpage-cell-main">
+                <text class="subpage-label">复制 Token</text>
+              </view>
+              <text class="subpage-chevron">›</text>
+            </view>
+            <view class="subpage-cell pressable" hover-class="list-cell-hover" bindtap="onDone">
+              <view class="subpage-cell-main">
+                <text class="subpage-label">完成</text>
+                <text class="subpage-meta">返回令牌列表</text>
+              </view>
+              <text class="subpage-chevron">›</text>
+            </view>
+          </view>
+        </view>
+      </block>
+
+      <block wx:else>
+        <view class="inset-group subpage-group">
+          <view class="subpage-cell stack">
+            <text class="subpage-label">令牌名称</text>
+            <input class="subpage-input" placeholder="例如：MacBook CLI" value="{{name}}" bindinput="onNameInput" />
+          </view>
+        </view>
+
+        <view class="subpage-section">
+          <view class="group-header">用途预设</view>
+          <view class="inset-group subpage-group">
+            <view
+              wx:for="{{presets}}"
+              wx:key="id"
+              class="subpage-cell preset-cell pressable"
+              hover-class="list-cell-hover"
+              bindtap="onPresetTap"
+              data-id="{{item.id}}"
+            >
+              <view class="subpage-cell-main">
+                <text class="subpage-label">{{item.label}}</text>
+                <text class="subpage-meta">{{item.description}}</text>
+              </view>
+              <text class="preset-check">{{selectedPreset === item.id ? '✓' : ''}}</text>
+            </view>
+          </view>
+        </view>
+
+        <view class="subpage-section">
+          <view class="inset-group subpage-group">
+            <view class="subpage-cell pressable" hover-class="list-cell-hover" bindtap="onToggleAdvanced">
+              <view class="subpage-cell-main">
+                <text class="subpage-label">高级设置</text>
+                <text class="subpage-meta">覆盖预设的到期时间或空闲失效天数</text>
+              </view>
+              <text class="subpage-chevron">{{showAdvanced ? '⌃' : '⌄'}}</text>
+            </view>
+            <block wx:if="{{showAdvanced}}">
+              <view class="subpage-cell stack">
+                <text class="subpage-label">到期时间</text>
+                <input class="subpage-input" placeholder="可选，例如 2026-12-01T00:00:00+08:00" value="{{customExpiresAt}}" bindinput="onExpiresInput" />
+              </view>
+              <view class="subpage-cell stack">
+                <text class="subpage-label">空闲失效天数</text>
+                <input class="subpage-input" type="number" placeholder="留空使用预设" value="{{customMaxIdleDays}}" bindinput="onMaxIdleInput" />
+              </view>
+            </block>
+          </view>
+        </view>
+
+        <view class="subpage-section">
+          <view class="inset-group subpage-group">
+            <view class="subpage-cell pressable" hover-class="list-cell-hover" bindtap="onCreate">
+              <view class="subpage-cell-main">
+                <text class="subpage-label">{{submitting ? '创建中…' : '创建令牌'}}</text>
+                <text class="subpage-meta">完整令牌仅创建时显示一次</text>
+              </view>
+              <text class="subpage-chevron">›</text>
+            </view>
+          </view>
+        </view>
+      </block>
+    </view>
+  </scroll-view>
+</view>

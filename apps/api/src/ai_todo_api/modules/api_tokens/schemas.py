@@ -5,13 +5,17 @@ class CreateApiTokenInput(CamelModel):
     name: str
     scopes: list[str] = ["read", "write", "contact:read", "contact:write"]
     expires_at: str | None = None
+    max_idle_days: int | None = None
 
 
 class ApiTokenSummary(CamelModel):
     id: str
     name: str
     scopes: list[str]
+    token_hint: str | None = None
+    status: str
     expires_at: str | None = None
+    max_idle_days: int | None = None
     last_used_at: str | None = None
     revoked_at: str | None = None
     created_at: str
@@ -23,7 +27,9 @@ class CreateApiTokenResult(CamelModel):
     name: str
     token_type: str = "pat"
     scopes: list[str]
+    token_hint: str | None = None
     expires_at: str | None = None
+    max_idle_days: int | None = None
 
 
 class ApiTokenListResult(CamelModel):

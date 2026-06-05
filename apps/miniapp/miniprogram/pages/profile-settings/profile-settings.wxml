@@ -1,36 +1,34 @@
-<view class="page profile-settings-page">
-  <view class="group-header">账户资料</view>
-  <form bindsubmit="onSubmit">
-    <view class="inset-group profile-form">
-      <view class="avatar-row">
-        <text class="form-label">头像</text>
-        <button class="profile-avatar-button" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar">
-          <image wx:if="{{avatarUrl}}" class="profile-avatar-image" src="{{avatarUrl}}" mode="aspectFill" />
-          <text wx:else>{{initial}}</text>
-        </button>
-      </view>
-      <view class="form-row">
-        <text class="form-label">昵称</text>
-        <input
-          class="form-input"
-          name="nickname"
-          type="nickname"
-          placeholder="选择或输入昵称"
-          value="{{displayName}}"
-          bindinput="onNameInput"
-          bindblur="onNameInput"
-        />
-      </view>
-      <view class="form-row">
-        <text class="form-label">用户名</text>
-        <text class="username-display" selectable>{{userUsername}}</text>
+<view class="mine-subpage profile-settings-page">
+  <scroll-view scroll-y class="mine-subpage-scroll" enhanced show-scrollbar="{{false}}">
+    <view class="mine-subpage-inner">
+      <view class="group-header">账户资料</view>
+      <view class="inset-group subpage-group profile-form">
+        <view class="avatar-row">
+          <text class="subpage-label">头像</text>
+          <button class="profile-avatar-button" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar">
+            <image wx:if="{{avatarUrl}}" class="profile-avatar-image" src="{{avatarUrl}}" mode="aspectFill" />
+            <text wx:else>{{initial}}</text>
+          </button>
+        </view>
+        <view class="subpage-cell">
+          <text class="subpage-label">昵称</text>
+          <input
+            class="profile-input"
+            type="nickname"
+            placeholder="选择或输入昵称"
+            value="{{displayName}}"
+            bindinput="onNameInput"
+            bindblur="onNameBlur"
+            disabled="{{loading || saving}}"
+          />
+        </view>
+        <view class="subpage-cell">
+          <text class="subpage-label">用户名</text>
+          <text class="username-display" selectable>{{userUsername}}</text>
+        </view>
       </view>
     </view>
-
-    <button class="todo-button todo-button-primary" form-type="submit" loading="{{saving}}" disabled="{{loading || saving}}">
-      {{saving ? '保存中…' : '保存资料'}}
-    </button>
-  </form>
+  </scroll-view>
 
   <privacy-authorization
     visible="{{showPrivacyAuthorization}}"

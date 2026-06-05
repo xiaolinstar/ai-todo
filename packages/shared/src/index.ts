@@ -86,6 +86,8 @@ export interface DeleteContactResult {
 export interface CreateApiTokenInput {
   name: string;
   scopes?: string[];
+  expiresAt?: string;
+  maxIdleDays?: number;
 }
 
 export interface CreateApiTokenResult {
@@ -94,14 +96,21 @@ export interface CreateApiTokenResult {
   name: string;
   tokenType?: string;
   scopes: string[];
+  tokenHint?: string;
   expiresAt?: string;
+  maxIdleDays?: number;
 }
+
+export type ApiTokenStatus = "active" | "expired" | "revoked" | "idle_revoked";
 
 export interface ApiTokenSummary {
   id: string;
   name: string;
   scopes: string[];
+  tokenHint?: string;
+  status: ApiTokenStatus;
   expiresAt?: string;
+  maxIdleDays?: number;
   lastUsedAt?: string;
   revokedAt?: string;
   createdAt: string;
@@ -109,6 +118,15 @@ export interface ApiTokenSummary {
 
 export interface ApiTokenListResult {
   items: ApiTokenSummary[];
+}
+
+export interface RevokeApiTokenResult {
+  id: string;
+  revoked: boolean;
+}
+
+export interface RevokeAllApiTokensResult {
+  revokedCount: number;
 }
 
 export interface ReminderSummary {

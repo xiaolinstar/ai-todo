@@ -1,60 +1,61 @@
-<view class="page settings-page notification-settings-page">
-  <view wx:if="{{loading}}" class="settings-hint">加载中…</view>
-  <block wx:else>
-    <view class="form-hint-block">
-      管理微信提醒渠道。新建提醒的默认通知请在「使用偏好」中设置；创建时仍需在微信中授权订阅。
-    </view>
-    <view class="inset-group">
-      <view class="settings-cell">
-        <view class="settings-cell-main">
-          <text class="settings-label">微信通知总开关</text>
-          <text class="cell-meta">关闭后创建提醒时不再提供微信提醒选项</text>
-        </view>
-        <switch
-          checked="{{wechatEnabled}}"
-          disabled="{{saving}}"
-          bindchange="onWechatEnabledChange"
-          color="{{switchColor}}"
-        />
-      </view>
-      <view class="settings-cell">
-        <view class="settings-cell-main">
-          <text class="settings-label">免打扰开始</text>
-        </view>
-        <picker mode="time" value="{{quietStart}}" disabled="{{saving}}" bindchange="onQuietStartChange">
-          <view class="picker-value">{{quietStart || '未设置'}}</view>
-        </picker>
-      </view>
-      <view class="settings-cell">
-        <view class="settings-cell-main">
-          <text class="settings-label">免打扰结束</text>
-        </view>
-        <picker mode="time" value="{{quietEnd}}" disabled="{{saving}}" bindchange="onQuietEndChange">
-          <view class="picker-value">{{quietEnd || '未设置'}}</view>
-        </picker>
-      </view>
-      <view wx:if="{{!templateConfigured}}" class="settings-cell stack">
-        <view class="settings-cell-main">
-          <text class="settings-label">模板状态</text>
-          <text class="cell-meta">服务端尚未配置微信提醒模板，开关保存后仍无法推送。</text>
-        </view>
-      </view>
-    </view>
-
-    <view wx:if="{{statusItems.length > 0}}" class="status-block">
-      <view class="group-header">最近送达</view>
-      <view class="inset-group">
-        <view
-          class="settings-cell stack"
-          wx:for="{{statusItems}}"
-          wx:key="id"
-        >
-          <view class="settings-cell-main">
-            <text class="settings-label">{{item.title}}</text>
-            <text class="cell-meta {{item.statusClass === 'danger' ? 'status-danger' : 'status-muted'}}">{{item.meta}}</text>
+<view class="mine-subpage notification-settings-page">
+  <scroll-view scroll-y class="mine-subpage-scroll" enhanced show-scrollbar="{{false}}">
+    <view class="mine-subpage-inner">
+      <text wx:if="{{loading}}" class="subpage-hint">加载中…</text>
+      <block wx:else>
+        <view class="inset-group subpage-group">
+          <view class="subpage-cell">
+            <view class="subpage-cell-main">
+              <text class="subpage-label">微信通知总开关</text>
+              <text class="subpage-meta">关闭后不再提供微信提醒选项</text>
+            </view>
+            <switch
+              checked="{{wechatEnabled}}"
+              disabled="{{saving}}"
+              bindchange="onWechatEnabledChange"
+              color="{{switchColor}}"
+            />
+          </view>
+          <view class="subpage-cell">
+            <view class="subpage-cell-main">
+              <text class="subpage-label">免打扰开始</text>
+            </view>
+            <picker mode="time" value="{{quietStart}}" disabled="{{saving}}" bindchange="onQuietStartChange">
+              <view class="picker-value">{{quietStart || '未设置'}}</view>
+            </picker>
+          </view>
+          <view class="subpage-cell">
+            <view class="subpage-cell-main">
+              <text class="subpage-label">免打扰结束</text>
+            </view>
+            <picker mode="time" value="{{quietEnd}}" disabled="{{saving}}" bindchange="onQuietEndChange">
+              <view class="picker-value">{{quietEnd || '未设置'}}</view>
+            </picker>
+          </view>
+          <view wx:if="{{!templateConfigured}}" class="subpage-cell stack">
+            <view class="subpage-cell-main">
+              <text class="subpage-label">模板状态</text>
+              <text class="subpage-meta">服务端尚未配置微信提醒模板，开关保存后仍无法推送。</text>
+            </view>
           </view>
         </view>
-      </view>
+
+        <view wx:if="{{statusItems.length > 0}}" class="subpage-section">
+          <view class="group-header">最近送达</view>
+          <view class="inset-group subpage-group">
+            <view
+              class="subpage-cell stack"
+              wx:for="{{statusItems}}"
+              wx:key="id"
+            >
+              <view class="subpage-cell-main">
+                <text class="subpage-label">{{item.title}}</text>
+                <text class="subpage-meta {{item.statusClass === 'danger' ? 'status-danger' : 'status-muted'}}">{{item.meta}}</text>
+              </view>
+            </view>
+          </view>
+        </view>
+      </block>
     </view>
-  </block>
+  </scroll-view>
 </view>

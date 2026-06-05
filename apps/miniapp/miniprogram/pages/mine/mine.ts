@@ -183,20 +183,6 @@ Page({
     });
   },
 
-  onLogout() {
-    wx.showModal({
-      title: "退出登录",
-      content: "退出后需重新微信登录。",
-      success: (result) => {
-        if (!result.confirm) return;
-        clearToken();
-        this.resetProfile();
-        this.syncMenu();
-        wx.showToast({ title: "已退出", icon: "none" });
-      }
-    });
-  },
-
   onProfileCardTap() {
     if (!this.data.loggedIn) {
       this.onWechatLogin();
@@ -264,11 +250,17 @@ Page({
   onChooseSetupAvatar(e: { detail: { avatarUrl?: string } }) {
     const avatarUrl = e.detail.avatarUrl || "";
     if (!avatarUrl) return;
-    this.setData({ setupAvatarUrl: avatarUrl });
+    this.setData({ setupAvatarUrl: avatarUrl }, () => {
+      this.trySaveProfileSetup();
+    });
   },
 
   onSetupNameInput(e: { detail: { value: string } }) {
     this.setData({ setupNameInput: e.detail.value });
+  },
+
+  onSetupNameBlur() {
+    this.trySaveProfileSetup();
   },
 
   onCancelProfileSetup() {
@@ -278,21 +270,15 @@ Page({
     this.setData({ showProfileSetup: false });
   },
 
-  onSaveProfileSetup(e?: { detail?: { value?: { nickname?: string } } }) {
-    const submittedName = e?.detail?.value?.nickname;
-    const displayName =
-      typeof submittedName === "string"
-        ? submittedName.trim()
-        : this.data.setupNameInput.trim();
-    if (!displayName) {
-      wx.showToast({ title: "请输入昵称", icon: "none" });
-      return;
-    }
+  trySaveProfileSetup() {
+    if (this.data.profileSaving) return;
+    const displayName = this.data.setupNameInput.trim();
+    if (!displayName) return;
     this.setData({ setupNameInput: displayName });
-    this.saveProfile(displayName, this.data.setupAvatarUrl || undefined, "资料已保存");
+    this.saveProfile(displayName, this.data.setupAvatarUrl || undefined);
   },
 
-  saveProfile(displayName: string, avatarUrl?: string, successTitle = "资料已保存") {
+  saveProfile(displayName: string, avatarUrl?: string) {
     this.setData({ profileSaving: true });
     updateProfile({ displayName, avatarUrl })
       .then((response) => {
@@ -305,7 +291,7 @@ Page({
         markProfileSetupSeen(response.data.user.id);
         this.setData({ showProfileSetup: false });
         this.syncMenu();
-        wx.showToast({ title: successTitle, icon: "success" });
+        wx.showToast({ title: "资料已更新", icon: "success" });
       })
       .catch(() => {
         this.setData({ profileSaving: false });

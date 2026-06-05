@@ -20,6 +20,8 @@ class Settings(BaseSettings):
     rate_limit_enabled: bool = Field(default=True)
     rate_limit_wechat_login_per_minute: int = Field(default=10, ge=1)
     session_token_ttl_days: int = Field(default=30, ge=1)
+    pat_default_max_idle_days: int | None = Field(default=90)
+    pat_max_ttl_days: int | None = Field(default=365)
     notification_worker_poll_seconds: int = Field(default=30, ge=1)
     notification_worker_batch_size: int = Field(default=50, ge=1)
     notification_max_attempts: int = Field(default=3, ge=1)

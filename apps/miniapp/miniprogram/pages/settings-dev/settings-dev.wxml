@@ -1,17 +1,39 @@
-<view class="page settings-page dev-settings-page">
-  <view class="dev-card">
-    <text class="dev-label">API 地址</text>
-    <text class="dev-value">{{apiUrl}}</text>
-    <text class="dev-label" style="margin-top: 24rpx;">连接状态</text>
-    <text class="dev-value">{{apiStatus}}</text>
-  </view>
-  <view class="settings-hint">以下操作仅用于本地开发调试。</view>
-  <view class="dev-actions">
-    <button class="todo-button todo-button-secondary" hover-class="todo-button-hover" bindtap="onResetProfileSetup">
-      重新触发资料确认
-    </button>
-    <button class="todo-button todo-button-secondary" hover-class="todo-button-hover" bindtap="onRevokeAllPats">
-      清理全部 CLI 令牌
-    </button>
-  </view>
+<view class="mine-subpage dev-settings-page">
+  <scroll-view scroll-y class="mine-subpage-scroll" enhanced show-scrollbar="{{false}}">
+    <view class="mine-subpage-inner">
+      <view class="group-header">连接</view>
+      <view class="inset-group subpage-group">
+        <view class="subpage-cell stack">
+          <view class="subpage-cell-main">
+            <text class="subpage-label">API 地址</text>
+            <text class="subpage-meta url-value">{{apiUrl}}</text>
+          </view>
+        </view>
+        <view class="subpage-cell">
+          <text class="subpage-label">连接状态</text>
+          <text class="subpage-value">{{apiStatus}}</text>
+        </view>
+      </view>
+
+      <view class="subpage-section">
+        <view class="group-header">开发操作</view>
+        <view class="inset-group subpage-group">
+          <view class="subpage-cell pressable" hover-class="list-cell-hover" bindtap="onResetProfileSetup">
+            <view class="subpage-cell-main">
+              <text class="subpage-label">重新触发资料确认</text>
+              <text class="subpage-meta">返回「我的」将弹出确认</text>
+            </view>
+            <text class="subpage-chevron">›</text>
+          </view>
+          <view class="subpage-cell pressable" hover-class="list-cell-hover" bindtap="onRevokeAllPats">
+            <view class="subpage-cell-main">
+              <text class="subpage-label danger">清理全部 CLI 令牌</text>
+              <text class="subpage-meta">吊销当前账号下所有 CLI 令牌</text>
+            </view>
+            <text class="subpage-chevron">›</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </scroll-view>
 </view>

@@ -1,21 +1,6 @@
-.settings-timezone-page {
-  padding-top: 8rpx;
-}
+@import "../../styles/mine-subpage.scss";
 
-.picker-row,
-.clock-row {
-  min-height: 96rpx;
-}
-
-.emphasis {
+.settings-timezone-page .emphasis {
   font-variant-numeric: tabular-nums;
-  font-weight: 600;
-}
-
-.hint {
-  display: block;
-  margin: 16rpx 32rpx 32rpx;
-  font-size: 26rpx;
-  color: var(--todo-text-secondary);
-  line-height: 1.5;
+  font-weight: var(--todo-font-weight-semibold);
 }

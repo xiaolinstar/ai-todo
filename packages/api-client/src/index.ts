@@ -19,8 +19,11 @@ import type {
   ListCalendarEventsParams,
   ListRemindersParams,
   MeResult,
+  ApiTokenListResult,
   ReminderDetailResult,
   ReminderListResult,
+  RevokeAllApiTokensResult,
+  RevokeApiTokenResult,
   RescheduleReminderInput,
   RescheduleReminderResult,
   TodayResult,
@@ -265,6 +268,23 @@ export class AiTodoClient {
     return this.request<CreateApiTokenResult>("/v1/api-tokens", {
       method: "POST",
       body: JSON.stringify(input)
+    });
+  }
+
+  listApiTokens(): Promise<ApiResponse<ApiTokenListResult>> {
+    return this.request<ApiTokenListResult>("/v1/api-tokens");
+  }
+
+  revokeApiToken(tokenId: string): Promise<ApiResponse<RevokeApiTokenResult>> {
+    return this.request<RevokeApiTokenResult>(`/v1/api-tokens/${encodeURIComponent(tokenId)}`, {
+      method: "DELETE"
+    });
+  }
+
+  revokeAllApiTokens(): Promise<ApiResponse<RevokeAllApiTokensResult>> {
+    return this.request<RevokeAllApiTokensResult>("/v1/api-tokens/revoke-all", {
+      method: "POST",
+      body: JSON.stringify({})
     });
   }
 

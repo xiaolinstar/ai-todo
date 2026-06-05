@@ -1,27 +1,39 @@
-<view class="page settings-page security-page">
-  <view class="inset-group">
-    <view class="settings-cell stack">
-      <view class="settings-cell-main">
-        <text class="settings-label">登录方式</text>
-        <text class="cell-meta">当前使用微信登录。退出请返回「我的」页面底部按钮。</text>
+<view class="mine-subpage security-page">
+  <scroll-view scroll-y class="mine-subpage-scroll" enhanced show-scrollbar="{{false}}">
+    <view class="mine-subpage-inner">
+      <view class="inset-group subpage-group">
+        <view class="subpage-cell stack">
+          <view class="subpage-cell-main">
+            <text class="subpage-label">登录方式</text>
+            <text class="subpage-meta">微信登录</text>
+          </view>
+        </view>
+        <view class="subpage-cell stack pressable" hover-class="list-cell-hover" bindtap="onOpenAgent">
+          <view class="subpage-cell-main">
+            <text class="subpage-label">访问令牌（PAT）</text>
+            <text class="subpage-meta">供电脑端 CLI / Agent 访问你的数据，请妥善保管，勿分享给他人。</text>
+          </view>
+          <text class="subpage-chevron">›</text>
+        </view>
+        <view class="subpage-cell stack">
+          <view class="subpage-cell-main">
+            <text class="subpage-label">数据范围</text>
+            <text class="subpage-meta">应用内提醒、日历与联系人</text>
+          </view>
+        </view>
       </view>
-    </view>
-    <view class="settings-cell stack pressable" hover-class="list-cell-hover" bindtap="onOpenAgent">
-      <view class="settings-cell-main">
-        <text class="settings-label">访问令牌（PAT）</text>
-        <text class="cell-meta">供电脑端 CLI / Agent 访问你的数据，请妥善保管，勿分享给他人。</text>
-      </view>
-      <text class="chevron">›</text>
-    </view>
-    <view class="settings-cell stack">
-      <view class="settings-cell-main">
-        <text class="settings-label">数据范围</text>
-        <text class="cell-meta">ai-todo 仅管理应用内提醒、日历与联系人，不读取系统通讯录或系统日历。</text>
-      </view>
-    </view>
-  </view>
 
-  <view class="settings-hint">
-    平台用户名用于私域内识别与关联联系人，可在个人资料中查看；修改用户名将在后续版本开放。
-  </view>
+      <view class="subpage-section">
+        <view class="inset-group subpage-group">
+          <view class="subpage-cell stack pressable" hover-class="list-cell-hover" bindtap="onLogout">
+            <view class="subpage-cell-main">
+              <text class="subpage-label danger">退出登录</text>
+              <text class="subpage-meta">退出后需重新微信登录</text>
+            </view>
+            <text class="subpage-chevron">›</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </scroll-view>
 </view>

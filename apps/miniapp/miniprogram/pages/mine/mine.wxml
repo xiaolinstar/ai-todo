@@ -56,15 +56,6 @@
         </view>
       </view>
 
-      <view wx:if="{{loggedIn}}" class="footer-actions">
-        <button
-          class="todo-button todo-button-secondary logout-btn"
-          hover-class="todo-button-hover"
-          bindtap="onLogout"
-        >
-          退出登录
-        </button>
-      </view>
     </view>
   </scroll-view>
 
@@ -72,32 +63,21 @@
     <view class="profile-setup-panel">
       <view class="profile-setup-title">确认微信资料</view>
       <view class="profile-setup-hint">选择微信头像和昵称，作为本小程序的账户信息。</view>
-      <form bindsubmit="onSaveProfileSetup">
-        <button class="setup-avatar-button" open-type="chooseAvatar" bindchooseavatar="onChooseSetupAvatar">
-          <image wx:if="{{setupAvatarUrl}}" class="setup-avatar-image" src="{{setupAvatarUrl}}" mode="aspectFill" />
-          <text wx:else>{{initial}}</text>
-        </button>
-        <input
-          class="setup-name-input"
-          name="nickname"
-          type="nickname"
-          placeholder="点击选择微信昵称"
-          value="{{setupNameInput}}"
-          bindinput="onSetupNameInput"
-          bindblur="onSetupNameInput"
-        />
-        <view class="profile-setup-actions">
-          <button class="profile-setup-action secondary" bindtap="onCancelProfileSetup">暂不设置</button>
-          <button
-            class="profile-setup-action primary"
-            form-type="submit"
-            loading="{{profileSaving}}"
-            disabled="{{profileSaving}}"
-          >
-            {{profileSaving ? '保存中…' : '保存'}}
-          </button>
-        </view>
-      </form>
+      <button class="setup-avatar-button" open-type="chooseAvatar" bindchooseavatar="onChooseSetupAvatar">
+        <image wx:if="{{setupAvatarUrl}}" class="setup-avatar-image" src="{{setupAvatarUrl}}" mode="aspectFill" />
+        <text wx:else>{{initial}}</text>
+      </button>
+      <input
+        class="setup-name-input"
+        type="nickname"
+        placeholder="点击选择微信昵称"
+        value="{{setupNameInput}}"
+        bindinput="onSetupNameInput"
+        bindblur="onSetupNameBlur"
+      />
+      <view class="profile-setup-actions">
+        <view class="profile-setup-dismiss pressable" hover-class="list-cell-hover" bindtap="onCancelProfileSetup">暂不设置</view>
+      </view>
     </view>
   </view>
 

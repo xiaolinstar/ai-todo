@@ -1,9 +1,7 @@
-.profile-settings-page {
-  padding-top: 8rpx;
-}
+@import "../../styles/mine-subpage.scss";
 
 .profile-form {
-  margin-bottom: 32rpx;
+  margin-bottom: 0;
 }
 
 .avatar-row {
@@ -13,6 +11,11 @@
   min-height: 148rpx;
   padding: 24rpx 28rpx;
   background: var(--todo-surface);
+}
+
+.profile-form .avatar-row + .subpage-cell,
+.profile-form .subpage-cell + .subpage-cell {
+  border-top: var(--todo-separator);
 }
 
 .profile-avatar-button {
@@ -27,8 +30,8 @@
   overflow: hidden;
   background: var(--todo-primary);
   color: var(--todo-text-inverse);
-  font-size: 42rpx;
-  font-weight: 700;
+  font-size: var(--todo-font-size-avatar-lg);
+  font-weight: var(--todo-font-weight-bold);
 }
 
 .profile-avatar-button::after {
@@ -40,4 +43,12 @@
   width: 100%;
   height: 100%;
   border-radius: 50%;
+}
+
+.profile-input {
+  flex: 1;
+  min-width: 0;
+  color: var(--todo-text-primary);
+  font-size: var(--todo-font-size-lg);
+  text-align: right;
 }

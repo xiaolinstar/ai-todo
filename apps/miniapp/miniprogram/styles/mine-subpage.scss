@@ -1,0 +1,129 @@
+.mine-subpage {
+  height: 100vh;
+  background: var(--todo-bg-page);
+}
+
+.mine-subpage-scroll {
+  height: 100vh;
+}
+
+.mine-subpage-inner {
+  box-sizing: border-box;
+  padding: 8rpx 32rpx calc(72rpx + env(safe-area-inset-bottom));
+}
+
+.mine-subpage .subpage-card {
+  margin-bottom: 16rpx;
+  overflow: hidden;
+}
+
+.mine-subpage .subpage-card-inner {
+  padding: 24rpx 28rpx;
+}
+
+.mine-subpage .subpage-section {
+  margin-bottom: 20rpx;
+}
+
+.mine-subpage .group-header {
+  margin-bottom: 8rpx;
+}
+
+.mine-subpage .subpage-group .subpage-cell + .subpage-cell,
+.mine-subpage .subpage-group .subpage-cell + picker .subpage-cell,
+.mine-subpage .subpage-group picker + .subpage-cell,
+.mine-subpage .subpage-group picker + picker .subpage-cell {
+  border-top: var(--todo-separator);
+}
+
+.mine-subpage .subpage-cell {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 84rpx;
+  padding: 18rpx 28rpx;
+  background: var(--todo-surface);
+}
+
+.mine-subpage .subpage-cell.stack {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10rpx;
+}
+
+.mine-subpage .subpage-cell-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.mine-subpage .subpage-label {
+  color: var(--todo-text-primary);
+  font-size: var(--todo-font-size-xl);
+  line-height: var(--todo-line-height-normal);
+}
+
+.mine-subpage .subpage-label.danger {
+  color: var(--todo-danger);
+}
+
+.mine-subpage .subpage-meta {
+  display: block;
+  margin-top: 6rpx;
+  color: var(--todo-text-secondary);
+  font-size: var(--todo-font-size-md);
+  line-height: var(--todo-line-height-normal);
+}
+
+.mine-subpage .subpage-value {
+  color: var(--todo-text-secondary);
+  font-size: var(--todo-font-size-lg);
+  line-height: var(--todo-line-height-normal);
+  text-align: right;
+  word-break: break-all;
+}
+
+.mine-subpage .subpage-value.primary {
+  color: var(--todo-primary);
+}
+
+.mine-subpage .subpage-hint {
+  display: block;
+  padding: 0 16rpx 20rpx;
+  color: var(--todo-text-secondary);
+  font-size: var(--todo-font-size-md);
+  line-height: var(--todo-line-height-relaxed);
+}
+
+.mine-subpage .subpage-footer-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+  margin-top: 8rpx;
+  padding-bottom: 8rpx;
+}
+
+.mine-subpage .subpage-footer-actions .todo-button {
+  margin-bottom: 0;
+}
+
+.mine-subpage .subpage-danger-button {
+  color: var(--todo-danger);
+}
+
+.mine-subpage .subpage-chevron {
+  flex-shrink: 0;
+  margin-left: 12rpx;
+  color: var(--todo-text-subtle);
+  font-size: var(--todo-font-size-title-lg);
+  font-weight: var(--todo-font-weight-light);
+  line-height: 1;
+}
+
+.mine-subpage .subpage-input {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 56rpx;
+  padding: 0;
+  color: var(--todo-text-primary);
+  font-size: var(--todo-font-size-lg);
+}

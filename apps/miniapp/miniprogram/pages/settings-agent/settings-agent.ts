@@ -1,25 +1,47 @@
 import {
-  createPat as createPatRequest,
   listApiTokens,
   revokeApiToken
 } from "../../lib/api";
+import { TODO_MODAL_CONFIRM_DANGER } from "../../lib/design-tokens";
 import { formatShortDate } from "../../lib/format";
 
 interface PatItem {
   id: string;
   name: string;
+  tokenHint: string;
+  status: string;
+  statusLabel: string;
+  statusClass: string;
   createdAt: string;
   lastUsedAt: string;
+  expiresAt: string;
+  maxIdleDays: string;
+  revoked: boolean;
+  expired: boolean;
+}
+
+const STATUS_LABELS: Record<string, string> = {
+  active: "有效",
+  expired: "已过期",
+  revoked: "已吊销",
+  idle_revoked: "久未使用失效"
+};
+
+function statusClass(status: string): string {
+  if (status === "active") return "status-active";
+  if (status === "idle_revoked") return "status-warning";
+  return "status-muted";
 }
 
 Page({
   data: {
-    patItems: [] as PatItem[],
-    patLoading: false,
-    creatingPat: false,
-    patName: "",
-    newPatToken: "",
-    patSubmitting: false
+    activePatItems: [] as PatItem[],
+    inactivePatItems: [] as PatItem[],
+    totalPatCount: 0,
+    activePatCount: 0,
+    inactivePatCount: 0,
+    showInactive: false,
+    patLoading: false
   },
 
   onShow() {
@@ -38,10 +60,24 @@ Page({
         const patItems = response.data.items.map((item) => ({
           id: item.id,
           name: item.name,
-          createdAt: formatShortDate(item.createdAt),
-          lastUsedAt: item.lastUsedAt ? formatShortDate(item.lastUsedAt) : "未使用"
+          tokenHint: item.tokenHint || "aitodo_****",
+          status: item.status,
+          statusLabel: STATUS_LABELS[item.status] || item.status,
+          statusClass: statusClass(item.status),
+          createdAt: item.createdAt ? formatShortDate(item.createdAt) : "-",
+          lastUsedAt: item.lastUsedAt ? formatShortDate(item.lastUsedAt) : "未使用",
+          expiresAt: item.expiresAt ? formatShortDate(item.expiresAt) : "永不过期",
+          maxIdleDays: item.maxIdleDays ? `${item.maxIdleDays} 天未用失效` : "不限制空闲",
+          revoked: item.status === "revoked",
+          expired: item.status === "expired" || item.status === "idle_revoked"
         }));
-        this.setData({ patItems });
+        this.setData({
+          activePatItems: patItems.filter((item) => item.status === "active"),
+          inactivePatItems: patItems.filter((item) => item.status !== "active"),
+          totalPatCount: patItems.length,
+          activePatCount: patItems.filter((item) => item.status === "active").length,
+          inactivePatCount: patItems.filter((item) => item.status !== "active").length
+        });
       })
       .catch(() => {
         this.setData({ patLoading: false });
@@ -49,51 +85,25 @@ Page({
       });
   },
 
-  onStartCreatePat() {
-    this.setData({ creatingPat: true, patName: "", newPatToken: "" });
+  onCreateToken() {
+    wx.navigateTo({ url: "/pages/settings-token-create/settings-token-create" });
   },
 
-  onCancelCreatePat() {
-    this.setData({ creatingPat: false, patName: "" });
-  },
-
-  onPatNameInput(e: { detail: { value: string } }) {
-    this.setData({ patName: e.detail.value });
-  },
-
-  onConfirmCreatePat() {
-    const name = this.data.patName.trim();
-    if (!name) {
-      wx.showToast({ title: "请输入令牌名称", icon: "none" });
-      return;
-    }
-    this.setData({ patSubmitting: true });
-    createPatRequest(name)
-      .then((response) => {
-        this.setData({ patSubmitting: false, creatingPat: false, patName: "" });
-        if (!response.ok || !response.data) {
-          wx.showToast({ title: response.error?.message || "创建失败", icon: "none" });
-          return;
-        }
-        this.setData({ newPatToken: response.data.token });
-        this.loadPatList();
-      })
-      .catch(() => {
-        this.setData({ patSubmitting: false });
-        wx.showToast({ title: "网络错误", icon: "none" });
-      });
-  },
-
-  onCopyPat() {
-    if (!this.data.newPatToken) return;
-    wx.setClipboardData({
-      data: this.data.newPatToken,
-      success: () => wx.showToast({ title: "已复制", icon: "success" })
+  onOpenHelp() {
+    wx.showModal({
+      title: "CLI 配置",
+      content: "新建令牌后复制登录命令，在电脑终端执行即可连接 ai-todo。完整令牌只在创建成功时显示一次。",
+      showCancel: false
     });
   },
 
-  onDismissPatReveal() {
-    this.setData({ newPatToken: "" });
+  onToggleInactive() {
+    this.setData({ showInactive: !this.data.showInactive });
+  },
+
+  onOpenDetail(e: { currentTarget: { dataset: { id: string } } }) {
+    const { id } = e.currentTarget.dataset;
+    wx.navigateTo({ url: `/pages/settings-token-detail/settings-token-detail?id=${encodeURIComponent(id)}` });
   },
 
   onRevokePat(e: { currentTarget: { dataset: { id: string; name: string } } }) {

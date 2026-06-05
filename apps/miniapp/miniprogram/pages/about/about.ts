@@ -5,15 +5,13 @@ import { MINIAPP_VERSION } from "../../lib/version";
 Page({
   data: {
     miniappVersion: MINIAPP_VERSION,
-    apiUrl: "",
     userId: "",
     loggedIn: false,
     healthSummary: "检查中…"
   },
 
   onShow() {
-    const { apiUrl, token } = getConfig();
-    this.setData({ apiUrl });
+    const { token } = getConfig();
     if (token) {
       fetchMe().then((response) => {
         if (response.ok && response.data) {
@@ -38,9 +36,9 @@ Page({
           return;
         }
         const d = response.data;
-        const parts = [`${d.status || "unknown"}`];
-        if (d.apiVersion) parts.push(`api ${d.apiVersion}`);
-        if (d.releaseTag) parts.push(`tag ${d.releaseTag}`);
+        const parts = [d.status === "ok" ? "已连接" : d.status || "unknown"];
+        if (d.apiVersion) parts.push(`API ${d.apiVersion}`);
+        if (d.releaseTag) parts.push(d.releaseTag);
         this.setData({ healthSummary: parts.join(" · ") });
       })
       .catch(() => {

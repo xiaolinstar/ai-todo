@@ -89,16 +89,10 @@ const ALL_SECTIONS: SettingsMenuSection[] = [
     items: [
       {
         id: "about",
-        label: "关于 ai-todo",
+        label: "关于",
         subtitle: "版本与帮助",
         route: { kind: "page", path: "/pages/about/about" }
-      }
-    ]
-  },
-  {
-    id: "dev",
-    title: "开发",
-    items: [
+      },
       {
         id: "dev",
         label: "开发者选项",
@@ -112,16 +106,18 @@ const ALL_SECTIONS: SettingsMenuSection[] = [
 
 export function buildMineMenuSections(loggedIn: boolean, showDev: boolean): SettingsMenuSection[] {
   return ALL_SECTIONS.filter((section) => {
-    if (section.id === "dev") {
-      return showDev;
-    }
     if (!loggedIn && section.id !== "about") {
       return false;
     }
     return true;
   }).map((section) => ({
     ...section,
-    items: section.items.filter((item) => !item.requireLogin || loggedIn)
+    items: section.items.filter((item) => {
+      if (item.id === "dev" && !showDev) {
+        return false;
+      }
+      return !item.requireLogin || loggedIn;
+    })
   }));
 }
 

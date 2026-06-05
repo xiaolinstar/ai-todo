@@ -43,6 +43,11 @@ export AI_TODO_API_URL=https://wodi.games
 # 本地开发一次性签发（仅 127.0.0.1 API）
 ai-todo login --issue-pat --name "My Agent"
 
+# 管理访问令牌
+ai-todo token list --json
+ai-todo token create --name "My Agent" --max-idle-days 90 --json
+ai-todo token revoke <token_id> --json
+
 # 退出（清除 settings.json 中的 token；环境变量需 unset AI_TODO_TOKEN）
 ai-todo logout
 ```

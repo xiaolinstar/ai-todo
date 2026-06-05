@@ -48,6 +48,7 @@ def create_session_token_for_user(
         scopes=scopes,
         timezone=timezone,
         expires_at=expires_at,
+        max_idle_days=None,
         commit=commit,
     )
 
@@ -61,6 +62,7 @@ def create_pat_for_user(
     timezone: str,
     client_kind: str,
     expires_at: str | None = None,
+    max_idle_days: int | None = None,
     commit: bool = True,
 ) -> CreateApiTokenResult:
     return _create_token(
@@ -72,6 +74,7 @@ def create_pat_for_user(
         scopes=scopes,
         timezone=timezone,
         expires_at=_parse_optional_datetime(expires_at, timezone),
+        max_idle_days=max_idle_days,
         commit=commit,
     )
 
@@ -84,6 +87,7 @@ def create_token_for_user(
     scopes: list[str],
     timezone: str,
     expires_at: str | None = None,
+    max_idle_days: int | None = None,
     commit: bool = True,
 ) -> CreateApiTokenResult:
     """Backward-compatible alias: creates a PAT (used by admin scripts)."""
@@ -95,6 +99,7 @@ def create_token_for_user(
         timezone=timezone,
         client_kind=CLIENT_KIND_MINIAPP,
         expires_at=expires_at,
+        max_idle_days=max_idle_days,
         commit=commit,
     )
 
@@ -132,6 +137,10 @@ class ApiTokenService:
         if not name:
             raise ValueError("Token name is required.")
 
+        expires_at = _parse_optional_datetime(input_data.expires_at, auth.timezone)
+        max_idle_days = _normalize_max_idle_days(input_data.max_idle_days)
+        _validate_expires_at(expires_at)
+
         return create_pat_for_user(
             self._session,
             user_id=auth.user_id,
@@ -139,7 +148,8 @@ class ApiTokenService:
             scopes=input_data.scopes,
             timezone=auth.timezone,
             client_kind=client_kind,
-            expires_at=input_data.expires_at,
+            expires_at=_format_datetime(expires_at),
+            max_idle_days=max_idle_days,
         )
 
     def list_pats(self, user_id: str) -> list[ApiTokenSummary]:
@@ -148,7 +158,6 @@ class ApiTokenService:
             .where(
                 ApiTokenModel.user_id == user_id,
                 ApiTokenModel.token_type == TOKEN_TYPE_PAT,
-                ApiTokenModel.revoked_at.is_(None),
             )
             .order_by(ApiTokenModel.created_at.desc())
         )
@@ -198,11 +207,12 @@ def resolve_token(session: Session, bearer: str) -> ApiTokenModel | None:
 
     now = now_utc()
     expires_at = token.expires_at
-    if expires_at is not None:
-        if expires_at.tzinfo is None:
-            expires_at = expires_at.replace(tzinfo=ZoneInfo("UTC"))
-        if expires_at < now:
-            return None
+    if expires_at is not None and _as_utc(expires_at) < now:
+        return None
+
+    idle_cutoff = _idle_cutoff(token)
+    if idle_cutoff is not None and idle_cutoff < now:
+        return None
 
     token.last_used_at = now
     session.commit()
@@ -219,6 +229,7 @@ def _create_token(
     scopes: list[str],
     timezone: str,
     expires_at: datetime | None,
+    max_idle_days: int | None,
     commit: bool,
 ) -> CreateApiTokenResult:
     plain = generate_api_token()
@@ -230,8 +241,10 @@ def _create_token(
         token_type=token_type,
         client_kind=client_kind,
         token_hash=hash_api_token(plain),
+        token_hint=_build_token_hint(plain),
         scopes=dumps_json(_normalize_scopes(scopes)),
         expires_at=expires_at,
+        max_idle_days=max_idle_days,
         created_at=now,
     )
     session.add(token)
@@ -247,7 +260,9 @@ def _create_token(
         name=token.name,
         token_type=token_type,
         scopes=loads_json(token.scopes),
+        token_hint=token.token_hint,
         expires_at=_format_datetime(token.expires_at),
+        max_idle_days=token.max_idle_days,
     )
 
 
@@ -256,7 +271,10 @@ def _to_summary(token: ApiTokenModel) -> ApiTokenSummary:
         id=token.id,
         name=token.name,
         scopes=loads_json(token.scopes),
+        token_hint=token.token_hint,
+        status=_token_status(token),
         expires_at=_format_datetime(token.expires_at),
+        max_idle_days=token.max_idle_days,
         last_used_at=_format_datetime(token.last_used_at),
         revoked_at=_format_datetime(token.revoked_at),
         created_at=token.created_at.isoformat(),
@@ -279,3 +297,49 @@ def _parse_optional_datetime(value: str | None, timezone: str) -> datetime | Non
 
 def _format_datetime(value: datetime | None) -> str | None:
     return value.isoformat() if value else None
+
+
+def _normalize_max_idle_days(value: int | None) -> int | None:
+    if value is None:
+        return settings.pat_default_max_idle_days
+    if value <= 0:
+        raise ValueError("maxIdleDays must be a positive integer.")
+    return value
+
+
+def _validate_expires_at(expires_at: datetime | None) -> None:
+    if expires_at is None or settings.pat_max_ttl_days is None:
+        return
+    max_expires_at = now_utc() + timedelta(days=settings.pat_max_ttl_days)
+    if _as_utc(expires_at) > max_expires_at:
+        raise ValueError(f"expiresAt must be within {settings.pat_max_ttl_days} days.")
+
+
+def _token_status(token: ApiTokenModel) -> str:
+    now = now_utc()
+    if token.revoked_at is not None:
+        return "revoked"
+    if token.expires_at is not None and _as_utc(token.expires_at) < now:
+        return "expired"
+    idle_cutoff = _idle_cutoff(token)
+    if idle_cutoff is not None and idle_cutoff < now:
+        return "idle_revoked"
+    return "active"
+
+
+def _idle_cutoff(token: ApiTokenModel) -> datetime | None:
+    if token.max_idle_days is None:
+        return None
+    activity_at = token.last_used_at or token.created_at
+    return _as_utc(activity_at) + timedelta(days=token.max_idle_days)
+
+
+def _as_utc(value: datetime) -> datetime:
+    if value.tzinfo is None:
+        return value.replace(tzinfo=ZoneInfo("UTC"))
+    return value.astimezone(ZoneInfo("UTC"))
+
+
+def _build_token_hint(token: str) -> str:
+    prefix = token.split("_", 1)[0]
+    return f"{prefix}_****{token[-4:]}"

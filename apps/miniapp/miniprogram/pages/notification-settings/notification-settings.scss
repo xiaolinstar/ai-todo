@@ -1,26 +1,14 @@
-@import "../../styles/settings-page.scss";
-
-.notification-settings-page .form-hint-block {
-  margin: 0 0 24rpx;
-  padding: 0 8rpx;
-  color: var(--todo-text-secondary);
-  font-size: var(--todo-font-size-md);
-  line-height: var(--todo-line-height-relaxed);
-}
+@import "../../styles/mine-subpage.scss";
 
 .notification-settings-page .picker-value {
   color: var(--todo-text-secondary);
   font-size: var(--todo-font-size-lg);
 }
 
-.notification-settings-page .status-block {
-  margin-top: 32rpx;
-}
-
-.notification-settings-page .cell-meta.status-danger {
+.notification-settings-page .subpage-meta.status-danger {
   color: var(--todo-danger);
 }
 
-.notification-settings-page .cell-meta.status-muted {
+.notification-settings-page .subpage-meta.status-muted {
   color: var(--todo-text-muted);
 }
