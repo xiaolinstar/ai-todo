@@ -7,7 +7,8 @@
     "ai-todo": "dist/index.js"
   },
   "files": [
-    "dist",
+    "dist/index.js",
+    "dist/index.js.map",
     "settings.example.json",
     "README.md"
   ],

@@ -1,6 +1,7 @@
 import * as esbuild from "esbuild";
-import { mkdirSync } from "node:fs";
+import { mkdirSync, rmSync } from "node:fs";
 
+rmSync("dist", { recursive: true, force: true });
 mkdirSync("dist", { recursive: true });
 
 await esbuild.build({
