@@ -23,9 +23,9 @@
 
         <view class="subpage-section">
           <view class="inset-group subpage-group">
-            <view class="subpage-cell pressable" hover-class="list-cell-hover" bindtap="onCopyCommandTemplate">
+            <view class="subpage-cell pressable" hover-class="list-cell-hover" bindtap="onCopySettingsTemplate">
               <view class="subpage-cell-main">
-                <text class="subpage-label">复制命令模板</text>
+                <text class="subpage-label">复制配置模板</text>
               </view>
               <text class="subpage-chevron">›</text>
             </view>

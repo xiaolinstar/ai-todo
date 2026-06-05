@@ -92,7 +92,7 @@ async function issuePersonalAccessToken(
             error: {
               code: "PAT_CREATE_NOT_SUPPORTED",
               message:
-                "Create a Personal Access Token in the WeChat miniapp Mine tab, then run ai-todo login --url … --token …"
+                "Create a Personal Access Token in the WeChat miniapp Mine tab, then write ~/.ai-todo/settings.json"
             }
           },
           null,
@@ -101,8 +101,7 @@ async function issuePersonalAccessToken(
       );
     } else {
       console.error("生产/远程 API 不支持 CLI 直接签发 PAT。");
-      console.error("请在微信小程序「我的 → CLI / Agent 访问令牌」中创建，然后：");
-      console.error(`  ai-todo login --url ${apiUrl} --token aitodo_xxx`);
+      console.error("请在微信小程序「我的 → CLI / Agent 访问令牌」中创建，然后写入 ~/.ai-todo/settings.json。");
     }
     process.exitCode = 1;
     return;

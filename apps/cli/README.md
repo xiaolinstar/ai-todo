@@ -1,0 +1,45 @@
+# @ai-todo/cli
+
+Structured command-line interface for [ai-todo](https://github.com/xiaolinstar/ai-todo) — reminders, calendar, contacts, and Agent-friendly `--json` output.
+
+## Install
+
+```bash
+npm install -g @ai-todo/cli
+```
+
+## Configure once
+
+Create `~/.ai-todo/settings.json` (see `settings.example.json` in this package):
+
+```json
+{
+  "url": "https://wodi.games",
+  "token": "aitodo_your_personal_access_token"
+}
+```
+
+Get a Personal Access Token in the WeChat miniapp: **Mine → CLI / Agent access tokens → Create**.
+
+Environment variables override the file (useful for CI / agents):
+
+```bash
+export AI_TODO_TOKEN=aitodo_xxx
+export AI_TODO_API_URL=https://wodi.games
+```
+
+## Usage
+
+```bash
+ai-todo today
+ai-todo reminder list --json
+ai-todo whoami
+ai-todo version
+```
+
+Run `ai-todo help` for the full command list.
+
+## Docs
+
+- [Agent usage guide](https://github.com/xiaolinstar/ai-todo/blob/main/docs/agent-usage.md)
+- [CLI design](https://github.com/xiaolinstar/ai-todo/blob/main/docs/cli-design.md)

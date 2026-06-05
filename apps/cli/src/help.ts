@@ -3,27 +3,26 @@ import { settingsPath } from "./settings";
 export function printHelp(): void {
   console.log(`ai-todo — structured CLI for reminders, calendar, and contacts
 
+Install:
+  npm install -g @ai-todo/cli
+
 Configuration (~/.ai-todo/settings.json):
-  One-time setup (like API keys for other AI tools):
-    ai-todo login --url https://wodi.games --token aitodo_xxx
-  Local dev:
-    ai-todo login --issue-pat
-  Example file: apps/cli/settings.example.json
+  {
+    "url": "https://wodi.games",
+    "token": "aitodo_xxx"
+  }
+
+  Create a Personal Access Token in the WeChat miniapp (Mine → CLI / Agent tokens).
+  Example file: settings.example.json (bundled with this package).
 
   Priority: AI_TODO_TOKEN / AI_TODO_API_URL env > settings.json > http://127.0.0.1:3100
 
-Auth:
-  ai-todo login [--url <url>] [--token aitodo_xxx] [--issue-pat]
-  ai-todo version
+Auth check:
   ai-todo whoami
-  ai-todo profile update --name <text> [--avatar-url <url>]
-  ai-todo logout
+  ai-todo version
 
-Access tokens:
-  ai-todo token list
-  ai-todo token create --name <text> [--expires-at <iso>] [--max-idle-days <days>] [--scopes read,write]
-  ai-todo token revoke <token_id>
-  ai-todo token revoke-all
+Profile:
+  ai-todo profile update --name <text> [--avatar-url <url>]
 
 Global flags (commands only):
   --json                 Output API JSON (recommended for agents)

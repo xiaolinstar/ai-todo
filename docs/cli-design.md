@@ -34,7 +34,7 @@ ai-todo <command> [options]
 | `--idempotency-key <key>` | 指定幂等键 |
 
 连接与认证写入 `~/.ai-todo/settings.json`（`url` + `token`），见 `apps/cli/settings.example.json`。  
-`ai-todo login --url … --token …` 负责首次配置；业务命令不再携带 `--api-url`。
+用户通过小程序创建 PAT 后编辑该文件即可；`ai-todo help` 不再展示 `login` / `token` 子命令（v0.4.0+）。
 
 ## 登录与授权
 

@@ -2,20 +2,17 @@
 
 ai-todo **不提供**服务端自然语言解析。Agent（OpenClaw、Claude Code、Cursor 等）在本地理解用户意图后，调用 **结构化 CLI** 或 HTTP API。
 
-## 前置条件
+## 安装 CLI
 
 ```bash
-# 构建 CLI
-pnpm install
-pnpm build
-
-# 启动 API（另开终端）
-pnpm dev:api
+npm install -g @ai-todo/cli
 ```
+
+仓库内开发仍可用 `pnpm build` 后 `node apps/cli/dist/index.js`，或 `pnpm cli`。
 
 ## 认证（Personal Access Token）
 
-与 OpenAI / Anthropic 等工具相同：**连接信息放在本地配置文件**，命令只关注业务。
+与 Claude Code / OpenAI CLI 相同：**连接信息放在本地配置文件**，业务命令不再携带认证参数。
 
 **配置文件**：`~/.ai-todo/settings.json`（示例见 `apps/cli/settings.example.json`）
 
@@ -26,33 +23,22 @@ pnpm dev:api
 }
 ```
 
-**首次配置（生产）**：微信小程序 → **我的 → CLI / Agent 访问令牌 → 创建**，然后：
+**首次配置（生产）**：微信小程序 → **我的 → CLI / Agent 访问令牌 → 创建** → 复制配置到 `~/.ai-todo/settings.json` → 验证：
 
 ```bash
-ai-todo login --url https://wodi.games --token aitodo_xxx
 ai-todo whoami --json
 ```
 
 **优先级**：`AI_TODO_TOKEN` / `AI_TODO_API_URL` 环境变量 > `~/.ai-todo/settings.json` > 默认 `http://127.0.0.1:3100`
 
 ```bash
-# Agent / CI 仍可用环境变量覆盖（推荐）
+# Agent / CI 推荐用环境变量覆盖
 export AI_TODO_TOKEN=aitodo_xxx
 export AI_TODO_API_URL=https://wodi.games
-
-# 本地开发一次性签发（仅 127.0.0.1 API）
-ai-todo login --issue-pat --name "My Agent"
-
-# 管理访问令牌
-ai-todo token list --json
-ai-todo token create --name "My Agent" --max-idle-days 90 --json
-ai-todo token revoke <token_id> --json
-
-# 退出（清除 settings.json 中的 token；环境变量需 unset AI_TODO_TOKEN）
-ai-todo logout
 ```
 
-> 微信登录下发的是**会话 Token**（仅供小程序），不能用于 CLI。CLI 必须使用 PAT。
+> 微信登录下发的是**会话 Token**（仅供小程序），不能用于 CLI。CLI 必须使用 PAT。  
+> 访问令牌在小程序内创建与管理；CLI 不再对外展示 `login` / `token` 子命令。
 
 配置完成后，日常命令**无需**再传 `--url`：
 
@@ -66,7 +52,15 @@ ai-todo contact list --json
 
 - **所有 Agent 调用加 `--json`**，解析 `ok` / `data` / `error.code`
 - **写操作加 `--idempotency-key <uuid>`**（或 HTTP 头 `Idempotency-Key`），避免重试重复创建
-- 使用 **Bearer Token**（`ai-todo login --token …`）而非仅依赖开发用户旁路
+- 使用 **Bearer PAT**（写入 settings 或环境变量），而非仅依赖开发用户旁路
+
+## 仓库内开发（可选）
+
+```bash
+pnpm install
+pnpm build
+pnpm dev:api   # 另开终端
+```
 
 ## 推荐工作流
 

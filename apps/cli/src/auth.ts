@@ -16,6 +16,10 @@ export function resolveTokenSource(): { token?: string; source: TokenSource } {
   return { source: "none" };
 }
 
+function settingsExample(apiUrl = "https://wodi.games"): string {
+  return JSON.stringify({ url: apiUrl, token: "aitodo_xxx" }, null, 2);
+}
+
 export function printAuthHint(reason: "missing" | "invalid" = "missing"): void {
   const settingsFile = settingsPath();
   const lines =
@@ -23,32 +27,29 @@ export function printAuthHint(reason: "missing" | "invalid" = "missing"): void {
       ? [
           "API Token 无效或已过期。",
           "",
-          "请重新配置 Personal Access Token（PAT）：",
-          "  ai-todo login --url https://wodi.games --token aitodo_xxx",
-          "  或编辑 ~/.ai-todo/settings.json（见 apps/cli/settings.example.json）",
+          "请更新 Personal Access Token（PAT）：",
           "",
-          "Agent 环境也可使用环境变量（优先级高于配置文件）：",
+          `编辑 ${settingsFile}：`,
+          settingsExample(),
+          "",
+          "Agent / CI 也可使用环境变量（优先级高于配置文件）：",
           "  export AI_TODO_TOKEN=aitodo_xxx",
           "  export AI_TODO_API_URL=https://wodi.games",
           "",
-          "本地开发（127.0.0.1）可一次性签发 PAT：",
-          "  ai-todo login --issue-pat",
-          "",
-          "生产环境请在微信小程序「我的 → CLI / Agent 访问令牌」创建 PAT。"
+          "生产环境请在微信小程序「我的 → CLI / Agent 访问令牌」创建新 PAT。"
         ]
       : [
           "未检测到 API Token。",
           "",
-          "首次配置（推荐，一次写入 ~/.ai-todo/settings.json）：",
-          "  ai-todo login --url https://wodi.games --token aitodo_xxx",
+          "首次配置：创建 ~/.ai-todo/settings.json",
           "",
-          `或手动创建 ${settingsFile}：`,
-          '  { "url": "https://wodi.games", "token": "aitodo_xxx" }',
+          settingsExample(),
           "",
-          "本地开发（127.0.0.1）：",
-          "  ai-todo login --issue-pat",
+          "1. 微信小程序 → 我的 → CLI / Agent 访问令牌 → 创建",
+          "2. 将完整 token 填入上述文件的 token 字段",
+          "3. 运行 ai-todo whoami 验证",
           "",
-          "生产环境请在微信小程序「我的 → CLI / Agent 访问令牌」创建 PAT。"
+          `配置文件路径：${settingsFile}`
         ];
 
   for (const line of lines) {

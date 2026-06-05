@@ -51,6 +51,12 @@ export function expiresAtFromDays(days?: number): string | undefined {
   return expiresAt.toISOString();
 }
 
-export function buildLoginCommand(apiUrl: string, token: string): string {
-  return `ai-todo login --url ${apiUrl} --token ${token}`;
+export const CLI_SETTINGS_PATH = "~/.ai-todo/settings.json";
+
+export function buildSettingsSnippet(apiUrl: string, token: string): string {
+  return JSON.stringify({ url: apiUrl, token }, null, 2);
+}
+
+export function buildSettingsTemplate(apiUrl: string): string {
+  return JSON.stringify({ url: apiUrl, token: "aitodo_xxx" }, null, 2);
 }

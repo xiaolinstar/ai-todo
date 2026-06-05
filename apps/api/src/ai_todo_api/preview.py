@@ -63,9 +63,8 @@ def preview_page() -> str:
 
       <section>
         <h2>Personal Access Token</h2>
-        <p>Agent / CLI 使用 PAT，写入 <code>~/.ai-todo/settings.json</code>：</p>
-        <p><code>ai-todo login --url http://127.0.0.1:3100 --token aitodo_xxx</code></p>
-        <p>本地开发一次性签发：<code>ai-todo login --issue-pat</code></p>
+        <p>Agent / CLI 使用 PAT，写入 <code>~/.ai-todo/settings.json</code>（见小程序创建令牌后复制的 JSON）。</p>
+        <p>安装 CLI：<code>npm install -g @ai-todo/cli</code></p>
       </section>
 
       <section>

@@ -2,6 +2,7 @@ import { ApiTokenSummary, listApiTokens, revokeApiToken } from "../../lib/api";
 import { getConfig } from "../../lib/config";
 import { TODO_MODAL_CONFIRM_DANGER } from "../../lib/design-tokens";
 import { formatShortDate } from "../../lib/format";
+import { buildSettingsTemplate } from "../../lib/token-presets";
 import {
   buildTokenInactiveSummary,
   isActiveTokenStatus,
@@ -19,7 +20,7 @@ Page({
     isActive: true,
     inactiveSummary: "",
     expiresAt: "永不过期",
-    commandTemplate: ""
+    settingsTemplate: ""
   },
 
   onLoad(query: { id?: string }) {
@@ -63,13 +64,13 @@ Page({
       isActive,
       inactiveSummary: isActive ? "" : buildTokenInactiveSummary(token),
       expiresAt: token.expiresAt ? formatShortDate(token.expiresAt) : "永不过期",
-      commandTemplate: `ai-todo login --url ${apiUrl} --token <创建时复制的完整令牌>`
+      settingsTemplate: buildSettingsTemplate(apiUrl)
     });
   },
 
-  onCopyCommandTemplate() {
+  onCopySettingsTemplate() {
     wx.setClipboardData({
-      data: this.data.commandTemplate,
+      data: this.data.settingsTemplate,
       success: () => wx.showToast({ title: "已复制", icon: "success" })
     });
   },

@@ -41,7 +41,7 @@
           <view class="subpage-cell stack">
             <view class="subpage-cell-main">
               <text class="subpage-label">CLI 使用</text>
-              <text class="subpage-meta">在「账号与安全」创建访问令牌后执行 ai-todo login</text>
+              <text class="subpage-meta">创建访问令牌后写入 ~/.ai-todo/settings.json</text>
             </view>
           </view>
         </view>

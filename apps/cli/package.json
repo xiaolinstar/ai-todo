@@ -1,23 +1,45 @@
 {
   "name": "@ai-todo/cli",
-  "version": "0.3.0",
-  "private": true,
+  "version": "0.4.0",
+  "description": "Structured CLI for ai-todo reminders, calendar, and contacts",
   "type": "commonjs",
   "bin": {
     "ai-todo": "dist/index.js"
   },
+  "files": [
+    "dist",
+    "settings.example.json",
+    "README.md"
+  ],
   "scripts": {
     "dev": "node dist/index.js",
-    "build": "tsc -b tsconfig.json",
+    "build": "node scripts/bundle.mjs",
     "typecheck": "tsc -b tsconfig.json",
-    "lint": "tsc -b tsconfig.json"
+    "lint": "tsc -b tsconfig.json",
+    "prepublishOnly": "pnpm build"
   },
-  "dependencies": {
-    "@ai-todo/api-client": "workspace:*",
-    "@ai-todo/shared": "workspace:*"
+  "publishConfig": {
+    "access": "public"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xiaolinstar/ai-todo.git",
+    "directory": "apps/cli"
+  },
+  "keywords": [
+    "ai-todo",
+    "cli",
+    "reminders",
+    "calendar",
+    "agent"
+  ],
+  "license": "MIT",
+  "dependencies": {},
   "devDependencies": {
+    "@ai-todo/api-client": "workspace:*",
+    "@ai-todo/shared": "workspace:*",
     "@types/node": "^22.10.0",
+    "esbuild": "^0.25.0",
     "typescript": "^5.6.3"
   }
 }

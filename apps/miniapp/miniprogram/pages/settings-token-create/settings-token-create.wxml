@@ -2,7 +2,7 @@
   <scroll-view scroll-y class="mine-subpage-scroll" enhanced show-scrollbar="{{false}}">
     <view class="mine-subpage-inner">
       <block wx:if="{{createdToken}}">
-        <view class="subpage-hint create-hint">令牌已创建。完整内容仅显示一次，请立即复制到电脑终端使用。</view>
+        <view class="subpage-hint create-hint">令牌已创建。完整内容仅显示一次，请立即复制到电脑 ~/.ai-todo/settings.json。</view>
 
         <view class="inset-group subpage-group">
           <view class="subpage-cell stack">
@@ -16,17 +16,17 @@
             <text class="token-secret" selectable>{{createdToken}}</text>
           </view>
           <view class="subpage-cell stack">
-            <text class="subpage-label">登录命令</text>
-            <text class="token-command" selectable>{{loginCommand}}</text>
+            <text class="subpage-label">CLI 配置</text>
+            <text class="token-command" selectable>{{settingsSnippet}}</text>
           </view>
         </view>
 
         <view class="subpage-section">
           <view class="inset-group subpage-group">
-            <view class="subpage-cell pressable" hover-class="list-cell-hover" bindtap="onCopyCommand">
+            <view class="subpage-cell pressable" hover-class="list-cell-hover" bindtap="onCopySettings">
               <view class="subpage-cell-main">
-                <text class="subpage-label">复制登录命令</text>
-                <text class="subpage-meta">推荐：粘贴到 Mac / Windows 终端执行</text>
+                <text class="subpage-label">复制配置</text>
+                <text class="subpage-meta">推荐：粘贴到 ~/.ai-todo/settings.json</text>
               </view>
               <text class="subpage-chevron">›</text>
             </view>
@@ -48,7 +48,7 @@
       </block>
 
       <block wx:else>
-        <view class="subpage-hint create-hint">选择用途并确认名称，创建后复制登录命令到电脑终端即可连接。</view>
+        <view class="subpage-hint create-hint">选择用途并确认名称，创建后复制配置到电脑 ~/.ai-todo/settings.json 即可连接。</view>
 
         <view class="subpage-section">
           <view class="group-header">用途</view>

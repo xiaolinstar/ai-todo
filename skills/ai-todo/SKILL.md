@@ -11,17 +11,20 @@ description: Manage personal reminders, calendar events, and contacts via the ai
 2. **Never** call NL parse endpoints; they are out of scope.
 3. **Structured fields only**: `--title`, `--due`, `--start`, ISO-8601 with timezone (e.g. `2026-05-20T14:00:00+08:00`).
 4. **Contacts**: run `ai-todo contact search "<name>" --json` before writes; if multiple matches, ask the user to pick `contact_id`.
-5. **Auth**: one-time `ai-todo login --url … --token …` → `~/.ai-todo/settings.json`; or `export AI_TODO_TOKEN` for agents. Local dev: `ai-todo login --issue-pat`.
+5. **Auth**: write `~/.ai-todo/settings.json` (`url` + `token` from miniapp PAT) or `export AI_TODO_TOKEN` for agents. No `login` step in normal flow.
 6. After setup, commands need **no** `--url`; connection comes from settings or env.
 
 ## Setup check
 
 ```bash
-ai-todo login --url https://wodi.games --token aitodo_xxx
-# or: export AI_TODO_TOKEN=aitodo_xxx
+# ~/.ai-todo/settings.json
+# { "url": "https://wodi.games", "token": "aitodo_xxx" }
+
 ai-todo version --json
 ai-todo whoami --json
 ```
+
+Install globally: `npm install -g @ai-todo/cli`
 
 Component versions are independent; see `docs/releases/versioning.md` and `compatibility.md`. Git `release_tag` (CD) may differ from `cli` / `miniapp` / `apiVersion`.
 

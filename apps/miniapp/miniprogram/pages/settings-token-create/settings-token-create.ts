@@ -2,7 +2,7 @@ import { createPat } from "../../lib/api";
 import { getConfig } from "../../lib/config";
 import {
   TOKEN_PRESETS,
-  buildLoginCommand,
+  buildSettingsSnippet,
   defaultTokenName,
   expiresAtFromDays,
   findTokenPreset
@@ -12,7 +12,7 @@ interface CreatedTokenPayload {
   token: string;
   name: string;
   tokenHint: string;
-  loginCommand: string;
+  settingsSnippet: string;
 }
 
 Page({
@@ -25,7 +25,7 @@ Page({
     createdToken: "",
     createdName: "",
     createdTokenHint: "",
-    loginCommand: ""
+    settingsSnippet: ""
   },
 
   onLoad(query: { preset?: string; name?: string }) {
@@ -50,11 +50,11 @@ Page({
       createdToken: payload.token,
       createdName: payload.name,
       createdTokenHint: payload.tokenHint,
-      loginCommand: payload.loginCommand
+      settingsSnippet: payload.settingsSnippet
     });
     wx.setClipboardData({
-      data: payload.loginCommand,
-      success: () => wx.showToast({ title: "已复制登录命令", icon: "success" })
+      data: payload.settingsSnippet,
+      success: () => wx.showToast({ title: "已复制配置", icon: "success" })
     });
   },
 
@@ -97,7 +97,7 @@ Page({
           token,
           name: response.data.name,
           tokenHint: response.data.tokenHint || `aitodo_****${token.slice(-4)}`,
-          loginCommand: buildLoginCommand(apiUrl, token)
+          settingsSnippet: buildSettingsSnippet(apiUrl, token)
         });
       })
       .catch(() => {
@@ -114,11 +114,11 @@ Page({
     });
   },
 
-  onCopyCommand() {
-    if (!this.data.loginCommand) return;
+  onCopySettings() {
+    if (!this.data.settingsSnippet) return;
     wx.setClipboardData({
-      data: this.data.loginCommand,
-      success: () => wx.showToast({ title: "已复制", icon: "success" })
+      data: this.data.settingsSnippet,
+      success: () => wx.showToast({ title: "已复制配置", icon: "success" })
     });
   },
 

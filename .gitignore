@@ -1,6 +1,7 @@
 node_modules/
 .pnpm-store/
 dist/
+apps/cli/dist-tsc/
 .venv/
 .turbo/
 .DS_Store

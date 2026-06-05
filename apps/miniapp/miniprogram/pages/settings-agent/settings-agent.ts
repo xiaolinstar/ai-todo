@@ -3,7 +3,7 @@ import { getConfig } from "../../lib/config";
 import { formatShortDate } from "../../lib/format";
 import {
   TOKEN_PRESETS,
-  buildLoginCommand,
+  buildSettingsSnippet,
   defaultTokenName,
   expiresAtFromDays,
   findTokenPreset
@@ -89,7 +89,7 @@ Page({
         const suggestedName = defaultTokenName();
         wx.showModal({
           title: "快速新建",
-          content: `将创建「${suggestedName}」${preset.label}令牌。创建后会自动复制登录命令。`,
+          content: `将创建「${suggestedName}」${preset.label}令牌。创建后会自动复制 CLI 配置。`,
           confirmText: "创建",
           success: (modalResult) => {
             if (!modalResult.confirm) return;
@@ -116,7 +116,7 @@ Page({
         }
         const token = response.data.token;
         const apiUrl = getConfig().apiUrl;
-        const loginCommand = buildLoginCommand(apiUrl, token);
+        const settingsSnippet = buildSettingsSnippet(apiUrl, token);
         wx.navigateTo({
           url: "/pages/settings-token-create/settings-token-create",
           success: (navResult) => {
@@ -124,7 +124,7 @@ Page({
               token,
               name: response.data!.name,
               tokenHint: response.data!.tokenHint || `aitodo_****${token.slice(-4)}`,
-              loginCommand
+              settingsSnippet
             });
           }
         });
@@ -139,7 +139,7 @@ Page({
   onOpenHelp() {
     wx.showModal({
       title: "CLI 配置",
-      content: "点「新建令牌」选择用途即可快速创建。创建后复制登录命令，在电脑终端执行 ai-todo login。完整令牌只在创建成功时显示一次。",
+      content: "点「新建令牌」选择用途即可快速创建。创建后复制配置到电脑 ~/.ai-todo/settings.json。完整令牌只在创建成功时显示一次。",
       showCancel: false
     });
   },
