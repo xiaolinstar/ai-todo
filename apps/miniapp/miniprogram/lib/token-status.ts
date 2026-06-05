@@ -24,14 +24,15 @@ type RawTokenFields = {
   last_used_at?: string;
 };
 
-export function normalizeApiTokenSummary<T extends RawTokenFields>(item: T): ApiTokenSummary & T {
-  const revokedAt = item.revokedAt ?? item.revoked_at;
-  const expiresAt = item.expiresAt ?? item.expires_at;
-  const maxIdleDays = item.maxIdleDays ?? item.max_idle_days;
-  const createdAt = item.createdAt ?? item.created_at;
-  const lastUsedAt = item.lastUsedAt ?? item.last_used_at;
+export function normalizeApiTokenSummary(item: ApiTokenSummary): ApiTokenSummary {
+  const raw = item as ApiTokenSummary & RawTokenFields;
+  const revokedAt = raw.revokedAt ?? raw.revoked_at;
+  const expiresAt = raw.expiresAt ?? raw.expires_at;
+  const maxIdleDays = raw.maxIdleDays ?? raw.max_idle_days;
+  const createdAt = raw.createdAt ?? raw.created_at;
+  const lastUsedAt = raw.lastUsedAt ?? raw.last_used_at;
   const status = resolveTokenStatus({
-    status: item.status,
+    status: raw.status,
     revokedAt,
     expiresAt,
     maxIdleDays,

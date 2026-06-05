@@ -22,7 +22,10 @@ declare const wx: {
   navigateTo(options: {
     url: string;
     events?: Record<string, (data: unknown) => void>;
-    success?: () => void;
+    success?: (res: {
+      eventChannel: { emit: (eventName: string, data?: unknown) => void };
+    }) => void;
+    fail?: () => void;
   }): void;
   navigateBack(options?: { delta?: number }): void;
   switchTab(options: { url: string; success?: () => void }): void;
