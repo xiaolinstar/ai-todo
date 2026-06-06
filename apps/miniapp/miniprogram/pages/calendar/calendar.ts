@@ -18,6 +18,7 @@ import {
 import { loadContentPrefs } from "../../lib/content-prefs";
 import { SwipeListGesture, withSwipeRow, type SwipeListRowState } from "../../lib/swipe-list";
 import { updateTabBarSelected } from "../../lib/tab-bar";
+import { buildAppShareOptions, buildAppShareTimelineOptions, enableShareMenu } from "../../lib/share";
 
 interface EventView extends CalendarEventSummary, SwipeListRowState {
   timeLabel: string;
@@ -63,6 +64,15 @@ Page({
       }
     });
     this._swipeList.updateDeleteActionWidth();
+    enableShareMenu();
+  },
+
+  onShareAppMessage() {
+    return buildAppShareOptions();
+  },
+
+  onShareTimeline() {
+    return buildAppShareTimelineOptions();
   },
 
   onShow() {

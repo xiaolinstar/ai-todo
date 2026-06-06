@@ -221,9 +221,11 @@ ai_todo_api（pydantic Settings，读取 AI_TODO_* 环境变量）
 
 ## 提醒触达 Worker
 
-提醒触达当前已完成服务端闭环，本地无正式微信 openid 时会按预期标记为 `WECHAT_OPENID_MISSING`。真实微信模板与 openid 投递留到后期联调验证；未启用前无需启动 worker。
+提醒触达服务端闭环已就绪：小程序创建/改期提醒时可 `requestSubscribeMessage`，API 写入 delivery 队列，worker 扫描到期记录并调用微信 send API。
 
-生产 compose 中 `worker` 使用 `notifications` profile，默认 `docker compose up -d` 不会启动；需要启用提醒投递时显式运行：
+生产 compose 中 `worker` 使用 `notifications` profile。**CD 部署脚本**（`deploy-from-manifest.sh`）在检测到 `.env.production` 已配置非空 `AI_TODO_WECHAT_REMINDER_TEMPLATE_ID` 时，会自动带上 `--profile notifications` 启动 worker；未配置模板 ID 时仍只启动 `api` + `postgres`。
+
+手动启停示例：
 
 ```bash
 docker compose -f docker-compose.prod.yml --env-file .env.production --profile notifications up -d
@@ -234,13 +236,28 @@ docker compose -f docker-compose.prod.yml --env-file .env.production --profile n
 - `api`：处理 HTTP API、小程序登录、提醒/日程/联系人 CRUD
 - `worker`：运行 `python -m ai_todo_api.modules.notifications.worker`，定时扫描到期的微信订阅消息投递记录
 
-启用提醒触达前，需要在微信公众平台申请提醒事项订阅消息模板，并在 `.env.production` 配置：
+启用前，需要在微信公众平台申请提醒事项订阅消息模板，并在 `.env.production` 配置：
 
 ```bash
 AI_TODO_WECHAT_REMINDER_TEMPLATE_ID=你的模板ID
 ```
 
-该模板当前按 `thing1`（事项名称）、`time2`（提醒时间）、`thing3`（备注）发送；如果微信后台选择的关键词顺序不同，需要同步调整 worker 的模板字段映射。
+该模板当前按公共模板 **#15788（待办事项到期提醒）** 字段发送：
+
+| 模板展示名 | keyword | 内容 |
+|-----------|---------|------|
+| 事项主题 | `thing23` | 提醒标题 |
+| 截止日期 | `time2` | 截止/提醒时刻（`YYYY年M月D日 HH:MM`） |
+| 备注 | `thing13` | 备注，无则「点击查看提醒详情」 |
+
+若更换模板，keyword 以公众平台「我的模板 → 详情」为准，并同步修改 `worker.py` 中的字段常量。
+
+联调验收：
+
+1. 小程序创建带截止时间的提醒并接受订阅；
+2. `GET /v1/notifications/status` 对应记录为 `pending`；
+3. 到期后 worker 发送，状态变为 `sent`（或 `no_quota` / `failed` 等可诊断状态）；
+4. 点击订阅消息应打开提醒编辑页（`reminders?reminderId=` 深链）。
 
 ## CI / CD
 

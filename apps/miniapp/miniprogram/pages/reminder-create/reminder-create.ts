@@ -1,15 +1,12 @@
 import { loadAccountDay } from "../../lib/account-day";
-import {
-  createReminder,
-  fetchNotificationSettings,
-  recordWechatSubscriptionResult
-} from "../../lib/api";
+import { createReminder } from "../../lib/api";
 import type { ContactSummary } from "../../lib/api";
 import { combineDateTime } from "../../lib/format";
-
 import { todoPageThemeData } from "../../lib/theme";
-
-const REMINDER_TEMPLATE_KEY = "reminder_due";
+import {
+  loadReminderNotificationPrefs,
+  requestReminderNotification
+} from "../../lib/wechat-notify";
 
 Page({
   data: {
@@ -36,16 +33,11 @@ Page({
         dueTime: nowTime
       });
     });
-    fetchNotificationSettings().then((response) => {
-      const settings = response.data?.settings;
-      if (!response.ok || !settings?.wechatReminderTemplateId) {
-        this.setData({ notifyAvailable: false, notifyEnabled: false });
-        return;
-      }
+    loadReminderNotificationPrefs().then((prefs) => {
       this.setData({
-        notifyAvailable: settings.wechatEnabled,
-        notifyEnabled: settings.wechatEnabled && settings.defaultReminderEnabled,
-        reminderTemplateId: settings.wechatReminderTemplateId
+        notifyAvailable: prefs.notifyAvailable,
+        notifyEnabled: prefs.notifyEnabled,
+        reminderTemplateId: prefs.reminderTemplateId
       });
     });
   },
@@ -126,7 +118,7 @@ Page({
           wx.showToast({ title: response.error?.message || "创建失败", icon: "none" });
           return;
         }
-        await this.requestReminderNotification(response.data?.reminder.id);
+        await this.notifyAfterSave(response.data?.reminder.id);
         setTimeout(() => wx.navigateBack(), 500);
       })
       .catch(() => {
@@ -135,56 +127,31 @@ Page({
       });
   },
 
-  async requestReminderNotification(reminderId?: string) {
-    if (
-      !reminderId ||
-      !this.data.hasDue ||
-      !this.data.notifyEnabled ||
-      !this.data.notifyAvailable ||
-      !this.data.reminderTemplateId
-    ) {
+  async notifyAfterSave(reminderId?: string) {
+    const shouldNotify =
+      Boolean(reminderId) &&
+      this.data.hasDue &&
+      this.data.notifyEnabled &&
+      this.data.notifyAvailable &&
+      Boolean(this.data.reminderTemplateId);
+
+    if (!shouldNotify || !reminderId) {
       wx.showToast({ title: "已创建", icon: "success" });
       return;
     }
 
-    const result = await requestSubscribeMessage(this.data.reminderTemplateId);
     try {
-      await recordWechatSubscriptionResult({
-        templateKey: REMINDER_TEMPLATE_KEY,
+      const { accepted } = await requestReminderNotification({
+        reminderId,
         templateId: this.data.reminderTemplateId,
-        result,
-        targetType: "reminder",
-        targetId: reminderId
+        enabled: true
+      });
+      wx.showToast({
+        title: accepted ? "已创建并开启提醒" : "已创建，未开启微信提醒",
+        icon: accepted ? "success" : "none"
       });
     } catch {
       wx.showToast({ title: "已创建，提醒授权同步失败", icon: "none" });
-      return;
     }
-
-    wx.showToast({
-      title: result === "accept" ? "已创建并开启提醒" : "已创建，未开启微信提醒",
-      icon: result === "accept" ? "success" : "none"
-    });
   }
 });
-
-function requestSubscribeMessage(
-  templateId: string
-): Promise<"accept" | "reject" | "ban" | "filter"> {
-  return new Promise((resolve) => {
-    wx.requestSubscribeMessage({
-      tmplIds: [templateId],
-      success(res) {
-        const value = res[templateId];
-        if (value === "accept" || value === "reject" || value === "ban" || value === "filter") {
-          resolve(value);
-          return;
-        }
-        resolve("reject");
-      },
-      fail() {
-        resolve("reject");
-      }
-    });
-  });
-}

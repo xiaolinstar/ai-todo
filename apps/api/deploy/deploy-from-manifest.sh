@@ -135,6 +135,19 @@ set_compose_files() {
 
 set_compose_files
 
+compose_notification_profile_args() {
+  if grep -Eq '^AI_TODO_WECHAT_REMINDER_TEMPLATE_ID=.+' "$ENV_FILE"; then
+    echo "Notification worker profile enabled (template ID configured)." >&2
+    printf '%s\n' --profile notifications
+  fi
+}
+
+compose_up() {
+  # shellcheck disable=SC2207
+  local profile_args=($(compose_notification_profile_args))
+  docker compose "${COMPOSE_FILES[@]}" "${profile_args[@]}" --env-file "$ENV_FILE" "$@"
+}
+
 PUBLISH_PORT="$(grep -E '^AI_TODO_PUBLISH_PORT=' "$ENV_FILE" | cut -d= -f2- || true)"
 PUBLISH_PORT="${PUBLISH_PORT:-8082}"
 
@@ -316,14 +329,14 @@ deploy_image() {
   fi
   export AI_TODO_API_IMAGE="${RESOLVED_API_IMAGE:-$image}"
   echo "compose image=${AI_TODO_API_IMAGE}" >&2
-  docker compose "${COMPOSE_FILES[@]}" --env-file "$ENV_FILE" up -d --no-build --pull never
+  compose_up up -d --no-build --pull never
 }
 
 deploy_server_build() {
   echo "Deploying via server-build (docker compose build on VPS)..." >&2
   unset AI_TODO_API_IMAGE
   export APT_MIRROR="${APT_MIRROR:-mirrors.tencent.com}"
-  docker compose "${COMPOSE_FILES[@]}" --env-file "$ENV_FILE" up -d --build
+  compose_up up -d --build
 }
 
 # pull | server-build (auto fallback uses pull then server-build)

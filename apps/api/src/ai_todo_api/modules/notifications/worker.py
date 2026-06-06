@@ -1,5 +1,7 @@
 import logging
 import time
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 from sqlalchemy import select
 
@@ -17,6 +19,12 @@ from ai_todo_api.modules.notifications.wechat_client import (
 
 
 logger = logging.getLogger(__name__)
+
+# WeChat public template #15788 (待办事项到期提醒):
+# 事项主题 {{thing23.DATA}} · 截止日期 {{time2.DATA}} · 备注 {{thing13.DATA}}
+WECHAT_REMINDER_FIELD_TITLE = "thing23"
+WECHAT_REMINDER_FIELD_DUE = "time2"
+WECHAT_REMINDER_FIELD_NOTES = "thing13"
 
 
 def run_forever() -> None:
@@ -99,11 +107,21 @@ def _build_wechat_message(
     return (
         f"pages/reminders/reminders?reminderId={reminder.id}",
         {
-            "thing1": {"value": _truncate(reminder.title, 20)},
-            "time2": {"value": _truncate(remind_time.replace("T", " "), 20)},
-            "thing3": {"value": _truncate(reminder.notes or "点击查看提醒详情", 20)},
+            WECHAT_REMINDER_FIELD_TITLE: {"value": _truncate(reminder.title, 20)},
+            WECHAT_REMINDER_FIELD_DUE: {"value": _format_wechat_time(remind_time)},
+            WECHAT_REMINDER_FIELD_NOTES: {
+                "value": _truncate(reminder.notes or "点击查看提醒详情", 20)
+            },
         },
     )
+
+
+def _format_wechat_time(value: str) -> str:
+    parsed = datetime.fromisoformat(value)
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=ZoneInfo(settings.timezone))
+    local = parsed.astimezone(ZoneInfo(settings.timezone))
+    return f"{local.year}年{local.month}月{local.day}日 {local.hour:02d}:{local.minute:02d}"
 
 
 def _truncate(value: str, max_length: int) -> str:

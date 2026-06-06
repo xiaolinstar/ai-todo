@@ -68,6 +68,12 @@ declare const wx: {
   }): void;
   stopPullDownRefresh(): void;
   setNavigationBarTitle(options: { title: string }): void;
+  showShareMenu(options: {
+    withShareTicket?: boolean;
+    menus?: Array<"shareAppMessage" | "shareTimeline">;
+    success?: () => void;
+    fail?: (err: unknown) => void;
+  }): void;
   getSystemInfoSync(): {
     windowWidth: number;
   };

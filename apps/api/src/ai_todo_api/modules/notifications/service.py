@@ -190,6 +190,51 @@ class NotificationDeliveryService:
         self._session.flush()
         return delivery
 
+    def sync_reminder_target(self, reminder: ReminderModel) -> None:
+        deliveries = self._session.scalars(
+            select(NotificationDeliveryModel).where(
+                NotificationDeliveryModel.user_id == self._user_id,
+                NotificationDeliveryModel.target_type == TARGET_TYPE_REMINDER,
+                NotificationDeliveryModel.target_id == reminder.id,
+            )
+        ).all()
+        if not deliveries:
+            return
+
+        now = now_utc()
+        if reminder.deleted_at is not None or reminder.status == "completed":
+            for delivery in deliveries:
+                if delivery.status in {STATUS_PENDING, STATUS_SENDING, STATUS_FAILED, STATUS_NO_QUOTA}:
+                    self._mark_delivery_skipped(
+                        delivery,
+                        code="REMINDER_INACTIVE",
+                        message="Reminder was completed or deleted.",
+                        now=now,
+                    )
+            self._session.commit()
+            return
+
+        scheduled_at = _parse_schedule(reminder.remind_at or reminder.due_at)
+        for delivery in deliveries:
+            if scheduled_at is None:
+                if delivery.status in {STATUS_PENDING, STATUS_SENDING, STATUS_FAILED, STATUS_NO_QUOTA}:
+                    self._mark_delivery_skipped(
+                        delivery,
+                        code="REMINDER_NO_SCHEDULE",
+                        message="Reminder no longer has a due or reminder time.",
+                        now=now,
+                    )
+                continue
+
+            delivery.scheduled_at = scheduled_at
+            if delivery.status in {STATUS_FAILED, STATUS_NO_QUOTA, STATUS_SKIPPED}:
+                delivery.status = STATUS_PENDING
+                delivery.error_code = None
+                delivery.error_message = None
+                delivery.next_attempt_at = None
+            delivery.updated_at = now
+        self._session.commit()
+
     def list_deliveries(
         self,
         *,
@@ -227,6 +272,19 @@ class NotificationDeliveryService:
         self._session.add(preference)
         self._session.flush()
         return preference
+
+    def _mark_delivery_skipped(
+        self,
+        delivery: NotificationDeliveryModel,
+        *,
+        code: str,
+        message: str,
+        now: datetime,
+    ) -> None:
+        delivery.status = STATUS_SKIPPED
+        delivery.error_code = code
+        delivery.error_message = message
+        delivery.updated_at = now
 
     def _upsert_subscription(
         self,

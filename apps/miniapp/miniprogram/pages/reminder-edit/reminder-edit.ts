@@ -3,6 +3,10 @@ import { fetchReminder, updateReminder } from "../../lib/api";
 import type { ContactSummary } from "../../lib/api";
 import { combineDateTime, splitIsoDateTime } from "../../lib/format";
 import { todoPageThemeData } from "../../lib/theme";
+import {
+  loadReminderNotificationPrefs,
+  requestReminderNotification
+} from "../../lib/wechat-notify";
 
 Page({
   data: {
@@ -16,10 +20,14 @@ Page({
     hasDue: true,
     dueDate: "",
     dueTime: "",
+    notifyAvailable: false,
+    reminderTemplateId: "",
     selectedContact: null as ContactSummary | null,
     accountTimezone: "",
     submitting: false
   },
+
+  _originalDueAt: "",
 
   onLoad(options: { id?: string }) {
     const reminderId = (options.id || "").trim();
@@ -29,8 +37,8 @@ Page({
       return;
     }
     this.setData({ reminderId });
-    Promise.all([loadAccountDay(), fetchReminder(reminderId)])
-      .then(([account, response]) => {
+    Promise.all([loadAccountDay(), fetchReminder(reminderId), loadReminderNotificationPrefs()])
+      .then(([account, response, prefs]) => {
         if (!response.ok || !response.data) {
           this.setData({ loading: false });
           wx.showToast({ title: response.error?.message || "加载失败", icon: "none" });
@@ -41,6 +49,7 @@ Page({
         const hasDue = Boolean(reminder.dueAt);
         const tz = account.timezone;
         const { date, time } = splitIsoDateTime(reminder.dueAt, tz);
+        this._originalDueAt = reminder.dueAt || "";
         this.setData({
           loading: false,
           accountTimezone: tz,
@@ -51,7 +60,9 @@ Page({
           hasDue: isCompleted ? false : hasDue,
           dueDate: date,
           dueTime: time,
-          selectedContact: reminder.contacts?.[0] || null
+          selectedContact: reminder.contacts?.[0] || null,
+          notifyAvailable: prefs.notifyAvailable,
+          reminderTemplateId: prefs.reminderTemplateId
         });
       })
       .catch(() => {
@@ -117,25 +128,45 @@ Page({
       contactIds: this.data.selectedContact ? [this.data.selectedContact.id] : []
     };
 
+    let nextDueAt: string | null = null;
     if (!this.data.isCompleted) {
-      payload.dueAt = this.data.hasDue
+      nextDueAt = this.data.hasDue
         ? combineDateTime(
             this.data.dueDate,
             this.data.dueTime,
             this.data.accountTimezone || undefined
           )
         : null;
+      payload.dueAt = nextDueAt;
     }
+
+    const dueChanged = !this.data.isCompleted && nextDueAt !== this._originalDueAt;
 
     this.setData({ submitting: true });
     updateReminder(this.data.reminderId, payload)
-      .then((response) => {
+      .then(async (response) => {
         this.setData({ submitting: false });
         if (!response.ok) {
           wx.showToast({ title: response.error?.message || "保存失败", icon: "none" });
           return;
         }
-        wx.showToast({ title: "已保存", icon: "success" });
+        if (dueChanged && nextDueAt && this.data.notifyAvailable && this.data.reminderTemplateId) {
+          try {
+            const { accepted } = await requestReminderNotification({
+              reminderId: this.data.reminderId,
+              templateId: this.data.reminderTemplateId,
+              enabled: true
+            });
+            wx.showToast({
+              title: accepted ? "已保存并更新微信提醒" : "已保存，未重新授权微信提醒",
+              icon: accepted ? "success" : "none"
+            });
+          } catch {
+            wx.showToast({ title: "已保存，提醒授权同步失败", icon: "none" });
+          }
+        } else {
+          wx.showToast({ title: "已保存", icon: "success" });
+        }
         setTimeout(() => wx.navigateBack(), 500);
       })
       .catch(() => {

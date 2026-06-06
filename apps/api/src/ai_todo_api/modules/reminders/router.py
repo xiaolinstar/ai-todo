@@ -8,6 +8,8 @@ from ai_todo_api.common.write import run_write
 from ai_todo_api.db.session import get_db
 from ai_todo_api.modules.contacts.links import ContactLinkService
 from ai_todo_api.modules.contacts.service import ContactNotFoundError
+from ai_todo_api.db.models import ReminderModel
+from ai_todo_api.modules.notifications.service import NotificationDeliveryService
 from ai_todo_api.modules.reminders.repository import ReminderRepository
 from ai_todo_api.modules.reminders.schemas import (
     CompleteReminderInput,
@@ -36,6 +38,13 @@ def _reminder_service(db: Session, user: CurrentUser) -> ReminderService:
         user.timezone,
         ContactLinkService(db, user.id),
     )
+
+
+def _sync_reminder_notifications(db: Session, user_id: str, reminder_id: str) -> None:
+    reminder = db.get(ReminderModel, reminder_id)
+    if reminder is None or reminder.user_id != user_id:
+        return
+    NotificationDeliveryService(db, user_id).sync_reminder_target(reminder)
 
 
 def _not_found(reminder_id: str) -> JSONResponse:
@@ -155,6 +164,7 @@ def complete_reminder(
             reminder = service.complete(reminder_id, input_data)
         except ReminderNotFoundError:
             return _not_found(reminder_id)
+        _sync_reminder_notifications(db, user.id, reminder_id)
         body = ApiResponse(data=CompleteReminderResult(reminder=reminder))
         return JSONResponse(status_code=200, content=body.model_dump(by_alias=True))
 
@@ -188,6 +198,7 @@ def reschedule_reminder(
             return _not_found(reminder_id)
         except ValueError as error:
             return _validation_error(str(error))
+        _sync_reminder_notifications(db, user.id, reminder_id)
         body = ApiResponse(data=RescheduleReminderResult(reminder=reminder))
         return JSONResponse(status_code=200, content=body.model_dump(by_alias=True))
 
@@ -223,6 +234,7 @@ def update_reminder(
             return _contact_not_found(str(error))
         except ValueError as error:
             return _validation_error(str(error))
+        _sync_reminder_notifications(db, user.id, reminder_id)
         body = ApiResponse(data=UpdateReminderResult(reminder=reminder))
         return JSONResponse(status_code=200, content=body.model_dump(by_alias=True))
 
@@ -253,6 +265,7 @@ def delete_reminder(
             deleted_id = service.delete(reminder_id)
         except ReminderNotFoundError:
             return _not_found(reminder_id)
+        _sync_reminder_notifications(db, user.id, reminder_id)
         body = ApiResponse(data=DeleteReminderResult(id=deleted_id))
         return JSONResponse(status_code=200, content=body.model_dump(by_alias=True))
 

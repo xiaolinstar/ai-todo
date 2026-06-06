@@ -10,6 +10,7 @@ import {
   todayIsoDateInTimezone
 } from "../../lib/format";
 import { updateTabBarSelected } from "../../lib/tab-bar";
+import { buildAppShareOptions, buildAppShareTimelineOptions, enableShareMenu } from "../../lib/share";
 
 interface ReminderView extends ReminderSummary {
   dueLabel: string;
@@ -107,11 +108,39 @@ Page({
   _activeRowId: "",
   _gestureSwipeActive: false,
   _deleteActionWidthPx: 86,
+  _pendingReminderId: "",
+
+  onLoad(options: { reminderId?: string }) {
+    const reminderId = (options?.reminderId || "").trim();
+    if (reminderId) {
+      this._pendingReminderId = reminderId;
+    }
+    enableShareMenu();
+  },
+
+  onShareAppMessage() {
+    return buildAppShareOptions();
+  },
+
+  onShareTimeline() {
+    return buildAppShareTimelineOptions();
+  },
 
   onShow() {
     updateTabBarSelected(0);
     this.updateDeleteActionWidth();
-    this.loadReminders();
+    this.loadReminders().then(() => this.openPendingReminderIfNeeded());
+  },
+
+  openPendingReminderIfNeeded() {
+    const reminderId = this._pendingReminderId;
+    if (!reminderId) {
+      return;
+    }
+    this._pendingReminderId = "";
+    wx.navigateTo({
+      url: `/pages/reminder-edit/reminder-edit?id=${encodeURIComponent(reminderId)}`
+    });
   },
 
   onUnload() {

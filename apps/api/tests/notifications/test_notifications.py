@@ -145,3 +145,65 @@ def test_dispatch_claims_due_delivery_and_consumes_quota(client):
         assert subscription.quota_remaining == quota_before - 1
     finally:
         session_generator.close()
+
+
+def test_sync_reminder_target_updates_delivery_schedule(client):
+    due_at = (now_utc() + timedelta(hours=2)).isoformat()
+    create_response = client.post(
+        "/v1/reminders",
+        json={"title": "改期提醒", "dueAt": due_at},
+    )
+    reminder_id = create_response.json()["data"]["reminder"]["id"]
+    client.post(
+        "/v1/notifications/wechat/subscription-result",
+        json={
+            "templateKey": "reminder_due",
+            "templateId": "tmpl_reminder",
+            "result": "accept",
+            "targetType": "reminder",
+            "targetId": reminder_id,
+        },
+    )
+
+    new_due_at = (now_utc() + timedelta(hours=4)).isoformat()
+    client.patch(
+        f"/v1/reminders/{reminder_id}",
+        json={"dueAt": new_due_at},
+    )
+
+    status_response = client.get(
+        f"/v1/notifications/status?target_type=reminder&target_id={reminder_id}"
+    )
+    items = status_response.json()["data"]["items"]
+    assert len(items) == 1
+    assert items[0]["status"] == "pending"
+    assert items[0]["scheduledAt"].startswith(new_due_at[:16])
+
+
+def test_sync_reminder_target_skips_delivery_when_completed(client):
+    due_at = (now_utc() + timedelta(hours=2)).isoformat()
+    create_response = client.post(
+        "/v1/reminders",
+        json={"title": "完成提醒", "dueAt": due_at},
+    )
+    reminder_id = create_response.json()["data"]["reminder"]["id"]
+    client.post(
+        "/v1/notifications/wechat/subscription-result",
+        json={
+            "templateKey": "reminder_due",
+            "templateId": "tmpl_reminder",
+            "result": "accept",
+            "targetType": "reminder",
+            "targetId": reminder_id,
+        },
+    )
+
+    client.post(f"/v1/reminders/{reminder_id}/complete", json={})
+
+    status_response = client.get(
+        f"/v1/notifications/status?target_type=reminder&target_id={reminder_id}"
+    )
+    items = status_response.json()["data"]["items"]
+    assert len(items) == 1
+    assert items[0]["status"] == "skipped"
+    assert items[0]["errorCode"] == "REMINDER_INACTIVE"
