@@ -82,6 +82,7 @@ git push origin v0.1.4
 - `0.3.0`：CLI 访问令牌生命周期、加密存储后可 reveal、小程序令牌 UI、`ai-todo token`（见 [v0.3.0-plan.md](./v0.3.0-plan.md)）。
 - `0.4.0`：CLI npm 全局安装、配置优先 UX、小程序复制 settings JSON（见 [v0.4.0-plan.md](./v0.4.0-plan.md)）。
 - `0.4.1`：Git 发布火车；npm 包名 `@xiaolinstar/ai-todo-cli` 与文档/CI 对齐（组件 L1 不变，见 [v0.4.1.md](./v0.4.1.md)）。
+- `0.4.3`：生产 API 域名 `xingxiaolin.cn`；API `0.2.2`（见 [v0.4.3.md](./v0.4.3.md)、[api-0.2.2.md](./api-0.2.2.md)）。
 - `0.3.x`：MCP、审计只读、提醒 P2 等（原 Agent 增强剩余项）。
 - `1.0.0`：稳定公开版本。
 
