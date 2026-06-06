@@ -1,5 +1,7 @@
 import type { CliContext } from "../context";
 import { handleApi, positionalAfter, readFlagValue, readRepeatedFlag } from "../context";
+import { readListCursor, readListLimit } from "../pagination";
+import { renderCalendarListPage } from "../render-list";
 
 export async function runCalendarToday(ctx: CliContext): Promise<void> {
   await handleApi(ctx, await ctx.client.listCalendarToday(), (data) => {
@@ -20,23 +22,32 @@ export async function runCalendarToday(ctx: CliContext): Promise<void> {
 
 export async function runCalendarList(ctx: CliContext, argv: string[]): Promise<void> {
   const date = readFlagValue(argv, "--date");
+  const limit = readListLimit(argv);
+  const cursor = readListCursor(argv);
+  if (process.exitCode) {
+    return;
+  }
+
   await handleApi(
     ctx,
     await ctx.client.listCalendarEvents(
-      date ? { from: date, to: date } : {}
+      date
+        ? { from: date, to: date, limit, cursor }
+        : { limit, cursor }
     ),
     (data) => {
       if (ctx.json) {
         return;
       }
-      if (data.items.length === 0) {
-        console.log("暂无日程");
-        return;
-      }
-      for (const event of data.items) {
-        const end = event.endAt ? ` - ${event.endAt}` : "";
-        console.log(`- ${event.title} (${event.startAt}${end}) (${event.id})`);
-      }
+      renderCalendarListPage(data.items, {
+        label: date ? `日程 · ${date}` : "日程",
+        totalCount: data.totalCount,
+        hasMore: data.hasMore,
+        nextCursor: data.nextCursor,
+        nextPageHint: date
+          ? "ai-todo calendar list --date <YYYY-MM-DD>"
+          : "ai-todo calendar list"
+      });
     }
   );
 }

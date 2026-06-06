@@ -13,6 +13,7 @@ from ai_todo_api.modules.reminders.repository import ReminderRepository, reminde
 from ai_todo_api.modules.reminders.schemas import (
     CompleteReminderInput,
     CreateReminderInput,
+    ReminderListResult,
     ReminderSummary,
     RescheduleReminderInput,
     UpdateReminderInput,
@@ -75,11 +76,39 @@ class ReminderService:
         from_date: str | None = None,
         to_date: str | None = None,
         limit: int = 50,
-    ) -> list[ReminderSummary]:
-        reminders = self._repository.list_active(limit=limit)
-        filtered: list[ReminderModel] = []
+        cursor: str | None = None,
+    ) -> ReminderListResult:
+        if from_date or to_date:
+            return self._list_reminders_in_due_range(
+                status=status,
+                from_date=from_date,
+                to_date=to_date,
+                limit=limit,
+            )
 
-        for reminder in reminders:
+        page = self._repository.list_page(status=status, limit=limit, cursor=cursor)
+        contact_map = self._links.summaries_for_reminders([reminder.id for reminder in page.items])
+        items = [
+            reminder_to_summary(reminder, contacts=contact_map.get(reminder.id, []))
+            for reminder in page.items
+        ]
+        return ReminderListResult(
+            items=items,
+            total_count=page.total_count,
+            next_cursor=page.next_cursor,
+            has_more=page.has_more,
+        )
+
+    def _list_reminders_in_due_range(
+        self,
+        *,
+        status: str | None,
+        from_date: str | None,
+        to_date: str | None,
+        limit: int,
+    ) -> ReminderListResult:
+        filtered: list[ReminderModel] = []
+        for reminder in self._repository.list_all_active():
             if status and reminder.status != status:
                 continue
             if not is_reminder_in_due_range(
@@ -93,12 +122,18 @@ class ReminderService:
 
         limited = filtered[:limit]
         contact_map = self._links.summaries_for_reminders([reminder.id for reminder in limited])
-        return [
+        items = [
             reminder_to_summary(reminder, contacts=contact_map.get(reminder.id, []))
             for reminder in limited
         ]
+        return ReminderListResult(
+            items=items,
+            total_count=len(filtered),
+            next_cursor=None,
+            has_more=len(filtered) > limit,
+        )
 
-    def list_today(self) -> list[ReminderSummary]:
+    def list_today(self) -> ReminderListResult:
         today = today_in_timezone(self._timezone)
         reminders = self._repository.list_active(limit=200)
         visible = [
@@ -112,10 +147,16 @@ class ReminderService:
             )
         ]
         contact_map = self._links.summaries_for_reminders([reminder.id for reminder in visible])
-        return [
+        items = [
             reminder_to_summary(reminder, contacts=contact_map.get(reminder.id, []))
             for reminder in visible
         ]
+        return ReminderListResult(
+            items=items,
+            total_count=len(items),
+            next_cursor=None,
+            has_more=False,
+        )
 
     def complete(self, reminder_id: str, input_data: CompleteReminderInput | None = None) -> ReminderSummary:
         reminder = self._require(reminder_id)

@@ -57,6 +57,9 @@ class CreateContactResult(CamelModel):
 
 class ContactListResult(CamelModel):
     items: list[ContactSummary]
+    total_count: int
+    next_cursor: str | None = None
+    has_more: bool = False
 
 
 class ContactDetailResult(CamelModel):

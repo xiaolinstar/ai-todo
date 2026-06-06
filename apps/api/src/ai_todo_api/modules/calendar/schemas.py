@@ -29,6 +29,9 @@ class CreateCalendarEventResult(CamelModel):
 
 class CalendarEventListResult(CamelModel):
     items: list[CalendarEventSummary]
+    total_count: int
+    next_cursor: str | None = None
+    has_more: bool = False
 
 
 class CalendarEventDetailResult(CamelModel):

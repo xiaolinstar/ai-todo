@@ -22,6 +22,7 @@ Page({
     loading: false,
     loaded: false,
     error: "",
+    totalCount: 0,
     items: [] as ContactView[]
   },
 
@@ -98,6 +99,7 @@ Page({
         this.setData({
           loading: false,
           loaded: true,
+          totalCount: response.data.totalCount,
           items: sorted.map((item) =>
             withSwipeRow({
               ...item,

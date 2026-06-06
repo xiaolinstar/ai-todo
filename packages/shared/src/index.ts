@@ -57,6 +57,15 @@ export interface CreateContactResult {
 
 export interface ContactListResult {
   items: ContactSummary[];
+  totalCount: number;
+  nextCursor?: string | null;
+  hasMore?: boolean;
+}
+
+export interface SearchContactsParams {
+  query?: string;
+  limit?: number;
+  cursor?: string;
 }
 
 export interface ContactDetailResult {
@@ -158,6 +167,9 @@ export interface CompleteReminderResult {
 
 export interface ReminderListResult {
   items: ReminderSummary[];
+  totalCount: number;
+  nextCursor?: string | null;
+  hasMore?: boolean;
 }
 
 export interface ReminderDetailResult {
@@ -196,6 +208,7 @@ export interface ListRemindersParams {
   from?: string;
   to?: string;
   limit?: number;
+  cursor?: string;
 }
 
 export interface UserSummary {
@@ -254,6 +267,9 @@ export interface CreateCalendarEventResult {
 
 export interface CalendarEventListResult {
   items: CalendarEventSummary[];
+  totalCount: number;
+  nextCursor?: string | null;
+  hasMore?: boolean;
 }
 
 export interface CalendarEventDetailResult {
@@ -283,6 +299,7 @@ export interface ListCalendarEventsParams {
   from?: string;
   to?: string;
   limit?: number;
+  cursor?: string;
 }
 
 export interface ApiError {

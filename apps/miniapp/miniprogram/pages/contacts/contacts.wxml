@@ -1,7 +1,7 @@
 <view class="page page-with-tab contacts-page">
   <view class="large-title-wrap">
     <view class="large-title">通讯录</view>
-    <view class="large-subtitle" wx:if="{{loaded}}">{{items.length}} 位联系人</view>
+    <view class="large-subtitle" wx:if="{{loaded}}">{{totalCount}} 位联系人</view>
   </view>
 
   <view class="search-group">

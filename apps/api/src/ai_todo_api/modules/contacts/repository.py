@@ -1,6 +1,9 @@
-from sqlalchemy import or_, select
+from dataclasses import dataclass
+
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.orm import Session, selectinload
 
+from ai_todo_api.common.cursor import decode_cursor, encode_cursor
 from ai_todo_api.db.models import ContactAliasModel, ContactMethodModel, ContactModel
 from ai_todo_api.modules.contacts.handles import normalize_handle
 from ai_todo_api.modules.contacts.schemas import (
@@ -8,6 +11,14 @@ from ai_todo_api.modules.contacts.schemas import (
     ContactMethodSummary,
     ContactSummary,
 )
+
+
+@dataclass
+class ContactSearchPage:
+    items: list[ContactModel]
+    total_count: int
+    next_cursor: str | None = None
+    has_more: bool = False
 
 
 class ContactRepository:
@@ -71,7 +82,51 @@ class ContactRepository:
 
         raise ValueError("Unable to generate a unique contact handle.")
 
-    def search(self, query: str | None = None, limit: int = 20) -> list[ContactModel]:
+    def search(
+        self,
+        query: str | None = None,
+        *,
+        limit: int | None = None,
+        cursor: str | None = None,
+    ) -> ContactSearchPage:
+        statement = self._search_statement(query)
+        total_count = self._count_search_matches(statement)
+
+        ordered = statement.order_by(ContactModel.created_at.asc(), ContactModel.id.asc())
+        if cursor:
+            sort_at, row_id = decode_cursor(cursor)
+            ordered = ordered.where(
+                or_(
+                    ContactModel.created_at > sort_at,
+                    and_(ContactModel.created_at == sort_at, ContactModel.id > row_id),
+                )
+            )
+
+        if limit is None:
+            items = list(self._session.scalars(ordered))
+            return ContactSearchPage(
+                items=items,
+                total_count=total_count,
+                next_cursor=None,
+                has_more=False,
+            )
+
+        rows = list(self._session.scalars(ordered.limit(limit + 1)))
+        has_more = len(rows) > limit
+        items = rows[:limit]
+        next_cursor = None
+        if has_more and items:
+            last = items[-1]
+            next_cursor = encode_cursor(sort_at=last.created_at, row_id=last.id)
+
+        return ContactSearchPage(
+            items=items,
+            total_count=total_count,
+            next_cursor=next_cursor,
+            has_more=has_more,
+        )
+
+    def _search_statement(self, query: str | None):
         statement = (
             select(ContactModel)
             .where(ContactModel.user_id == self._user_id)
@@ -82,25 +137,31 @@ class ContactRepository:
         )
 
         normalized_query = normalize_text(query)
-        if normalized_query:
-            pattern = f"%{normalized_query}%"
-            normalized_handle_query = normalize_handle(query or "")
-            handle_pattern = f"%{normalized_handle_query}%" if normalized_handle_query else pattern
-            statement = (
-                statement.outerjoin(ContactAliasModel)
-                .where(
-                    or_(
-                        ContactModel.handle.ilike(handle_pattern),
-                        ContactModel.display_name.ilike(pattern),
-                        ContactModel.nickname.ilike(pattern),
-                        ContactModel.company.ilike(pattern),
-                        ContactAliasModel.normalized_alias.ilike(pattern),
-                    )
-                )
-                .distinct()
-            )
+        if not normalized_query:
+            return statement
 
-        return list(self._session.scalars(statement.order_by(ContactModel.created_at).limit(limit)))
+        pattern = f"%{normalized_query}%"
+        normalized_handle_query = normalize_handle(query or "")
+        handle_pattern = f"%{normalized_handle_query}%" if normalized_handle_query else pattern
+        return (
+            statement.outerjoin(ContactAliasModel)
+            .where(
+                or_(
+                    ContactModel.handle.ilike(handle_pattern),
+                    ContactModel.display_name.ilike(pattern),
+                    ContactModel.nickname.ilike(pattern),
+                    ContactModel.company.ilike(pattern),
+                    ContactAliasModel.normalized_alias.ilike(pattern),
+                )
+            )
+            .distinct()
+        )
+
+    def _count_search_matches(self, statement) -> int:
+        count_statement = select(func.count()).select_from(
+            statement.with_only_columns(ContactModel.id).distinct().subquery()
+        )
+        return int(self._session.scalar(count_statement) or 0)
 
 
 def contact_to_summary(contact: ContactModel) -> ContactSummary:

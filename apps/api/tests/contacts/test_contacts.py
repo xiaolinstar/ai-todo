@@ -117,3 +117,54 @@ def test_contact_search_matches_normalized_handle(client: TestClient) -> None:
     assert search_response.status_code == 200
     items = search_response.json()["data"]["items"]
     assert any(item["id"] == contact["id"] for item in items)
+
+
+def test_contact_list_returns_all_contacts_without_limit(client: TestClient) -> None:
+    for index in range(25):
+        response = client.post(
+            "/v1/contacts",
+            json={"displayName": f"联系人 {index:02d}"},
+        )
+        assert response.status_code == 201
+
+    list_response = client.get("/v1/contacts")
+    assert list_response.status_code == 200
+    body = list_response.json()["data"]
+    assert body["totalCount"] >= 25
+    assert len(body["items"]) == body["totalCount"]
+    assert body["hasMore"] is False
+    assert body["nextCursor"] is None
+
+
+def test_contact_list_supports_cursor_pagination(client: TestClient) -> None:
+    for index in range(5):
+        response = client.post(
+            "/v1/contacts",
+            json={"displayName": f"分页联系人 {index}"},
+        )
+        assert response.status_code == 201
+
+    first_page = client.get("/v1/contacts", params={"limit": 2})
+    assert first_page.status_code == 200
+    first_body = first_page.json()["data"]
+    assert len(first_body["items"]) == 2
+    assert first_body["totalCount"] >= 5
+    assert first_body["hasMore"] is True
+    assert first_body["nextCursor"]
+
+    second_page = client.get(
+        "/v1/contacts",
+        params={"limit": 2, "cursor": first_body["nextCursor"]},
+    )
+    assert second_page.status_code == 200
+    second_body = second_page.json()["data"]
+    assert len(second_body["items"]) == 2
+    first_ids = {item["id"] for item in first_body["items"]}
+    second_ids = {item["id"] for item in second_body["items"]}
+    assert first_ids.isdisjoint(second_ids)
+
+
+def test_contact_list_rejects_invalid_cursor(client: TestClient) -> None:
+    response = client.get("/v1/contacts", params={"limit": 10, "cursor": "not-a-cursor"})
+    assert response.status_code == 400
+    assert response.json()["error"]["code"] == "INVALID_CURSOR"

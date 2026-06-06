@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, Query
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
+from ai_todo_api.common.cursor import InvalidCursorError
 from ai_todo_api.auth.context import AuthContext, CurrentUser
 from ai_todo_api.auth.deps import get_auth_context, get_current_user, get_idempotency_key
 from ai_todo_api.common.write import run_write
@@ -73,24 +74,29 @@ def list_calendar_today(
     db: Session = Depends(get_db),
     user: CurrentUser = Depends(get_current_user),
 ) -> ApiResponse[CalendarEventListResult]:
-    items = _calendar_service(db, user).list_today()
-    return ApiResponse(data=CalendarEventListResult(items=items))
+    return ApiResponse(data=_calendar_service(db, user).list_today())
 
 
-@router.get("/events")
+@router.get("/events", response_model=None)
 def list_calendar_events(
     from_date: str | None = Query(default=None, alias="from"),
     to_date: str | None = Query(default=None, alias="to"),
     limit: int = Query(default=50, ge=1, le=100),
+    cursor: str | None = None,
     db: Session = Depends(get_db),
     user: CurrentUser = Depends(get_current_user),
-) -> ApiResponse[CalendarEventListResult]:
-    items = _calendar_service(db, user).list_events(
-        from_date=from_date,
-        to_date=to_date,
-        limit=limit,
-    )
-    return ApiResponse(data=CalendarEventListResult(items=items))
+) -> ApiResponse[CalendarEventListResult] | JSONResponse:
+    try:
+        result = _calendar_service(db, user).list_events(
+            from_date=from_date,
+            to_date=to_date,
+            limit=limit,
+            cursor=cursor,
+        )
+    except InvalidCursorError as error:
+        body = ErrorResponse(error=ApiError(code="INVALID_CURSOR", message=str(error)))
+        return JSONResponse(status_code=400, content=body.model_dump(by_alias=True))
+    return ApiResponse(data=result)
 
 
 @router.get("/events/{event_id}")

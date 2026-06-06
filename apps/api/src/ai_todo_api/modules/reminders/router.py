@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 
 from ai_todo_api.auth.context import AuthContext, CurrentUser
 from ai_todo_api.auth.deps import get_auth_context, get_current_user, get_idempotency_key
+from ai_todo_api.common.cursor import InvalidCursorError
 from ai_todo_api.common.write import run_write
 from ai_todo_api.db.session import get_db
 from ai_todo_api.modules.contacts.links import ContactLinkService
@@ -72,22 +73,28 @@ def _reminder_id_from_data(data: dict) -> list[str]:
     return [reminder_id] if reminder_id else []
 
 
-@router.get("")
+@router.get("", response_model=None)
 def list_reminders(
     status: str | None = None,
     from_date: str | None = Query(default=None, alias="from"),
     to_date: str | None = Query(default=None, alias="to"),
     limit: int = Query(default=50, ge=1, le=100),
+    cursor: str | None = None,
     db: Session = Depends(get_db),
     user: CurrentUser = Depends(get_current_user),
-) -> ApiResponse[ReminderListResult]:
-    items = _reminder_service(db, user).list_reminders(
-        status=status,
-        from_date=from_date,
-        to_date=to_date,
-        limit=limit,
-    )
-    return ApiResponse(data=ReminderListResult(items=items))
+) -> ApiResponse[ReminderListResult] | JSONResponse:
+    try:
+        result = _reminder_service(db, user).list_reminders(
+            status=status,
+            from_date=from_date,
+            to_date=to_date,
+            limit=limit,
+            cursor=cursor,
+        )
+    except InvalidCursorError as error:
+        body = ErrorResponse(error=ApiError(code="INVALID_CURSOR", message=str(error)))
+        return JSONResponse(status_code=400, content=body.model_dump(by_alias=True))
+    return ApiResponse(data=result)
 
 
 @router.get("/today")
@@ -95,8 +102,7 @@ def list_reminders_today(
     db: Session = Depends(get_db),
     user: CurrentUser = Depends(get_current_user),
 ) -> ApiResponse[ReminderListResult]:
-    items = _reminder_service(db, user).list_today()
-    return ApiResponse(data=ReminderListResult(items=items))
+    return ApiResponse(data=_reminder_service(db, user).list_today())
 
 
 @router.get("/{reminder_id}")

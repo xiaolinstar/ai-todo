@@ -33,7 +33,7 @@ Today:
 
 Reminders (aliases: add, list, done, reschedule):
   ai-todo reminder create --title <text> [--due <iso>] [--remind <iso>] [--notes <text>] [--contact <id_or_handle> ...]
-  ai-todo reminder list [--status pending|completed|cancelled] [--from YYYY-MM-DD] [--to YYYY-MM-DD]
+  ai-todo reminder list [--status pending|completed|cancelled] [--from YYYY-MM-DD] [--to YYYY-MM-DD] [--limit <n>] [--cursor <token>]
   ai-todo reminder show <reminder_id>
   ai-todo reminder done <reminder_id>
   ai-todo reminder update <reminder_id> [--title <text>] [--notes <text>] [--due <iso>] [--remind <iso>] [--contact <id_or_handle> ...]
@@ -43,7 +43,7 @@ Reminders (aliases: add, list, done, reschedule):
 
 Calendar:
   ai-todo calendar today
-  ai-todo calendar list [--date YYYY-MM-DD]
+  ai-todo calendar list [--date YYYY-MM-DD] [--limit <n>] [--cursor <token>]
   ai-todo calendar add --title <text> --start <iso> [--end <iso>] [--location <text>]
   ai-todo calendar show <event_id>
   ai-todo calendar update <event_id> [--title <text>] [--start <iso>] [--end <iso>]
@@ -51,8 +51,8 @@ Calendar:
 
 Contacts:
   ai-todo contact add <name> [--handle <handle>] [--email <v>] [--phone <v>] [--company <text>] [--job-title <text>] [--notes <text>] [--alias <v>]
-  ai-todo contact list
-  ai-todo contact search <query>
+  ai-todo contact list [--limit <n>] [--cursor <token>]
+  ai-todo contact search <query> [--limit <n>] [--cursor <token>]
   ai-todo contact show <contact_id_or_handle>
   ai-todo contact update <contact_id_or_handle> [--handle <handle>] [--name <text>] [--email <v>] [--phone <v>] [--company <text>] [--job-title <text>] [--notes <text>]
   ai-todo contact delete <contact_id_or_handle>

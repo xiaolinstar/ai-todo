@@ -1,8 +1,10 @@
 from datetime import datetime
 
-from sqlalchemy import select
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.orm import Session
 
+from ai_todo_api.common.cursor import decode_cursor, encode_cursor
+from ai_todo_api.common.list_page import ListPage
 from ai_todo_api.db.models import ReminderModel
 from ai_todo_api.modules.reminders.schemas import ReminderSummary
 
@@ -28,14 +30,59 @@ class ReminderRepository:
         return self._session.scalar(statement)
 
     def list_active(self, *, limit: int = 100) -> list[ReminderModel]:
+        return self.list_page(limit=limit).items
+
+    def list_page(
+        self,
+        *,
+        status: str | None = None,
+        limit: int = 50,
+        cursor: str | None = None,
+    ) -> ListPage[ReminderModel]:
+        statement = select(ReminderModel).where(
+            ReminderModel.user_id == self._user_id,
+            ReminderModel.deleted_at.is_(None),
+        )
+        if status:
+            statement = statement.where(ReminderModel.status == status)
+
+        total_count = int(
+            self._session.scalar(select(func.count()).select_from(statement.subquery())) or 0
+        )
+
+        ordered = statement.order_by(ReminderModel.created_at.desc(), ReminderModel.id.desc())
+        if cursor:
+            sort_at, row_id = decode_cursor(cursor)
+            ordered = ordered.where(
+                or_(
+                    ReminderModel.created_at < sort_at,
+                    and_(ReminderModel.created_at == sort_at, ReminderModel.id < row_id),
+                )
+            )
+
+        rows = list(self._session.scalars(ordered.limit(limit + 1)))
+        has_more = len(rows) > limit
+        items = rows[:limit]
+        next_cursor = None
+        if has_more and items:
+            last = items[-1]
+            next_cursor = encode_cursor(sort_at=last.created_at, row_id=last.id)
+
+        return ListPage(
+            items=items,
+            total_count=total_count,
+            next_cursor=next_cursor,
+            has_more=has_more,
+        )
+
+    def list_all_active(self) -> list[ReminderModel]:
         statement = (
             select(ReminderModel)
             .where(
                 ReminderModel.user_id == self._user_id,
                 ReminderModel.deleted_at.is_(None),
             )
-            .order_by(ReminderModel.created_at.desc())
-            .limit(limit)
+            .order_by(ReminderModel.created_at.desc(), ReminderModel.id.desc())
         )
         return list(self._session.scalars(statement))
 

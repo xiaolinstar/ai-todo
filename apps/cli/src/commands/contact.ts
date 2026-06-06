@@ -1,7 +1,9 @@
-import type { ContactSummary, CreateContactInput } from "@ai-todo/shared";
+import type { CreateContactInput } from "@ai-todo/shared";
 
 import type { CliContext } from "../context";
 import { handleApi, positionalAfter, readFlagValue } from "../context";
+import { readListCursor, readListLimit } from "../pagination";
+import { renderContactListPage } from "../render-list";
 
 export async function runContactAdd(ctx: CliContext, argv: string[]): Promise<void> {
   const displayName = positionalAfter(argv, "contact", "add");
@@ -53,25 +55,58 @@ export async function runContactAdd(ctx: CliContext, argv: string[]): Promise<vo
 export async function runContactSearch(ctx: CliContext, argv: string[]): Promise<void> {
   const query = positionalAfter(argv, "contact", "search");
   if (!query) {
-    console.error("Usage: ai-todo contact search <query>");
+    console.error("Usage: ai-todo contact search <query> [--limit <n>] [--cursor <token>]");
     process.exitCode = 1;
     return;
   }
-  await handleApi(ctx, await ctx.client.searchContacts(query), (data) => {
-    if (ctx.json) {
-      return;
+  if (process.exitCode) {
+    return;
+  }
+
+  const limit = readListLimit(argv);
+  const cursor = readListCursor(argv);
+  await handleApi(
+    ctx,
+    await ctx.client.searchContacts({ query, limit, cursor }),
+    (data) => {
+      if (ctx.json) {
+        return;
+      }
+      renderContactListPage(data.items, {
+        label: "联系人",
+        totalCount: data.totalCount,
+        hasMore: data.hasMore,
+        nextCursor: data.nextCursor,
+        query,
+        nextPageHint: "ai-todo contact search <query>"
+      });
     }
-    renderContactList(data.items);
-  });
+  );
 }
 
-export async function runContactList(ctx: CliContext): Promise<void> {
-  await handleApi(ctx, await ctx.client.searchContacts(), (data) => {
-    if (ctx.json) {
-      return;
+export async function runContactList(ctx: CliContext, argv: string[]): Promise<void> {
+  const limit = readListLimit(argv);
+  const cursor = readListCursor(argv);
+  if (process.exitCode) {
+    return;
+  }
+
+  await handleApi(
+    ctx,
+    await ctx.client.searchContacts({ limit, cursor }),
+    (data) => {
+      if (ctx.json) {
+        return;
+      }
+      renderContactListPage(data.items, {
+        label: "联系人",
+        totalCount: data.totalCount,
+        hasMore: data.hasMore,
+        nextCursor: data.nextCursor,
+        nextPageHint: "ai-todo contact list"
+      });
     }
-    renderContactList(data.items);
-  });
+  );
 }
 
 export async function runContactShow(ctx: CliContext, argv: string[]): Promise<void> {
@@ -190,20 +225,6 @@ export async function runContactDelete(ctx: CliContext, argv: string[]): Promise
       console.log(`已删除联系人：${data.id}`);
     }
   });
-}
-
-function renderContactList(items: ContactSummary[]): void {
-  if (items.length === 0) {
-    console.log("未找到联系人");
-    return;
-  }
-
-  for (const contact of items) {
-    const email = contact.primaryEmail ? ` <${contact.primaryEmail}>` : "";
-    const phone = contact.primaryPhone ? ` ${contact.primaryPhone}` : "";
-    const company = contact.company ? ` · ${contact.company}` : "";
-    console.log(`- ${contact.displayName}${company}${email}${phone} (@${contact.handle}, ${contact.id})`);
-  }
 }
 
 declare const process: { exitCode?: number };

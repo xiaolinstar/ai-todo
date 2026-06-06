@@ -36,6 +36,9 @@ class CompleteReminderResult(CamelModel):
 
 class ReminderListResult(CamelModel):
     items: list[ReminderSummary]
+    total_count: int
+    next_cursor: str | None = None
+    has_more: bool = False
 
 
 class ReminderDetailResult(CamelModel):

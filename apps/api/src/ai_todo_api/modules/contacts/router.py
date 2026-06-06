@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 
 from ai_todo_api.auth.context import AuthContext, CurrentUser
 from ai_todo_api.auth.deps import get_auth_context, get_current_user, get_idempotency_key
+from ai_todo_api.common.cursor import InvalidCursorError
 from ai_todo_api.common.write import run_write
 from ai_todo_api.db.session import get_db
 from ai_todo_api.modules.contacts.repository import ContactRepository
@@ -60,16 +61,21 @@ def create_contact(
     )
 
 
-@router.get("")
+@router.get("", response_model=None)
 def search_contacts(
     q: str | None = None,
-    limit: int = Query(default=20, ge=1, le=100),
+    limit: int | None = Query(default=None, ge=1, le=100),
+    cursor: str | None = None,
     db: Session = Depends(get_db),
     user: CurrentUser = Depends(get_current_user),
-) -> ApiResponse[ContactListResult]:
+) -> ApiResponse[ContactListResult] | JSONResponse:
     contact_service = ContactService(ContactRepository(db, user.id), user.id)
-    items = contact_service.search(q, limit)
-    return ApiResponse(data=ContactListResult(items=items))
+    try:
+        result = contact_service.list_contacts(q, limit=limit, cursor=cursor)
+    except InvalidCursorError as error:
+        body = ErrorResponse(error=ApiError(code="INVALID_CURSOR", message=str(error)))
+        return JSONResponse(status_code=400, content=body.model_dump(by_alias=True))
+    return ApiResponse(data=result)
 
 
 @router.get("/{contact_id}")

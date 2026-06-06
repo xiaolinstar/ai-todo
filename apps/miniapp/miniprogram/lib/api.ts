@@ -96,6 +96,9 @@ export interface ApiTokenListResult {
 
 export interface ContactListResult {
   items: ContactSummary[];
+  totalCount: number;
+  nextCursor?: string | null;
+  hasMore?: boolean;
 }
 
 export interface NotificationSettings {

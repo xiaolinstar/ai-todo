@@ -8,6 +8,8 @@ import {
   readFlagValue,
   readRepeatedFlag
 } from "../context";
+import { readListCursor, readListLimit } from "../pagination";
+import { renderReminderListPage } from "../render-list";
 
 export async function runReminderCreate(ctx: CliContext, argv: string[]): Promise<void> {
   const title = readFlagValue(argv, "--title") ?? positionalAfter(argv, "add", "create");
@@ -42,25 +44,32 @@ export async function runReminderCreate(ctx: CliContext, argv: string[]): Promis
 
 export async function runReminderList(ctx: CliContext, argv: string[]): Promise<void> {
   const status = readFlagValue(argv, "--status") as ReminderStatus | undefined;
+  const limit = readListLimit(argv);
+  const cursor = readListCursor(argv);
+  if (process.exitCode) {
+    return;
+  }
+
   await handleApi(
     ctx,
     await ctx.client.listReminders({
       status,
       from: readFlagValue(argv, "--from"),
-      to: readFlagValue(argv, "--to")
+      to: readFlagValue(argv, "--to"),
+      limit,
+      cursor
     }),
     (data) => {
       if (ctx.json) {
         return;
       }
-      if (data.items.length === 0) {
-        console.log("暂无提醒");
-        return;
-      }
-      for (const reminder of data.items) {
-        const due = reminder.dueAt ? ` @ ${reminder.dueAt}` : "";
-        console.log(`- [${reminder.status}] ${reminder.title}${due} (${reminder.id})`);
-      }
+      renderReminderListPage(data.items, {
+        label: "提醒",
+        totalCount: data.totalCount,
+        hasMore: data.hasMore,
+        nextCursor: data.nextCursor,
+        nextPageHint: "ai-todo reminder list"
+      });
     }
   );
 }

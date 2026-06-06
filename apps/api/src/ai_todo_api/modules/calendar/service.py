@@ -6,6 +6,7 @@ from ai_todo_api.common.time import now_utc, today_in_timezone
 from ai_todo_api.db.models import CalendarEventModel
 from ai_todo_api.modules.calendar.repository import CalendarEventRepository, event_to_summary
 from ai_todo_api.modules.calendar.schemas import (
+    CalendarEventListResult,
     CalendarEventSummary,
     CreateCalendarEventInput,
     UpdateCalendarEventInput,
@@ -75,11 +76,38 @@ class CalendarEventService:
         from_date: str | None = None,
         to_date: str | None = None,
         limit: int = 50,
-    ) -> list[CalendarEventSummary]:
-        events = self._repository.list_active(limit=limit)
+        cursor: str | None = None,
+    ) -> CalendarEventListResult:
+        if from_date or to_date:
+            return self._list_events_in_date_range(
+                from_date=from_date,
+                to_date=to_date,
+                limit=limit,
+            )
+
+        page = self._repository.list_page(limit=limit, cursor=cursor)
+        contact_map = self._links.summaries_for_calendar_events([event.id for event in page.items])
+        items = [
+            event_to_summary(event, contacts=contact_map.get(event.id, []))
+            for event in page.items
+        ]
+        return CalendarEventListResult(
+            items=items,
+            total_count=page.total_count,
+            next_cursor=page.next_cursor,
+            has_more=page.has_more,
+        )
+
+    def _list_events_in_date_range(
+        self,
+        *,
+        from_date: str | None,
+        to_date: str | None,
+        limit: int,
+    ) -> CalendarEventListResult:
         filtered = [
             event
-            for event in events
+            for event in self._repository.list_all_active()
             if event_overlaps_date_range(
                 start_at=event.start_at,
                 end_at=event.end_at,
@@ -90,12 +118,18 @@ class CalendarEventService:
         ]
         limited = filtered[:limit]
         contact_map = self._links.summaries_for_calendar_events([event.id for event in limited])
-        return [
+        items = [
             event_to_summary(event, contacts=contact_map.get(event.id, []))
             for event in limited
         ]
+        return CalendarEventListResult(
+            items=items,
+            total_count=len(filtered),
+            next_cursor=None,
+            has_more=len(filtered) > limit,
+        )
 
-    def list_today(self) -> list[CalendarEventSummary]:
+    def list_today(self) -> CalendarEventListResult:
         today = today_in_timezone(self._timezone)
         events = self._repository.list_active(limit=200)
         visible = [
@@ -109,10 +143,16 @@ class CalendarEventService:
             )
         ]
         contact_map = self._links.summaries_for_calendar_events([event.id for event in visible])
-        return [
+        items = [
             event_to_summary(event, contacts=contact_map.get(event.id, []))
             for event in visible
         ]
+        return CalendarEventListResult(
+            items=items,
+            total_count=len(items),
+            next_cursor=None,
+            has_more=False,
+        )
 
     def update(self, event_id: str, input_data: UpdateCalendarEventInput) -> CalendarEventSummary:
         event = self._require(event_id)

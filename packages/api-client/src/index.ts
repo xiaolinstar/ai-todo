@@ -24,6 +24,7 @@ import type {
   ReminderListResult,
   RevokeAllApiTokensResult,
   RevokeApiTokenResult,
+  SearchContactsParams,
   RescheduleReminderInput,
   RescheduleReminderResult,
   TodayResult,
@@ -118,6 +119,9 @@ export class AiTodoClient {
     if (params.limit) {
       search.set("limit", String(params.limit));
     }
+    if (params.cursor) {
+      search.set("cursor", params.cursor);
+    }
     const query = search.toString();
     return this.request<ReminderListResult>(`/v1/reminders${query ? `?${query}` : ""}`);
   }
@@ -181,6 +185,9 @@ export class AiTodoClient {
     if (params.limit) {
       search.set("limit", String(params.limit));
     }
+    if (params.cursor) {
+      search.set("cursor", params.cursor);
+    }
     const query = search.toString();
     return this.request<CalendarEventListResult>(
       `/v1/calendar/events${query ? `?${query}` : ""}`
@@ -239,9 +246,19 @@ export class AiTodoClient {
     });
   }
 
-  searchContacts(query?: string): Promise<ApiResponse<ContactListResult>> {
-    const params = query ? `?q=${encodeURIComponent(query)}` : "";
-    return this.request<ContactListResult>(`/v1/contacts${params}`);
+  searchContacts(params: SearchContactsParams = {}): Promise<ApiResponse<ContactListResult>> {
+    const search = new URLSearchParams();
+    if (params.query) {
+      search.set("q", params.query);
+    }
+    if (params.limit !== undefined) {
+      search.set("limit", String(params.limit));
+    }
+    if (params.cursor) {
+      search.set("cursor", params.cursor);
+    }
+    const query = search.toString();
+    return this.request<ContactListResult>(`/v1/contacts${query ? `?${query}` : ""}`);
   }
 
   getContact(contactId: string): Promise<ApiResponse<ContactDetailResult>> {

@@ -12,6 +12,7 @@ from ai_todo_api.modules.contacts.repository import (
 )
 from ai_todo_api.modules.contacts.schemas import (
     ContactDetail,
+    ContactListResult,
     ContactSummary,
     CreateContactInput,
     UpdateContactInput,
@@ -167,8 +168,25 @@ class ContactService:
         contact.updated_at = now
         return contact_to_detail(self._repository.save(contact))
 
+    def list_contacts(
+        self,
+        query: str | None = None,
+        *,
+        limit: int | None = None,
+        cursor: str | None = None,
+    ) -> ContactListResult:
+        if cursor and limit is None:
+            limit = 50
+        page = self._repository.search(query, limit=limit, cursor=cursor)
+        return ContactListResult(
+            items=[contact_to_summary(contact) for contact in page.items],
+            total_count=page.total_count,
+            next_cursor=page.next_cursor,
+            has_more=page.has_more,
+        )
+
     def search(self, query: str | None = None, limit: int = 20) -> list[ContactSummary]:
-        return [contact_to_summary(contact) for contact in self._repository.search(query, limit)]
+        return self.list_contacts(query, limit=limit).items
 
     def get(self, contact_id: str) -> ContactDetail:
         contact = self._repository.get(contact_id)

@@ -37,8 +37,8 @@ def today(
     result = TodayResult(
         date=today_in_timezone(user.timezone),
         timezone=user.timezone,
-        reminders=reminder_service.list_today(),
-        calendar_events=calendar_service.list_today(),
+        reminders=reminder_service.list_today().items,
+        calendar_events=calendar_service.list_today().items,
     )
 
     return ApiResponse(data=result)

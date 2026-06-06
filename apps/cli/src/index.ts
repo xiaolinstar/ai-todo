@@ -120,7 +120,7 @@ async function main(): Promise<void> {
       if (action === "add") {
         await contact.runContactAdd(ctx, argv);
       } else if (action === "list") {
-        await contact.runContactList(ctx);
+        await contact.runContactList(ctx, argv);
       } else if (action === "search") {
         await contact.runContactSearch(ctx, argv);
       } else if (action === "show") {
