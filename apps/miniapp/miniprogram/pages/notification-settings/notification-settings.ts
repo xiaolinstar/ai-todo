@@ -12,6 +12,15 @@ interface StatusRow {
   statusClass: string;
 }
 
+const STATUS_LABELS: Record<string, string> = {
+  pending: "待发送",
+  sending: "发送中",
+  sent: "已发送",
+  failed: "发送失败",
+  no_quota: "配额不足",
+  skipped: "已跳过"
+};
+
 Page({
   data: {
     ...todoPageThemeData(),
@@ -59,27 +68,44 @@ Page({
       id: string;
       targetType: string;
       targetId: string;
+      targetTitle?: string;
       status: string;
       scheduledAt: string;
+      attemptCount?: number;
+      errorCode?: string;
     }>
   ): StatusRow[] {
     return items.map((item) => {
-      const shortId = item.targetId.length > 8 ? `${item.targetId.slice(0, 8)}…` : item.targetId;
       const typeLabel =
         item.targetType === "calendar_event"
           ? "日程"
           : item.targetType === "reminder"
             ? "提醒"
             : item.targetType;
+      const name = (item.targetTitle || "").trim() || item.targetId.slice(0, 8);
+      const statusLabel = STATUS_LABELS[item.status] || item.status;
       const statusClass =
         item.status === "failed" || item.status === "no_quota" ? "danger" : "muted";
+      const hint = this.statusHint(item);
+      const attemptSuffix =
+        item.attemptCount && item.attemptCount > 0 ? ` · 第 ${item.attemptCount} 次` : "";
       return {
         id: item.id,
-        title: `${typeLabel} · ${shortId}`,
-        meta: `${item.status} · ${item.scheduledAt}`,
+        title: `${typeLabel} · ${name}`,
+        meta: `${statusLabel}${attemptSuffix} · ${item.scheduledAt}${hint ? ` · ${hint}` : ""}`,
         statusClass
       };
     });
+  },
+
+  statusHint(item: { status: string; targetType: string }): string {
+    if (item.status === "no_quota") {
+      return "请重新编辑并授权微信提醒";
+    }
+    if (item.status === "failed") {
+      return "稍后自动重试，或重新编辑并授权";
+    }
+    return "";
   },
 
   saveSettings(patch: {

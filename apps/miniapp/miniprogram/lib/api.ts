@@ -462,9 +462,13 @@ export interface NotificationDeliverySummary {
   id: string;
   targetType: string;
   targetId: string;
+  targetTitle: string;
   templateKey: string;
   scheduledAt: string;
   status: string;
+  attemptCount: number;
+  errorCode?: string;
+  errorMessage?: string;
   sentAt?: string;
 }
 

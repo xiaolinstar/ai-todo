@@ -11,6 +11,8 @@ const miniprogramRoot = resolve(miniappRoot, "miniprogram");
 const appJsonPath = resolve(miniprogramRoot, "app.json");
 
 const PAGE_SOURCE_EXTS = [".ts", ".wxml", ".scss", ".json"];
+const MAX_MEDIA_BYTES = 200 * 1024;
+const MEDIA_EXTS = new Set([".png", ".jpg", ".jpeg", ".gif", ".webp", ".mp3", ".wav", ".aac", ".m4a"]);
 
 function readJson(path) {
   return JSON.parse(readFileSync(path, "utf8"));
@@ -167,6 +169,21 @@ function assertNoHardcodedVisualTokens() {
 
 assertNoTrackedGeneratedFiles();
 assertNoHardcodedVisualTokens();
+
+function assertMediaSizeLimit() {
+  for (const file of walk(miniprogramRoot)) {
+    const ext = extname(file).toLowerCase();
+    if (!MEDIA_EXTS.has(ext)) continue;
+    const size = statSync(file).size;
+    if (size <= MAX_MEDIA_BYTES) continue;
+    fail(
+      `media asset exceeds WeChat 200KB limit (${Math.round(size / 1024)}KB): ${relative(root, file)} — ` +
+        "compress, resize, or move unused masters outside miniprogram/"
+    );
+  }
+}
+
+assertMediaSizeLimit();
 
 if (!process.exitCode) {
   console.log("ai-todo wechat miniprogram static checks passed");

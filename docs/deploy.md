@@ -130,6 +130,8 @@ curl https://xingxiaolin.cn/v1/health
 
 本地开发：开发者工具勾选「不校验合法域名」，API 使用 `http://127.0.0.1:3100`。
 
+上传体验版/正式版前运行 `pnpm check:wechat`，校验单文件 ≤ 200KB（微信代码质量）。勿提交未引用的大体积 PNG；图标优先 SVG 或按需压缩。
+
 ## 数据库密码
 
 ### 为什么改 `.env.production` 不够？
@@ -263,6 +265,29 @@ AI_TODO_WECHAT_REMINDER_TEMPLATE_ID=你的模板ID
 5. 点击提醒订阅消息应打开提醒编辑页（`reminders?reminderId=` 深链）；
 6. 点击日程订阅消息应打开日程编辑页（`calendar?eventId=` 深链）。
 
+### 本地 Docker（含 worker）
+
+本地联调提醒/日程订阅消息时，必须加载 `.env.local` 中的微信配置，并启用 `notifications` profile：
+
+```bash
+cd apps/api
+./scripts/dev-up.sh
+# 等价于：docker compose --env-file .env.local --profile notifications up -d --build
+curl http://127.0.0.1:3100/v1/health
+```
+
+模板 ID 等变量见 `apps/api/.env.local.example`。未带 `--env-file .env.local` 时 worker 可能因空配置而无法发送。
+
+### 生产 CD 验收清单（v0.5.2+）
+
+部署完成后逐项确认：
+
+1. `curl https://xingxiaolin.cn/v1/health` 返回 API `0.2.6`（或当前 release 版本）
+2. worker 容器运行中（`docker compose ... ps` 含 `worker`）
+3. 小程序「通知设置 → 最近送达」显示「提醒/日程 · 标题」及中文状态
+4. 创建 1 条提醒 + 1 条日程，接受订阅，到期后均收到消息且深链正确
+5. 微信开发者工具上传前 `pnpm check:wechat` 通过（媒体 ≤ 200KB）
+
 ## CI / CD
 
 详见 **[docs/ci-cd.md](./ci-cd.md)**（`deploy_mode`、NJU 镜像、pull/server-build）。
@@ -337,6 +362,7 @@ docker compose -f docker-compose.prod.yml -f docker-compose.tls.yml ...
 | 项 | 本地 | 生产 |
 |----|------|------|
 | Compose | `docker-compose.yml`（Postgres + API，可选 worker） | `docker-compose.prod.yml` |
+| 本地一键启动 | `apps/api/scripts/dev-up.sh`（`.env.local` + notifications profile） | — |
 | API 运行 | Docker 容器 → 宿主机 :3100；或可选宿主机 `pnpm dev:api` | Docker 容器 → 宿主机 :8082 |
 | HTTPS | 不需要 | xiaolin-gateway → `https://xingxiaolin.cn` |
 | 合法域名 | 开发者工具跳过校验 | 公众平台配置 `xingxiaolin.cn` |

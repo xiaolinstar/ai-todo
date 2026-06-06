@@ -335,7 +335,14 @@ class NotificationDeliveryService:
             .order_by(NotificationDeliveryModel.scheduled_at.desc())
             .limit(limit)
         ).all()
-        return [delivery_to_summary(item) for item in items]
+        title_map = _load_target_titles(self._session, self._user_id, items)
+        return [
+            delivery_to_summary(
+                item,
+                target_title=title_map.get((item.target_type, item.target_id)),
+            )
+            for item in items
+        ]
 
     def _get_or_create_preference(self) -> NotificationPreferenceModel:
         preference = self._session.get(NotificationPreferenceModel, self._user_id)
@@ -496,11 +503,17 @@ class NotificationDispatchService:
         return identity.provider_subject if identity else None
 
 
-def delivery_to_summary(delivery: NotificationDeliveryModel) -> NotificationDeliverySummary:
+def delivery_to_summary(
+    delivery: NotificationDeliveryModel,
+    *,
+    target_title: str | None = None,
+) -> NotificationDeliverySummary:
+    resolved_title = (target_title or "").strip() or _short_target_id(delivery.target_id)
     return NotificationDeliverySummary(
         id=delivery.id,
         target_type=delivery.target_type,
         target_id=delivery.target_id,
+        target_title=resolved_title,
         template_key=delivery.template_key,
         scheduled_at=delivery.scheduled_at.isoformat(),
         status=delivery.status,
@@ -509,6 +522,67 @@ def delivery_to_summary(delivery: NotificationDeliveryModel) -> NotificationDeli
         error_message=delivery.error_message,
         sent_at=delivery.sent_at.isoformat() if delivery.sent_at else None,
     )
+
+
+def _short_target_id(target_id: str) -> str:
+    if len(target_id) <= 8:
+        return target_id
+    return f"{target_id[:8]}…"
+
+
+def _load_target_titles(
+    session: Session,
+    user_id: str,
+    deliveries: list[NotificationDeliveryModel],
+) -> dict[tuple[str, str], str]:
+    reminder_ids = {
+        delivery.target_id
+        for delivery in deliveries
+        if delivery.target_type == TARGET_TYPE_REMINDER
+    }
+    event_ids = {
+        delivery.target_id
+        for delivery in deliveries
+        if delivery.target_type == TARGET_TYPE_CALENDAR_EVENT
+    }
+    titles: dict[tuple[str, str], str] = {}
+
+    if reminder_ids:
+        reminders = session.scalars(
+            select(ReminderModel).where(
+                ReminderModel.user_id == user_id,
+                ReminderModel.id.in_(reminder_ids),
+            )
+        ).all()
+        for reminder in reminders:
+            titles[(TARGET_TYPE_REMINDER, reminder.id)] = _resolve_target_title(
+                reminder.title,
+                reminder.deleted_at,
+            )
+
+    if event_ids:
+        events = session.scalars(
+            select(CalendarEventModel).where(
+                CalendarEventModel.user_id == user_id,
+                CalendarEventModel.id.in_(event_ids),
+            )
+        ).all()
+        for event in events:
+            titles[(TARGET_TYPE_CALENDAR_EVENT, event.id)] = _resolve_target_title(
+                event.title,
+                event.deleted_at,
+            )
+
+    return titles
+
+
+def _resolve_target_title(title: str | None, deleted_at: datetime | None) -> str:
+    cleaned = (title or "").strip()
+    if cleaned:
+        return cleaned
+    if deleted_at is not None:
+        return "（已删除）"
+    return ""
 
 
 def _clean_optional(value: str | None) -> str | None:

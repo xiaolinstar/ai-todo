@@ -157,7 +157,25 @@ def _calendar_event_notes(event: CalendarEventModel) -> str:
     description = (event.description or "").strip()
     if description:
         return _truncate(description, 20)
+    if event.end_at and event.start_at:
+        return _truncate(_format_wechat_time_range(event.start_at, event.end_at), 20)
     return "点击查看日程详情"
+
+
+def _format_wechat_time_range(start_at: str, end_at: str) -> str:
+    tz = ZoneInfo(settings.timezone)
+    start = datetime.fromisoformat(start_at)
+    end = datetime.fromisoformat(end_at)
+    if start.tzinfo is None:
+        start = start.replace(tzinfo=tz)
+    if end.tzinfo is None:
+        end = end.replace(tzinfo=tz)
+    start_local = start.astimezone(tz)
+    end_local = end.astimezone(tz)
+    return (
+        f"{start_local.hour:02d}:{start_local.minute:02d}-"
+        f"{end_local.hour:02d}:{end_local.minute:02d}"
+    )
 
 
 def _format_wechat_time(value: str) -> str:

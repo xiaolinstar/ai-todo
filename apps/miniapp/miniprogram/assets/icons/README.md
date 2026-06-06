@@ -1,4 +1,11 @@
-Official ai-todo miniapp icon assets live here.
+Official ai-todo miniapp icon sources (SVG only in this package).
 
-- `ai-todo-avatar-light.svg` / `ai-todo-avatar-light.png`: 1024 x 1024 light-theme miniapp avatar.
-- `ai-todo-avatar-dark.svg` / `ai-todo-avatar-dark.png`: 1024 x 1024 dark-theme miniapp avatar.
+- `ai-todo-avatar-light.svg` / `ai-todo-avatar-dark.svg`: 1024×1024 vector masters for future in-app branding.
+
+**WeChat upload limit:** each image/audio in `miniprogram/` must be ≤ 200KB. Do not add 1024 PNG exports here.
+
+Raster masters (PNG) for API / favicon / store assets live under:
+
+- `apps/api/src/ai_todo_api/static/icons/`
+
+When the miniapp needs a bitmap icon, add a compressed variant (e.g. ≤ 144×144, ≤ 40KB) and reference it from WXML/JSON.

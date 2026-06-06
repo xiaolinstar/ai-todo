@@ -45,6 +45,7 @@ class NotificationDeliverySummary(CamelModel):
     id: str
     target_type: str
     target_id: str
+    target_title: str
     template_key: str
     scheduled_at: str
     status: str
