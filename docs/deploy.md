@@ -244,20 +244,24 @@ AI_TODO_WECHAT_REMINDER_TEMPLATE_ID=你的模板ID
 
 该模板当前按公共模板 **#15788（待办事项到期提醒）** 字段发送：
 
-| 模板展示名 | keyword | 内容 |
-|-----------|---------|------|
-| 事项主题 | `thing23` | 提醒标题 |
-| 截止日期 | `time2` | 截止/提醒时刻（`YYYY年M月D日 HH:MM`） |
-| 备注 | `thing13` | 备注，无则「点击查看提醒详情」 |
+| 模板展示名 | keyword | 提醒 | 日程 |
+|-----------|---------|------|------|
+| 事项主题 | `thing23` | 标题 | 标题 |
+| 截止日期 | `time2` | 截止/提醒时刻 | **开始时刻**（展示名仍为「截止日期」） |
+| 备注 | `thing13` | 备注或「点击查看提醒详情」 | 地点 → 描述 → 「点击查看日程详情」 |
+
+时间格式：`YYYY年M月D日 HH:MM`（账户时区）。
 
 若更换模板，keyword 以公众平台「我的模板 → 详情」为准，并同步修改 `worker.py` 中的字段常量。
 
 联调验收：
 
 1. 小程序创建带截止时间的提醒并接受订阅；
-2. `GET /v1/notifications/status` 对应记录为 `pending`；
-3. 到期后 worker 发送，状态变为 `sent`（或 `no_quota` / `failed` 等可诊断状态）；
-4. 点击订阅消息应打开提醒编辑页（`reminders?reminderId=` 深链）。
+2. 小程序创建带开始时间的日程并接受订阅；
+3. `GET /v1/notifications/status` 对应记录为 `pending`；
+4. 到期后 worker 发送，状态变为 `sent`（或 `no_quota` / `failed` 等可诊断状态）；
+5. 点击提醒订阅消息应打开提醒编辑页（`reminders?reminderId=` 深链）；
+6. 点击日程订阅消息应打开日程编辑页（`calendar?eventId=` 深链）。
 
 ## CI / CD
 

@@ -10,6 +10,7 @@ from ai_todo_api.auth.wechat_service import WECHAT_PROVIDER
 from ai_todo_api.common.time import now_utc
 from ai_todo_api.config import settings
 from ai_todo_api.db.models import (
+    CalendarEventModel,
     IdentityModel,
     NotificationDeliveryModel,
     NotificationPreferenceModel,
@@ -25,7 +26,9 @@ from ai_todo_api.modules.notifications.schemas import (
 
 CHANNEL_WECHAT_SUBSCRIBE = "wechat_subscribe"
 TEMPLATE_KEY_REMINDER_DUE = "reminder_due"
+TEMPLATE_KEY_CALENDAR_START = "calendar_event_start"
 TARGET_TYPE_REMINDER = "reminder"
+TARGET_TYPE_CALENDAR_EVENT = "calendar_event"
 STATUS_PENDING = "pending"
 STATUS_SENDING = "sending"
 STATUS_SENT = "sent"
@@ -96,14 +99,8 @@ class NotificationDeliveryService:
                 result=result,
                 increment_quota=False,
             )
+            self._session.commit()
             return False, None, subscription.quota_remaining
-
-        subscription = self._upsert_subscription(
-            template_key=template_key,
-            template_id=template_id,
-            result=result,
-            increment_quota=True,
-        )
 
         delivery = None
         if target_type or target_id:
@@ -116,6 +113,14 @@ class NotificationDeliveryService:
                 template_id=template_id,
             )
 
+        subscription = self._upsert_subscription(
+            template_key=template_key,
+            template_id=template_id,
+            result=result,
+            increment_quota=True,
+        )
+        self._session.commit()
+
         return True, delivery, subscription.quota_remaining
 
     def ensure_delivery_for_target(
@@ -126,25 +131,56 @@ class NotificationDeliveryService:
         template_key: str,
         template_id: str,
     ) -> NotificationDeliveryModel:
-        if target_type != TARGET_TYPE_REMINDER:
-            raise NotificationValidationError("Only reminder notifications are supported.")
-        if template_key != TEMPLATE_KEY_REMINDER_DUE:
-            raise NotificationValidationError("Unsupported notification template.")
-
-        reminder = self._session.scalar(
-            select(ReminderModel).where(
-                ReminderModel.id == target_id,
-                ReminderModel.user_id == self._user_id,
-                ReminderModel.deleted_at.is_(None),
+        if target_type == TARGET_TYPE_REMINDER:
+            if template_key != TEMPLATE_KEY_REMINDER_DUE:
+                raise NotificationValidationError("Unsupported notification template.")
+            reminder = self._session.scalar(
+                select(ReminderModel).where(
+                    ReminderModel.id == target_id,
+                    ReminderModel.user_id == self._user_id,
+                    ReminderModel.deleted_at.is_(None),
+                )
             )
+            if reminder is None:
+                raise NotificationTargetNotFoundError(target_id)
+            scheduled_at = _parse_schedule(reminder.remind_at or reminder.due_at)
+            if scheduled_at is None:
+                raise NotificationValidationError("Reminder does not have a due or reminder time.")
+        elif target_type == TARGET_TYPE_CALENDAR_EVENT:
+            if template_key != TEMPLATE_KEY_CALENDAR_START:
+                raise NotificationValidationError("Unsupported notification template.")
+            event = self._session.scalar(
+                select(CalendarEventModel).where(
+                    CalendarEventModel.id == target_id,
+                    CalendarEventModel.user_id == self._user_id,
+                    CalendarEventModel.deleted_at.is_(None),
+                )
+            )
+            if event is None:
+                raise NotificationTargetNotFoundError(target_id)
+            scheduled_at = _parse_schedule(event.start_at)
+            if scheduled_at is None:
+                raise NotificationValidationError("Calendar event does not have a start time.")
+        else:
+            raise NotificationValidationError("Only reminder and calendar event notifications are supported.")
+
+        return self._upsert_delivery(
+            target_type=target_type,
+            target_id=target_id,
+            template_key=template_key,
+            template_id=template_id,
+            scheduled_at=scheduled_at,
         )
-        if reminder is None:
-            raise NotificationTargetNotFoundError(target_id)
 
-        scheduled_at = _parse_schedule(reminder.remind_at or reminder.due_at)
-        if scheduled_at is None:
-            raise NotificationValidationError("Reminder does not have a due or reminder time.")
-
+    def _upsert_delivery(
+        self,
+        *,
+        target_type: str,
+        target_id: str,
+        template_key: str,
+        template_id: str,
+        scheduled_at: datetime,
+    ) -> NotificationDeliveryModel:
         now = now_utc()
         delivery = self._session.scalar(
             select(NotificationDeliveryModel).where(
@@ -222,6 +258,51 @@ class NotificationDeliveryService:
                         delivery,
                         code="REMINDER_NO_SCHEDULE",
                         message="Reminder no longer has a due or reminder time.",
+                        now=now,
+                    )
+                continue
+
+            delivery.scheduled_at = scheduled_at
+            if delivery.status in {STATUS_FAILED, STATUS_NO_QUOTA, STATUS_SKIPPED}:
+                delivery.status = STATUS_PENDING
+                delivery.error_code = None
+                delivery.error_message = None
+                delivery.next_attempt_at = None
+            delivery.updated_at = now
+        self._session.commit()
+
+    def sync_calendar_event_target(self, event: CalendarEventModel) -> None:
+        deliveries = self._session.scalars(
+            select(NotificationDeliveryModel).where(
+                NotificationDeliveryModel.user_id == self._user_id,
+                NotificationDeliveryModel.target_type == TARGET_TYPE_CALENDAR_EVENT,
+                NotificationDeliveryModel.target_id == event.id,
+            )
+        ).all()
+        if not deliveries:
+            return
+
+        now = now_utc()
+        if event.deleted_at is not None:
+            for delivery in deliveries:
+                if delivery.status in {STATUS_PENDING, STATUS_SENDING, STATUS_FAILED, STATUS_NO_QUOTA}:
+                    self._mark_delivery_skipped(
+                        delivery,
+                        code="CALENDAR_EVENT_INACTIVE",
+                        message="Calendar event was deleted.",
+                        now=now,
+                    )
+            self._session.commit()
+            return
+
+        scheduled_at = _parse_schedule(event.start_at)
+        for delivery in deliveries:
+            if scheduled_at is None:
+                if delivery.status in {STATUS_PENDING, STATUS_SENDING, STATUS_FAILED, STATUS_NO_QUOTA}:
+                    self._mark_delivery_skipped(
+                        delivery,
+                        code="CALENDAR_EVENT_NO_SCHEDULE",
+                        message="Calendar event no longer has a start time.",
                         now=now,
                     )
                 continue

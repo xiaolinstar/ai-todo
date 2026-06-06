@@ -20,6 +20,9 @@ services:
       context: .
       args:
         PIP_INDEX_URL: ${PIP_INDEX_URL:-https://pypi.org/simple}
+    env_file:
+      - path: .env.local
+        required: false
     environment:
       AI_TODO_HOST: 0.0.0.0
       AI_TODO_PORT: ${AI_TODO_PORT:-3100}
@@ -52,6 +55,9 @@ services:
       context: .
       args:
         PIP_INDEX_URL: ${PIP_INDEX_URL:-https://pypi.org/simple}
+    env_file:
+      - path: .env.local
+        required: false
     command: ["python", "-m", "ai_todo_api.modules.notifications.worker"]
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-ai_todo}
@@ -73,6 +79,12 @@ services:
       AI_TODO_ICP_BEIAN_TEXT: ${AI_TODO_ICP_BEIAN_TEXT:-苏ICP备2026011017号-7}
       AI_TODO_PUBLIC_SECURITY_BEIAN_TEXT: ${AI_TODO_PUBLIC_SECURITY_BEIAN_TEXT:-苏公网安备32010602012480号}
       AI_TODO_SKIP_MIGRATIONS: "true"
+    healthcheck:
+      test: ["CMD", "python", "/app/scripts/worker_healthcheck.py"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
     depends_on:
       postgres:
         condition: service_healthy

@@ -8,7 +8,7 @@
           <view class="inset-group subpage-group">
             <view class="subpage-cell">
               <view class="subpage-cell-main">
-                <text class="subpage-label">默认开启微信通知</text>
+                <text class="subpage-label">新建提醒/日程默认开启微信通知</text>
                 <text class="subpage-meta">需通知总开关已开启且已配置模板</text>
               </view>
               <switch

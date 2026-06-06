@@ -3,6 +3,10 @@ import { fetchCalendarEvent, updateCalendarEvent } from "../../lib/api";
 import type { ContactSummary } from "../../lib/api";
 import { combineDateTime, splitIsoDateTime } from "../../lib/format";
 import { todoPageThemeData } from "../../lib/theme";
+import {
+  loadWechatNotificationPrefs,
+  requestCalendarEventNotification
+} from "../../lib/wechat-notify";
 
 Page({
   data: {
@@ -18,10 +22,14 @@ Page({
     endDate: "",
     endTime: "",
     hasEnd: false,
+    notifyAvailable: false,
+    reminderTemplateId: "",
     selectedContact: null as ContactSummary | null,
     accountTimezone: "",
     submitting: false
   },
+
+  _originalStartAt: "",
 
   onLoad(options: { id?: string }) {
     const eventId = (options.id || "").trim();
@@ -31,8 +39,8 @@ Page({
       return;
     }
     this.setData({ eventId });
-    Promise.all([loadAccountDay(), fetchCalendarEvent(eventId)])
-      .then(([account, response]) => {
+    Promise.all([loadAccountDay(), fetchCalendarEvent(eventId), loadWechatNotificationPrefs()])
+      .then(([account, response, prefs]) => {
         if (!response.ok || !response.data) {
           this.setData({ loading: false });
           wx.showToast({ title: response.error?.message || "加载失败", icon: "none" });
@@ -42,9 +50,12 @@ Page({
         const tz = account.timezone;
         const start = splitIsoDateTime(event.startAt, tz);
         const end = splitIsoDateTime(event.endAt, tz);
+        this._originalStartAt = event.startAt;
         this.setData({
           loading: false,
           accountTimezone: tz,
+          notifyAvailable: prefs.notifyAvailable,
+          reminderTemplateId: prefs.reminderTemplateId,
           title: event.title || "",
           location: event.location || "",
           description: event.description || "",
@@ -147,15 +158,34 @@ Page({
       contactIds: this.data.selectedContact ? [this.data.selectedContact.id] : []
     };
 
+    const nextStartAt = payload.startAt;
+    const startChanged = nextStartAt !== this._originalStartAt;
+
     this.setData({ submitting: true });
     updateCalendarEvent(this.data.eventId, payload)
-      .then((response) => {
+      .then(async (response) => {
         this.setData({ submitting: false });
         if (!response.ok) {
           wx.showToast({ title: response.error?.message || "保存失败", icon: "none" });
           return;
         }
-        wx.showToast({ title: "已保存", icon: "success" });
+        if (startChanged && this.data.notifyAvailable && this.data.reminderTemplateId) {
+          try {
+            const { accepted } = await requestCalendarEventNotification({
+              eventId: this.data.eventId,
+              templateId: this.data.reminderTemplateId,
+              enabled: true
+            });
+            wx.showToast({
+              title: accepted ? "已保存并更新微信提醒" : "已保存，未重新授权微信提醒",
+              icon: accepted ? "success" : "none"
+            });
+          } catch {
+            wx.showToast({ title: "已保存，提醒授权同步失败", icon: "none" });
+          }
+        } else {
+          wx.showToast({ title: "已保存", icon: "success" });
+        }
         setTimeout(() => wx.navigateBack(), 500);
       })
       .catch(() => {

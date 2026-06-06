@@ -65,11 +65,17 @@ Page({
   ): StatusRow[] {
     return items.map((item) => {
       const shortId = item.targetId.length > 8 ? `${item.targetId.slice(0, 8)}…` : item.targetId;
+      const typeLabel =
+        item.targetType === "calendar_event"
+          ? "日程"
+          : item.targetType === "reminder"
+            ? "提醒"
+            : item.targetType;
       const statusClass =
         item.status === "failed" || item.status === "no_quota" ? "danger" : "muted";
       return {
         id: item.id,
-        title: `${item.targetType} · ${shortId}`,
+        title: `${typeLabel} · ${shortId}`,
         meta: `${item.status} · ${item.scheduledAt}`,
         statusClass
       };

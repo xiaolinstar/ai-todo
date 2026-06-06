@@ -478,7 +478,7 @@ export function recordWechatSubscriptionResult(input: {
   templateKey: string;
   templateId: string;
   result: "accept" | "reject" | "ban" | "filter";
-  targetType?: "reminder";
+  targetType?: "reminder" | "calendar_event";
   targetId?: string;
 }) {
   return request<{ accepted: boolean; deliveryId?: string; status?: string; quotaRemaining: number }>(

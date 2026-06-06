@@ -42,8 +42,13 @@ Page({
   },
 
   _swipeList: null as SwipeListGesture<EventView> | null,
+  _pendingEventId: "",
 
-  onLoad() {
+  onLoad(options: { eventId?: string }) {
+    const eventId = (options?.eventId || "").trim();
+    if (eventId) {
+      this._pendingEventId = eventId;
+    }
     this._swipeList = new SwipeListGesture<EventView>({
       getItems: () => this.data.events,
       setItems: (events) => this.setData({ events }),
@@ -82,10 +87,23 @@ Page({
       const openToday = prefs.calendar.selectTodayOnOpen;
       if (openToday) {
         return loadAccountDay().then(({ today }) => {
-          this.setData({ selectedDate: today }, () => this.loadEvents());
+          this.setData({ selectedDate: today }, () =>
+            this.loadEvents().then(() => this.openPendingEventIfNeeded())
+          );
         });
       }
-      this.loadEvents();
+      this.loadEvents().then(() => this.openPendingEventIfNeeded());
+    });
+  },
+
+  openPendingEventIfNeeded() {
+    const eventId = this._pendingEventId;
+    if (!eventId) {
+      return;
+    }
+    this._pendingEventId = "";
+    wx.navigateTo({
+      url: `/pages/event-edit/event-edit?id=${encodeURIComponent(eventId)}`
     });
   },
 

@@ -4,6 +4,7 @@ import {
 } from "./api";
 
 export const REMINDER_TEMPLATE_KEY = "reminder_due";
+export const CALENDAR_TEMPLATE_KEY = "calendar_event_start";
 
 export type SubscribeMessageResult = "accept" | "reject" | "ban" | "filter";
 
@@ -53,7 +54,32 @@ export async function requestReminderNotification(options: {
   return { subscribed: true, accepted: result === "accept" };
 }
 
-export async function loadReminderNotificationPrefs(): Promise<{
+export async function requestCalendarEventNotification(options: {
+  eventId: string;
+  templateId: string;
+  enabled: boolean;
+}): Promise<{ subscribed: boolean; accepted: boolean }> {
+  if (!options.enabled || !options.templateId) {
+    return { subscribed: false, accepted: false };
+  }
+
+  const result = await requestSubscribeMessage(options.templateId);
+  try {
+    await recordWechatSubscriptionResult({
+      templateKey: CALENDAR_TEMPLATE_KEY,
+      templateId: options.templateId,
+      result,
+      targetType: "calendar_event",
+      targetId: options.eventId
+    });
+  } catch {
+    throw new Error("SUBSCRIPTION_SYNC_FAILED");
+  }
+
+  return { subscribed: true, accepted: result === "accept" };
+}
+
+export async function loadWechatNotificationPrefs(): Promise<{
   notifyAvailable: boolean;
   notifyEnabled: boolean;
   reminderTemplateId: string;
@@ -68,4 +94,13 @@ export async function loadReminderNotificationPrefs(): Promise<{
     notifyEnabled: settings.wechatEnabled && settings.defaultReminderEnabled,
     reminderTemplateId: settings.wechatReminderTemplateId
   };
+}
+
+/** @deprecated Use loadWechatNotificationPrefs — applies to reminders and calendar events. */
+export async function loadReminderNotificationPrefs(): Promise<{
+  notifyAvailable: boolean;
+  notifyEnabled: boolean;
+  reminderTemplateId: string;
+}> {
+  return loadWechatNotificationPrefs();
 }

@@ -4,6 +4,10 @@ import type { ContactSummary } from "../../lib/api";
 import { applyDefaultEventEnd, loadContentPrefs } from "../../lib/content-prefs";
 import { combineDateTime } from "../../lib/format";
 import { todoPageThemeData } from "../../lib/theme";
+import {
+  loadWechatNotificationPrefs,
+  requestCalendarEventNotification
+} from "../../lib/wechat-notify";
 
 Page({
   data: {
@@ -17,6 +21,9 @@ Page({
     endDate: "",
     endTime: "",
     hasEnd: false,
+    notifyEnabled: true,
+    notifyAvailable: false,
+    reminderTemplateId: "",
     selectedContact: null as ContactSummary | null,
     accountTimezone: "",
     submitting: false
@@ -32,6 +39,13 @@ Page({
         hasEnd: endDefaults.hasEnd,
         endDate: endDefaults.endDate,
         endTime: endDefaults.endTime
+      });
+    });
+    loadWechatNotificationPrefs().then((prefs) => {
+      this.setData({
+        notifyAvailable: prefs.notifyAvailable,
+        notifyEnabled: prefs.notifyEnabled,
+        reminderTemplateId: prefs.reminderTemplateId
       });
     });
   },
@@ -134,18 +148,45 @@ Page({
 
     this.setData({ submitting: true });
     createCalendarEvent(payload)
-      .then((response) => {
+      .then(async (response) => {
         this.setData({ submitting: false });
         if (!response.ok) {
           wx.showToast({ title: response.error?.message || "创建失败", icon: "none" });
           return;
         }
-        wx.showToast({ title: "已创建", icon: "success" });
+        await this.notifyAfterSave(response.data?.calendarEvent.id);
         setTimeout(() => wx.navigateBack(), 500);
       })
       .catch(() => {
         this.setData({ submitting: false });
         wx.showToast({ title: "网络错误", icon: "none" });
       });
+  },
+
+  async notifyAfterSave(eventId?: string) {
+    const shouldNotify =
+      Boolean(eventId) &&
+      this.data.notifyEnabled &&
+      this.data.notifyAvailable &&
+      Boolean(this.data.reminderTemplateId);
+
+    if (!shouldNotify || !eventId) {
+      wx.showToast({ title: "已创建", icon: "success" });
+      return;
+    }
+
+    try {
+      const { accepted } = await requestCalendarEventNotification({
+        eventId,
+        templateId: this.data.reminderTemplateId,
+        enabled: true
+      });
+      wx.showToast({
+        title: accepted ? "已创建并开启提醒" : "已创建，未开启微信提醒",
+        icon: accepted ? "success" : "none"
+      });
+    } catch {
+      wx.showToast({ title: "已创建，提醒授权同步失败", icon: "none" });
+    }
   }
 });

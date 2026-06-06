@@ -207,3 +207,99 @@ def test_sync_reminder_target_skips_delivery_when_completed(client):
     assert len(items) == 1
     assert items[0]["status"] == "skipped"
     assert items[0]["errorCode"] == "REMINDER_INACTIVE"
+
+
+def test_wechat_subscription_accept_creates_calendar_delivery(client):
+    start_at = (now_utc() + timedelta(minutes=5)).isoformat()
+    create_response = client.post(
+        "/v1/calendar/events",
+        json={"title": "测试微信日程", "startAt": start_at},
+    )
+    event_id = create_response.json()["data"]["calendarEvent"]["id"]
+
+    response = client.post(
+        "/v1/notifications/wechat/subscription-result",
+        json={
+            "templateKey": "calendar_event_start",
+            "templateId": "tmpl_reminder",
+            "result": "accept",
+            "targetType": "calendar_event",
+            "targetId": event_id,
+        },
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["ok"] is True
+    assert body["data"]["accepted"] is True
+    assert body["data"]["status"] == "pending"
+
+    status_response = client.get(
+        f"/v1/notifications/status?target_type=calendar_event&target_id={event_id}"
+    )
+    items = status_response.json()["data"]["items"]
+    assert len(items) == 1
+    assert items[0]["templateKey"] == "calendar_event_start"
+    assert items[0]["status"] == "pending"
+
+
+def test_sync_calendar_event_target_updates_delivery_schedule(client):
+    start_at = (now_utc() + timedelta(hours=2)).isoformat()
+    create_response = client.post(
+        "/v1/calendar/events",
+        json={"title": "改期日程", "startAt": start_at},
+    )
+    event_id = create_response.json()["data"]["calendarEvent"]["id"]
+    client.post(
+        "/v1/notifications/wechat/subscription-result",
+        json={
+            "templateKey": "calendar_event_start",
+            "templateId": "tmpl_reminder",
+            "result": "accept",
+            "targetType": "calendar_event",
+            "targetId": event_id,
+        },
+    )
+
+    new_start_at = (now_utc() + timedelta(hours=4)).isoformat()
+    client.patch(
+        f"/v1/calendar/events/{event_id}",
+        json={"startAt": new_start_at},
+    )
+
+    status_response = client.get(
+        f"/v1/notifications/status?target_type=calendar_event&target_id={event_id}"
+    )
+    items = status_response.json()["data"]["items"]
+    assert len(items) == 1
+    assert items[0]["status"] == "pending"
+    assert items[0]["scheduledAt"].startswith(new_start_at[:16])
+
+
+def test_sync_calendar_event_target_skips_delivery_when_deleted(client):
+    start_at = (now_utc() + timedelta(hours=2)).isoformat()
+    create_response = client.post(
+        "/v1/calendar/events",
+        json={"title": "删除日程", "startAt": start_at},
+    )
+    event_id = create_response.json()["data"]["calendarEvent"]["id"]
+    client.post(
+        "/v1/notifications/wechat/subscription-result",
+        json={
+            "templateKey": "calendar_event_start",
+            "templateId": "tmpl_reminder",
+            "result": "accept",
+            "targetType": "calendar_event",
+            "targetId": event_id,
+        },
+    )
+
+    client.delete(f"/v1/calendar/events/{event_id}")
+
+    status_response = client.get(
+        f"/v1/notifications/status?target_type=calendar_event&target_id={event_id}"
+    )
+    items = status_response.json()["data"]["items"]
+    assert len(items) == 1
+    assert items[0]["status"] == "skipped"
+    assert items[0]["errorCode"] == "CALENDAR_EVENT_INACTIVE"

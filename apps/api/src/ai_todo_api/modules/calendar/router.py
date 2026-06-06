@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from ai_todo_api.auth.context import AuthContext, CurrentUser
 from ai_todo_api.auth.deps import get_auth_context, get_current_user, get_idempotency_key
 from ai_todo_api.common.write import run_write
+from ai_todo_api.db.models import CalendarEventModel
 from ai_todo_api.db.session import get_db
 from ai_todo_api.modules.calendar.repository import CalendarEventRepository
 from ai_todo_api.modules.contacts.links import ContactLinkService
@@ -19,6 +20,7 @@ from ai_todo_api.modules.calendar.schemas import (
     UpdateCalendarEventResult,
 )
 from ai_todo_api.modules.calendar.service import CalendarEventNotFoundError, CalendarEventService
+from ai_todo_api.modules.notifications.service import NotificationDeliveryService
 from ai_todo_api.schemas import ApiError, ApiResponse, ErrorResponse
 
 
@@ -32,6 +34,13 @@ def _calendar_service(db: Session, user: CurrentUser) -> CalendarEventService:
         user.timezone,
         ContactLinkService(db, user.id),
     )
+
+
+def _sync_calendar_notifications(db: Session, user_id: str, event_id: str) -> None:
+    event = db.get(CalendarEventModel, event_id)
+    if event is None or event.user_id != user_id:
+        return
+    NotificationDeliveryService(db, user_id).sync_calendar_event_target(event)
 
 
 def _not_found(event_id: str) -> JSONResponse:
@@ -153,6 +162,7 @@ def update_calendar_event(
             return _contact_not_found(str(error))
         except ValueError as error:
             return _validation_error(str(error))
+        _sync_calendar_notifications(db, user.id, event_id)
         body = ApiResponse(data=UpdateCalendarEventResult(calendar_event=event))
         return JSONResponse(status_code=200, content=body.model_dump(by_alias=True))
 
@@ -183,6 +193,7 @@ def delete_calendar_event(
             deleted_id = service.delete(event_id)
         except CalendarEventNotFoundError:
             return _not_found(event_id)
+        _sync_calendar_notifications(db, user.id, event_id)
         body = ApiResponse(data=DeleteCalendarEventResult(id=deleted_id))
         return JSONResponse(status_code=200, content=body.model_dump(by_alias=True))
 

@@ -6,9 +6,10 @@ from zoneinfo import ZoneInfo
 from sqlalchemy import select
 
 from ai_todo_api.config import settings
-from ai_todo_api.db.models import NotificationDeliveryModel, ReminderModel
+from ai_todo_api.db.models import CalendarEventModel, NotificationDeliveryModel, ReminderModel
 from ai_todo_api.db.session import SessionLocal
 from ai_todo_api.modules.notifications.service import (
+    TARGET_TYPE_CALENDAR_EVENT,
     TARGET_TYPE_REMINDER,
     NotificationDispatchService,
 )
@@ -90,9 +91,17 @@ def _build_wechat_message(
     session,
     delivery: NotificationDeliveryModel,
 ) -> tuple[str, dict[str, dict[str, str]]]:
-    if delivery.target_type != TARGET_TYPE_REMINDER:
-        raise ValueError(f"Unsupported target type: {delivery.target_type}")
+    if delivery.target_type == TARGET_TYPE_REMINDER:
+        return _build_reminder_wechat_message(session, delivery)
+    if delivery.target_type == TARGET_TYPE_CALENDAR_EVENT:
+        return _build_calendar_wechat_message(session, delivery)
+    raise ValueError(f"Unsupported target type: {delivery.target_type}")
 
+
+def _build_reminder_wechat_message(
+    session,
+    delivery: NotificationDeliveryModel,
+) -> tuple[str, dict[str, dict[str, str]]]:
     reminder = session.scalar(
         select(ReminderModel).where(
             ReminderModel.id == delivery.target_id,
@@ -114,6 +123,41 @@ def _build_wechat_message(
             },
         },
     )
+
+
+def _build_calendar_wechat_message(
+    session,
+    delivery: NotificationDeliveryModel,
+) -> tuple[str, dict[str, dict[str, str]]]:
+    event = session.scalar(
+        select(CalendarEventModel).where(
+            CalendarEventModel.id == delivery.target_id,
+            CalendarEventModel.user_id == delivery.user_id,
+            CalendarEventModel.deleted_at.is_(None),
+        )
+    )
+    if event is None:
+        raise ValueError(f"Calendar event {delivery.target_id} was not found.")
+
+    start_time = event.start_at or delivery.scheduled_at.isoformat()
+    return (
+        f"pages/calendar/calendar?eventId={event.id}",
+        {
+            WECHAT_REMINDER_FIELD_TITLE: {"value": _truncate(event.title, 20)},
+            WECHAT_REMINDER_FIELD_DUE: {"value": _format_wechat_time(start_time)},
+            WECHAT_REMINDER_FIELD_NOTES: {"value": _calendar_event_notes(event)},
+        },
+    )
+
+
+def _calendar_event_notes(event: CalendarEventModel) -> str:
+    location = (event.location or "").strip()
+    if location:
+        return _truncate(location, 20)
+    description = (event.description or "").strip()
+    if description:
+        return _truncate(description, 20)
+    return "点击查看日程详情"
 
 
 def _format_wechat_time(value: str) -> str:

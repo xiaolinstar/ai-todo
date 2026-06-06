@@ -86,6 +86,12 @@ services:
       AI_TODO_ICP_BEIAN_TEXT: ${AI_TODO_ICP_BEIAN_TEXT:-苏ICP备2026011017号-7}
       AI_TODO_PUBLIC_SECURITY_BEIAN_TEXT: ${AI_TODO_PUBLIC_SECURITY_BEIAN_TEXT:-苏公网安备32010602012480号}
       AI_TODO_SKIP_MIGRATIONS: "true"
+    healthcheck:
+      test: ["CMD", "python", "/app/scripts/worker_healthcheck.py"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
     depends_on:
       postgres:
         condition: service_healthy
