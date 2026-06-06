@@ -51,6 +51,12 @@ See `docs/tech-decisions.md`.
 
 Write requests accept `Idempotency-Key` and are recorded in `command_logs`.
 
+### CLI / Agent onboarding
+
+- Install: `npm install -g @xiaolinstar/ai-todo-cli` (command: `ai-todo`)
+- Configure: `~/.ai-todo/settings.json` with `url` + PAT from the WeChat miniapp
+- Root page (`GET /`) shows the same install and settings guidance
+
 ## Current Endpoints
 
 - `GET /`

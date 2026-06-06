@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from ai_todo_api.auth.context import DEFAULT_SCOPES, AuthContext, CurrentUser
 from ai_todo_api.auth.scopes import ForbiddenError, is_write_method, require_write
 from ai_todo_api.auth.service import ensure_dev_user
+from ai_todo_api.cli_guidance import SESSION_TOKEN_CLI_HINT
 from ai_todo_api.common.json_store import loads_json
 from ai_todo_api.config import settings
 from ai_todo_api.db.session import get_db
@@ -83,10 +84,7 @@ def get_auth_context(
                     "ok": False,
                     "error": {
                         "code": "SESSION_TOKEN_NOT_ALLOWED",
-                        "message": (
-                            "CLI requires a Personal Access Token. "
-                            "Create one in the WeChat miniapp Mine tab."
-                        ),
+                        "message": SESSION_TOKEN_CLI_HINT,
                     },
                 },
             )

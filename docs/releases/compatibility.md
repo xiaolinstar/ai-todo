@@ -18,6 +18,7 @@
 
 | releaseTag | api | cli | miniapp | 说明 |
 |------------|-----|-----|---------|------|
+| `v0.4.2` | `0.2.1` | `0.4.0` | `0.4.0` | API 根页与错误提示对齐 CLI onboarding（`@xiaolinstar/ai-todo-cli` + settings.json）。无 API 契约变更。 |
 | `v0.4.1` | `0.2.0` | `0.4.0` | `0.4.0` | npm 包名确定为 `@xiaolinstar/ai-todo-cli`；文档/CI 与仓库对齐。组件 L1 无变更。 |
 | `v0.4.0` | `0.2.0` | `0.4.0` | `0.4.0` | CLI npm 单包发布、settings.json 配置优先、help 隐藏 login/token（仓库内包名 `@ai-todo/cli`）。 |
 | `v0.3.0` | `0.2.0` | `0.3.0` | `0.3.0` | CLI / Agent 访问令牌生命周期：状态、到期、空闲失效、CLI token 子命令。 |
