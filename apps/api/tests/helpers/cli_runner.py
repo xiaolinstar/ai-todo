@@ -32,7 +32,7 @@ class CliRunner:
     def run(self, *args: str, json_output: bool = False) -> CliResult:
         if not CLI_ENTRY.is_file():
             raise FileNotFoundError(
-                f"CLI not built: {CLI_ENTRY}. Run `pnpm --filter @ai-todo/cli build` first."
+                f"CLI not built: {CLI_ENTRY}. Run `pnpm --filter @xiaolinstar/ai-todo-cli build` first."
             )
 
         command = ["node", str(CLI_ENTRY), *args]

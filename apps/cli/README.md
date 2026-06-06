@@ -1,12 +1,14 @@
-# @ai-todo/cli
+# @xiaolinstar/ai-todo-cli
 
 Structured command-line interface for [ai-todo](https://github.com/xiaolinstar/ai-todo) — reminders, calendar, contacts, and Agent-friendly `--json` output.
 
 ## Install
 
 ```bash
-npm install -g @ai-todo/cli
+npm install -g @xiaolinstar/ai-todo-cli
 ```
+
+The `ai-todo` command is available globally after install.
 
 ## Configure once
 

@@ -52,7 +52,7 @@ def cli_built() -> None:
     if CLI_ENTRY.is_file():
         return
     subprocess.run(
-        ["pnpm", "--filter", "@ai-todo/cli", "build"],
+        ["pnpm", "--filter", "@xiaolinstar/ai-todo-cli", "build"],
         cwd=REPO_ROOT,
         check=True,
         capture_output=True,

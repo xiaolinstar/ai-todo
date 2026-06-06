@@ -4,7 +4,7 @@ export function printHelp(): void {
   console.log(`ai-todo — structured CLI for reminders, calendar, and contacts
 
 Install:
-  npm install -g @ai-todo/cli
+  npm install -g @xiaolinstar/ai-todo-cli
 
 Configuration (~/.ai-todo/settings.json):
   {

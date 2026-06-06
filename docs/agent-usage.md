@@ -5,7 +5,7 @@ ai-todo **不提供**服务端自然语言解析。Agent（OpenClaw、Claude Cod
 ## 安装 CLI
 
 ```bash
-npm install -g @ai-todo/cli
+npm install -g @xiaolinstar/ai-todo-cli
 ```
 
 仓库内开发仍可用 `pnpm build` 后 `node apps/cli/dist/index.js`，或 `pnpm cli`。

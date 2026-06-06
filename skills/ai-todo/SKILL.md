@@ -24,7 +24,7 @@ ai-todo version --json
 ai-todo whoami --json
 ```
 
-Install globally: `npm install -g @ai-todo/cli`
+Install globally: `npm install -g @xiaolinstar/ai-todo-cli`
 
 Component versions are independent; see `docs/releases/versioning.md` and `compatibility.md`. Git `release_tag` (CD) may differ from `cli` / `miniapp` / `apiVersion`.
 

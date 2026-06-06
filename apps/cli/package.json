@@ -1,5 +1,5 @@
 {
-  "name": "@ai-todo/cli",
+  "name": "@xiaolinstar/ai-todo-cli",
   "version": "0.4.0",
   "description": "Structured CLI for ai-todo reminders, calendar, and contacts",
   "type": "commonjs",

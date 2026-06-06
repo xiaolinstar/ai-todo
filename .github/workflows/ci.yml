@@ -107,7 +107,7 @@ jobs:
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter "./packages/*" --filter "@ai-todo/cli" -r build
+      - run: pnpm --filter "./packages/*" --filter "@xiaolinstar/ai-todo-cli" -r build
 
   build-miniapp:
     name: "2-build · WeChat miniapp dist"
