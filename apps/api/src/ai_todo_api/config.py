@@ -27,6 +27,8 @@ class Settings(BaseSettings):
     notification_max_attempts: int = Field(default=3, ge=1)
     release_tag: str | None = Field(default=None)
     git_sha: str | None = Field(default=None)
+    icp_beian_text: str | None = Field(default="苏ICP备2026011017号-7")
+    public_security_beian_text: str | None = Field(default="苏公网安备32010602012480号")
 
 
 settings = Settings()

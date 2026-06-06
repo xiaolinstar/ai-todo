@@ -1,9 +1,11 @@
 import logging
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy import inspect, text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
@@ -52,6 +54,9 @@ async def lifespan(application: FastAPI):
 
 app = FastAPI(title="ai-todo API", version=get_api_version(), lifespan=lifespan)
 logger = logging.getLogger(__name__)
+static_dir = Path(__file__).parent / "static"
+favicon_path = static_dir / "icons" / "ai-todo.svg"
+app.mount("/static", StaticFiles(directory=static_dir, check_dir=False), name="static")
 
 
 def _error_response(
@@ -118,6 +123,12 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
 @app.get("/", response_class=HTMLResponse)
 def preview() -> str:
     return preview_page()
+
+
+@app.get("/favicon.ico", include_in_schema=False)
+@app.get("/favicon.svg", include_in_schema=False)
+def favicon() -> FileResponse:
+    return FileResponse(favicon_path, media_type="image/svg+xml")
 
 
 @app.get("/v1/health")

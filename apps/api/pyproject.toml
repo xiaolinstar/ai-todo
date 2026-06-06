@@ -1,6 +1,6 @@
 [project]
 name = "ai-todo-api"
-version = "0.2.2"
+version = "0.2.3"
 description = "FastAPI backend for ai-todo"
 requires-python = ">=3.11"
 dependencies = [
@@ -31,6 +31,9 @@ package-dir = {"" = "src"}
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+ai_todo_api = ["static/icons/*"]
 
 [tool.pytest.ini_options]
 pythonpath = ["src", "."]
