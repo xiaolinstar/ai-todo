@@ -1,63 +1,38 @@
 import { settingsPath } from "./settings";
 
 export function printHelp(): void {
-  console.log(`ai-todo — structured CLI for reminders, calendar, and contacts
+  console.log(`ai-todo — reminders, calendar, and contacts
 
-Install:
-  npm install -g @xiaolinstar/ai-todo-cli
+Config ${settingsPath()}:
+  { "url": "https://xingxiaolin.cn", "token": "aitodo_xxx" }
 
-Configuration (~/.ai-todo/settings.json):
-  {
-    "url": "https://xingxiaolin.cn",
-    "token": "aitodo_xxx"
-  }
+  Token: WeChat miniapp → Mine → CLI / Agent tokens
+  Override: AI_TODO_TOKEN, AI_TODO_API_URL (else local http://127.0.0.1:3100)
 
-  Create a Personal Access Token in the WeChat miniapp (Mine → CLI / Agent tokens).
-  Example file: settings.example.json (bundled with this package).
+Flags: --json  --limit <n>  --cursor <token>  --idempotency-key <uuid>
 
-  Priority: AI_TODO_TOKEN / AI_TODO_API_URL env > settings.json > http://127.0.0.1:3100
-
-Auth check:
+Core:
+  ai-todo today
   ai-todo whoami
   ai-todo version
 
-Profile:
-  ai-todo profile update --name <text> [--avatar-url <url>]
-
-Global flags (commands only):
-  --json                 Output API JSON (recommended for agents)
-  --idempotency-key <uuid>   Recommended for agent write retries
-
-Today:
-  ai-todo today
-
-Reminders (aliases: add, list, done, reschedule):
-  ai-todo reminder create --title <text> [--due <iso>] [--remind <iso>] [--notes <text>] [--contact <id_or_handle> ...]
+Reminders:
+  ai-todo reminder create --title <text> [--due <iso>] [--remind <iso>] [--notes <text>] [--contact <id> ...]
   ai-todo reminder list [--status pending|completed|cancelled] [--from YYYY-MM-DD] [--to YYYY-MM-DD] [--limit <n>] [--cursor <token>]
-  ai-todo reminder show <reminder_id>
-  ai-todo reminder done <reminder_id>
-  ai-todo reminder update <reminder_id> [--title <text>] [--notes <text>] [--due <iso>] [--remind <iso>] [--contact <id_or_handle> ...]
-  ai-todo reminder reschedule <reminder_id> --due <iso> [--remind <iso>]
-  ai-todo reminder delete <reminder_id>
-  ai-todo add <title>                    # shorthand create (title only)
+  ai-todo reminder show|done|delete <id>
+  ai-todo reminder update <id> [--title <text>] [--notes <text>] [--due <iso>] [--remind <iso>] [--contact <id> ...]
+  ai-todo reminder reschedule <id> --due <iso> [--remind <iso>]
+  ai-todo add <title>
 
 Calendar:
-  ai-todo calendar today
+  ai-todo calendar today|list|add|show|update|delete ...
   ai-todo calendar list [--date YYYY-MM-DD] [--limit <n>] [--cursor <token>]
   ai-todo calendar add --title <text> --start <iso> [--end <iso>] [--location <text>]
-  ai-todo calendar show <event_id>
-  ai-todo calendar update <event_id> [--title <text>] [--start <iso>] [--end <iso>]
-  ai-todo calendar delete <event_id>
 
 Contacts:
-  ai-todo contact add <name> [--handle <handle>] [--email <v>] [--phone <v>] [--company <text>] [--job-title <text>] [--notes <text>] [--alias <v>]
+  ai-todo contact add|list|search|show|update|delete ...
   ai-todo contact list [--limit <n>] [--cursor <token>]
   ai-todo contact search <query> [--limit <n>] [--cursor <token>]
-  ai-todo contact show <contact_id_or_handle>
-  ai-todo contact update <contact_id_or_handle> [--handle <handle>] [--name <text>] [--email <v>] [--phone <v>] [--company <text>] [--job-title <text>] [--notes <text>]
-  ai-todo contact delete <contact_id_or_handle>
 
-Settings file: ${settingsPath()}
-
-Agents: see docs/agent-usage.md and skills/ai-todo/SKILL.md`);
+Agents: https://github.com/xiaolinstar/ai-todo/blob/main/docs/agent-usage.md`);
 }

@@ -29,16 +29,10 @@ async function main(): Promise<void> {
     case "whoami":
       await core.runWhoami(ctx);
       break;
-    case "profile": {
-      const action = sub ?? "help";
-      if (action === "update") {
-        await core.runProfileUpdate(ctx, argv);
-      } else {
-        console.error("Usage: ai-todo profile update --name <text> [--avatar-url <url>]");
-        process.exitCode = 1;
-      }
+    case "profile":
+      console.error("个人资料请在微信小程序「我的」中修改，CLI 不提供 profile 命令。");
+      process.exitCode = 1;
       break;
-    }
     case "logout":
       await core.runLogout(ctx);
       break;

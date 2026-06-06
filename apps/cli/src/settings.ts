@@ -11,14 +11,30 @@ export interface CliSettings {
 const SETTINGS_DIR = path.join(os.homedir(), ".ai-todo");
 const SETTINGS_PATH = path.join(SETTINGS_DIR, "settings.json");
 const LEGACY_CONFIG_PATH = path.join(SETTINGS_DIR, "config.json");
+const PRODUCTION_API_URL = "https://xingxiaolin.cn";
+
+function normalizeApiUrl(url: string | undefined): string | undefined {
+  if (!url) {
+    return undefined;
+  }
+  const trimmed = url.trim();
+  if (!trimmed) {
+    return undefined;
+  }
+  if (/wodi\.games/i.test(trimmed)) {
+    return PRODUCTION_API_URL;
+  }
+  return trimmed;
+}
 
 function normalizeSettings(raw: Record<string, unknown>): CliSettings {
-  const url =
+  const url = normalizeApiUrl(
     typeof raw.url === "string"
       ? raw.url
       : typeof raw.apiUrl === "string"
         ? raw.apiUrl
-        : undefined;
+        : undefined
+  );
   const token = typeof raw.token === "string" ? raw.token : undefined;
   return { url, token };
 }
@@ -48,7 +64,17 @@ export function settingsPath(): string {
 export function loadSettings(): CliSettings {
   const current = readJsonFile(SETTINGS_PATH);
   if (current) {
-    return normalizeSettings(current);
+    const settings = normalizeSettings(current);
+    const rawUrl =
+      typeof current.url === "string"
+        ? current.url
+        : typeof current.apiUrl === "string"
+          ? current.apiUrl
+          : undefined;
+    if (rawUrl && normalizeApiUrl(rawUrl) !== rawUrl.trim()) {
+      writeSettingsFile(settings);
+    }
+    return settings;
   }
 
   const legacy = readJsonFile(LEGACY_CONFIG_PATH);
@@ -74,12 +100,12 @@ export function clearToken(): void {
 }
 
 export function resolveApiUrl(settings: CliSettings = loadSettings()): string {
-  const fromEnv = process.env.AI_TODO_API_URL?.trim();
+  const fromEnv = normalizeApiUrl(process.env.AI_TODO_API_URL);
   if (fromEnv) {
     return fromEnv;
   }
 
-  const fromFile = settings.url?.trim();
+  const fromFile = normalizeApiUrl(settings.url);
   if (fromFile) {
     return fromFile;
   }

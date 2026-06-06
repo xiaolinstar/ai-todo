@@ -35,7 +35,6 @@ Expect `ok: true` and `data.user.id` (dev: `user_dev`).
 | Task | Command |
 |------|---------|
 | Today overview | `ai-todo today --json` |
-| Update current user profile | `ai-todo profile update --name "…" [--avatar-url "…"] --json` |
 | Create reminder | `ai-todo reminder create --title "…" [--due "…"] [--contact <id> ...] --json` |
 | List reminders | `ai-todo reminder list [--status pending] --json` |
 | Show reminder | `ai-todo reminder show <reminder_id> --json` |

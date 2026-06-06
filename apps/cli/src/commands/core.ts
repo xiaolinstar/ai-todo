@@ -221,33 +221,6 @@ export async function runWhoami(ctx: CliContext): Promise<void> {
   });
 }
 
-export async function runProfileUpdate(ctx: CliContext, argv: string[]): Promise<void> {
-  const displayName = readFlagValue(argv, "--name") ?? readFlagValue(argv, "--display-name");
-  const avatarUrl = readFlagValue(argv, "--avatar-url");
-
-  if (!displayName && avatarUrl === undefined) {
-    console.error("Usage: ai-todo profile update --name <text> [--avatar-url <url>]");
-    process.exitCode = 1;
-    return;
-  }
-
-  await handleApi(
-    ctx,
-    await ctx.client.updateProfile({
-      displayName,
-      avatarUrl
-    }),
-    (data) => {
-      if (!ctx.json) {
-        console.log(`已更新个人资料：${data.user.displayName} (${data.user.id})`);
-        if (data.user.avatarUrl) {
-          console.log(`头像：${data.user.avatarUrl}`);
-        }
-      }
-    }
-  );
-}
-
 export async function runToday(ctx: CliContext): Promise<void> {
   await handleApi(ctx, await ctx.client.today(), (data) => {
     if (ctx.json) {

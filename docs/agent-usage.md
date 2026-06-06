@@ -119,7 +119,6 @@ ai-todo reminder delete rem_xxx --json
 |------|------|
 | CLI / API 版本 | `ai-todo version --json`；API：`GET /v1/health` → `apiVersion` |
 | 当前用户 | `ai-todo whoami --json` |
-| 更新当前用户资料 | `ai-todo profile update --name <text> [--avatar-url <url>] --json` |
 | 今日聚合 | `ai-todo today --json` |
 | 创建提醒 | `ai-todo reminder create --title … [--due …] [--contact …]` |
 | 提醒列表 | `ai-todo reminder list [--status pending]` |
