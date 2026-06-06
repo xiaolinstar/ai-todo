@@ -8,7 +8,7 @@ Install:
 
 Configuration (~/.ai-todo/settings.json):
   {
-    "url": "https://wodi.games",
+    "url": "https://xingxiaolin.cn",
     "token": "aitodo_xxx"
   }
 

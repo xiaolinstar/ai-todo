@@ -176,7 +176,7 @@ CD 里带 `environment: production` 的 Job **同时可读**：
 | `DEPLOY_PATH` | 否 | Repository | 默认 `$HOME/AgentProjects/ai-todo` |
 | `GHCR_DEPLOY_TOKEN` | 否 | Repository | 私有 GHCR 才需要 |
 | `GHCR_DEPLOY_USER` | 否 | Repository | 配合 PAT |
-| **`CD_PUBLIC_API_URL`** | **是**（新 CD） | **Environment production** 或 Repository | 公网 API 基址，如 `https://wodi.games` |
+| **`CD_PUBLIC_API_URL`** | **是**（新 CD） | **Environment production** 或 Repository | 公网 API 基址，如 `https://xingxiaolin.cn` |
 | **`CD_SMOKE_PAT`** | 否 | **Environment production** 或 Repository | 黑盒：`/v1/me`、`/v1/today` |
 
 只把 **新增 2 个** 放在 Environment `production` 完全够用；**不必**把 `DEPLOY_*` 搬进 Environment。

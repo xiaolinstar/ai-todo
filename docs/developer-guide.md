@@ -109,7 +109,7 @@ pnpm dev:api
 http://127.0.0.1:3100
 ```
 
-如需在「我的」页手动改 API 地址，只有 `develop` 环境会保存自定义地址；体验版和正式版固定使用 `https://wodi.games`。
+如需在「我的」页手动改 API 地址，只有 `develop` 环境会保存自定义地址；体验版和正式版固定使用 `https://xingxiaolin.cn`。
 
 ### 4. 本地免微信登录开发
 
@@ -211,19 +211,19 @@ AI_TODO_ALLOW_DEV_AUTH=false
 微信公众平台需要配置 request 合法域名：
 
 ```text
-wodi.games
+xingxiaolin.cn
 ```
 
 或在部分后台页面填写：
 
 ```text
-https://wodi.games
+https://xingxiaolin.cn
 ```
 
 生产/体验版小程序固定访问：
 
 ```text
-https://wodi.games
+https://xingxiaolin.cn
 ```
 
 代码位置：
@@ -302,8 +302,8 @@ python3 -m venv .venv
 生产部署后：
 
 ```bash
-curl https://wodi.games/v1/health
-curl https://wodi.games/v1/health/db
+curl https://xingxiaolin.cn/v1/health
+curl https://xingxiaolin.cn/v1/health/db
 ```
 
 小程序体验版至少验证：

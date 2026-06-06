@@ -22,6 +22,6 @@ API 文案与 miniapp / CLI onboarding 对齐（无路由或契约变更）。
 ## 部署后验证
 
 ```bash
-curl -sS https://wodi.games/ | grep xiaolinstar
-curl -sS https://wodi.games/v1/health | jq '.data.apiVersion'
+curl -sS https://xingxiaolin.cn/ | grep xiaolinstar
+curl -sS https://xingxiaolin.cn/v1/health | jq '.data.apiVersion'
 ```

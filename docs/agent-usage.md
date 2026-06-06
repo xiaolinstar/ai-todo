@@ -18,7 +18,7 @@ npm install -g @xiaolinstar/ai-todo-cli
 
 ```json
 {
-  "url": "https://wodi.games",
+  "url": "https://xingxiaolin.cn",
   "token": "aitodo_xxx"
 }
 ```
@@ -34,7 +34,7 @@ ai-todo whoami --json
 ```bash
 # Agent / CI 推荐用环境变量覆盖
 export AI_TODO_TOKEN=aitodo_xxx
-export AI_TODO_API_URL=https://wodi.games
+export AI_TODO_API_URL=https://xingxiaolin.cn
 ```
 
 > 微信登录下发的是**会话 Token**（仅供小程序），不能用于 CLI。CLI 必须使用 PAT。  

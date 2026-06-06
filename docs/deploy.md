@@ -8,7 +8,7 @@
 
 ```text
 小程序 wx.request
-    → https://wodi.games/v1/...
+    → https://xingxiaolin.cn/v1/...
     → xiaolin-gateway（Nginx，443，证书集中管理）
     → 宿主机 :8082
     → ai-todo API 容器（内部 :3100）+ Postgres
@@ -25,9 +25,18 @@
 ## 前置条件
 
 - Linux 服务器 + Docker Compose v2
-- 已备案域名 **wodi.games**（HTTPS 证书放在 xiaolin-gateway）
+- 已备案域名 **xingxiaolin.cn**（ai待办服务主体；HTTPS 证书放在 xiaolin-gateway）
 - 微信小程序 AppID / AppSecret（测试号或正式号）
 - xiaolin-gateway 已部署并可 `git pull && docker compose up -d`
+
+### 生产域名
+
+| 域名 | 说明 |
+|------|------|
+| **`https://xingxiaolin.cn`** | 唯一正式 API 域名（小程序代码、CLI 文档、CD 拨测均以此为准） |
+| `wodi.games` | **过渡保留**：网关仍可反代，供尚未重新上传的旧版小程序体验版；新发布不再使用 |
+
+CLI 用户请将 `~/.ai-todo/settings.json` 中 `url` 改为 `https://xingxiaolin.cn`。微信公众平台 **request 合法域名** 需包含 `xingxiaolin.cn`。
 
 ## 1. 部署 API（ai-todo 仓库）
 
@@ -81,8 +90,8 @@ docker compose -f docker-compose.prod.yml build --progress=plain --no-cache api 
 
 在 [xiaolin-gateway](https://github.com/xiaolinstar/xiaolin-gateway) 仓库：
 
-1. 证书放到 `app/ai-todo/cert/`（`wodi.games_bundle.crt`、`wodi.games.key`）
-2. vhost 配置 `app/ai-todo/ai-todo.conf`：`wodi.games` → `宿主机IP:8082`
+1. 证书放到 `app/ai-todo/cert/`（`xingxiaolin.cn_bundle.crt`、`xingxiaolin.cn.key`）
+2. vhost 配置 `app/ai-todo/ai-todo.conf`：`xingxiaolin.cn` → `宿主机IP:8082`
 3. `docker-compose.yml` 挂载 `app/ai-todo/cert`
 
 部署 gateway（重启容器会重新加载配置，**无需**额外 `docker exec nginx -s reload`）：
@@ -91,7 +100,7 @@ docker compose -f docker-compose.prod.yml build --progress=plain --no-cache api 
 cd ~/AgentProjects/xiaolin-gateway
 git pull
 docker compose up -d
-curl https://wodi.games/v1/health
+curl https://xingxiaolin.cn/v1/health
 ```
 
 ## 3. 微信小程序
@@ -102,7 +111,7 @@ curl https://wodi.games/v1/health
 
 | 类型 | 填写内容 |
 |------|----------|
-| request 合法域名 | `https://wodi.games`（测试号）；正式号多为 `wodi.games` |
+| request 合法域名 | `https://xingxiaolin.cn`（测试号）；正式号多为 `xingxiaolin.cn` |
 
 注意：
 
@@ -116,7 +125,7 @@ curl https://wodi.games/v1/health
 | 项 | 配置位置 |
 |----|----------|
 | AppID | `apps/miniapp/project.config.json` → `appid` |
-| API 基址 | 代码默认 `https://wodi.games`（体验版/正式版）；开发者工具用 `http://127.0.0.1:3100` |
+| API 基址 | 代码默认 `https://xingxiaolin.cn`（体验版/正式版）；开发者工具用 `http://127.0.0.1:3100` |
 | 微信登录 | 「我的」页 → 微信登录 |
 
 本地开发：开发者工具勾选「不校验合法域名」，API 使用 `http://127.0.0.1:3100`。
@@ -308,9 +317,9 @@ docker compose -f docker-compose.prod.yml -f docker-compose.tls.yml ...
 |----|------|------|
 | Compose | `docker-compose.yml`（Postgres + API，可选 worker） | `docker-compose.prod.yml` |
 | API 运行 | Docker 容器 → 宿主机 :3100；或可选宿主机 `pnpm dev:api` | Docker 容器 → 宿主机 :8082 |
-| HTTPS | 不需要 | xiaolin-gateway → `https://wodi.games` |
-| 合法域名 | 开发者工具跳过校验 | 公众平台配置 `wodi.games` |
-| 小程序 API | `http://127.0.0.1:3100` | `https://wodi.games`（代码默认） |
+| HTTPS | 不需要 | xiaolin-gateway → `https://xingxiaolin.cn` |
+| 合法域名 | 开发者工具跳过校验 | 公众平台配置 `xingxiaolin.cn` |
+| 小程序 API | `http://127.0.0.1:3100` | `https://xingxiaolin.cn`（代码默认） |
 
 ## 相关文档
 

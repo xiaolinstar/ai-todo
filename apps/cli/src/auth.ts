@@ -16,7 +16,7 @@ export function resolveTokenSource(): { token?: string; source: TokenSource } {
   return { source: "none" };
 }
 
-function settingsExample(apiUrl = "https://wodi.games"): string {
+function settingsExample(apiUrl = "https://xingxiaolin.cn"): string {
   return JSON.stringify({ url: apiUrl, token: "aitodo_xxx" }, null, 2);
 }
 
@@ -34,7 +34,7 @@ export function printAuthHint(reason: "missing" | "invalid" = "missing"): void {
           "",
           "Agent / CI 也可使用环境变量（优先级高于配置文件）：",
           "  export AI_TODO_TOKEN=aitodo_xxx",
-          "  export AI_TODO_API_URL=https://wodi.games",
+          "  export AI_TODO_API_URL=https://xingxiaolin.cn",
           "",
           "生产环境请在微信小程序「我的 → CLI / Agent 访问令牌」创建新 PAT。"
         ]

@@ -178,7 +178,7 @@ apps/miniapp/
 | 环境 | API 地址 | Token | 「我的」页 UI |
 |------|----------|-------|----------------|
 | **develop**（开发者工具） | 可改 `http://127.0.0.1:3100` | 可选；后端 `allow_dev_auth` 时可无 Token | 显示 API / Token / 签发 PAT |
-| **trial / release** | 固定 `https://wodi.games`（代码内置） | **仅**微信登录后自动写入，用户不手填 | 只显示「微信登录」与连接状态 |
+| **trial / release** | 固定 `https://xingxiaolin.cn`（代码内置） | **仅**微信登录后自动写入，用户不手填 | 只显示「微信登录」与连接状态 |
 
 生产用户流程：`wx.login` → `POST /v1/auth/wechat/login` → 保存 `accessToken` → 后续请求带 `Authorization: Bearer …`。  
 不需要、也不应要求用户配置域名或 Access Token。PAT 签发仅用于本地/Agent CLI 调试。

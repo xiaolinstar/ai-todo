@@ -39,7 +39,7 @@ cp apps/miniapp/project.private.config.example.json apps/miniapp/project.private
 
 ### 1. 部署 API + Gateway
 
-按 [docs/deploy.md](../../docs/deploy.md)：`https://wodi.games` → gateway → 宿主机 `:8082`。
+按 [docs/deploy.md](../../docs/deploy.md)：`https://xingxiaolin.cn` → gateway → 宿主机 `:8082`。
 
 ### 2. 合法域名（微信公众平台，非代码）
 
@@ -47,7 +47,7 @@ cp apps/miniapp/project.private.config.example.json apps/miniapp/project.private
 
 | 类型 | 填写 |
 |------|------|
-| request 合法域名 | `https://wodi.games`（测试号界面要求带 `https://`；正式号后台通常只填 `wodi.games`） |
+| request 合法域名 | `https://xingxiaolin.cn`（测试号界面要求带 `https://`；正式号后台通常只填 `xingxiaolin.cn`） |
 
 - **只在公众平台后台填写**，不在小程序源码里配置
 - 不要带路径或端口（如 `/v1`、`:8082`）
@@ -57,8 +57,10 @@ cp apps/miniapp/project.private.config.example.json apps/miniapp/project.private
 | 项 | 位置 |
 |----|------|
 | AppID | `project.private.config.json`（本地真实 AppID）；`project.config.json` 仅提交 `touristid` |
-| API 基址 | 代码默认 `https://wodi.games`（体验版/正式版） |
+| API 基址 | 代码默认 `https://xingxiaolin.cn`（体验版/正式版） |
 | 登录 | 「我的」→ **微信登录** |
+
+**域名切换**：自 0.4.0 起生产基址为 `xingxiaolin.cn`。若体验版仍连旧域，需重新上传小程序；网关侧 `wodi.games` 暂保留至全量切换完成。
 
 真机验证时关闭开发者工具「不校验合法域名」。
 
@@ -74,7 +76,7 @@ pnpm check:wechat
 | `未找到 pages/.../xxx.js` | 确认 `project.config.json` 已启用 `useCompilerPlugins: ["typescript","sass"]`；DevTools 重新编译 |
 | 改了 .ts 没生效 | DevTools「编译」→「清缓存」→ 重新编译 |
 | 无法连接 API（本地） | 勾选「不校验合法域名」；API 用 `127.0.0.1:3100` |
-| 无法连接 API（真机） | 公众平台配置 `wodi.games`；确认 `https://wodi.games/v1/health` |
+| 无法连接 API（真机） | 公众平台配置 `xingxiaolin.cn`；确认 `https://xingxiaolin.cn/v1/health` |
 | Git 里出现 .js/.wxss | 勿提交；运行 `git rm --cached` 移除跟踪 |
 
 ## Tab 结构

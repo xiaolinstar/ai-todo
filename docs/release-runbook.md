@@ -25,13 +25,15 @@
     → 手动触发 CD，填写发布 tag，自动解析 tag 指向 commit 的成功 CI
     → CD：校验 manifest → 部署（VPS 本机 health）→ 公网拨测（CD_PUBLIC_API_URL）
     → 拨测失败则自动回滚 + 回滚后复验 → 发布报告（artifact + Summary）
-    → xiaolin-gateway 反代 https://wodi.games
+    → xiaolin-gateway 反代 https://xingxiaolin.cn
 
 微信用户打开小程序
-    → wx.request https://wodi.games/v1/...
+    → wx.request https://xingxiaolin.cn/v1/...
     → wx.login → POST /v1/auth/wechat/login
     → 获得 PAT → 调用 /v1/reminders 等 API
 ```
+
+**生产域名**：正式 API 为 `https://xingxiaolin.cn`。`wodi.games` 仅过渡保留（旧版小程序未重新上传前）。CLI 用户请更新 `~/.ai-todo/settings.json` 的 `url`。
 
 **API 与小程序是两条发布线：**
 
@@ -79,7 +81,7 @@ AI_TODO_ALLOW_DEV_AUTH=false
 
 ### 4. xiaolin-gateway（HTTPS）
 
-在 `xiaolin-gateway` 仓库配置 `wodi.games` → 宿主机 `:8082`，证书放 `app/ai-todo/cert/`。  
+在 `xiaolin-gateway` 仓库配置 `xingxiaolin.cn` → 宿主机 `:8082`，证书放 `app/ai-todo/cert/`。  
 **不要**在 ai-todo 侧启用 Caddy（`docker-compose.tls.yml`）。
 
 ### 5. 首次手动部署 API
@@ -87,8 +89,8 @@ AI_TODO_ALLOW_DEV_AUTH=false
 ```bash
 bash deploy/remote-deploy.sh
 curl -sf http://127.0.0.1:8082/v1/health
-curl -sf https://wodi.games/v1/health
-curl -sf https://wodi.games/v1/health/db
+curl -sf https://xingxiaolin.cn/v1/health
+curl -sf https://xingxiaolin.cn/v1/health/db
 ```
 
 若 Docker 构建 `pip install` 失败，见 [deploy.md](./deploy.md)「Docker 构建失败」— 使用腾讯云 PyPI 镜像。
@@ -122,8 +124,8 @@ docker compose up -d
 验证：
 
 ```bash
-curl -sf https://wodi.games/v1/health
-curl -sf https://wodi.games/v1/health/db
+curl -sf https://xingxiaolin.cn/v1/health
+curl -sf https://xingxiaolin.cn/v1/health/db
 ```
 
 ---
@@ -134,13 +136,13 @@ curl -sf https://wodi.games/v1/health/db
 
 1. 登录 [微信公众平台](https://mp.weixin.qq.com/) 或[测试号](https://mp.weixin.qq.com/debug/cgi-bin/sandbox)
 2. **开发 → 开发管理 → 开发设置 → 服务器域名**
-3. **request 合法域名** 添加：`https://wodi.games`（测试号；正式号后台若只接受纯域名则填 `wodi.games`）
+3. **request 合法域名** 添加：`https://xingxiaolin.cn`（测试号；正式号后台若只接受纯域名则填 `xingxiaolin.cn`）
 4. 保存，等待约 5 分钟生效
 
 小程序代码侧只需：
 
 - `project.config.json` 配置 AppID
-- API 基址默认为 `https://wodi.games`（见 `lib/config.ts`）
+- API 基址默认为 `https://xingxiaolin.cn`（见 `lib/config.ts`）
 
 ---
 
@@ -154,7 +156,7 @@ curl -sf https://wodi.games/v1/health/db
 
 ### 正式版提审
 
-1. 确认 `https://wodi.games/v1/health` 与登录流程稳定
+1. 确认 `https://xingxiaolin.cn/v1/health` 与登录流程稳定
 2. 开发者工具上传 → 公众平台提审 → 发布
 
 ---
@@ -168,8 +170,8 @@ curl -sf https://wodi.games/v1/health/db
 2. push/PR → main（CI 绿，并生成 deploy-manifest）
 3. 若涉及小程序，开发者工具上传体验版并完成真机 smoke test
 4. 手动触发 CD：`Use workflow from` 选择 `main`，填写 `release_tag`（如 `v0.1.1`），`ci_run_id` 留空，`deploy_mode=auto`
-5. curl https://wodi.games/v1/health
-6. curl https://wodi.games/v1/health/db
+5. curl https://xingxiaolin.cn/v1/health
+6. curl https://xingxiaolin.cn/v1/health/db
 7. 确认 `/v1/health` 的 `releaseTag` / `gitSha` 与发布 tag 一致；查看服务器 `.deploy/current.json`，确认 `gitSha` / image digest / fingerprint 符合预期
 8. 生产 smoke test（微信登录 + CLI PAT + 提醒/联系人）
 ```
@@ -179,7 +181,7 @@ curl -sf https://wodi.games/v1/health/db
 ```text
 1. 修改 xiaolin-gateway 仓库
 2. push main → gateway CD
-3. curl https://wodi.games/v1/health
+3. curl https://xingxiaolin.cn/v1/health
 ```
 
 ### 小程序变更
@@ -218,8 +220,8 @@ docker compose -f apps/api/docker-compose.prod.yml exec postgres \
 
 - [ ] API health：`curl http://127.0.0.1:8082/v1/health`
 - [ ] DB health：`curl http://127.0.0.1:8082/v1/health/db`，确认 `status=ok`
-- [ ] Gateway health：`curl https://wodi.games/v1/health`
-- [ ] Gateway DB health：`curl https://wodi.games/v1/health/db`
+- [ ] Gateway health：`curl https://xingxiaolin.cn/v1/health`
+- [ ] Gateway DB health：`curl https://xingxiaolin.cn/v1/health/db`
 - [ ] `.deploy/current.json` 中的 `gitSha` / `apiDigest` / `fingerprint` / `deployMode` 与本次 CI 一致
 - [ ] `.env.production` 中 `AI_TODO_ALLOW_DEV_AUTH=false`
 - [ ] 微信 AppID / AppSecret 正确
@@ -227,7 +229,7 @@ docker compose -f apps/api/docker-compose.prod.yml exec postgres \
 
 **微信**
 
-- [ ] 公众平台 request 合法域名已填（测试号：`https://wodi.games`）
+- [ ] 公众平台 request 合法域名已填（测试号：`https://xingxiaolin.cn`）
 - [ ] 体验版微信登录 + 四个 Tab 正常
 - [ ] 真机（关闭域名校验绕过）测试通过
 
@@ -249,7 +251,7 @@ docker compose -f apps/api/docker-compose.prod.yml exec postgres \
 | 微信登录 500 / FK `identities_user_id_fkey` | 先写 `users` 再写 `identities` 失败或脏数据 | 见下方「微信登录 FK 修复」；部署最新 API 后重试 |
 | 微信登录 500 `DATABASE_ERROR` | 未跑迁移 | `docker compose ... exec api alembic upgrade head`；确认 `/v1/health/db` 中 `identitiesTable: true` |
 | 微信登录 500 其他 | AppID 与小程序不一致、库异常 | 对齐 AppID/Secret；查 API 日志 |
-| 小程序 request 失败 | 合法域名未配 | 公众平台填 `wodi.games` |
+| 小程序 request 失败 | 合法域名未配 | 公众平台填 `xingxiaolin.cn` |
 
 ### 微信登录 FK 修复（`identities_user_id_fkey`）
 

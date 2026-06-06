@@ -16,7 +16,7 @@ Create `~/.ai-todo/settings.json` (see `settings.example.json` in this package):
 
 ```json
 {
-  "url": "https://wodi.games",
+  "url": "https://xingxiaolin.cn",
   "token": "aitodo_your_personal_access_token"
 }
 ```
@@ -27,7 +27,7 @@ Environment variables override the file (useful for CI / agents):
 
 ```bash
 export AI_TODO_TOKEN=aitodo_xxx
-export AI_TODO_API_URL=https://wodi.games
+export AI_TODO_API_URL=https://xingxiaolin.cn
 ```
 
 ## Usage

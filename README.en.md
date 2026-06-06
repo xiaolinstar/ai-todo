@@ -58,7 +58,7 @@ The API listens on `http://127.0.0.1:3100`.
 
 ## Production Deploy
 
-生产环境通过 **xiaolin-gateway** 提供 `https://wodi.games`，API 宿主机端口 **8082**。
+生产环境通过 **xiaolin-gateway** 提供 `https://xingxiaolin.cn`，API 宿主机端口 **8082**。
 
 See [docs/deploy.md](docs/deploy.md) for Docker deployment, gateway routing, WeChat domain setup, and CI/CD. **Release runbook:** [docs/release-runbook.md](docs/release-runbook.md).
 

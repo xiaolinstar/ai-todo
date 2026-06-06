@@ -18,7 +18,7 @@ description: Manage personal reminders, calendar events, and contacts via the ai
 
 ```bash
 # ~/.ai-todo/settings.json
-# { "url": "https://wodi.games", "token": "aitodo_xxx" }
+# { "url": "https://xingxiaolin.cn", "token": "aitodo_xxx" }
 
 ai-todo version --json
 ai-todo whoami --json

@@ -164,7 +164,7 @@ def main(argv: list[str]) -> int:
     if not args.base_url:
         error_message = (
             "CD_PUBLIC_API_URL is not set. Add it to the GitHub Environment "
-            "(e.g. https://wodi.games) before running post-deploy verify."
+            "(e.g. https://xingxiaolin.cn) before running post-deploy verify."
         )
         print(error_message, file=sys.stderr)
         _write_json_out(args.json_out, outcome, error_message, checks, args)

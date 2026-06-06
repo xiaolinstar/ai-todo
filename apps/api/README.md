@@ -162,7 +162,7 @@ Coverage is configured in `pyproject.toml` with the following exclusions:
 
 ## Production Deploy
 
-Docker + PostgreSQL，宿主机 **8082** → 容器 3100。HTTPS 由 [xiaolin-gateway](https://github.com/xiaolinstar/xiaolin-gateway) 反代 `https://wodi.games`。
+Docker + PostgreSQL，宿主机 **8082** → 容器 3100。HTTPS 由 [xiaolin-gateway](https://github.com/xiaolinstar/xiaolin-gateway) 反代 `https://xingxiaolin.cn`。
 
 See **[docs/deploy.md](../../docs/deploy.md)**。
 
