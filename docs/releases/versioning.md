@@ -80,7 +80,8 @@ git push origin v0.1.4
 - `0.2.2`：账户时区切换与全站按账户时区显示；平台 username/建联推迟（见 [v0.2.2-plan.md](./v0.2.2-plan.md)、[platform-identity.md](../product/platform-identity.md)）。
 - `0.2.3`：CD 六步扩展（发布后拨测/黑盒 → 失败回滚 → 回滚复验 → 发布报告）；换域仅 **xiaolin-gateway** 运维（见 [v0.2.3-plan.md](./v0.2.3-plan.md)、[v0.2.3-cd-pipeline-plan.md](./v0.2.3-cd-pipeline-plan.md)）。
 - `0.3.0`：CLI 访问令牌生命周期、加密存储后可 reveal、小程序令牌 UI、`ai-todo token`（见 [v0.3.0-plan.md](./v0.3.0-plan.md)）。
-- `0.4.0`：CLI npm 全局安装（`@xiaolinstar/ai-todo-cli`）、配置优先 UX、小程序复制 settings JSON（见 [v0.4.0-plan.md](./v0.4.0-plan.md)）。
+- `0.4.0`：CLI npm 全局安装、配置优先 UX、小程序复制 settings JSON（见 [v0.4.0-plan.md](./v0.4.0-plan.md)）。
+- `0.4.1`：Git 发布火车；npm 包名 `@xiaolinstar/ai-todo-cli` 与文档/CI 对齐（组件 L1 不变，见 [v0.4.1.md](./v0.4.1.md)）。
 - `0.3.x`：MCP、审计只读、提醒 P2 等（原 Agent 增强剩余项）。
 - `1.0.0`：稳定公开版本。
 
