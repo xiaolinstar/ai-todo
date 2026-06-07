@@ -59,12 +59,13 @@ cp apps/miniapp/project.private.config.example.json apps/miniapp/project.private
 
 1. `project.private.config.json` 中配置真实 AppID（见上文）
 2. [微信公众平台](https://mp.weixin.qq.com/) → **开发管理 → 小程序代码上传 → 上传密钥**，下载 `private.wxXXXX.key`
-3. 配置环境变量（可复制 `ci.env.example` 为 `ci.env`）：
+3. 将密钥放在 **`apps/miniapp/`** 目录下（文件名形如 `private.wxYOUR_APPID.key`），已在 `.gitignore` 中，**不会提交到 Git**
+4. （可选）复制 `ci.env.example` 为 `ci.env` 并指定路径；若目录内只有一个 `private.wx*.key`，`pnpm preview` 会自动识别
 
 ```bash
 cp ci.env.example ci.env
-# 编辑 WECHAT_CI_PRIVATE_KEY_PATH
-set -a && source ci.env && set +a
+# 默认: WECHAT_CI_PRIVATE_KEY_PATH=./private.wxYOUR_APPID.key
+set -a && source ci.env && set +a   # 可省略，若密钥已在 apps/miniapp/ 且仅一份
 ```
 
 **常用命令**（在 `apps/miniapp` 目录，或仓库根目录用 `pnpm miniapp:*`）：
@@ -79,7 +80,7 @@ pnpm miniapp:preview
 pnpm miniapp:upload -- --desc "v0.5.4 体验版"
 ```
 
-微信扫码即可真机调试；上传密钥 IP 白名单需包含本机公网 IP（开发可临时填 `0.0.0.0/0`）。
+微信扫码即可真机调试。上传密钥 **IP 白名单**需包含本机公网 IP（含 IPv6；开发可临时填 `0.0.0.0/0`）。Node.js 25+ 需通过 `scripts/run-ci.mjs` 启动（`pnpm preview` 已封装）。
 
 ## 生产 / 体验版
 

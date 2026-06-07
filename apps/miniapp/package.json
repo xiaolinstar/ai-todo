@@ -1,15 +1,15 @@
 {
   "name": "@ai-todo/miniapp",
   "private": true,
-  "version": "0.5.5",
+  "version": "0.5.6",
   "description": "WeChat native miniapp for ai-todo (TypeScript + Sass)",
   "scripts": {
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "build:check": "node scripts/build-wechat-miniprogram.mjs",
     "clean": "node scripts/clean-wechat-miniprogram.mjs",
     "check": "pnpm typecheck && pnpm build:check && node scripts/check-wechat-miniprogram.mjs",
-    "preview": "node scripts/miniapp-ci.mjs preview",
-    "upload": "node scripts/miniapp-ci.mjs upload"
+    "preview": "node scripts/run-ci.mjs preview",
+    "upload": "node scripts/run-ci.mjs upload"
   },
   "devDependencies": {
     "miniprogram-ci": "^2.1.31",

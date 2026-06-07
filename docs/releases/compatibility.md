@@ -18,6 +18,7 @@
 
 | releaseTag | api | cli | miniapp | 说明 |
 |------------|-----|-----|---------|------|
+| `v0.5.6` | `0.2.7` | `0.4.2` | `0.5.6` | miniprogram-ci Node 25 兼容；上传密钥自动识别与文档。 |
 | `v0.5.5` | `0.2.7` | `0.4.2` | `0.5.5` | miniapp 工具链内聚；URLSearchParams/getSystemInfoSync/Sass 警告修复；miniprogram-ci。 |
 | `v0.5.4` | `0.2.7` | `0.4.2` | `0.5.4` | 免打扰 worker skip claim；提醒 list `sort`；小程序全量 pending 按 due_at 排序。 |
 | `v0.5.0` | `0.2.4` | `0.4.0` | `0.5.0` | 提醒微信订阅消息触达（模板 #15788）、delivery 同步、CD 自动启 worker；小程序分享与改期重新订阅。日程触达未含。 |

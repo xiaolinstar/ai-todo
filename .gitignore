@@ -24,9 +24,10 @@ deploy-manifest.json
 miniapp-dist.tar.gz
 miniapp-dist.sha256
 
-# WeChat DevTools
+# WeChat DevTools / CI secrets (never commit)
 apps/miniapp/project.private.config.json
 apps/miniapp/ci.env
 apps/miniapp/.preview/
+apps/miniapp/private.wx*.key
 apps/miniapp/private*.key
 apps/miniapp/*.key

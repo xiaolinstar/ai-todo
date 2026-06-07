@@ -53,12 +53,17 @@ ai-todo 与 party-helper 的业务差异：
 `project.private.config.json` 已加入 `.gitignore`；提交到 GitHub 的只有
 `project.private.config.example.json` 模板。AppSecret、订阅消息模板 ID 等后端敏感或运行配置必须放在 API 环境变量中，不放入小程序工程配置。
 
+命令行预览/上传（`miniprogram-ci`）使用的 **`private.wx*.key`** 上传密钥、`ci.env` 同样放在 `apps/miniapp/` 下，已由 `.gitignore` 忽略，勿提交。
+
 ## 目录结构
 
 ```text
 apps/miniapp/
   project.config.json       # 微信开发者工具工程根（miniprogramRoot 指向子目录）
   project.private.config.example.json # 本地私有配置模板；真实 project.private.config.json 不提交
+  ci.env.example              # miniprogram-ci 环境变量模板；真实 ci.env 不提交
+  private.wx*.key             # 代码上传密钥（本地放置，gitignore）
+  scripts/                    # 构建检查与 miniprogram-ci 封装
   tsconfig.json             # 小程序 TS 严格检查（noEmit）
   types/
     wechat-miniprogram.d.ts # 最小 wx 类型补充（可按需扩展）

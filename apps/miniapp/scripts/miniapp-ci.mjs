@@ -4,15 +4,15 @@
  *
  * Prerequisites:
  * 1. project.private.config.json with real appid
- * 2. Upload key from 微信公众平台 → 开发管理 → 小程序代码上传 → 上传密钥
- * 3. Export WECHAT_CI_PRIVATE_KEY_PATH=/path/to/private.wxXXXX.key
+ * 2. Upload key: save private.wxYOUR_APPID.key in apps/miniapp/ (gitignored)
+ * 3. Optional: ci.env with WECHAT_CI_PRIVATE_KEY_PATH=./private.wxYOUR_APPID.key
  *
  * Usage (from apps/miniapp):
  *   pnpm preview [-- --page pages/reminders/reminders]
  *   pnpm upload [-- --desc "备注"]
  */
 import { createRequire } from "node:module";
-import { existsSync, mkdirSync, readFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -46,16 +46,32 @@ function readAppId() {
 function readPrivateKeyPath() {
   const configured = process.env.WECHAT_CI_PRIVATE_KEY_PATH?.trim();
   if (configured) {
-    if (!existsSync(configured)) {
-      fail(`Private key not found: ${configured}`);
+    const resolved = configured.startsWith("./")
+      ? resolve(miniappRoot, configured.slice(2))
+      : configured;
+    if (!existsSync(resolved)) {
+      fail(`Private key not found: ${resolved}`);
     }
-    return configured;
+    return resolved;
   }
+
+  const candidates = readdirSync(miniappRoot)
+    .filter((name) => /^private\.wx[a-f0-9]+\.key$/i.test(name))
+    .map((name) => resolve(miniappRoot, name));
+  if (candidates.length === 1) {
+    return candidates[0];
+  }
+  if (candidates.length > 1) {
+    fail(
+      "Multiple private.wx*.key files in apps/miniapp — set WECHAT_CI_PRIVATE_KEY_PATH in ci.env"
+    );
+  }
+
   fail(
     [
-      "Set WECHAT_CI_PRIVATE_KEY_PATH to your upload private key file.",
+      "Set WECHAT_CI_PRIVATE_KEY_PATH in ci.env, or place private.wxYOUR_APPID.key in apps/miniapp/.",
       "Download from 微信公众平台 → 开发管理 → 小程序代码上传 → 上传密钥",
-      "Example: export WECHAT_CI_PRIVATE_KEY_PATH=$HOME/.wechat/private.wxXXXX.key"
+      "Example: WECHAT_CI_PRIVATE_KEY_PATH=./private.wxYOUR_APPID.key"
     ].join("\n")
   );
 }
