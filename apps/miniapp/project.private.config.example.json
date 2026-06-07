@@ -1,7 +1,7 @@
 {
   "description": "复制为 project.private.config.json（已被 gitignore），本地 DevTools 会合并此配置",
   "appid": "wx-your-local-miniapp-appid",
-  "libVersion": "3.4.3",
+  "libVersion": "3.15.0",
   "projectname": "ai-todo",
   "setting": {
     "urlCheck": false,

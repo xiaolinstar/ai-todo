@@ -1,7 +1,7 @@
 import { fetchHealth, fetchMe } from "../../lib/api";
 import { getConfig } from "../../lib/config";
 import { MINIAPP_VERSION } from "../../lib/version";
-import { buildAppShareOptions, buildAppShareTimelineOptions, enableShareMenu } from "../../lib/share";
+import { buildAppShareOptions, buildAppShareTimelineOptions } from "../../lib/share";
 
 Page({
   data: {
@@ -9,10 +9,6 @@ Page({
     userId: "",
     loggedIn: false,
     healthSummary: "检查中…"
-  },
-
-  onLoad() {
-    enableShareMenu();
   },
 
   onShareAppMessage() {

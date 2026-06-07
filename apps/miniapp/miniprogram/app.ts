@@ -1,5 +1,6 @@
 import { ensureAuth } from "./lib/auth";
 import { getDefaultApiUrl, isDevelopEnv } from "./lib/config";
+import { enableShareMenu } from "./lib/share";
 
 type PrivacyAuthorizationResolve = (result: {
   event: "agree" | "disagree";
@@ -29,6 +30,9 @@ function setupPrivacyAuthorization() {
           event: result.confirm ? "agree" : "disagree",
           buttonId: result.confirm ? "privacy-modal-agree" : "privacy-modal-disagree"
         });
+      },
+      fail() {
+        resolve({ event: "disagree", buttonId: "privacy-modal-fail" });
       }
     });
   });
@@ -45,5 +49,8 @@ App({
       wx.setStorageSync("apiUrl", getDefaultApiUrl());
     }
     ensureAuth().catch(() => undefined);
+    if (!isDevelopEnv()) {
+      enableShareMenu();
+    }
   }
 });

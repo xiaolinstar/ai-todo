@@ -11,7 +11,7 @@ import {
 } from "../../lib/format";
 import { updateTabBarSelected } from "../../lib/tab-bar";
 import { getWindowWidthPx } from "../../lib/window-metrics";
-import { buildAppShareOptions, buildAppShareTimelineOptions, enableShareMenu } from "../../lib/share";
+import { buildAppShareOptions, buildAppShareTimelineOptions } from "../../lib/share";
 
 interface ReminderView extends ReminderSummary {
   dueLabel: string;
@@ -116,7 +116,6 @@ Page({
     if (reminderId) {
       this._pendingReminderId = reminderId;
     }
-    enableShareMenu();
   },
 
   onShareAppMessage() {

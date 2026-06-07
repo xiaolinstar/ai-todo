@@ -49,6 +49,7 @@ declare const wx: {
     cancelText?: string;
     showCancel?: boolean;
     success?: (res: { confirm: boolean; cancel: boolean }) => void;
+    fail?: (err: unknown) => void;
   }): void;
   onNeedPrivacyAuthorization?: (
     callback: (
@@ -83,6 +84,7 @@ declare const wx: {
       appId: string;
     };
   };
+  canIUse?(schema: string): boolean;
 };
 
 declare function App(options: any): void;

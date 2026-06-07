@@ -18,6 +18,7 @@
 
 | releaseTag | api | cli | miniapp | 说明 |
 |------------|-----|-----|---------|------|
+| `v0.5.7` | `0.2.7` | `0.4.2` | `0.5.7` | 用户隐私保护指引审核通过；DevTools 告警与分享/TabBar 样式修复。 |
 | `v0.5.6` | `0.2.7` | `0.4.2` | `0.5.6` | miniprogram-ci Node 25 兼容；上传密钥自动识别与文档。 |
 | `v0.5.5` | `0.2.7` | `0.4.2` | `0.5.5` | miniapp 工具链内聚；URLSearchParams/getSystemInfoSync/Sass 警告修复；miniprogram-ci。 |
 | `v0.5.4` | `0.2.7` | `0.4.2` | `0.5.4` | 免打扰 worker skip claim；提醒 list `sort`；小程序全量 pending 按 due_at 排序。 |

@@ -1,4 +1,8 @@
-@use "../styles/tokens.scss";
+@use "../styles/todo-design-tokens" as *;
+
+.todo-theme {
+  @include todo-design-tokens;
+}
 
 .tab-bar {
   position: fixed;

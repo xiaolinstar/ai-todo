@@ -17,6 +17,7 @@
 pnpm dev:api
 # 微信开发者工具 → 导入 apps/miniapp → 确认已启用 TS/Sass 编译插件
 # 详情 → 勾选「不校验合法域名」
+# 详情 → 本地设置 → 调试基础库建议 **3.15.0**（3.15.1/3.15.2 可能控制台报 `WAServiceMainContext Error: timeout`，一般不影响功能）
 ```
 
 **小程序包内命令**（在 `apps/miniapp` 目录）：

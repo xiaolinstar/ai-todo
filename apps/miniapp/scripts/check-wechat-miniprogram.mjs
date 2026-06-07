@@ -130,7 +130,10 @@ for (const file of walk(miniprogramRoot)) {
 }
 
 function assertNoHardcodedVisualTokens() {
-  const allowedScss = new Set([resolve(miniprogramRoot, "styles/tokens.scss")]);
+  const allowedScss = new Set([
+    resolve(miniprogramRoot, "styles/todo-design-tokens.scss"),
+    resolve(miniprogramRoot, "styles/tokens.scss")
+  ]);
   const hexRe = /#[0-9a-fA-F]{3,8}\b/g;
   const fontFamilyRe = /font-family\s*:/i;
   for (const file of walk(miniprogramRoot)) {
@@ -140,7 +143,7 @@ function assertNoHardcodedVisualTokens() {
     const rel = relative(repoRoot, file);
     if (hexRe.test(source)) {
       fail(
-        `hardcoded hex color in ${rel} — use var(--todo-*) from styles/tokens.scss (see docs/miniapp-design-tokens.md)`
+        `hardcoded hex color in ${rel} — use var(--todo-*) from styles/todo-design-tokens.scss (see docs/miniapp-design-tokens.md)`
       );
     }
     if (fontFamilyRe.test(source)) {

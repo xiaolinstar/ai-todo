@@ -8,7 +8,7 @@ import {
 import { avatarColor, getInitial } from "../../lib/format";
 import { SwipeListGesture, withSwipeRow, type SwipeListRowState } from "../../lib/swipe-list";
 import { updateTabBarSelected } from "../../lib/tab-bar";
-import { buildAppShareOptions, buildAppShareTimelineOptions, enableShareMenu } from "../../lib/share";
+import { buildAppShareOptions, buildAppShareTimelineOptions } from "../../lib/share";
 
 interface ContactView extends ContactSummary, SwipeListRowState {
   subtitle: string;
@@ -49,7 +49,6 @@ Page({
       }
     });
     this._swipeList.updateDeleteActionWidth();
-    enableShareMenu();
   },
 
   onShareAppMessage() {

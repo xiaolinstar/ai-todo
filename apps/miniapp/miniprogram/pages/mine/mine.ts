@@ -19,7 +19,7 @@ import {
 import { requirePrivacyAuthorization } from "../../lib/privacy";
 import { TODO_COLORS } from "../../lib/design-tokens";
 import { updateTabBarSelected } from "../../lib/tab-bar";
-import { buildAppShareOptions, buildAppShareTimelineOptions, enableShareMenu } from "../../lib/share";
+import { buildAppShareOptions, buildAppShareTimelineOptions } from "../../lib/share";
 
 type PrivacyAuthorizationResolve = (result: {
   event: "agree" | "disagree";
@@ -48,10 +48,6 @@ Page({
   },
 
   _privacyResolve: undefined as PrivacyAuthorizationResolve | undefined,
-
-  onLoad() {
-    enableShareMenu();
-  },
 
   onShareAppMessage() {
     return buildAppShareOptions();

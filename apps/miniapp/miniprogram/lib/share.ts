@@ -12,13 +12,25 @@ export interface ShareTimelineOptions {
   imageUrl?: string;
 }
 
+/**
+ * 开启右上角「分享给朋友」。朋友圈入口由页面 onShareTimeline 定义即可，不必传 shareTimeline。
+ * DevTools 基础库 3.15.1+ 对 showShareMenu(shareTimeline) 易报 WAServiceMainContext timeout，故省略。
+ */
 export function enableShareMenu(): void {
   if (typeof wx.showShareMenu !== "function") {
     return;
   }
-  wx.showShareMenu({
-    menus: ["shareAppMessage", "shareTimeline"]
-  });
+
+  const show = () => {
+    wx.showShareMenu({
+      menus: ["shareAppMessage"],
+      fail(err) {
+        console.warn("showShareMenu failed", err);
+      }
+    });
+  };
+
+  setTimeout(show, 0);
 }
 
 export function buildAppShareOptions(overrides?: Partial<ShareOptions>): ShareOptions {
