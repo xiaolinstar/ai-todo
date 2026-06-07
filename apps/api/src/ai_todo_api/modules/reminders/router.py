@@ -78,11 +78,20 @@ def list_reminders(
     status: str | None = None,
     from_date: str | None = Query(default=None, alias="from"),
     to_date: str | None = Query(default=None, alias="to"),
-    limit: int = Query(default=50, ge=1, le=100),
+    sort: str = Query(default="created_at"),
+    limit: int | None = Query(default=None, ge=1, le=500),
     cursor: str | None = None,
     db: Session = Depends(get_db),
     user: CurrentUser = Depends(get_current_user),
 ) -> ApiResponse[ReminderListResult] | JSONResponse:
+    if sort not in {"created_at", "due_at", "completed_at"}:
+        body = ErrorResponse(
+            error=ApiError(
+                code="VALIDATION_ERROR",
+                message="sort must be one of: created_at, due_at, completed_at",
+            )
+        )
+        return JSONResponse(status_code=400, content=body.model_dump(by_alias=True))
     try:
         result = _reminder_service(db, user).list_reminders(
             status=status,
@@ -90,6 +99,7 @@ def list_reminders(
             to_date=to_date,
             limit=limit,
             cursor=cursor,
+            sort=sort,
         )
     except InvalidCursorError as error:
         body = ErrorResponse(error=ApiError(code="INVALID_CURSOR", message=str(error)))

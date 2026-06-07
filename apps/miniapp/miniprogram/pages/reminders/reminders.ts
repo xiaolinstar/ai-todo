@@ -1,4 +1,5 @@
-import { completeReminder, deleteReminder, fetchToday } from "../../lib/api";
+import { completeReminder, deleteReminder, fetchReminders } from "../../lib/api";
+import { loadAccountDay } from "../../lib/account-day";
 import { TODO_MODAL_CONFIRM_DANGER } from "../../lib/design-tokens";
 import type { ReminderSummary } from "../../lib/api";
 import {
@@ -6,8 +7,7 @@ import {
   formatDateTime,
   formatIsoDateLabel,
   formatWeekdayLong,
-  isOverdueDueAt,
-  todayIsoDateInTimezone
+  isOverdueDueAt
 } from "../../lib/format";
 import { updateTabBarSelected } from "../../lib/tab-bar";
 import { buildAppShareOptions, buildAppShareTimelineOptions, enableShareMenu } from "../../lib/share";
@@ -155,35 +155,44 @@ Page({
 
   loadReminders() {
     this.setData({ loading: true, error: "" });
-    return fetchToday()
-      .then((todayRes) => {
-        if (!todayRes.ok || !todayRes.data) {
+    return Promise.all([
+      loadAccountDay(),
+      fetchReminders({ status: "pending", sort: "due_at" }),
+      fetchReminders({ status: "completed", sort: "completed_at" })
+    ])
+      .then(([account, pendingRes, completedRes]) => {
+        if (!pendingRes.ok || !pendingRes.data || !completedRes.ok || !completedRes.data) {
           this.setData({
             loading: false,
             loaded: true,
-            error: todayRes.error?.message || "加载失败，请在「我的」页检查 API 地址"
+            error:
+              pendingRes.error?.message ||
+              completedRes.error?.message ||
+              "加载失败，请在「我的」页检查 API 地址"
           });
           return;
         }
 
-        const { date, timezone, reminders: rawReminders } = todayRes.data;
-        const items = rawReminders.map((item) => enrichReminder(item, timezone));
+        const { timezone, today } = account;
+        const pendingItems = pendingRes.data.items.map((item) => enrichReminder(item, timezone));
+        const completedItems = completedRes.data.items.map((item) =>
+          enrichReminder(item, timezone)
+        );
         const animating = this.data.pending.filter(
           (item: ReminderView) => item.completing || item.exiting
         );
         const animatingIds = new Set(animating.map((item: ReminderView) => item.id));
-        const serverPending = items.filter((item) => item.status !== "completed");
         const pending = [
           ...animating,
-          ...serverPending.filter((item) => !animatingIds.has(item.id))
+          ...pendingItems.filter((item) => !animatingIds.has(item.id))
         ];
-        const completed = items.filter((item) => item.status === "completed");
+        const completed = completedItems;
 
         this.setData({
           loading: false,
           loaded: true,
-          dateLabel: formatIsoDateLabel(date),
-          weekdayLabel: formatWeekdayLong(date),
+          dateLabel: formatIsoDateLabel(today),
+          weekdayLabel: formatWeekdayLong(today),
           timezone,
           pendingCount: pending.length,
           completedCount: completed.length,

@@ -101,6 +101,13 @@ export interface ContactListResult {
   hasMore?: boolean;
 }
 
+export interface ReminderListResult {
+  items: ReminderSummary[];
+  totalCount: number;
+  nextCursor?: string | null;
+  hasMore?: boolean;
+}
+
 export interface NotificationSettings {
   wechatEnabled: boolean;
   defaultReminderEnabled: boolean;
@@ -239,6 +246,25 @@ export function fetchToday() {
 
 export function fetchRemindersToday() {
   return request<{ items: ReminderSummary[] }>("/v1/reminders/today");
+}
+
+export function fetchReminders(params: {
+  status?: string;
+  sort?: "created_at" | "due_at" | "completed_at";
+  limit?: number;
+}) {
+  const search = new URLSearchParams();
+  if (params.status) {
+    search.set("status", params.status);
+  }
+  if (params.sort) {
+    search.set("sort", params.sort);
+  }
+  if (params.limit !== undefined) {
+    search.set("limit", String(params.limit));
+  }
+  const query = search.toString();
+  return request<ReminderListResult>(`/v1/reminders${query ? `?${query}` : ""}`);
 }
 
 export function fetchCalendarToday() {

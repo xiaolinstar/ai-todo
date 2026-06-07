@@ -122,6 +122,9 @@ export class AiTodoClient {
     if (params.cursor) {
       search.set("cursor", params.cursor);
     }
+    if (params.sort) {
+      search.set("sort", params.sort);
+    }
     const query = search.toString();
     return this.request<ReminderListResult>(`/v1/reminders${query ? `?${query}` : ""}`);
   }

@@ -75,18 +75,27 @@ class ReminderService:
         status: str | None = None,
         from_date: str | None = None,
         to_date: str | None = None,
-        limit: int = 50,
+        limit: int | None = 50,
         cursor: str | None = None,
+        sort: str = "created_at",
     ) -> ReminderListResult:
         if from_date or to_date:
             return self._list_reminders_in_due_range(
                 status=status,
                 from_date=from_date,
                 to_date=to_date,
+                limit=limit or 50,
+            )
+
+        if sort in {"due_at", "completed_at"}:
+            return self._list_reminders_sorted(
+                status=status,
+                sort=sort,
                 limit=limit,
             )
 
-        page = self._repository.list_page(status=status, limit=limit, cursor=cursor)
+        page_limit = limit if limit is not None else 50
+        page = self._repository.list_page(status=status, limit=page_limit, cursor=cursor)
         contact_map = self._links.summaries_for_reminders([reminder.id for reminder in page.items])
         items = [
             reminder_to_summary(reminder, contacts=contact_map.get(reminder.id, []))
@@ -97,6 +106,27 @@ class ReminderService:
             total_count=page.total_count,
             next_cursor=page.next_cursor,
             has_more=page.has_more,
+        )
+
+    def _list_reminders_sorted(
+        self,
+        *,
+        status: str | None,
+        sort: str,
+        limit: int | None,
+    ) -> ReminderListResult:
+        reminders = self._repository.list_all_sorted(status=status, sort=sort, limit=limit)
+        total_count = self._repository.count_active(status=status)
+        contact_map = self._links.summaries_for_reminders([reminder.id for reminder in reminders])
+        items = [
+            reminder_to_summary(reminder, contacts=contact_map.get(reminder.id, []))
+            for reminder in reminders
+        ]
+        return ReminderListResult(
+            items=items,
+            total_count=total_count,
+            next_cursor=None,
+            has_more=limit is not None and total_count > len(items),
         )
 
     def _list_reminders_in_due_range(

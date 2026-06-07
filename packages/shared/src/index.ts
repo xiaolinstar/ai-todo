@@ -209,6 +209,7 @@ export interface ListRemindersParams {
   to?: string;
   limit?: number;
   cursor?: string;
+  sort?: "created_at" | "due_at" | "completed_at";
 }
 
 export interface UserSummary {

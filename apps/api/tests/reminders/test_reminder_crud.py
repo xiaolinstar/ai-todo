@@ -83,3 +83,36 @@ def test_today_excludes_completed_and_deleted(client: TestClient) -> None:
 
     list_completed = client.get("/v1/reminders", params={"status": "completed"})
     assert reminder_id in {item["id"] for item in list_completed.json()["data"]["items"]}
+
+
+def test_list_pending_sorted_by_due_at(client: TestClient) -> None:
+    early = client.post(
+        "/v1/reminders",
+        json={"title": "较早", "dueAt": "2026-06-01T10:00:00+08:00"},
+    )
+    later = client.post(
+        "/v1/reminders",
+        json={"title": "较晚", "dueAt": "2026-06-15T10:00:00+08:00"},
+    )
+    no_due = client.post("/v1/reminders", json={"title": "无截止"})
+    assert early.status_code == 201
+    assert later.status_code == 201
+    assert no_due.status_code == 201
+
+    response = client.get(
+        "/v1/reminders",
+        params={"status": "pending", "sort": "due_at"},
+    )
+    assert response.status_code == 200
+    body = response.json()["data"]
+    titles = [item["title"] for item in body["items"]]
+    assert titles.index("较早") < titles.index("较晚")
+    assert titles.index("较晚") < titles.index("无截止")
+    assert body["totalCount"] >= 3
+    assert body["nextCursor"] is None
+
+
+def test_list_invalid_sort(client: TestClient) -> None:
+    response = client.get("/v1/reminders", params={"sort": "invalid"})
+    assert response.status_code == 400
+    assert response.json()["error"]["code"] == "VALIDATION_ERROR"

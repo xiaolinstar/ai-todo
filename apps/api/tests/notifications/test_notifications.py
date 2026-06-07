@@ -148,7 +148,47 @@ def test_dispatch_claims_due_delivery_and_consumes_quota(client):
         session_generator.close()
 
 
-def test_sync_reminder_target_updates_delivery_schedule(client):
+def test_claim_due_skips_during_quiet_hours(client, monkeypatch):
+    due_at = (now_utc() + timedelta(minutes=5)).isoformat()
+    create_response = client.post(
+        "/v1/reminders",
+        json={"title": "静默时段提醒", "dueAt": due_at},
+    )
+    reminder_id = create_response.json()["data"]["reminder"]["id"]
+    client.patch(
+        "/v1/notifications/settings",
+        json={"quietStart": "22:00", "quietEnd": "08:00"},
+    )
+    response = client.post(
+        "/v1/notifications/wechat/subscription-result",
+        json={
+            "templateKey": "reminder_due",
+            "templateId": "tmpl_reminder",
+            "result": "accept",
+            "targetType": "reminder",
+            "targetId": reminder_id,
+        },
+    )
+    delivery_id = response.json()["data"]["deliveryId"]
+
+    monkeypatch.setattr(
+        "ai_todo_api.modules.notifications.service.is_in_quiet_hours",
+        lambda **kwargs: True,
+    )
+
+    from ai_todo_api.main import app
+    from ai_todo_api.db.session import get_db
+
+    session_generator = app.dependency_overrides[get_db]()
+    session = next(session_generator)
+    try:
+        dispatcher = NotificationDispatchService(session)
+        deliveries = dispatcher.claim_due(limit=10)
+        assert deliveries == []
+        delivery = session.get(NotificationDeliveryModel, delivery_id)
+        assert delivery.status == "pending"
+    finally:
+        session_generator.close()
     due_at = (now_utc() + timedelta(hours=2)).isoformat()
     create_response = client.post(
         "/v1/reminders",

@@ -7,6 +7,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from ai_todo_api.auth.wechat_service import WECHAT_PROVIDER
+from ai_todo_api.common.quiet_hours import is_in_quiet_hours
 from ai_todo_api.common.time import now_utc
 from ai_todo_api.config import settings
 from ai_todo_api.db.models import (
@@ -16,6 +17,7 @@ from ai_todo_api.db.models import (
     NotificationPreferenceModel,
     NotificationSubscriptionModel,
     ReminderModel,
+    UserModel,
 )
 from ai_todo_api.modules.notifications.schemas import (
     NotificationDeliverySummary,
@@ -429,14 +431,67 @@ class NotificationDispatchService:
                 ),
             )
             .order_by(NotificationDeliveryModel.scheduled_at.asc())
-            .limit(limit)
+            .limit(limit * 4)
             .with_for_update(skip_locked=True)
         ).all()
+
+        quiet_context = self._load_quiet_hours_context([delivery.user_id for delivery in due])
+        claimed: list[NotificationDeliveryModel] = []
         for delivery in due:
+            if len(claimed) >= limit:
+                break
+            if self._delivery_blocked_by_quiet_hours(delivery, quiet_context):
+                continue
             delivery.status = STATUS_SENDING
             delivery.updated_at = now
+            claimed.append(delivery)
         self._session.commit()
-        return list(due)
+        return claimed
+
+    def _load_quiet_hours_context(
+        self,
+        user_ids: list[str],
+    ) -> dict[str, tuple[str | None, str | None, str]]:
+        unique_ids = list(dict.fromkeys(user_ids))
+        if not unique_ids:
+            return {}
+
+        preferences = self._session.scalars(
+            select(NotificationPreferenceModel).where(
+                NotificationPreferenceModel.user_id.in_(unique_ids)
+            )
+        ).all()
+        preference_map = {preference.user_id: preference for preference in preferences}
+
+        users = self._session.scalars(
+            select(UserModel).where(UserModel.id.in_(unique_ids))
+        ).all()
+        timezone_map = {user.id: user.timezone for user in users}
+
+        context: dict[str, tuple[str | None, str | None, str]] = {}
+        for user_id in unique_ids:
+            preference = preference_map.get(user_id)
+            context[user_id] = (
+                preference.quiet_start if preference else None,
+                preference.quiet_end if preference else None,
+                timezone_map.get(user_id) or settings.timezone,
+            )
+        return context
+
+    def _delivery_blocked_by_quiet_hours(
+        self,
+        delivery: NotificationDeliveryModel,
+        quiet_context: dict[str, tuple[str | None, str | None, str]],
+    ) -> bool:
+        quiet_start, quiet_end, timezone = quiet_context.get(
+            delivery.user_id,
+            (None, None, settings.timezone),
+        )
+        return is_in_quiet_hours(
+            quiet_start=quiet_start,
+            quiet_end=quiet_end,
+            timezone=timezone,
+        )
 
     def mark_sent(self, delivery: NotificationDeliveryModel, *, provider_message_id: str | None = None) -> None:
         now = now_utc()

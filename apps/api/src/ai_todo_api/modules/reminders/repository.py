@@ -75,6 +75,51 @@ class ReminderRepository:
             has_more=has_more,
         )
 
+    def list_all_sorted(
+        self,
+        *,
+        status: str | None = None,
+        sort: str = "due_at",
+        limit: int | None = None,
+    ) -> list[ReminderModel]:
+        statement = select(ReminderModel).where(
+            ReminderModel.user_id == self._user_id,
+            ReminderModel.deleted_at.is_(None),
+        )
+        if status:
+            statement = statement.where(ReminderModel.status == status)
+
+        if sort == "completed_at":
+            statement = statement.order_by(
+                ReminderModel.completed_at.desc().nulls_last(),
+                ReminderModel.id.desc(),
+            )
+        elif sort == "due_at":
+            statement = statement.order_by(
+                ReminderModel.due_at.asc().nulls_last(),
+                ReminderModel.id.asc(),
+            )
+        else:
+            statement = statement.order_by(
+                ReminderModel.created_at.desc(),
+                ReminderModel.id.desc(),
+            )
+
+        if limit is not None:
+            statement = statement.limit(limit)
+        return list(self._session.scalars(statement))
+
+    def count_active(self, *, status: str | None = None) -> int:
+        statement = select(ReminderModel).where(
+            ReminderModel.user_id == self._user_id,
+            ReminderModel.deleted_at.is_(None),
+        )
+        if status:
+            statement = statement.where(ReminderModel.status == status)
+        return int(
+            self._session.scalar(select(func.count()).select_from(statement.subquery())) or 0
+        )
+
     def list_all_active(self) -> list[ReminderModel]:
         statement = (
             select(ReminderModel)
