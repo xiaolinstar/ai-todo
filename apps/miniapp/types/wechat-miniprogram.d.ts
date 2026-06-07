@@ -74,7 +74,7 @@ declare const wx: {
     success?: () => void;
     fail?: (err: unknown) => void;
   }): void;
-  getSystemInfoSync(): {
+  getWindowInfo(): {
     windowWidth: number;
   };
   getAccountInfoSync(): {

@@ -5,8 +5,8 @@ import { fileURLToPath } from "node:url";
 import ts from "typescript";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
-const root = resolve(scriptDir, "..");
-const miniappRoot = resolve(root, "apps/miniapp");
+const miniappRoot = resolve(scriptDir, "..");
+const repoRoot = resolve(miniappRoot, "../..");
 const miniprogramRoot = resolve(miniappRoot, "miniprogram");
 const appJsonPath = resolve(miniprogramRoot, "app.json");
 
@@ -38,7 +38,7 @@ function assertSourceBundle(basePath, label, extensions) {
   for (const ext of extensions) {
     const path = `${basePath}${ext}`;
     if (!existsSync(path)) {
-      fail(`${label} is missing ${relative(root, path)}`);
+      fail(`${label} is missing ${relative(repoRoot, path)}`);
     }
   }
 }
@@ -47,7 +47,7 @@ function assertNoTrackedGeneratedFiles() {
   try {
     const tracked = execSync(
       'git ls-files "apps/miniapp/miniprogram/**/*.js" "apps/miniapp/miniprogram/**/*.wxss"',
-      { cwd: root, encoding: "utf8" }
+      { cwd: repoRoot, encoding: "utf8" }
     ).trim();
     if (tracked) {
       fail(
@@ -71,7 +71,7 @@ function assertTabBarIcons(appJson) {
     for (const iconPath of [item.iconPath, item.selectedIconPath]) {
       const fullPath = resolve(miniprogramRoot, iconPath);
       if (!existsSync(fullPath)) {
-        fail(`tabBar icon not found: ${relative(root, fullPath)}`);
+        fail(`tabBar icon not found: ${relative(repoRoot, fullPath)}`);
       }
     }
   }
@@ -79,7 +79,7 @@ function assertTabBarIcons(appJson) {
 
 assertSourceBundle(resolve(miniprogramRoot, "app"), "app", [".ts", ".scss"]);
 if (!existsSync(appJsonPath)) {
-  fail(`missing ${relative(root, appJsonPath)}`);
+  fail(`missing ${relative(repoRoot, appJsonPath)}`);
 }
 
 if (!process.exitCode) {
@@ -101,7 +101,7 @@ for (const file of walk(miniprogramRoot)) {
   try {
     readJson(file);
   } catch (error) {
-    fail(`invalid JSON in ${relative(root, file)}: ${error.message}`);
+    fail(`invalid JSON in ${relative(repoRoot, file)}: ${error.message}`);
   }
 }
 
@@ -123,7 +123,7 @@ for (const file of walk(miniprogramRoot)) {
   );
   if (errors.length <= 0) continue;
 
-  fail(`TypeScript syntax errors in ${relative(root, file)}:`);
+  fail(`TypeScript syntax errors in ${relative(repoRoot, file)}:`);
   for (const error of errors) {
     fail(`  - ${ts.flattenDiagnosticMessageText(error.messageText, " ")}`);
   }
@@ -137,7 +137,7 @@ function assertNoHardcodedVisualTokens() {
     if (extname(file) !== ".scss") continue;
     if (allowedScss.has(file)) continue;
     const source = readFileSync(file, "utf8");
-    const rel = relative(root, file);
+    const rel = relative(repoRoot, file);
     if (hexRe.test(source)) {
       fail(
         `hardcoded hex color in ${rel} — use var(--todo-*) from styles/tokens.scss (see docs/miniapp-design-tokens.md)`
@@ -161,7 +161,7 @@ function assertNoHardcodedVisualTokens() {
     const source = readFileSync(file, "utf8");
     if (tsHexRe.test(source)) {
       fail(
-        `hardcoded color string in ${relative(root, file)} — import from lib/design-tokens.ts`
+        `hardcoded color string in ${relative(repoRoot, file)} — import from lib/design-tokens.ts`
       );
     }
   }
@@ -177,7 +177,7 @@ function assertMediaSizeLimit() {
     const size = statSync(file).size;
     if (size <= MAX_MEDIA_BYTES) continue;
     fail(
-      `media asset exceeds WeChat 200KB limit (${Math.round(size / 1024)}KB): ${relative(root, file)} — ` +
+      `media asset exceeds WeChat 200KB limit (${Math.round(size / 1024)}KB): ${relative(repoRoot, file)} — ` +
         "compress, resize, or move unused masters outside miniprogram/"
     );
   }

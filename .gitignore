@@ -26,3 +26,7 @@ miniapp-dist.sha256
 
 # WeChat DevTools
 apps/miniapp/project.private.config.json
+apps/miniapp/ci.env
+apps/miniapp/.preview/
+apps/miniapp/private*.key
+apps/miniapp/*.key

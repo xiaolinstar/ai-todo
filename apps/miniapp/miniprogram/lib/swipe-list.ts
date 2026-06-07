@@ -1,4 +1,5 @@
 import { TODO_MODAL_CONFIRM_DANGER } from "./design-tokens";
+import { getWindowWidthPx } from "./window-metrics";
 
 export interface SwipeListRowState {
   id: string;
@@ -69,8 +70,7 @@ export class SwipeListGesture<T extends SwipeListRowState> {
 
   updateDeleteActionWidth(): void {
     try {
-      const systemInfo = wx.getSystemInfoSync();
-      this._deleteActionWidthPx = Math.round((systemInfo.windowWidth * 160) / 750);
+      this._deleteActionWidthPx = Math.round((getWindowWidthPx() * 160) / 750);
     } catch {
       this._deleteActionWidthPx = 86;
     }

@@ -10,6 +10,7 @@ import {
   isOverdueDueAt
 } from "../../lib/format";
 import { updateTabBarSelected } from "../../lib/tab-bar";
+import { getWindowWidthPx } from "../../lib/window-metrics";
 import { buildAppShareOptions, buildAppShareTimelineOptions, enableShareMenu } from "../../lib/share";
 
 interface ReminderView extends ReminderSummary {
@@ -229,8 +230,7 @@ Page({
 
   updateDeleteActionWidth() {
     try {
-      const systemInfo = wx.getSystemInfoSync();
-      this._deleteActionWidthPx = Math.round((systemInfo.windowWidth * 160) / 750);
+      this._deleteActionWidthPx = Math.round((getWindowWidthPx() * 160) / 750);
     } catch {
       this._deleteActionWidthPx = 86;
     }

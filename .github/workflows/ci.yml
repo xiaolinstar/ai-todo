@@ -65,9 +65,7 @@ jobs:
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
-      - run: pnpm typecheck:wechat
-      - run: node scripts/build-wechat-miniprogram.mjs
-      - run: node scripts/check-wechat-miniprogram.mjs
+      - run: pnpm check:wechat
 
   scan-api:
     name: "1-scan · API ruff"
@@ -124,9 +122,7 @@ jobs:
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
-      - run: pnpm typecheck:wechat
-      - run: node scripts/build-wechat-miniprogram.mjs
-      - run: node scripts/check-wechat-miniprogram.mjs
+      - run: pnpm check:wechat
 
       - name: Package miniapp source artifact
         run: |

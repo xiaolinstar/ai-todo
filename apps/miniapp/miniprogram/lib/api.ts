@@ -121,6 +121,18 @@ function buildUrl(path: string): string {
   return `${apiUrl.replace(/\/$/, "")}${path}`;
 }
 
+function buildQueryString(params: Record<string, string | undefined>): string {
+  const parts: string[] = [];
+  Object.keys(params).forEach((key) => {
+    const value = params[key];
+    if (value !== undefined && value !== "") {
+      parts.push(`${encodeURIComponent(key)}=${encodeURIComponent(value)}`);
+    }
+  });
+  const query = parts.join("&");
+  return query ? `?${query}` : "";
+}
+
 function buildHeaders(includeJsonContentType: boolean): Record<string, string> {
   const { token } = getConfig();
   const headers: Record<string, string> = {
@@ -253,18 +265,13 @@ export function fetchReminders(params: {
   sort?: "created_at" | "due_at" | "completed_at";
   limit?: number;
 }) {
-  const search = new URLSearchParams();
-  if (params.status) {
-    search.set("status", params.status);
-  }
-  if (params.sort) {
-    search.set("sort", params.sort);
-  }
-  if (params.limit !== undefined) {
-    search.set("limit", String(params.limit));
-  }
-  const query = search.toString();
-  return request<ReminderListResult>(`/v1/reminders${query ? `?${query}` : ""}`);
+  return request<ReminderListResult>(
+    `/v1/reminders${buildQueryString({
+      status: params.status,
+      sort: params.sort,
+      limit: params.limit !== undefined ? String(params.limit) : undefined
+    })}`
+  );
 }
 
 export function fetchCalendarToday() {

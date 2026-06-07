@@ -5,8 +5,9 @@ import * as sass from "sass";
 import ts from "typescript";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
-const root = resolve(scriptDir, "..");
-const miniprogramRoot = resolve(root, "apps/miniapp/miniprogram");
+const miniappRoot = resolve(scriptDir, "..");
+const repoRoot = resolve(miniappRoot, "../..");
+const miniprogramRoot = resolve(miniappRoot, "miniprogram");
 
 function walk(dir) {
   const files = [];
@@ -35,7 +36,7 @@ function transpileTs(file) {
     (item) => item.category === ts.DiagnosticCategory.Error
   );
   if (errors.length > 0) {
-    console.error(`Failed to transpile ${relative(root, file)}`);
+    console.error(`Failed to transpile ${relative(repoRoot, file)}`);
     for (const error of errors) {
       console.error(`  - ${ts.flattenDiagnosticMessageText(error.messageText, " ")}`);
     }
@@ -47,13 +48,13 @@ function compileScss(file) {
   try {
     sass.compile(file, { style: "expanded" });
   } catch (error) {
-    console.error(`Failed to compile ${relative(root, file)}: ${error.message}`);
+    console.error(`Failed to compile ${relative(repoRoot, file)}: ${error.message}`);
     process.exitCode = 1;
   }
 }
 
 if (!existsSync(miniprogramRoot)) {
-  console.error(`missing ${relative(root, miniprogramRoot)}`);
+  console.error(`missing ${relative(repoRoot, miniprogramRoot)}`);
   process.exit(1);
 }
 

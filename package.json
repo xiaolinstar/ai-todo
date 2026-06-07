@@ -12,13 +12,11 @@
     "dev:cli": "pnpm --filter @xiaolinstar/ai-todo-cli build && pnpm --filter @xiaolinstar/ai-todo-cli dev",
     "cli": "pnpm --filter @xiaolinstar/ai-todo-cli build && node apps/cli/dist/index.js",
     "test:api": "pnpm --filter @xiaolinstar/ai-todo-cli build && cd apps/api && .venv/bin/python -m pytest -q",
-    "typecheck:wechat": "tsc -p apps/miniapp/tsconfig.json --noEmit",
-    "build:wechat:check": "node scripts/build-wechat-miniprogram.mjs",
-    "clean:wechat": "node scripts/clean-wechat-miniprogram.mjs",
-    "check:wechat": "pnpm typecheck:wechat && pnpm build:wechat:check && node scripts/check-wechat-miniprogram.mjs"
-  },
-  "devDependencies": {
-    "sass": "^1.89.2",
-    "typescript": "^5.6.3"
+    "typecheck:wechat": "pnpm --filter @ai-todo/miniapp typecheck",
+    "build:wechat:check": "pnpm --filter @ai-todo/miniapp build:check",
+    "clean:wechat": "pnpm --filter @ai-todo/miniapp clean",
+    "check:wechat": "pnpm --filter @ai-todo/miniapp check",
+    "miniapp:preview": "pnpm --filter @ai-todo/miniapp preview",
+    "miniapp:upload": "pnpm --filter @ai-todo/miniapp upload"
   }
 }

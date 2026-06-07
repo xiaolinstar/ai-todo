@@ -3,8 +3,9 @@ import { dirname, extname, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
-const root = resolve(scriptDir, "..");
-const miniprogramRoot = resolve(root, "apps/miniapp/miniprogram");
+const miniappRoot = resolve(scriptDir, "..");
+const repoRoot = resolve(miniappRoot, "../..");
+const miniprogramRoot = resolve(miniappRoot, "miniprogram");
 
 function walk(dir) {
   const files = [];
@@ -18,7 +19,7 @@ function walk(dir) {
 }
 
 if (!existsSync(miniprogramRoot)) {
-  console.error(`missing ${relative(root, miniprogramRoot)}`);
+  console.error(`missing ${relative(repoRoot, miniprogramRoot)}`);
   process.exit(1);
 }
 
@@ -28,7 +29,7 @@ for (const file of walk(miniprogramRoot)) {
   if (ext !== ".js" && ext !== ".wxss") continue;
   unlinkSync(file);
   removed += 1;
-  console.log(`removed ${relative(root, file)}`);
+  console.log(`removed ${relative(repoRoot, file)}`);
 }
 
 console.log(`wechat miniprogram clean ok (${removed} files)`);
