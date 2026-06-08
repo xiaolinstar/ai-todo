@@ -55,6 +55,16 @@ def _not_found(reminder_id: str) -> JSONResponse:
     return JSONResponse(status_code=404, content=body.model_dump(by_alias=True))
 
 
+def _source_not_found(source: str, external_id: str) -> JSONResponse:
+    body = ErrorResponse(
+        error=ApiError(
+            code="NOT_FOUND",
+            message=f"No reminder with source={source} externalId={external_id}.",
+        ),
+    )
+    return JSONResponse(status_code=404, content=body.model_dump(by_alias=True))
+
+
 def _validation_error(message: str) -> JSONResponse:
     body = ErrorResponse(error=ApiError(code="VALIDATION_ERROR", message=message))
     return JSONResponse(status_code=400, content=body.model_dump(by_alias=True))
@@ -76,6 +86,7 @@ def _reminder_id_from_data(data: dict) -> list[str]:
 @router.get("", response_model=None)
 def list_reminders(
     status: str | None = None,
+    source: str | None = None,
     from_date: str | None = Query(default=None, alias="from"),
     to_date: str | None = Query(default=None, alias="to"),
     sort: str = Query(default="created_at"),
@@ -95,6 +106,7 @@ def list_reminders(
     try:
         result = _reminder_service(db, user).list_reminders(
             status=status,
+            source=source,
             from_date=from_date,
             to_date=to_date,
             limit=limit,
@@ -104,6 +116,8 @@ def list_reminders(
     except InvalidCursorError as error:
         body = ErrorResponse(error=ApiError(code="INVALID_CURSOR", message=str(error)))
         return JSONResponse(status_code=400, content=body.model_dump(by_alias=True))
+    except ValueError as error:
+        return _validation_error(str(error))
     return ApiResponse(data=result)
 
 
@@ -113,6 +127,25 @@ def list_reminders_today(
     user: CurrentUser = Depends(get_current_user),
 ) -> ApiResponse[ReminderListResult]:
     return ApiResponse(data=_reminder_service(db, user).list_today())
+
+
+@router.get("/lookup")
+def lookup_reminder(
+    source: str,
+    external_id: str = Query(alias="externalId"),
+    db: Session = Depends(get_db),
+    user: CurrentUser = Depends(get_current_user),
+) -> JSONResponse:
+    service = _reminder_service(db, user)
+    try:
+        reminder = service.find_by_source(source=source, external_id=external_id)
+    except ReminderNotFoundError:
+        return _source_not_found(source, external_id)
+    except ValueError as error:
+        return _validation_error(str(error))
+
+    body = ApiResponse(data=ReminderDetailResult(reminder=reminder))
+    return JSONResponse(status_code=200, content=body.model_dump(by_alias=True))
 
 
 @router.get("/{reminder_id}")
@@ -144,13 +177,16 @@ def create_reminder(
 
     def handler() -> JSONResponse:
         try:
-            reminder = service.create(input_data)
+            reminder, created = service.create(input_data)
         except ContactNotFoundError as error:
             return _contact_not_found(str(error))
         except ValueError as error:
             return _validation_error(str(error))
-        body = ApiResponse(data=CreateReminderResult(reminder=reminder))
-        return JSONResponse(status_code=201, content=body.model_dump(by_alias=True))
+        body = ApiResponse(data=CreateReminderResult(reminder=reminder, created=created))
+        return JSONResponse(
+            status_code=201 if created else 200,
+            content=body.model_dump(by_alias=True),
+        )
 
     return run_write(
         db,

@@ -15,6 +15,10 @@
       <view wx:if="{{notesExpanded}}" class="form-row stack">
         <textarea class="form-textarea" placeholder="可选" value="{{notes}}" maxlength="1000" auto-height bindinput="onNotesInput" />
       </view>
+      <view wx:if="{{sourceLabel}}" class="form-row">
+        <text class="form-label">来源</text>
+        <text class="form-value muted">{{sourceLabel}}</text>
+      </view>
       <view wx:if="{{!isCompleted}}" class="form-row">
         <text class="form-label">截止时间</text>
         <switch checked="{{hasDue}}" bindchange="onDueToggle" color="{{switchColor}}" />

@@ -227,6 +227,76 @@ def test_cli_reminder_show_update_delete(cli_runner: CliRunner, demo_suffix: str
     assert missing.returncode != 0 or missing.json()["ok"] is False
 
 
+def test_cli_reminder_source_lookup_flow(cli_runner: CliRunner, demo_suffix: str) -> None:
+    external_id = f"mail-{demo_suffix}"
+    create = cli_runner.run(
+        "reminder",
+        "create",
+        "--title",
+        f"Source Mail {demo_suffix}",
+        "--source",
+        "email",
+        "--external-id",
+        external_id,
+        "--source-meta",
+        '{"subject":"hello"}',
+        json_output=True,
+    )
+    assert create.returncode == 0, create.stderr
+    created = create.json()["data"]
+    reminder_id = created["reminder"]["id"]
+    assert created["created"] is True
+    assert created["reminder"]["source"] == "email"
+    assert created["reminder"]["externalId"] == external_id
+    assert created["reminder"]["sourceMeta"]["subject"] == "hello"
+
+    duplicate = cli_runner.run(
+        "reminder",
+        "create",
+        "--title",
+        f"Source Mail Duplicate {demo_suffix}",
+        "--source",
+        "email",
+        "--external-id",
+        external_id,
+        json_output=True,
+    )
+    assert duplicate.returncode == 0, duplicate.stderr
+    duplicated = duplicate.json()["data"]
+    assert duplicated["created"] is False
+    assert duplicated["reminder"]["id"] == reminder_id
+
+    found = cli_runner.run(
+        "reminder",
+        "find",
+        "--source",
+        "email",
+        "--external-id",
+        external_id,
+        json_output=True,
+    )
+    assert found.returncode == 0, found.stderr
+    assert found.json()["data"]["reminder"]["id"] == reminder_id
+
+    listed = cli_runner.run("reminder", "list", "--source", "email", json_output=True)
+    assert listed.returncode == 0, listed.stderr
+    items = listed.json()["data"]["items"]
+    assert any(item["id"] == reminder_id for item in items)
+
+    done = cli_runner.run(
+        "reminder",
+        "done",
+        "--source",
+        "email",
+        "--external-id",
+        external_id,
+        json_output=True,
+    )
+    assert done.returncode == 0, done.stderr
+    assert done.json()["data"]["reminder"]["id"] == reminder_id
+    assert done.json()["data"]["reminder"]["status"] == "completed"
+
+
 def test_cli_contact_show_update(cli_runner: CliRunner, demo_suffix: str) -> None:
     create = cli_runner.run(
         "contact",

@@ -1,6 +1,17 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+    text,
+)
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
@@ -109,6 +120,17 @@ class IdempotencyRecordModel(Base):
 
 class ReminderModel(Base):
     __tablename__ = "reminders"
+    __table_args__ = (
+        Index(
+            "uq_reminders_user_source_external_id",
+            "user_id",
+            "source",
+            "external_id",
+            unique=True,
+            sqlite_where=text("source IS NOT NULL AND external_id IS NOT NULL"),
+            postgresql_where=text("source IS NOT NULL AND external_id IS NOT NULL"),
+        ),
+    )
 
     id: Mapped[str] = mapped_column(String(64), primary_key=True)
     user_id: Mapped[str] = mapped_column(
@@ -122,6 +144,9 @@ class ReminderModel(Base):
     status: Mapped[str] = mapped_column(String(32), nullable=False, default="pending")
     due_at: Mapped[str | None] = mapped_column(String(64), nullable=True)
     remind_at: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    source: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+    external_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    source_meta: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

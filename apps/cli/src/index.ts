@@ -75,6 +75,8 @@ async function main(): Promise<void> {
         await reminder.runReminderList(ctx, argv);
       } else if (action === "show") {
         await reminder.runReminderShow(ctx, argv);
+      } else if (action === "find") {
+        await reminder.runReminderFind(ctx, argv);
       } else if (action === "done" || action === "complete") {
         await reminder.runReminderDone(ctx, argv);
       } else if (action === "update") {
@@ -84,7 +86,7 @@ async function main(): Promise<void> {
       } else if (action === "delete") {
         await reminder.runReminderDelete(ctx, argv);
       } else {
-        console.error("Usage: ai-todo reminder <create|list|show|done|update|reschedule|delete>");
+        console.error("Usage: ai-todo reminder <create|list|show|find|done|update|reschedule|delete>");
         process.exitCode = 1;
       }
       break;

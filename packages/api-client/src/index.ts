@@ -110,6 +110,9 @@ export class AiTodoClient {
     if (params.status) {
       search.set("status", params.status);
     }
+    if (params.source) {
+      search.set("source", params.source);
+    }
     if (params.from) {
       search.set("from", params.from);
     }
@@ -127,6 +130,16 @@ export class AiTodoClient {
     }
     const query = search.toString();
     return this.request<ReminderListResult>(`/v1/reminders${query ? `?${query}` : ""}`);
+  }
+
+  findReminderBySource(
+    source: string,
+    externalId: string
+  ): Promise<ApiResponse<ReminderDetailResult>> {
+    const search = new URLSearchParams();
+    search.set("source", source);
+    search.set("externalId", externalId);
+    return this.request<ReminderDetailResult>(`/v1/reminders/lookup?${search.toString()}`);
   }
 
   listRemindersToday(): Promise<ApiResponse<ReminderListResult>> {

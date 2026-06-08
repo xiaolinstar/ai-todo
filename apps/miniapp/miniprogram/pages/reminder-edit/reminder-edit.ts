@@ -17,6 +17,7 @@ Page({
     title: "",
     notes: "",
     notesExpanded: false,
+    sourceLabel: "",
     hasDue: true,
     dueDate: "",
     dueTime: "",
@@ -57,6 +58,7 @@ Page({
           title: reminder.title || "",
           notes: reminder.notes || "",
           notesExpanded: Boolean(reminder.notes),
+          sourceLabel: formatSourceLabel(reminder.source, reminder.externalId),
           hasDue: isCompleted ? false : hasDue,
           dueDate: date,
           dueTime: time,
@@ -175,3 +177,20 @@ Page({
       });
   }
 });
+
+function formatSourceLabel(source?: string, externalId?: string): string {
+  if (!source || !externalId) {
+    return "";
+  }
+  const sourceNames: Record<string, string> = {
+    email: "邮件",
+    wechat: "微信",
+    wechat_message: "微信消息",
+    work_order: "工单",
+    ticket: "工单",
+    tencent_doc: "腾讯文档",
+    manual: "手动"
+  };
+  const name = sourceNames[source] || source;
+  return `${name} · ${externalId}`;
+}

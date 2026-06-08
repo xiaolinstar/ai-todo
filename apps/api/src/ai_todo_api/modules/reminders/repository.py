@@ -29,6 +29,22 @@ class ReminderRepository:
             statement = statement.where(ReminderModel.deleted_at.is_(None))
         return self._session.scalar(statement)
 
+    def find_by_source(
+        self,
+        *,
+        source: str,
+        external_id: str,
+        include_deleted: bool = False,
+    ) -> ReminderModel | None:
+        statement = select(ReminderModel).where(
+            ReminderModel.user_id == self._user_id,
+            ReminderModel.source == source,
+            ReminderModel.external_id == external_id,
+        )
+        if not include_deleted:
+            statement = statement.where(ReminderModel.deleted_at.is_(None))
+        return self._session.scalar(statement)
+
     def list_active(self, *, limit: int = 100) -> list[ReminderModel]:
         return self.list_page(limit=limit).items
 
@@ -36,6 +52,7 @@ class ReminderRepository:
         self,
         *,
         status: str | None = None,
+        source: str | None = None,
         limit: int = 50,
         cursor: str | None = None,
     ) -> ListPage[ReminderModel]:
@@ -45,6 +62,8 @@ class ReminderRepository:
         )
         if status:
             statement = statement.where(ReminderModel.status == status)
+        if source:
+            statement = statement.where(ReminderModel.source == source)
 
         total_count = int(
             self._session.scalar(select(func.count()).select_from(statement.subquery())) or 0
@@ -79,6 +98,7 @@ class ReminderRepository:
         self,
         *,
         status: str | None = None,
+        source: str | None = None,
         sort: str = "due_at",
         limit: int | None = None,
     ) -> list[ReminderModel]:
@@ -88,6 +108,8 @@ class ReminderRepository:
         )
         if status:
             statement = statement.where(ReminderModel.status == status)
+        if source:
+            statement = statement.where(ReminderModel.source == source)
 
         if sort == "completed_at":
             statement = statement.order_by(
@@ -109,13 +131,15 @@ class ReminderRepository:
             statement = statement.limit(limit)
         return list(self._session.scalars(statement))
 
-    def count_active(self, *, status: str | None = None) -> int:
+    def count_active(self, *, status: str | None = None, source: str | None = None) -> int:
         statement = select(ReminderModel).where(
             ReminderModel.user_id == self._user_id,
             ReminderModel.deleted_at.is_(None),
         )
         if status:
             statement = statement.where(ReminderModel.status == status)
+        if source:
+            statement = statement.where(ReminderModel.source == source)
         return int(
             self._session.scalar(select(func.count()).select_from(statement.subquery())) or 0
         )
@@ -150,6 +174,9 @@ def reminder_to_summary(
         notes=reminder.notes,
         due_at=reminder.due_at,
         remind_at=reminder.remind_at,
+        source=reminder.source,
+        external_id=reminder.external_id,
+        source_meta=reminder.source_meta,
         completed_at=_format_datetime(reminder.completed_at),
         contacts=contacts or [],
     )

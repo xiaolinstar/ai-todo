@@ -36,6 +36,9 @@ export interface ReminderSummary {
   notes?: string;
   dueAt?: string;
   remindAt?: string;
+  source?: string;
+  externalId?: string;
+  sourceMeta?: Record<string, unknown>;
   contacts?: ContactSummary[];
 }
 

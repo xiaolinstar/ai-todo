@@ -17,9 +17,11 @@ Core:
   ai-todo version
 
 Reminders:
-  ai-todo reminder create --title <text> [--due <iso>] [--remind <iso>] [--notes <text>] [--contact <id> ...]
-  ai-todo reminder list [--status pending|completed|cancelled] [--from YYYY-MM-DD] [--to YYYY-MM-DD] [--limit <n>] [--cursor <token>]
+  ai-todo reminder create --title <text> [--due <iso>] [--remind <iso>] [--notes <text>] [--source <name>] [--external-id <id>]
+  ai-todo reminder list [--status pending|completed|cancelled] [--source <name>] [--from YYYY-MM-DD] [--to YYYY-MM-DD] [--limit <n>] [--cursor <token>]
+  ai-todo reminder find --source <name> --external-id <id>
   ai-todo reminder show|done|delete <id>
+  ai-todo reminder done|delete --source <name> --external-id <id>
   ai-todo reminder update <id> [--title <text>] [--notes <text>] [--due <iso>] [--remind <iso>] [--contact <id> ...]
   ai-todo reminder reschedule <id> --due <iso> [--remind <iso>]
   ai-todo add <title>

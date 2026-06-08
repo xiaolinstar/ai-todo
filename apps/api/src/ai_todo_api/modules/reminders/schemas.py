@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Any, Literal
 
 from ai_todo_api.modules.contacts.schemas import ContactSummary
 from ai_todo_api.schemas import CamelModel
@@ -14,6 +14,9 @@ class ReminderSummary(CamelModel):
     notes: str | None = None
     due_at: str | None = None
     remind_at: str | None = None
+    source: str | None = None
+    external_id: str | None = None
+    source_meta: dict[str, Any] | None = None
     completed_at: str | None = None
     contacts: list[ContactSummary] = []
 
@@ -23,11 +26,15 @@ class CreateReminderInput(CamelModel):
     notes: str | None = None
     due_at: str | None = None
     remind_at: str | None = None
+    source: str | None = None
+    external_id: str | None = None
+    source_meta: dict[str, Any] | None = None
     contact_ids: list[str] = []
 
 
 class CreateReminderResult(CamelModel):
     reminder: ReminderSummary
+    created: bool = True
 
 
 class CompleteReminderResult(CamelModel):

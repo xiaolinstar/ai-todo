@@ -145,6 +145,9 @@ export interface ReminderSummary {
   notes?: string;
   dueAt?: string;
   remindAt?: string;
+  source?: string;
+  externalId?: string;
+  sourceMeta?: Record<string, unknown>;
   completedAt?: string;
   contacts?: ContactSummary[];
 }
@@ -154,11 +157,15 @@ export interface CreateReminderInput {
   notes?: string;
   dueAt?: string;
   remindAt?: string;
+  source?: string;
+  externalId?: string;
+  sourceMeta?: Record<string, unknown>;
   contactIds?: EntityId[];
 }
 
 export interface CreateReminderResult {
   reminder: ReminderSummary;
+  created?: boolean;
 }
 
 export interface CompleteReminderResult {
@@ -205,6 +212,7 @@ export interface DeleteReminderResult {
 
 export interface ListRemindersParams {
   status?: ReminderStatus;
+  source?: string;
   from?: string;
   to?: string;
   limit?: number;

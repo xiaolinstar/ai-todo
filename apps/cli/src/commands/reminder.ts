@@ -15,9 +15,14 @@ export async function runReminderCreate(ctx: CliContext, argv: string[]): Promis
   const title = readFlagValue(argv, "--title") ?? positionalAfter(argv, "add", "create");
   if (!title) {
     console.error(
-      "Usage: ai-todo reminder create --title <text> [--due <iso>] [--contact <contact_id> ...]"
+      "Usage: ai-todo reminder create --title <text> [--due <iso>] [--source <name>] [--external-id <id>]"
     );
     process.exitCode = 1;
+    return;
+  }
+
+  const sourceMeta = readSourceMeta(argv);
+  if (process.exitCode) {
     return;
   }
 
@@ -28,14 +33,20 @@ export async function runReminderCreate(ctx: CliContext, argv: string[]): Promis
       dueAt: readFlagValue(argv, "--due"),
       remindAt: readFlagValue(argv, "--remind"),
       notes: readFlagValue(argv, "--notes"),
+      source: readFlagValue(argv, "--source"),
+      externalId: readFlagValue(argv, "--external-id"),
+      sourceMeta,
       contactIds: readRepeatedFlag(argv, "--contact")
     }),
     (data) => {
       if (!ctx.json) {
-        console.log(`已创建提醒：${data.reminder.title}`);
+        console.log(`${data.created === false ? "已存在提醒" : "已创建提醒"}：${data.reminder.title}`);
         console.log(`ID：${data.reminder.id}`);
         if (data.reminder.dueAt) {
           console.log(`截止：${data.reminder.dueAt}`);
+        }
+        if (data.reminder.source && data.reminder.externalId) {
+          console.log(`来源：${data.reminder.source} / ${data.reminder.externalId}`);
         }
       }
     }
@@ -54,6 +65,7 @@ export async function runReminderList(ctx: CliContext, argv: string[]): Promise<
     ctx,
     await ctx.client.listReminders({
       status,
+      source: readFlagValue(argv, "--source"),
       from: readFlagValue(argv, "--from"),
       to: readFlagValue(argv, "--to"),
       limit,
@@ -72,6 +84,22 @@ export async function runReminderList(ctx: CliContext, argv: string[]): Promise<
       });
     }
   );
+}
+
+export async function runReminderFind(ctx: CliContext, argv: string[]): Promise<void> {
+  const source = readFlagValue(argv, "--source");
+  const externalId = readFlagValue(argv, "--external-id");
+  if (!source || !externalId) {
+    console.error("Usage: ai-todo reminder find --source <name> --external-id <id>");
+    process.exitCode = 1;
+    return;
+  }
+  await handleApi(ctx, await ctx.client.findReminderBySource(source, externalId), (data) => {
+    if (ctx.json) {
+      return;
+    }
+    renderReminderDetail(data.reminder);
+  });
 }
 
 export async function runReminderShow(ctx: CliContext, argv: string[]): Promise<void> {
@@ -94,6 +122,9 @@ export async function runReminderShow(ctx: CliContext, argv: string[]): Promise<
     if (r.remindAt) {
       console.log(`通知：${r.remindAt}`);
     }
+    if (r.source && r.externalId) {
+      console.log(`来源：${r.source} / ${r.externalId}`);
+    }
     if (r.notes) {
       console.log(`备注：${r.notes}`);
     }
@@ -106,9 +137,9 @@ export async function runReminderShow(ctx: CliContext, argv: string[]): Promise<
 }
 
 export async function runReminderDone(ctx: CliContext, argv: string[]): Promise<void> {
-  const id = positionalAfter(argv, "done", "complete");
+  const id = await resolveReminderId(ctx, argv, "done", "complete");
   if (!id) {
-    console.error("Usage: ai-todo reminder done <reminder_id>");
+    console.error("Usage: ai-todo reminder done <reminder_id> OR --source <name> --external-id <id>");
     process.exitCode = 1;
     return;
   }
@@ -121,10 +152,10 @@ export async function runReminderDone(ctx: CliContext, argv: string[]): Promise<
 }
 
 export async function runReminderUpdate(ctx: CliContext, argv: string[]): Promise<void> {
-  const id = positionalAfter(argv, "update");
+  const id = await resolveReminderId(ctx, argv, "update");
   if (!id) {
     console.error(
-      "Usage: ai-todo reminder update <reminder_id> [--title <text>] [--notes <text>] [--due <iso>] [--remind <iso>] [--contact <contact_id_or_handle> ...]"
+      "Usage: ai-todo reminder update <reminder_id> [--title <text>] OR --source <name> --external-id <id> [fields]"
     );
     process.exitCode = 1;
     return;
@@ -173,11 +204,13 @@ export async function runReminderUpdate(ctx: CliContext, argv: string[]): Promis
 }
 
 export async function runReminderReschedule(ctx: CliContext, argv: string[]): Promise<void> {
-  const id = positionalAfter(argv, "reschedule");
+  const id = await resolveReminderId(ctx, argv, "reschedule");
   const due = readFlagValue(argv, "--due");
   const remind = readFlagValue(argv, "--remind");
   if (!id || (!due && !remind)) {
-    console.error("Usage: ai-todo reminder reschedule <reminder_id> --due <iso> [--remind <iso>]");
+    console.error(
+      "Usage: ai-todo reminder reschedule <reminder_id> --due <iso> OR --source <name> --external-id <id> --due <iso>"
+    );
     process.exitCode = 1;
     return;
   }
@@ -196,9 +229,9 @@ export async function runReminderReschedule(ctx: CliContext, argv: string[]): Pr
 }
 
 export async function runReminderDelete(ctx: CliContext, argv: string[]): Promise<void> {
-  const id = positionalAfter(argv, "delete");
+  const id = await resolveReminderId(ctx, argv, "delete");
   if (!id) {
-    console.error("Usage: ai-todo reminder delete <reminder_id>");
+    console.error("Usage: ai-todo reminder delete <reminder_id> OR --source <name> --external-id <id>");
     process.exitCode = 1;
     return;
   }
@@ -207,6 +240,83 @@ export async function runReminderDelete(ctx: CliContext, argv: string[]): Promis
       console.log(`已删除提醒：${data.id}`);
     }
   });
+}
+
+function renderReminderDetail(r: {
+  id: string;
+  title: string;
+  status: ReminderStatus;
+  dueAt?: string;
+  remindAt?: string;
+  source?: string;
+  externalId?: string;
+  notes?: string;
+  contacts?: { displayName: string; handle: string }[];
+}): void {
+  console.log(`${r.title} (${r.id})`);
+  console.log(`状态：${r.status}`);
+  if (r.dueAt) {
+    console.log(`截止：${r.dueAt}`);
+  }
+  if (r.remindAt) {
+    console.log(`通知：${r.remindAt}`);
+  }
+  if (r.source && r.externalId) {
+    console.log(`来源：${r.source} / ${r.externalId}`);
+  }
+  if (r.notes) {
+    console.log(`备注：${r.notes}`);
+  }
+  if (r.contacts && r.contacts.length > 0) {
+    console.log(`联系人：${r.contacts.map((c) => `${c.displayName} (@${c.handle})`).join(", ")}`);
+  }
+}
+
+function readSourceMeta(argv: string[]): Record<string, unknown> | undefined {
+  const raw = readFlagValue(argv, "--source-meta");
+  if (!raw) {
+    return undefined;
+  }
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    if (!parsed || Array.isArray(parsed) || typeof parsed !== "object") {
+      throw new Error("source meta must be an object");
+    }
+    return parsed as Record<string, unknown>;
+  } catch {
+    console.error("--source-meta must be a JSON object, for example '{\"subject\":\"...\"}'");
+    process.exitCode = 1;
+    return undefined;
+  }
+}
+
+async function resolveReminderId(
+  ctx: CliContext,
+  argv: string[],
+  ...anchors: string[]
+): Promise<string | undefined> {
+  const id = positionalAfter(argv, ...anchors);
+  if (id) {
+    return id;
+  }
+
+  const source = readFlagValue(argv, "--source");
+  const externalId = readFlagValue(argv, "--external-id");
+  if (!source && !externalId) {
+    return undefined;
+  }
+  if (!source || !externalId) {
+    console.error("--source and --external-id must be provided together.");
+    process.exitCode = 1;
+    return undefined;
+  }
+
+  const response = await ctx.client.findReminderBySource(source, externalId);
+  if (!response.ok) {
+    await handleApi(ctx, response, () => {});
+    return undefined;
+  }
+  return response.data.reminder.id;
 }
 
 declare const process: { exitCode?: number };
