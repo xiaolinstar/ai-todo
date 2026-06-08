@@ -1,12 +1,12 @@
 {
   "name": "@ai-todo/agent-protocol",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "type": "commonjs",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsc -b tsconfig.json",
+    "build": "tsc -b tsconfig.json && node ../../scripts/ci/export-agent-tools.mjs",
     "typecheck": "tsc -b tsconfig.json",
     "lint": "tsc -b tsconfig.json"
   },

@@ -251,9 +251,14 @@ POST /v1/reminders
   "notes": "确认最终报价和交付时间",
   "due_at": "2026-05-20T10:00:00+08:00",
   "remind_at": "2026-05-20T09:30:00+08:00",
-  "contact_ids": ["contact_123"]
+  "contact_ids": ["contact_123"],
+  "source": "email",
+  "external_id": "<Message-ID>",
+  "source_meta": { "subject": "Re: 报价", "from": "client@example.com" }
 }
 ```
+
+`source` / `external_id` / `source_meta`（API 响应字段为 camelCase：`source`、`externalId`、`sourceMeta`）描述**业务来源**（邮件、工单、IM 等），与请求头 `x-client-source`（`cli` / `miniapp` / `agent`）正交。`source` 不做硬枚举；同一用户下 `source` + `external_id` 非空时唯一。重复创建命中已有记录时响应 `created: false`。
 
 `contact_ids` 为兼容早期契约保留字段名；服务端会把每一项解析为当前用户通讯录内的 `Contact.id` 或 `Contact.handle`，并最终存储真实 `contact_id`。后续如升级大版本，可考虑改名为 `contact_refs`。
 
@@ -289,8 +294,18 @@ GET /v1/reminders?status=pending&from=2026-05-19&to=2026-05-20
 - `from`
 - `to`
 - `contact_id` / `contact_handle`
+- `source` — 按业务来源分桶（如 `email`、`jira`）
+- `sort` — `created_at`（默认）、`due_at`、`completed_at`
 - `limit`
 - `cursor`
+
+### 按来源反查提醒
+
+```http
+GET /v1/reminders/lookup?source=email&externalId=<Message-ID>
+```
+
+返回单条 `reminder` 或 `404`。Agent 幂等写入应先 lookup，再决定 create 或 update。CLI：`ai-todo reminder find --source email --external-id "..."`。
 
 ### 查询今日提醒
 

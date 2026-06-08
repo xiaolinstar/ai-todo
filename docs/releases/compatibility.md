@@ -18,6 +18,7 @@
 
 | releaseTag | api | cli | miniapp | 说明 |
 |------------|-----|-----|---------|------|
+| `v0.6.1` | `0.3.0` | `0.5.0` | `0.6.0` | Agent 工具链：`agent-protocol` 0.4.0 来源工具与 guidelines、Skill/文档；无 API/小程序变更。 |
 | `v0.6.0` | `0.3.0` | `0.5.0` | `0.6.0` | Reminder 来源外键与反查：`source/externalId/sourceMeta`、lookup、source list、CLI 快捷操作；小程序只读展示来源。 |
 | `v0.5.7` | `0.2.7` | `0.4.2` | `0.5.7` | 用户隐私保护指引审核通过；DevTools 告警与分享/TabBar 样式修复。 |
 | `v0.5.6` | `0.2.7` | `0.4.2` | `0.5.6` | miniprogram-ci Node 25 兼容；上传密钥自动识别与文档。 |

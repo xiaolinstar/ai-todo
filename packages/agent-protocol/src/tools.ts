@@ -27,14 +27,58 @@ export const AI_TODO_AGENT_TOOLS: AgentToolSpec[] = [
     name: "ai_todo_reminder_create",
     description: "Create a reminder. Use ISO-8601 for dueAt in user timezone.",
     command:
-      'ai-todo reminder create --title "<title>" [--due "<iso>"] [--notes "<text>"]',
+      'ai-todo reminder create --title "<title>" [--due "<iso>"] [--notes "<text>"] [--contact <id> ...]',
     jsonFlag: "--json",
-    notes: "Prefer structured flags; do not rely on server-side NL parsing."
+    notes:
+      "Prefer structured flags; do not rely on server-side NL parsing. When the caller has a stable external key (email Message-ID, ticket id), use ai_todo_reminder_create_sourced instead."
+  },
+  {
+    name: "ai_todo_reminder_find",
+    description:
+      "Look up a reminder by business source and external id (idempotent read before create/update).",
+    command: 'ai-todo reminder find --source "<source>" --external-id "<external_id>"',
+    jsonFlag: "--json",
+    notes: "source is the business origin (email, jira, wechat), not x-client-source."
+  },
+  {
+    name: "ai_todo_reminder_create_sourced",
+    description:
+      "Create a reminder keyed by source + externalId. API returns created=false when the pair already exists.",
+    command:
+      'ai-todo reminder create --title "<title>" --source "<source>" --external-id "<external_id>" [--due "<iso>"] [--notes "<text>"] [--source-meta \'<json>\'] [--contact <id> ...]',
+    jsonFlag: "--json",
+    notes: "Run ai_todo_reminder_find first when unsure; pass --idempotency-key on writes."
+  },
+  {
+    name: "ai_todo_reminder_list_by_source",
+    description: "List reminders filtered by business source (e.g. email, jira).",
+    command: 'ai-todo reminder list --source "<source>" [--status pending|completed|cancelled]',
+    jsonFlag: "--json"
   },
   {
     name: "ai_todo_reminder_list",
     description: "List reminders; optional status pending|completed|cancelled.",
     command: "ai-todo reminder list [--status pending]",
+    jsonFlag: "--json"
+  },
+  {
+    name: "ai_todo_reminder_show",
+    description: "Get a single reminder by id.",
+    command: "ai-todo reminder show <reminder_id>",
+    jsonFlag: "--json"
+  },
+  {
+    name: "ai_todo_reminder_update",
+    description: "Update reminder title, notes, due/remind times, or linked contacts by id.",
+    command:
+      'ai-todo reminder update <reminder_id> [--title "<title>"] [--notes "<text>"] [--due "<iso>"] [--remind "<iso>"] [--contact <id> ...]',
+    jsonFlag: "--json"
+  },
+  {
+    name: "ai_todo_reminder_update_by_source",
+    description: "Update a reminder located by source + externalId.",
+    command:
+      'ai-todo reminder update --source "<source>" --external-id "<external_id>" [--title "<title>"] [--notes "<text>"] [--due "<iso>"] [--remind "<iso>"] [--contact <id> ...]',
     jsonFlag: "--json"
   },
   {
@@ -44,15 +88,34 @@ export const AI_TODO_AGENT_TOOLS: AgentToolSpec[] = [
     jsonFlag: "--json"
   },
   {
+    name: "ai_todo_reminder_complete_by_source",
+    description: "Mark a reminder completed by source + externalId.",
+    command: 'ai-todo reminder done --source "<source>" --external-id "<external_id>"',
+    jsonFlag: "--json"
+  },
+  {
     name: "ai_todo_reminder_reschedule",
-    description: "Reschedule reminder due/remind times.",
-    command: 'ai-todo reminder reschedule <reminder_id> --due "<iso>"',
+    description: "Reschedule reminder due/remind times by id.",
+    command: 'ai-todo reminder reschedule <reminder_id> --due "<iso>" [--remind "<iso>"]',
+    jsonFlag: "--json"
+  },
+  {
+    name: "ai_todo_reminder_reschedule_by_source",
+    description: "Reschedule a reminder by source + externalId.",
+    command:
+      'ai-todo reminder reschedule --source "<source>" --external-id "<external_id>" --due "<iso>" [--remind "<iso>"]',
     jsonFlag: "--json"
   },
   {
     name: "ai_todo_reminder_delete",
-    description: "Soft-delete a reminder.",
+    description: "Soft-delete a reminder by id.",
     command: "ai-todo reminder delete <reminder_id>",
+    jsonFlag: "--json"
+  },
+  {
+    name: "ai_todo_reminder_delete_by_source",
+    description: "Soft-delete a reminder by source + externalId.",
+    command: 'ai-todo reminder delete --source "<source>" --external-id "<external_id>"',
     jsonFlag: "--json"
   },
   {
@@ -103,5 +166,10 @@ export const AI_TODO_AGENT_GUIDELINES = [
   "On contact name ambiguity, run contact search and ask the user to pick an id.",
   "Set AI_TODO_TOKEN or ~/.ai-todo/settings.json (url + token) before agent calls.",
   "Set AI_TODO_API_URL if the API is not on http://127.0.0.1:3100.",
-  "Exit code is non-zero when the API returns ok: false."
+  "Exit code is non-zero when the API returns ok: false.",
+  "source and external_id identify the business origin (email, jira, wechat message); they are not the HTTP x-client-source header (cli, miniapp, agent).",
+  "Idempotent writes: run reminder find --source ... --external-id ... first; if found, update/done/delete by source; otherwise create with --source and --external-id.",
+  "source_meta is optional JSON for display/audit only (e.g. email subject); the API does not parse natural language from it.",
+  "source is not a fixed enum; use a stable lowercase slug per integrating system.",
+  "Pass --idempotency-key <uuid> (or HTTP Idempotency-Key) on create/update writes to survive agent retries."
 ] as const;

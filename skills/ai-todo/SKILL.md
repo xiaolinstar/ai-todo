@@ -1,6 +1,6 @@
 ---
 name: ai-todo
-description: Manage personal reminders, calendar events, and contacts via the ai-todo structured CLI. Use when the user asks about todos, reminders, schedule, today agenda, contacts, or wants OpenClaw/Claude to create, list, complete, or reschedule items. Do not expect server-side natural language parsing—parse time and titles in the agent, then call ai-todo with --json.
+description: Manage personal reminders, calendar events, and contacts via the ai-todo structured CLI. Use when the user asks about todos, reminders, schedule, today agenda, contacts, or wants OpenClaw/Claude to create, list, complete, or reschedule items. For email/ticket/jira integrations, use source + external-id for idempotent reminder writes. Do not expect server-side natural language parsing—parse time and titles in the agent, then call ai-todo with --json.
 ---
 
 # ai-todo Agent Skill
@@ -13,6 +13,8 @@ description: Manage personal reminders, calendar events, and contacts via the ai
 4. **Contacts**: run `ai-todo contact search "<name>" --json` before writes; if multiple matches, ask the user to pick `contact_id`.
 5. **Auth**: write `~/.ai-todo/settings.json` (`url` + `token` from miniapp PAT) or `export AI_TODO_TOKEN` for agents. No `login` step in normal flow.
 6. After setup, commands need **no** `--url`; connection comes from settings or env.
+7. **External source keys** (`--source` + `--external-id`): use for email Message-ID, ticket ids, etc. Run `reminder find` before create to avoid duplicates. `source` is the business origin (`email`, `jira`), not the HTTP client type.
+8. **Writes**: pass `--idempotency-key <uuid>` when the host supports it.
 
 ## Setup check
 
@@ -36,12 +38,18 @@ Expect `ok: true` and `data.user.id` (dev: `user_dev`).
 |------|---------|
 | Today overview | `ai-todo today --json` |
 | Create reminder | `ai-todo reminder create --title "…" [--due "…"] [--contact <id> ...] --json` |
+| Find by source | `ai-todo reminder find --source "<source>" --external-id "<id>" --json` |
+| Create with source | `ai-todo reminder create --title "…" --source "<source>" --external-id "<id>" [--source-meta '{"subject":"…"}'] --json` |
+| List by source | `ai-todo reminder list --source "<source>" [--status pending] --json` |
 | List reminders | `ai-todo reminder list [--status pending] --json` |
 | Show reminder | `ai-todo reminder show <reminder_id> --json` |
 | Update reminder | `ai-todo reminder update <id> [--title "…"] [--notes "…"] [--due "…"] [--remind "…"] [--contact <id> ...] --json` |
+| Update by source | `ai-todo reminder update --source "<source>" --external-id "<id>" [--title "…"] [--due "…"] --json` |
 | Complete | `ai-todo reminder done <reminder_id> --json` |
+| Complete by source | `ai-todo reminder done --source "<source>" --external-id "<id>" --json` |
 | Reschedule | `ai-todo reminder reschedule <id> --due "…" [--remind "…"] --json` |
 | Delete reminder | `ai-todo reminder delete <id> --json` |
+| Delete by source | `ai-todo reminder delete --source "<source>" --external-id "<id>" --json` |
 | Create event | `ai-todo calendar add --title "…" --start "…" [--end "…"] [--contact <id> ...] --json` |
 | Update event | `ai-todo calendar update <event_id> [--title "…"] [--start "…"] --json` |
 | Today events | `ai-todo calendar today --json` |
@@ -52,6 +60,8 @@ Expect `ok: true` and `data.user.id` (dev: `user_dev`).
 
 Shorthand (human): `ai-todo add "title only"` creates a reminder without due date (shows in today).
 
+Programmatic catalog: `@ai-todo/agent-protocol` or `packages/agent-protocol/dist/agent-tools.json`.
+
 ## Example: user request → commands
 
 User: 「明天上午十点提醒我给王总发报价邮件」
@@ -61,11 +71,18 @@ User: 「明天上午十点提醒我给王总发报价邮件」
 3. `ai-todo reminder create --title "给客户王总发报价邮件" --due "2026-05-21T10:00:00+08:00" --contact <contact_id> --json`
 4. Reply with `data.reminder.id` and summary
 
-User: 「晚上 6 点联系小明完成作业」
+User: 「把这封邮件做成待办，别重复建」
 
-1. `ai-todo contact search "小明" --json` → pick `contact_id`
-2. `ai-todo reminder create --title "联系小明完成作业" --due "2026-05-20T18:00:00+08:00" --contact <contact_id> --json`
-3. Response includes `data.reminder.contacts[]` with display name and primary email for later email-cli
+1. Parse email `Message-ID`, subject, suggested due time in the agent
+2. `ai-todo reminder find --source email --external-id "<Message-ID>" --json`
+3. If found → `reminder update --source email --external-id "<Message-ID>" --title "…" --due "…" --json`
+4. Else → `reminder create --title "…" --source email --external-id "<Message-ID>" --source-meta '{"subject":"…"}' --due "…" --json`
+5. If `data.created` is `false`, treat as existing row and run `find` again
+
+User: 「JIRA PROJ-123 关单了，对应提醒勾掉」
+
+1. `ai-todo reminder find --source jira --external-id "PROJ-123" --json`
+2. `ai-todo reminder done --source jira --external-id "PROJ-123" --json`
 
 User: 「今天有什么安排」
 
@@ -75,7 +92,7 @@ User: 「今天有什么安排」
 ## Errors
 
 - If `ok: false`, show `error.code` and `error.message`; do not retry blindly on `VALIDATION_ERROR`.
-- `NOT_FOUND` → id may be wrong or deleted.
+- `NOT_FOUND` → id may be wrong or deleted; for source lookups, create instead of update.
 
 ## More detail
 

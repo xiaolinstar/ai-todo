@@ -113,6 +113,65 @@ ai-todo reminder delete rem_xxx --json
 
 `reminder update` 与 `reminder reschedule` 均可改 `dueAt` / `remindAt`；仅改时间时二者等价，`update` 还可同时改标题、备注与关联联系人。
 
+## 外部来源与幂等（v0.6.0+）
+
+邮件 Agent、工单 Agent 等外部系统写入提醒时，应使用 **`source` + `externalId`** 作为稳定业务键，而不是仅靠标题去重。
+
+| 字段 | 含义 |
+|------|------|
+| `source` | 业务来源 slug，如 `email`、`jira`、`wechat`（**不是** HTTP 头 `x-client-source`） |
+| `externalId` | 外部系统主键，如邮件 `Message-ID`、工单 `PROJ-123` |
+| `sourceMeta` | 可选 JSON，仅展示/审计（`subject`、`from` 等）；服务端不做 NL 解析 |
+
+### 推荐流程
+
+```text
+find --source … --external-id …
+  → 存在：update / done / delete（可用 --source 代替 reminder id）
+  → 不存在：create --source … --external-id … [--source-meta '…']
+  → create 返回 created:false：并发下已存在，再 find 一次
+```
+
+写操作建议带 `--idempotency-key <uuid>`（或 HTTP `Idempotency-Key`），避免 Agent 重试产生重复副作用。
+
+### 邮件 → 提醒
+
+```bash
+MSG_ID='<cabinet@example.com>'
+ai-todo reminder find --source email --external-id "$MSG_ID" --json
+
+ai-todo reminder create \
+  --title "回复客户报价邮件" \
+  --source email \
+  --external-id "$MSG_ID" \
+  --source-meta '{"subject":"Re: Quote","from":"client@example.com"}' \
+  --due "2026-05-21T10:00:00+08:00" \
+  --idempotency-key "$(uuidgen)" \
+  --json
+```
+
+### 工单关闭 → 完成提醒
+
+```bash
+ai-todo reminder done --source jira --external-id "PROJ-123" --json
+```
+
+### 按来源浏览
+
+```bash
+ai-todo reminder list --source email --status pending --json
+```
+
+### HTTP 对照
+
+| CLI | API |
+|-----|-----|
+| `reminder find --source S --external-id E` | `GET /v1/reminders/lookup?source=S&externalId=E` |
+| `reminder list --source S` | `GET /v1/reminders?source=S` |
+| `create … --source S --external-id E` | `POST /v1/reminders` body 含 `source`、`external_id` |
+
+工具规格见 `@ai-todo/agent-protocol`（`AI_TODO_AGENT_TOOLS`）或 `packages/agent-protocol/dist/agent-tools.json`。
+
 ## 命令索引
 
 | 意图 | 命令 |
@@ -120,13 +179,14 @@ ai-todo reminder delete rem_xxx --json
 | CLI / API 版本 | `ai-todo version --json`；API：`GET /v1/health` → `apiVersion` |
 | 当前用户 | `ai-todo whoami --json` |
 | 今日聚合 | `ai-todo today --json` |
-| 创建提醒 | `ai-todo reminder create --title … [--due …] [--contact …]` |
-| 提醒列表 | `ai-todo reminder list [--status pending]` |
+| 创建提醒 | `ai-todo reminder create --title … [--due …] [--contact …] [--source …] [--external-id …]` |
+| 按来源查找 | `ai-todo reminder find --source … --external-id …` |
+| 提醒列表 | `ai-todo reminder list [--status pending] [--source …]` |
 | 查看提醒 | `ai-todo reminder show <id>` |
-| 更新提醒 | `ai-todo reminder update <id> [--title …] [--notes …] [--due …] [--remind …] [--contact …]` |
-| 完成提醒 | `ai-todo reminder done <id>` |
-| 改期提醒 | `ai-todo reminder reschedule <id> --due … [--remind …]` |
-| 删除提醒 | `ai-todo reminder delete <id>` |
+| 更新提醒 | `ai-todo reminder update <id> …` 或 `--source … --external-id …` |
+| 完成提醒 | `ai-todo reminder done <id>` 或 `--source … --external-id …` |
+| 改期提醒 | `ai-todo reminder reschedule <id> --due …` 或 `--source … --external-id …` |
+| 删除提醒 | `ai-todo reminder delete <id>` 或 `--source … --external-id …` |
 | 创建日程 | `ai-todo calendar add --title … --start …` |
 | 更新日程 | `ai-todo calendar update <id> [--title …] [--start …]` |
 | 今日日程 | `ai-todo calendar today --json` |
@@ -165,6 +225,8 @@ TypeScript 导出见 `@ai-todo/agent-protocol`：
 ```ts
 import { AI_TODO_AGENT_TOOLS, AI_TODO_AGENT_GUIDELINES } from "@ai-todo/agent-protocol";
 ```
+
+构建后 JSON 导出：`packages/agent-protocol/dist/agent-tools.json`（`pnpm --filter @ai-todo/agent-protocol build`）。
 
 ## 安装 Skill（Cursor / Claude）
 
