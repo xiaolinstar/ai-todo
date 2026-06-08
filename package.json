@@ -17,6 +17,8 @@
     "clean:wechat": "pnpm --filter @ai-todo/miniapp clean",
     "check:wechat": "pnpm --filter @ai-todo/miniapp check",
     "miniapp:preview": "pnpm --filter @ai-todo/miniapp preview",
-    "miniapp:upload": "pnpm --filter @ai-todo/miniapp upload"
+    "miniapp:upload": "pnpm --filter @ai-todo/miniapp upload",
+    "mcp:build": "pnpm --filter @ai-todo/mcp build",
+    "mcp:smoke": "pnpm --filter @ai-todo/mcp smoke"
   }
 }

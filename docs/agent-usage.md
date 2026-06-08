@@ -218,6 +218,16 @@ ai-todo reminder list --source email --status pending --json
 
 常见 `error.code`：`VALIDATION_ERROR`、`NOT_FOUND`、`CONTACT_NOT_FOUND`。
 
+## MCP 接入（v0.6.2+）
+
+Cursor / Claude Desktop 可通过 **stdio MCP** 调用 ai-todo，无需模型拼 shell。Server 包装 `ai-todo --json`，鉴权与 CLI 相同。
+
+```bash
+pnpm mcp:build
+```
+
+配置示例与工具列表见 [mcp-setup.md](./mcp-setup.md)。有 MCP 时优先用 MCP tools；否则用 Skill + shell。
+
 ## 工具清单（程序化）
 
 TypeScript 导出见 `@ai-todo/agent-protocol`：

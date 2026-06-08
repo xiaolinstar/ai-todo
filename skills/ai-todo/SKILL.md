@@ -1,6 +1,6 @@
 ---
 name: ai-todo
-description: Manage personal reminders, calendar events, and contacts via the ai-todo structured CLI. Use when the user asks about todos, reminders, schedule, today agenda, contacts, or wants OpenClaw/Claude to create, list, complete, or reschedule items. For email/ticket/jira integrations, use source + external-id for idempotent reminder writes. Do not expect server-side natural language parsing—parse time and titles in the agent, then call ai-todo with --json.
+description: Manage personal reminders, calendar events, and contacts via the ai-todo structured CLI or MCP server. Use when the user asks about todos, reminders, schedule, today agenda, contacts, or wants OpenClaw/Claude to create, list, complete, or reschedule items. For email/ticket/jira integrations, use source + external-id for idempotent reminder writes. Prefer MCP tools when configured (see docs/mcp-setup.md); otherwise call ai-todo with --json. Do not expect server-side natural language parsing.
 ---
 
 # ai-todo Agent Skill
@@ -61,6 +61,8 @@ Expect `ok: true` and `data.user.id` (dev: `user_dev`).
 Shorthand (human): `ai-todo add "title only"` creates a reminder without due date (shows in today).
 
 Programmatic catalog: `@ai-todo/agent-protocol` or `packages/agent-protocol/dist/agent-tools.json`.
+
+**MCP** (recommended when available): configure `ai-todo-mcp` per `docs/mcp-setup.md` — tools `whoami`, `today`, `reminder_find`, `reminder_create_sourced`, etc.
 
 ## Example: user request → commands
 

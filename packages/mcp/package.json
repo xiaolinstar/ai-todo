@@ -1,0 +1,29 @@
+{
+  "name": "@ai-todo/mcp",
+  "version": "0.1.0",
+  "private": true,
+  "description": "stdio MCP server for ai-todo (wraps ai-todo CLI)",
+  "type": "commonjs",
+  "bin": {
+    "ai-todo-mcp": "dist/index.js"
+  },
+  "files": [
+    "dist/index.js",
+    "dist/index.js.map"
+  ],
+  "scripts": {
+    "build": "node scripts/bundle.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "tsc -p tsconfig.json --noEmit",
+    "smoke": "node scripts/smoke.mjs"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "esbuild": "^0.25.0",
+    "typescript": "^5.6.3"
+  }
+}

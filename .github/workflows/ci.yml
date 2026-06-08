@@ -39,6 +39,9 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm typecheck
       - run: pnpm lint
+      - run: pnpm --filter @xiaolinstar/ai-todo-cli build
+      - run: pnpm mcp:build
+      - run: pnpm mcp:smoke
       - name: Verify deploy manifest tooling
         run: node scripts/ci/smoke-deploy-manifest.mjs
 
