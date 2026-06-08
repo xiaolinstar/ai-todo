@@ -14,7 +14,10 @@ from typing import Any
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Post-deploy public API verification")
-    parser.add_argument("--base-url", default=os.environ.get("CD_PUBLIC_API_URL", "").strip())
+    parser.add_argument(
+        "--base-url",
+        default=os.environ.get("CD_PUBLIC_API_URL", "https://xingxiaolin.cn").strip(),
+    )
     parser.add_argument("--expect-git-sha", default="")
     parser.add_argument(
         "--skip-git-sha-check",

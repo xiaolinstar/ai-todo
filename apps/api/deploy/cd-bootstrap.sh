@@ -3,6 +3,8 @@
 # Expects deploy secrets/env from ssh-action (FINGERPRINT, CI_RUN_ID, DEPLOY_MODE_INPUT, …).
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 echo "CD action=${AI_TODO_CD_ACTION:-deploy} fingerprint=${FINGERPRINT:-} ci_run=${CI_RUN_ID:-} deploy_mode_input=${DEPLOY_MODE_INPUT:-auto}"
 
 if [[ "${AI_TODO_CD_ACTION:-deploy}" == "rollback" ]]; then
@@ -32,5 +34,4 @@ case "$deploy_mode_input" in
     ;;
 esac
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 exec bash "$SCRIPT_DIR/remote-deploy.sh"
