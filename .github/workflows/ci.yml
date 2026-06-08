@@ -9,6 +9,8 @@ on:
 env:
   # GitHub Actions runner: use Node 24 for action runtimes (Node 20 deprecation)
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  NODE_VERSION: "24"
+  PYTHON_VERSION: "3.11"
   REGISTRY: ghcr.io
   API_IMAGE_NAME: ghcr.io/xiaolinstar/ai-todo-api
 
@@ -31,25 +33,14 @@ jobs:
 
       - uses: actions/setup-node@v5
         with:
-          node-version: "24"
+          node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
       - run: pnpm typecheck
       - run: pnpm lint
       - name: Verify deploy manifest tooling
-        run: |
-          TMP_DIR="$(mktemp -d)"
-          cd "$TMP_DIR"
-          API_IMAGE="${{ env.API_IMAGE_NAME }}@sha256:0000000000000000000000000000000000000000000000000000000000000000" \
-            API_IMAGE_DIGEST="sha256:0000000000000000000000000000000000000000000000000000000000000000" \
-            MINIAPP_ARTIFACT_SHA="0000000000000000000000000000000000000000000000000000000000000000" \
-            GITHUB_REPOSITORY="${{ github.repository }}" \
-            GITHUB_SHA="${{ github.sha }}" \
-            GITHUB_REF="${{ github.ref }}" \
-            GITHUB_RUN_ID="${{ github.run_id }}" \
-            node "$GITHUB_WORKSPACE/scripts/ci/write-deploy-manifest.mjs"
-          python3 "$GITHUB_WORKSPACE/scripts/ci/verify_deploy_manifest.py" deploy-manifest.json
+        run: node scripts/ci/smoke-deploy-manifest.mjs
 
   scan-miniapp:
     name: "1-scan · Miniapp typecheck"
@@ -61,7 +52,7 @@ jobs:
 
       - uses: actions/setup-node@v5
         with:
-          node-version: "24"
+          node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
@@ -78,7 +69,7 @@ jobs:
 
       - uses: actions/setup-python@v6
         with:
-          python-version: "3.11"
+          python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
           cache-dependency-path: apps/api/pyproject.toml
 
@@ -101,7 +92,7 @@ jobs:
 
       - uses: actions/setup-node@v5
         with:
-          node-version: "24"
+          node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
@@ -111,6 +102,8 @@ jobs:
     name: "2-build · WeChat miniapp dist"
     needs: [scan-miniapp]
     runs-on: ubuntu-latest
+    outputs:
+      artifact_digest: ${{ steps.miniapp_artifact.outputs.artifact-digest }}
     steps:
       - uses: actions/checkout@v5
 
@@ -118,23 +111,21 @@ jobs:
 
       - uses: actions/setup-node@v5
         with:
-          node-version: "24"
+          node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
       - run: pnpm check:wechat
 
-      - name: Package miniapp source artifact
-        run: |
-          tar -czf miniapp-dist.tar.gz -C apps/miniapp miniprogram project.config.json tsconfig.json types
-          sha256sum miniapp-dist.tar.gz | awk '{print $1}' > miniapp-dist.sha256
-
       - uses: actions/upload-artifact@v6
+        id: miniapp_artifact
         with:
           name: miniapp-dist
           path: |
-            miniapp-dist.tar.gz
-            miniapp-dist.sha256
+            apps/miniapp/miniprogram
+            apps/miniapp/project.config.json
+            apps/miniapp/tsconfig.json
+            apps/miniapp/types
           retention-days: 30
 
   build-api-image:
@@ -145,15 +136,22 @@ jobs:
       contents: read
       packages: write
     outputs:
-      image: ${{ steps.meta.outputs.image }}
       digest: ${{ steps.build.outputs.digest }}
     steps:
       - uses: actions/checkout@v5
 
-      - id: meta
-        run: |
-          echo "image=${{ env.API_IMAGE_NAME }}" >> "$GITHUB_OUTPUT"
-          echo "tags=${{ env.API_IMAGE_NAME }}:sha-${{ github.sha }}" >> "$GITHUB_OUTPUT"
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/metadata-action@v6
+        id: meta
+        with:
+          images: ${{ env.API_IMAGE_NAME }}
+          tags: |
+            type=sha,prefix=sha-
+          labels: |
+            org.opencontainers.image.title=ai-todo API
+            org.opencontainers.image.description=FastAPI service for ai-todo
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
 
       - uses: docker/login-action@v4
         if: github.event_name != 'pull_request'
@@ -168,13 +166,16 @@ jobs:
           context: apps/api
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             PIP_INDEX_URL=https://pypi.org/simple
 
       - name: Write image metadata (PR build-only)
         if: github.event_name == 'pull_request'
-        run: |
-          echo '{"image":"${{ env.API_IMAGE_NAME }}","digest":"${{ steps.build.outputs.digest }}","push":false}' > api-image-metadata.json
+        env:
+          API_IMAGE_DIGEST: ${{ steps.build.outputs.digest }}
+          IMAGE_PUSHED: "false"
+        run: node scripts/ci/write-api-image-metadata.mjs
 
       - uses: actions/upload-artifact@v6
         if: github.event_name == 'pull_request'
@@ -201,12 +202,12 @@ jobs:
 
       - uses: actions/setup-node@v5
         with:
-          node-version: "24"
+          node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
 
       - uses: actions/setup-python@v6
         with:
-          python-version: "3.11"
+          python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
           cache-dependency-path: apps/api/pyproject.toml
 
@@ -234,19 +235,11 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - uses: actions/download-artifact@v7
-        with:
-          name: miniapp-dist
-
-      - name: Read miniapp artifact hash
-        id: miniapp_sha
-        run: echo "value=$(cat miniapp-dist.sha256)" >> "$GITHUB_OUTPUT"
-
       - name: Publish deploy manifest
         env:
-          API_IMAGE: ${{ needs.build-api-image.outputs.image }}@${{ needs.build-api-image.outputs.digest }}
+          API_IMAGE: ${{ env.API_IMAGE_NAME }}@${{ needs.build-api-image.outputs.digest }}
           API_IMAGE_DIGEST: ${{ needs.build-api-image.outputs.digest }}
-          MINIAPP_ARTIFACT_SHA: ${{ steps.miniapp_sha.outputs.value }}
+          MINIAPP_ARTIFACT_SHA: ${{ needs.build-miniapp.outputs.artifact_digest }}
         run: node scripts/ci/write-deploy-manifest.mjs
 
       - uses: actions/upload-artifact@v6

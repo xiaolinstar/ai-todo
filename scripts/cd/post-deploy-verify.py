@@ -8,6 +8,7 @@ import os
 import sys
 import urllib.error
 import urllib.request
+from pathlib import Path
 from typing import Any
 
 
@@ -221,6 +222,11 @@ def _write_json_out(
     checks: list[dict[str, Any]],
     args: argparse.Namespace,
 ) -> None:
+    github_output = os.environ.get("GITHUB_OUTPUT", "").strip()
+    if github_output:
+        with open(github_output, "a", encoding="utf-8") as handle:
+            handle.write(f"error={error or ''}\n")
+
     if not path:
         return
     payload = {
@@ -231,7 +237,9 @@ def _write_json_out(
         "checks": checks,
         "error": error or None,
     }
-    with open(path, "w", encoding="utf-8") as handle:
+    output_path = Path(path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    with output_path.open("w", encoding="utf-8") as handle:
         json.dump(payload, handle, ensure_ascii=False, indent=2)
         handle.write("\n")
 

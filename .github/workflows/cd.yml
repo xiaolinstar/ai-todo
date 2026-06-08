@@ -35,6 +35,8 @@ permissions:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  NODE_VERSION: "24"
+  PYTHON_VERSION: "3.11"
 
 concurrency:
   group: cd-${{ github.event.inputs.environment || 'production' }}
@@ -54,9 +56,13 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
       - uses: actions/setup-python@v6
         with:
-          python-version: "3.11"
+          python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Resolve CI run id
         id: ci_run
@@ -64,127 +70,7 @@ jobs:
           INPUT_RUN_ID: ${{ github.event.inputs.ci_run_id }}
           INPUT_RELEASE_TAG: ${{ github.event.inputs.release_tag }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          REPOSITORY: ${{ github.repository }}
-        run: |
-          if [[ -n "$INPUT_RUN_ID" ]]; then
-            echo "run_id=$INPUT_RUN_ID" >> "$GITHUB_OUTPUT"
-            echo "target_sha=" >> "$GITHUB_OUTPUT"
-            echo "release_tag=$INPUT_RELEASE_TAG" >> "$GITHUB_OUTPUT"
-            echo "Using explicit CI run id: $INPUT_RUN_ID"
-            exit 0
-          fi
-
-          if [[ -z "$INPUT_RELEASE_TAG" ]]; then
-            echo "release_tag is required for normal CD. Use a version tag such as v0.1.1, or provide ci_run_id for rollback." >&2
-            exit 1
-          fi
-
-          if [[ ! "$INPUT_RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]; then
-            echo "release_tag must look like v0.1.1; got '$INPUT_RELEASE_TAG'." >&2
-            exit 1
-          fi
-
-          target_sha="$(RELEASE_TAG="$INPUT_RELEASE_TAG" python3 - <<'PY'
-          import json
-          import os
-          import sys
-          import urllib.parse
-          import urllib.request
-
-          repo = os.environ["REPOSITORY"]
-          token = os.environ["GH_TOKEN"]
-          tag = os.environ["RELEASE_TAG"]
-
-          def github_get(path: str) -> dict:
-              request = urllib.request.Request(
-                  f"https://api.github.com/repos/{repo}{path}",
-                  headers={
-                      "Authorization": f"Bearer {token}",
-                      "Accept": "application/vnd.github+json",
-                      "X-GitHub-Api-Version": "2022-11-28",
-                  },
-              )
-              with urllib.request.urlopen(request) as response:
-                  return json.load(response)
-
-          try:
-              ref = github_get(f"/git/ref/tags/{urllib.parse.quote(tag, safe='')}")
-          except Exception as exc:
-              print(f"Cannot resolve release_tag '{tag}': {exc}", file=sys.stderr)
-              sys.exit(1)
-
-          obj = ref.get("object") or {}
-          obj_type = obj.get("type")
-          obj_sha = obj.get("sha")
-          if obj_type == "tag":
-              tag_obj = github_get(f"/git/tags/{obj_sha}")
-              obj = tag_obj.get("object") or {}
-              obj_type = obj.get("type")
-              obj_sha = obj.get("sha")
-
-          if obj_type != "commit" or not obj_sha:
-              print(f"release_tag '{tag}' does not point to a commit.", file=sys.stderr)
-              sys.exit(1)
-
-          print(obj_sha)
-          PY
-          )"
-
-          if [[ ! "$target_sha" =~ ^[0-9a-fA-F]{40}$ ]]; then
-            echo "Resolved tag target must be a full 40-character commit SHA; got '$target_sha'." >&2
-            exit 1
-          fi
-
-          echo "Resolved release tag $INPUT_RELEASE_TAG -> $target_sha"
-          echo "Resolving latest successful CI run for release commit: $target_sha"
-          run_id="$(TARGET_SHA="$target_sha" python3 - <<'PY'
-          import json
-          import os
-          import sys
-          import urllib.parse
-          import urllib.request
-
-          repo = os.environ["REPOSITORY"]
-          token = os.environ["GH_TOKEN"]
-          target_sha = os.environ["TARGET_SHA"]
-          query = urllib.parse.urlencode(
-              {
-                  "event": "push",
-                  "status": "success",
-                  "head_sha": target_sha,
-                  "per_page": "20",
-              }
-          )
-          url = f"https://api.github.com/repos/{repo}/actions/workflows/ci.yml/runs?{query}"
-          request = urllib.request.Request(
-              url,
-              headers={
-                  "Authorization": f"Bearer {token}",
-                  "Accept": "application/vnd.github+json",
-                  "X-GitHub-Api-Version": "2022-11-28",
-              },
-          )
-          with urllib.request.urlopen(request) as response:
-              payload = json.load(response)
-
-          for run in payload.get("workflow_runs", []):
-              if run.get("head_sha") == target_sha and run.get("conclusion") == "success":
-                  print(run["id"])
-                  break
-          else:
-              print(
-                  "No successful CI push run found for the release tag commit. "
-                  "Make sure the tag points to a commit already pushed to main with green CI, "
-                  "or provide ci_run_id explicitly for rollback.",
-                  file=sys.stderr,
-              )
-              sys.exit(1)
-          PY
-          )"
-          echo "run_id=$run_id" >> "$GITHUB_OUTPUT"
-          echo "target_sha=$target_sha" >> "$GITHUB_OUTPUT"
-          echo "release_tag=$INPUT_RELEASE_TAG" >> "$GITHUB_OUTPUT"
-          echo "Resolved CI run id: $run_id"
+        run: node scripts/cd/resolve-ci-run.mjs
 
       - name: Download deploy-manifest from CI
         uses: actions/download-artifact@v7
@@ -199,18 +85,9 @@ jobs:
 
       - name: Export manifest fields
         id: manifest
-        run: |
-          SHA=$(python3 -c "import json; print(json.load(open('manifest/deploy-manifest.json'))['gitSha'])")
-          IMG=$(python3 -c "import json; print(json.load(open('manifest/deploy-manifest.json'))['artifacts']['api']['image'])")
-          FP=$(python3 -c "import json; print(json.load(open('manifest/deploy-manifest.json'))['fingerprint'])")
-          TARGET_SHA="${{ steps.ci_run.outputs.target_sha }}"
-          if [[ -n "$TARGET_SHA" && "$SHA" != "$TARGET_SHA" ]]; then
-            echo "Manifest gitSha '$SHA' does not match requested target_sha '$TARGET_SHA'." >&2
-            exit 1
-          fi
-          echo "git_sha=$SHA" >> "$GITHUB_OUTPUT"
-          echo "api_image=$IMG" >> "$GITHUB_OUTPUT"
-          echo "fingerprint=$FP" >> "$GITHUB_OUTPUT"
+        env:
+          TARGET_SHA: ${{ steps.ci_run.outputs.target_sha }}
+        run: node scripts/cd/export-manifest-fields.mjs manifest/deploy-manifest.json
 
       - name: Stage verified manifest for deploy job
         uses: actions/upload-artifact@v6
@@ -230,31 +107,21 @@ jobs:
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.environment || 'production' }}
     steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
       - name: Check deploy configuration
         id: deploy_config
-        run: |
-          missing=()
-          [[ -z "${{ secrets.DEPLOY_HOST }}" ]] && missing+=("DEPLOY_HOST")
-          [[ -z "${{ secrets.DEPLOY_USER }}" ]] && missing+=("DEPLOY_USER")
-          has_key=0
-          has_password=0
-          [[ -n "${{ secrets.DEPLOY_SSH_KEY }}" ]] && has_key=1
-          [[ -n "${{ secrets.DEPLOY_PASSWORD }}" ]] && has_password=1
-          if [[ $has_key -eq 0 && $has_password -eq 0 ]]; then
-            missing+=("DEPLOY_SSH_KEY or DEPLOY_PASSWORD")
-          fi
-          if ((${#missing[@]} > 0)); then
-            echo "::error::Missing GitHub secrets in environment '${{ github.event.inputs.environment || 'production' }}' (or repository): ${missing[*]}"
-            echo "Configure in GitHub: Settings → Secrets and variables → Actions (or Environment production)"
-            exit 1
-          else
-            echo "configured=true" >> "$GITHUB_OUTPUT"
-            if [[ $has_key -eq 1 ]]; then
-              echo "auth=ssh_key" >> "$GITHUB_OUTPUT"
-            else
-              echo "auth=password" >> "$GITHUB_OUTPUT"
-            fi
-          fi
+        env:
+          CD_ENVIRONMENT: ${{ github.event.inputs.environment || 'production' }}
+          DEPLOY_HOST_PRESENT: ${{ secrets.DEPLOY_HOST != '' }}
+          DEPLOY_USER_PRESENT: ${{ secrets.DEPLOY_USER != '' }}
+          DEPLOY_SSH_KEY_PRESENT: ${{ secrets.DEPLOY_SSH_KEY != '' }}
+          DEPLOY_PASSWORD_PRESENT: ${{ secrets.DEPLOY_PASSWORD != '' }}
+        run: node scripts/cd/check-deploy-config.mjs
 
       - name: Download verified manifest
         if: steps.deploy_config.outputs.configured == 'true'
@@ -264,24 +131,12 @@ jobs:
           path: manifest
 
       - name: Copy manifest to server
-        if: steps.deploy_config.outputs.configured == 'true' && steps.deploy_config.outputs.auth == 'ssh_key'
+        if: steps.deploy_config.outputs.configured == 'true'
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
-          port: ${{ secrets.DEPLOY_PORT || 22 }}
-          source: manifest/deploy-manifest.json
-          target: /tmp/
-          strip_components: 1
-          overwrite: true
-
-      - name: Copy manifest to server (password)
-        if: steps.deploy_config.outputs.configured == 'true' && steps.deploy_config.outputs.auth == 'password'
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_USER }}
           password: ${{ secrets.DEPLOY_PASSWORD }}
           port: ${{ secrets.DEPLOY_PORT || 22 }}
           source: manifest/deploy-manifest.json
@@ -289,8 +144,8 @@ jobs:
           strip_components: 1
           overwrite: true
 
-      - name: Deploy to VPS (SSH key)
-        if: steps.deploy_config.outputs.configured == 'true' && steps.deploy_config.outputs.auth == 'ssh_key'
+      - name: Deploy to VPS
+        if: steps.deploy_config.outputs.configured == 'true'
         uses: appleboy/ssh-action@v1.2.0
         env:
           FINGERPRINT: ${{ needs.resolve-manifest.outputs.fingerprint }}
@@ -304,34 +159,6 @@ jobs:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
-          port: ${{ secrets.DEPLOY_PORT || 22 }}
-          envs: FINGERPRINT,CI_RUN_ID,RELEASE_TAG,GHCR_DEPLOY_TOKEN,GHCR_DEPLOY_USER,DEPLOY_PATH,DEPLOY_MODE_INPUT
-          command_timeout: 10m
-          script_stop: true
-          script: |
-            DEPLOY_PATH="${DEPLOY_PATH:-$HOME/AgentProjects/ai-todo}"
-            cd "$DEPLOY_PATH"
-            git fetch --prune origin main
-            git pull --ff-only origin main
-            export AI_TODO_DEPLOY_MANIFEST=/tmp/deploy-manifest.json
-            export AI_TODO_RELEASE_TAG="$RELEASE_TAG"
-            export AI_TODO_CD_ACTION=deploy
-            bash apps/api/deploy/cd-bootstrap.sh
-
-      - name: Deploy to VPS (password)
-        if: steps.deploy_config.outputs.configured == 'true' && steps.deploy_config.outputs.auth == 'password'
-        uses: appleboy/ssh-action@v1.2.0
-        env:
-          FINGERPRINT: ${{ needs.resolve-manifest.outputs.fingerprint }}
-          CI_RUN_ID: ${{ needs.resolve-manifest.outputs.ci_run_id }}
-          RELEASE_TAG: ${{ needs.resolve-manifest.outputs.release_tag }}
-          GHCR_DEPLOY_TOKEN: ${{ secrets.GHCR_DEPLOY_TOKEN || github.token }}
-          GHCR_DEPLOY_USER: ${{ secrets.GHCR_DEPLOY_USER || github.actor }}
-          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
-          DEPLOY_MODE_INPUT: ${{ github.event.inputs.deploy_mode || 'auto' }}
-        with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_USER }}
           password: ${{ secrets.DEPLOY_PASSWORD }}
           port: ${{ secrets.DEPLOY_PORT || 22 }}
           envs: FINGERPRINT,CI_RUN_ID,RELEASE_TAG,GHCR_DEPLOY_TOKEN,GHCR_DEPLOY_USER,DEPLOY_PATH,DEPLOY_MODE_INPUT
@@ -369,19 +196,11 @@ jobs:
           CD_PUBLIC_API_URL: ${{ secrets.CD_PUBLIC_API_URL }}
           CD_SMOKE_PAT: ${{ secrets.CD_SMOKE_PAT }}
           RELEASE_TAG: ${{ needs.resolve-manifest.outputs.release_tag }}
-        run: |
-          mkdir -p cd-report
-          set +e
-          python3 scripts/cd/post-deploy-verify.py \
-            --expect-git-sha "${{ needs.resolve-manifest.outputs.git_sha }}" \
-            --release-tag "${{ needs.resolve-manifest.outputs.release_tag }}" \
-            --json-out cd-report/verify-result.json
-          ec=$?
-          if [[ -f cd-report/verify-result.json ]]; then
-            err="$(python3 -c "import json; print(json.load(open('cd-report/verify-result.json')).get('error') or '')")"
-            echo "error=$err" >> "$GITHUB_OUTPUT"
-          fi
-          exit "$ec"
+        run: >
+          python3 scripts/cd/post-deploy-verify.py
+          --expect-git-sha "${{ needs.resolve-manifest.outputs.git_sha }}"
+          --release-tag "${{ needs.resolve-manifest.outputs.release_tag }}"
+          --json-out cd-report/verify-result.json
 
       - uses: actions/upload-artifact@v6
         if: always()
@@ -417,31 +236,24 @@ jobs:
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.environment || 'production' }}
     steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
       - name: Check deploy configuration
         id: deploy_config
-        run: |
-          missing=()
-          [[ -z "${{ secrets.DEPLOY_HOST }}" ]] && missing+=("DEPLOY_HOST")
-          [[ -z "${{ secrets.DEPLOY_USER }}" ]] && missing+=("DEPLOY_USER")
-          has_key=0
-          has_password=0
-          [[ -n "${{ secrets.DEPLOY_SSH_KEY }}" ]] && has_key=1
-          [[ -n "${{ secrets.DEPLOY_PASSWORD }}" ]] && has_password=1
-          if [[ $has_key -eq 0 && $has_password -eq 0 ]]; then
-            missing+=("DEPLOY_SSH_KEY or DEPLOY_PASSWORD")
-          fi
-          if ((${#missing[@]} > 0)); then
-            echo "::error::Missing deploy secrets for rollback: ${missing[*]}" >&2
-            exit 1
-          fi
-          if [[ $has_key -eq 1 ]]; then
-            echo "auth=ssh_key" >> "$GITHUB_OUTPUT"
-          else
-            echo "auth=password" >> "$GITHUB_OUTPUT"
-          fi
+        env:
+          CD_ENVIRONMENT: ${{ github.event.inputs.environment || 'production' }}
+          DEPLOY_HOST_PRESENT: ${{ secrets.DEPLOY_HOST != '' }}
+          DEPLOY_USER_PRESENT: ${{ secrets.DEPLOY_USER != '' }}
+          DEPLOY_SSH_KEY_PRESENT: ${{ secrets.DEPLOY_SSH_KEY != '' }}
+          DEPLOY_PASSWORD_PRESENT: ${{ secrets.DEPLOY_PASSWORD != '' }}
+        run: node scripts/cd/check-deploy-config.mjs
 
-      - name: Rollback on VPS (SSH key)
-        if: steps.deploy_config.outputs.auth == 'ssh_key'
+      - name: Rollback on VPS
+        if: steps.deploy_config.outputs.configured == 'true'
         uses: appleboy/ssh-action@v1.2.0
         env:
           GHCR_DEPLOY_TOKEN: ${{ secrets.GHCR_DEPLOY_TOKEN || github.token }}
@@ -451,28 +263,6 @@ jobs:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
-          port: ${{ secrets.DEPLOY_PORT || 22 }}
-          envs: GHCR_DEPLOY_TOKEN,GHCR_DEPLOY_USER,DEPLOY_PATH
-          command_timeout: 10m
-          script_stop: true
-          script: |
-            DEPLOY_PATH="${DEPLOY_PATH:-$HOME/AgentProjects/ai-todo}"
-            cd "$DEPLOY_PATH"
-            git fetch --prune origin main
-            git pull --ff-only origin main
-            export AI_TODO_CD_ACTION=rollback
-            bash apps/api/deploy/cd-bootstrap.sh
-
-      - name: Rollback on VPS (password)
-        if: steps.deploy_config.outputs.auth == 'password'
-        uses: appleboy/ssh-action@v1.2.0
-        env:
-          GHCR_DEPLOY_TOKEN: ${{ secrets.GHCR_DEPLOY_TOKEN || github.token }}
-          GHCR_DEPLOY_USER: ${{ secrets.GHCR_DEPLOY_USER || github.actor }}
-          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
-        with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_USER }}
           password: ${{ secrets.DEPLOY_PASSWORD }}
           port: ${{ secrets.DEPLOY_PORT || 22 }}
           envs: GHCR_DEPLOY_TOKEN,GHCR_DEPLOY_USER,DEPLOY_PATH
@@ -499,11 +289,10 @@ jobs:
         env:
           CD_PUBLIC_API_URL: ${{ secrets.CD_PUBLIC_API_URL }}
           CD_SMOKE_PAT: ${{ secrets.CD_SMOKE_PAT }}
-        run: |
-          mkdir -p cd-report
-          python3 scripts/cd/post-deploy-verify.py \
-            --skip-git-sha-check \
-            --json-out cd-report/verify-after-rollback.json
+        run: >
+          python3 scripts/cd/post-deploy-verify.py
+          --skip-git-sha-check
+          --json-out cd-report/verify-after-rollback.json
 
       - uses: actions/upload-artifact@v6
         if: always()
