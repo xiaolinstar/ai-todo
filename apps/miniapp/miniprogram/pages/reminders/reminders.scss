@@ -97,6 +97,38 @@
   min-width: 0;
 }
 
+.title-line {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  min-width: 0;
+}
+
+.title-line .cell-title {
+  flex: 1;
+  min-width: 0;
+}
+
+.source-badge {
+  flex-shrink: 0;
+  max-width: 128rpx;
+  overflow: hidden;
+  padding: 4rpx 10rpx;
+  border-radius: 999rpx;
+  background: var(--todo-fill-primary-10);
+  color: var(--todo-primary);
+  font-size: var(--todo-font-size-xs);
+  font-weight: var(--todo-font-weight-semibold);
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.source-badge.muted {
+  background: var(--todo-fill-neutral-12);
+  color: var(--todo-text-subtle);
+}
+
 .check-hit-static {
   pointer-events: none;
 }

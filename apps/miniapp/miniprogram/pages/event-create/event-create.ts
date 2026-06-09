@@ -29,9 +29,15 @@ Page({
     submitting: false
   },
 
+  _endTouched: false,
+
   onLoad() {
     Promise.all([loadAccountDay(), loadContentPrefs()]).then(([{ today, timezone, nowTime }, prefs]) => {
-      const endDefaults = applyDefaultEventEnd(today, nowTime, prefs.calendar);
+      const endDefaults = applyDefaultEventEnd(today, nowTime, {
+        ...prefs.calendar,
+        defaultHasEnd: true,
+        defaultDurationMinutes: 60
+      });
       this.setData({
         accountTimezone: timezone,
         startDate: today,
@@ -67,23 +73,58 @@ Page({
   },
 
   onEndToggle(e: { detail: { value: boolean } }) {
-    this.setData({ hasEnd: e.detail.value });
+    const hasEnd = e.detail.value;
+    if (hasEnd && !this._endTouched) {
+      const endDefaults = applyDefaultEventEnd(this.data.startDate, this.data.startTime, {
+        defaultHasEnd: true,
+        defaultDurationMinutes: 60,
+        selectTodayOnOpen: true
+      });
+      this.setData({
+        hasEnd,
+        endDate: endDefaults.endDate,
+        endTime: endDefaults.endTime
+      });
+      return;
+    }
+    this.setData({ hasEnd });
   },
 
   onStartDateChange(e: { detail: { value: string } }) {
-    this.setData({ startDate: e.detail.value });
+    this.setStartDateTime(e.detail.value, this.data.startTime);
   },
 
   onStartTimeChange(e: { detail: { value: string } }) {
-    this.setData({ startTime: e.detail.value });
+    this.setStartDateTime(this.data.startDate, e.detail.value);
   },
 
   onEndDateChange(e: { detail: { value: string } }) {
+    this._endTouched = true;
     this.setData({ endDate: e.detail.value });
   },
 
   onEndTimeChange(e: { detail: { value: string } }) {
+    this._endTouched = true;
     this.setData({ endTime: e.detail.value });
+  },
+
+  setStartDateTime(startDate: string, startTime: string) {
+    if (this._endTouched) {
+      this.setData({ startDate, startTime });
+      return;
+    }
+    const endDefaults = applyDefaultEventEnd(startDate, startTime, {
+      defaultHasEnd: true,
+      defaultDurationMinutes: 60,
+      selectTodayOnOpen: true
+    });
+    this.setData({
+      startDate,
+      startTime,
+      hasEnd: true,
+      endDate: endDefaults.endDate,
+      endTime: endDefaults.endTime
+    });
   },
 
   pickContact() {

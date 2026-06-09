@@ -25,31 +25,31 @@ export function printAuthHint(reason: "missing" | "invalid" = "missing"): void {
   const lines =
     reason === "invalid"
       ? [
-          "API Token 无效或已过期。",
+          "The API token is invalid or expired.",
           "",
-          "请更新 Personal Access Token（PAT）：",
+          "Update your Personal Access Token (PAT):",
           "",
-          `编辑 ${settingsFile}：`,
+          `Edit ${settingsFile}:`,
           settingsExample(),
           "",
-          "Agent / CI 也可使用环境变量（优先级高于配置文件）：",
+          "Agents and CI can also use environment variables, which override the settings file:",
           "  export AI_TODO_TOKEN=aitodo_xxx",
           "  export AI_TODO_API_URL=https://xingxiaolin.cn",
           "",
-          "生产环境请在微信小程序「我的 → CLI / Agent 访问令牌」创建新 PAT。"
+          "For production, create a new PAT in the WeChat miniapp: Mine -> CLI / Agent access tokens."
         ]
       : [
-          "未检测到 API Token。",
+          "No API token configured.",
           "",
-          "首次配置：创建 ~/.ai-todo/settings.json",
+          "First-time setup: create ~/.ai-todo/settings.json",
           "",
           settingsExample(),
           "",
-          "1. 微信小程序 → 我的 → CLI / Agent 访问令牌 → 创建",
-          "2. 将完整 token 填入上述文件的 token 字段",
-          "3. 运行 ai-todo whoami 验证",
+          "1. Open the WeChat miniapp: Mine -> CLI / Agent access tokens -> Create",
+          "2. Paste the full token into the token field in the settings file",
+          "3. Run ai-todo whoami to verify the setup",
           "",
-          `配置文件路径：${settingsFile}`
+          `Settings path: ${settingsFile}`
         ];
 
   for (const line of lines) {

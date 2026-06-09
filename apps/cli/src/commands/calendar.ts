@@ -9,7 +9,7 @@ export async function runCalendarToday(ctx: CliContext): Promise<void> {
       return;
     }
     if (data.items.length === 0) {
-      console.log("今日暂无日程");
+      console.log("No calendar events today.");
       return;
     }
     for (const event of data.items) {
@@ -40,7 +40,7 @@ export async function runCalendarList(ctx: CliContext, argv: string[]): Promise<
         return;
       }
       renderCalendarListPage(data.items, {
-        label: date ? `日程 · ${date}` : "日程",
+        label: date ? `Calendar · ${date}` : "Calendar",
         totalCount: data.totalCount,
         hasMore: data.hasMore,
         nextCursor: data.nextCursor,
@@ -78,11 +78,11 @@ export async function runCalendarAdd(ctx: CliContext, argv: string[]): Promise<v
     (data) => {
       if (!ctx.json) {
         const event = data.calendarEvent;
-        console.log(`已创建日程：${event.title}`);
-        console.log(`ID：${event.id}`);
-        console.log(`开始：${event.startAt}`);
+        console.log(`Created calendar event: ${event.title}`);
+        console.log(`ID: ${event.id}`);
+        console.log(`Start: ${event.startAt}`);
         if (event.endAt) {
-          console.log(`结束：${event.endAt}`);
+          console.log(`End: ${event.endAt}`);
         }
       }
     }
@@ -104,7 +104,7 @@ export async function runCalendarShow(ctx: CliContext, argv: string[]): Promise<
     console.log(`${e.title} (${e.id})`);
     console.log(`${e.startAt}${e.endAt ? ` → ${e.endAt}` : ""}`);
     if (e.location) {
-      console.log(`地点：${e.location}`);
+      console.log(`Location: ${e.location}`);
     }
   });
 }
@@ -118,7 +118,7 @@ export async function runCalendarDelete(ctx: CliContext, argv: string[]): Promis
   }
   await handleApi(ctx, await ctx.client.deleteCalendarEvent(id), (data) => {
     if (!ctx.json) {
-      console.log(`已删除日程：${data.id}`);
+      console.log(`Deleted calendar event: ${data.id}`);
     }
   });
 }
@@ -160,7 +160,7 @@ export async function runCalendarUpdate(ctx: CliContext, argv: string[]): Promis
     (data) => {
       if (!ctx.json) {
         const event = data.calendarEvent;
-        console.log(`已更新日程：${event.title} (${event.id})`);
+        console.log(`Updated calendar event: ${event.title} (${event.id})`);
       }
     }
   );

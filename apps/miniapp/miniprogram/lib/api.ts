@@ -159,17 +159,36 @@ function formatRequestError(err: unknown): string {
 }
 
 function parseApiErrorBody(body: unknown, statusCode: number): ApiResponse<never> | null {
+  const authError =
+    statusCode === 401 || statusCode === 403
+      ? {
+          ok: false as const,
+          error: {
+            code: "UNAUTHORIZED",
+            message: "请先登录后继续使用"
+          }
+        }
+      : null;
+
   if (!body || typeof body !== "object") {
-    return null;
+    return authError;
   }
   const payload = body as Record<string, unknown>;
   if (payload.ok === false && payload.error) {
+    const error = payload.error as Record<string, unknown>;
+    if (statusCode === 401 || statusCode === 403 || error.code === "UNAUTHORIZED") {
+      return authError;
+    }
     return body as ApiResponse<never>;
   }
   const detail = payload.detail;
   if (detail && typeof detail === "object") {
     const nested = detail as Record<string, unknown>;
     if (nested.ok === false && nested.error) {
+      const error = nested.error as Record<string, unknown>;
+      if (statusCode === 401 || statusCode === 403 || error.code === "UNAUTHORIZED") {
+        return authError;
+      }
       return nested as unknown as ApiResponse<never>;
     }
   }

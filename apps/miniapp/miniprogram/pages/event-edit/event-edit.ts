@@ -2,6 +2,7 @@ import { loadAccountDay } from "../../lib/account-day";
 import { fetchCalendarEvent, updateCalendarEvent } from "../../lib/api";
 import type { ContactSummary } from "../../lib/api";
 import { combineDateTime, splitIsoDateTime } from "../../lib/format";
+import { applyDefaultEventEnd } from "../../lib/content-prefs";
 import { todoPageThemeData } from "../../lib/theme";
 import {
   loadWechatNotificationPrefs,
@@ -30,6 +31,8 @@ Page({
   },
 
   _originalStartAt: "",
+  _endTouched: false,
+  _originalDurationMinutes: 60,
 
   onLoad(options: { id?: string }) {
     const eventId = (options.id || "").trim();
@@ -51,6 +54,15 @@ Page({
         const start = splitIsoDateTime(event.startAt, tz);
         const end = splitIsoDateTime(event.endAt, tz);
         this._originalStartAt = event.startAt;
+        this._endTouched = false;
+        this._originalDurationMinutes = event.endAt
+          ? Math.max(
+              1,
+              Math.round(
+                (new Date(event.endAt).getTime() - new Date(event.startAt).getTime()) / 60000
+              )
+            )
+          : 60;
         this.setData({
           loading: false,
           accountTimezone: tz,
@@ -91,23 +103,64 @@ Page({
   },
 
   onEndToggle(e: { detail: { value: boolean } }) {
-    this.setData({ hasEnd: e.detail.value });
+    const hasEnd = e.detail.value;
+    if (hasEnd && !this._endTouched) {
+      const endDefaults = applyDefaultEventEnd(this.data.startDate, this.data.startTime, {
+        defaultHasEnd: true,
+        defaultDurationMinutes: this.normalizeDuration(this._originalDurationMinutes),
+        selectTodayOnOpen: true
+      });
+      this.setData({
+        hasEnd,
+        endDate: endDefaults.endDate,
+        endTime: endDefaults.endTime
+      });
+      return;
+    }
+    this.setData({ hasEnd });
   },
 
   onStartDateChange(e: { detail: { value: string } }) {
-    this.setData({ startDate: e.detail.value });
+    this.setStartDateTime(e.detail.value, this.data.startTime);
   },
 
   onStartTimeChange(e: { detail: { value: string } }) {
-    this.setData({ startTime: e.detail.value });
+    this.setStartDateTime(this.data.startDate, e.detail.value);
   },
 
   onEndDateChange(e: { detail: { value: string } }) {
+    this._endTouched = true;
     this.setData({ endDate: e.detail.value });
   },
 
   onEndTimeChange(e: { detail: { value: string } }) {
+    this._endTouched = true;
     this.setData({ endTime: e.detail.value });
+  },
+
+  normalizeDuration(minutes: number): 30 | 60 | 90 {
+    if (minutes === 30 || minutes === 90) {
+      return minutes;
+    }
+    return 60;
+  },
+
+  setStartDateTime(startDate: string, startTime: string) {
+    if (this._endTouched || !this.data.hasEnd) {
+      this.setData({ startDate, startTime });
+      return;
+    }
+    const endDefaults = applyDefaultEventEnd(startDate, startTime, {
+      defaultHasEnd: true,
+      defaultDurationMinutes: this.normalizeDuration(this._originalDurationMinutes),
+      selectTodayOnOpen: true
+    });
+    this.setData({
+      startDate,
+      startTime,
+      endDate: endDefaults.endDate,
+      endTime: endDefaults.endTime
+    });
   },
 
   pickContact() {

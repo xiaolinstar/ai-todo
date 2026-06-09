@@ -44,9 +44,9 @@ export async function runContactAdd(ctx: CliContext, argv: string[]): Promise<vo
     }),
     (data) => {
       if (!ctx.json) {
-        console.log(`已创建联系人：${data.contact.displayName}`);
-        console.log(`标识：${data.contact.handle}`);
-        console.log(`ID：${data.contact.id}`);
+        console.log(`Created contact: ${data.contact.displayName}`);
+        console.log(`Handle: ${data.contact.handle}`);
+        console.log(`ID: ${data.contact.id}`);
       }
     }
   );
@@ -73,7 +73,7 @@ export async function runContactSearch(ctx: CliContext, argv: string[]): Promise
         return;
       }
       renderContactListPage(data.items, {
-        label: "联系人",
+        label: "Contacts",
         totalCount: data.totalCount,
         hasMore: data.hasMore,
         nextCursor: data.nextCursor,
@@ -99,7 +99,7 @@ export async function runContactList(ctx: CliContext, argv: string[]): Promise<v
         return;
       }
       renderContactListPage(data.items, {
-        label: "联系人",
+        label: "Contacts",
         totalCount: data.totalCount,
         hasMore: data.hasMore,
         nextCursor: data.nextCursor,
@@ -122,35 +122,35 @@ export async function runContactShow(ctx: CliContext, argv: string[]): Promise<v
     }
     const c = data.contact;
     console.log(`${c.displayName} (@${c.handle}, ${c.id})`);
-    console.log(`标识来源：${c.handleSource === "generated" ? "自动生成" : "手动设置"}`);
+    console.log(`Handle source: ${c.handleSource === "generated" ? "generated" : "manual"}`);
     if (c.linkedUserId) {
-      console.log(`平台用户：${c.linkedUserId}`);
+      console.log(`Linked user: ${c.linkedUserId}`);
     }
     if (c.primaryEmail) {
-      console.log(`邮箱：${c.primaryEmail}`);
+      console.log(`Email: ${c.primaryEmail}`);
     }
     if (c.primaryPhone) {
-      console.log(`电话：${c.primaryPhone}`);
+      console.log(`Phone: ${c.primaryPhone}`);
     }
     if (c.company) {
-      console.log(`公司：${c.company}`);
+      console.log(`Company: ${c.company}`);
     }
     if (c.title) {
-      console.log(`职位：${c.title}`);
+      console.log(`Job title: ${c.title}`);
     }
     if (c.aliases.length > 0) {
-      console.log(`别名：${c.aliases.join(", ")}`);
+      console.log(`Aliases: ${c.aliases.join(", ")}`);
     }
     if (c.methods.length > 0) {
-      console.log("联系方式：");
+      console.log("Contact methods:");
       for (const method of c.methods) {
-        const primary = method.isPrimary ? "，主要" : "";
-        const label = method.label ? `，${method.label}` : "";
-        console.log(`- ${method.type}${label}${primary}：${method.value}`);
+        const primary = method.isPrimary ? ", primary" : "";
+        const label = method.label ? `, ${method.label}` : "";
+        console.log(`- ${method.type}${label}${primary}: ${method.value}`);
       }
     }
     if (c.notes) {
-      console.log(`备注：${c.notes}`);
+      console.log(`Notes: ${c.notes}`);
     }
   });
 }
@@ -205,7 +205,7 @@ export async function runContactUpdate(ctx: CliContext, argv: string[]): Promise
     (data) => {
       if (!ctx.json) {
         console.log(
-          `已更新联系人：${data.contact.displayName} (@${data.contact.handle}, ${data.contact.id})`
+          `Updated contact: ${data.contact.displayName} (@${data.contact.handle}, ${data.contact.id})`
         );
       }
     }
@@ -222,7 +222,7 @@ export async function runContactDelete(ctx: CliContext, argv: string[]): Promise
 
   await handleApi(ctx, await ctx.client.deleteContact(id), (data) => {
     if (!ctx.json) {
-      console.log(`已删除联系人：${data.id}`);
+      console.log(`Deleted contact: ${data.id}`);
     }
   });
 }

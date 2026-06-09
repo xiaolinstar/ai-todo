@@ -3,7 +3,7 @@
   <view class="form-group">
     <view class="form-row">
       <text class="form-label">标题</text>
-      <input class="form-input" placeholder="必填" value="{{title}}" bindinput="onTitleInput" />
+      <input class="form-input" placeholder="必填，最多 80 字" maxlength="80" value="{{title}}" bindinput="onTitleInput" />
     </view>
     <view class="form-row">
       <text class="form-label">开始</text>

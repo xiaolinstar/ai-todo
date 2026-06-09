@@ -30,7 +30,7 @@ async function main(): Promise<void> {
       await core.runWhoami(ctx);
       break;
     case "profile":
-      console.error("个人资料请在微信小程序「我的」中修改，CLI 不提供 profile 命令。");
+      console.error("Edit your profile in the WeChat miniapp Mine tab. The CLI does not provide a profile command.");
       process.exitCode = 1;
       break;
     case "logout":
@@ -71,9 +71,14 @@ async function main(): Promise<void> {
       const action = sub ?? "help";
       if (action === "create") {
         await reminder.runReminderCreate(ctx, argv);
-      } else if (action === "list") {
-        await reminder.runReminderList(ctx, argv);
-      } else if (action === "show") {
+      } else if (action === "list" || action === "ls") {
+        const maybeId = argv[2];
+        if (maybeId && !maybeId.startsWith("-")) {
+          await reminder.runReminderShow(ctx, argv, action);
+        } else {
+          await reminder.runReminderList(ctx, argv);
+        }
+      } else if (action === "show" || action === "inspect") {
         await reminder.runReminderShow(ctx, argv);
       } else if (action === "find") {
         await reminder.runReminderFind(ctx, argv);

@@ -18,6 +18,7 @@
 
 | releaseTag | api | cli | miniapp | 说明 |
 |------------|-----|-----|---------|------|
+| `v0.7.0` | `0.3.0` | `0.5.1` | `0.7.0` | 内测 UX 稳定版：登录错误提示、日历默认 1 小时结束时间与时间联动、长标题单行省略、提醒来源角标与逾期/今天/未来分组、CLI 英文输出。 |
 | `v0.6.2` | `0.3.0` | `0.5.0` | `0.6.0` | MCP stdio Server：`@ai-todo/mcp` 0.1.0、12 个 P0 tools、`docs/mcp-setup.md`；无 API/小程序变更。 |
 | `v0.6.1` | `0.3.0` | `0.5.0` | `0.6.0` | Agent 工具链：`agent-protocol` 0.4.0 来源工具与 guidelines、Skill/文档；无 API/小程序变更。 |
 | `v0.6.0` | `0.3.0` | `0.5.0` | `0.6.0` | Reminder 来源外键与反查：`source/externalId/sourceMeta`、lookup、source list、CLI 快捷操作；小程序只读展示来源。 |

@@ -33,13 +33,13 @@ function readScopes(argv: string[]): string[] | undefined {
 function statusLabel(status: ApiTokenSummary["status"]): string {
   switch (status) {
     case "active":
-      return "有效";
+      return "active";
     case "expired":
-      return "已过期";
+      return "expired";
     case "idle_revoked":
-      return "久未使用失效";
+      return "idle revoked";
     case "revoked":
-      return "已吊销";
+      return "revoked";
     default:
       return status;
   }
@@ -55,16 +55,16 @@ export async function runTokenList(ctx: CliContext): Promise<void> {
       return;
     }
     if (data.items.length === 0) {
-      console.log("暂无访问令牌。");
+      console.log("No access tokens.");
       return;
     }
     for (const item of data.items) {
       console.log(`${item.id}  ${item.name}  ${statusLabel(item.status)}`);
-      console.log(`  提示：${item.tokenHint ?? "aitodo_****"}`);
-      console.log(`  创建：${formatDate(item.createdAt)}  最后使用：${formatDate(item.lastUsedAt)}`);
+      console.log(`  Hint: ${item.tokenHint ?? "aitodo_****"}`);
+      console.log(`  Created: ${formatDate(item.createdAt)}  Last used: ${formatDate(item.lastUsedAt)}`);
       console.log(
-        `  到期：${formatDate(item.expiresAt)}  空闲失效：${
-          item.maxIdleDays ? `${item.maxIdleDays} 天` : "-"
+        `  Expires: ${formatDate(item.expiresAt)}  Max idle: ${
+          item.maxIdleDays ? `${item.maxIdleDays} days` : "-"
         }`
       );
     }
@@ -99,14 +99,14 @@ export async function runTokenCreate(ctx: CliContext, argv: string[]): Promise<v
     if (ctx.json) {
       return;
     }
-    console.log("已创建访问令牌（仅显示一次，请妥善保管）：");
+    console.log("Created an access token. It is shown only once:");
     console.log("");
     console.log(data.token);
     console.log("");
-    console.log(`ID：${data.id}`);
-    console.log(`名称：${data.name}`);
-    console.log(`到期：${data.expiresAt ?? "-"}`);
-    console.log(`空闲失效：${data.maxIdleDays ? `${data.maxIdleDays} 天` : "-"}`);
+    console.log(`ID: ${data.id}`);
+    console.log(`Name: ${data.name}`);
+    console.log(`Expires: ${data.expiresAt ?? "-"}`);
+    console.log(`Max idle: ${data.maxIdleDays ? `${data.maxIdleDays} days` : "-"}`);
   });
 }
 
@@ -119,7 +119,7 @@ export async function runTokenRevoke(ctx: CliContext, argv: string[]): Promise<v
   }
   await handleApi(ctx, await ctx.client.revokeApiToken(tokenId), (data) => {
     if (!ctx.json) {
-      console.log(`已吊销访问令牌：${data.id}`);
+      console.log(`Revoked access token: ${data.id}`);
     }
   });
 }
@@ -127,7 +127,7 @@ export async function runTokenRevoke(ctx: CliContext, argv: string[]): Promise<v
 export async function runTokenRevokeAll(ctx: CliContext): Promise<void> {
   await handleApi(ctx, await ctx.client.revokeAllApiTokens(), (data) => {
     if (!ctx.json) {
-      console.log(`已吊销 ${data.revokedCount} 个访问令牌。`);
+      console.log(`Revoked ${data.revokedCount} access tokens.`);
     }
   });
 }

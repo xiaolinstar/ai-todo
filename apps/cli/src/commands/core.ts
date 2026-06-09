@@ -65,17 +65,17 @@ export async function runLogin(ctx: CliContext, argv: string[]): Promise<void> {
     return;
   }
 
-  console.log(`已保存 API 地址：${apiUrl}`);
+  console.log(`Saved API URL: ${apiUrl}`);
   if (token) {
-    console.log(`已写入 ${settingsPath()}`);
-    console.log("后续直接运行 ai-todo whoami / ai-todo today 等命令即可，无需再传 --url。");
-    console.log("Agent 环境仍可用 export AI_TODO_TOKEN=… 覆盖配置文件。");
+    console.log(`Wrote ${settingsPath()}`);
+    console.log("You can now run ai-todo whoami, ai-todo today, and other commands without --url.");
+    console.log("Agent environments can still override the settings file with AI_TODO_TOKEN.");
   } else if (resolved.source === "env") {
-    console.log("检测到 AI_TODO_TOKEN 环境变量（已生效）");
+    console.log("Detected AI_TODO_TOKEN in the environment.");
   } else {
     printAuthHint("missing");
   }
-  console.log(`配置文件：${settingsPath()}`);
+  console.log(`Settings file: ${settingsPath()}`);
 }
 
 async function issuePersonalAccessToken(
@@ -100,8 +100,8 @@ async function issuePersonalAccessToken(
         )
       );
     } else {
-      console.error("生产/远程 API 不支持 CLI 直接签发 PAT。");
-      console.error("请在微信小程序「我的 → CLI / Agent 访问令牌」中创建，然后写入 ~/.ai-todo/settings.json。");
+      console.error("The CLI cannot issue PATs against production or remote APIs.");
+      console.error("Create one in the WeChat miniapp, then write it to ~/.ai-todo/settings.json.");
     }
     process.exitCode = 1;
     return;
@@ -115,7 +115,7 @@ async function issuePersonalAccessToken(
     } else {
       console.error(`[${response.error.code}] ${response.error.message}`);
       console.error("");
-      console.error("签发 PAT 失败。请确认 API 已启动且 AI_TODO_ALLOW_DEV_AUTH=true。");
+      console.error("Failed to issue a PAT. Confirm the API is running with AI_TODO_ALLOW_DEV_AUTH=true.");
     }
     process.exitCode = 1;
     return;
@@ -143,14 +143,14 @@ async function issuePersonalAccessToken(
     return;
   }
 
-  console.log("已签发 Personal Access Token（仅显示一次，请妥善保管）：");
+  console.log("Created a Personal Access Token. It is shown only once:");
   console.log("");
   console.log(token);
   console.log("");
-  console.log("推荐写入 Agent 环境变量：");
+  console.log("Recommended Agent environment variable:");
   console.log(`  export AI_TODO_TOKEN=${token}`);
   console.log("");
-  console.log(`已同时保存到 ${settingsPath()}（可被环境变量覆盖）`);
+  console.log(`Also saved to ${settingsPath()}. Environment variables can override it.`);
 }
 
 export async function runLogout(ctx: CliContext): Promise<void> {
@@ -166,8 +166,8 @@ export async function runLogout(ctx: CliContext): Promise<void> {
           tokenSource: resolved.source,
           note:
             resolved.source === "env"
-              ? "AI_TODO_TOKEN 环境变量仍生效；unset AI_TODO_TOKEN 可完全退出"
-              : "settings.json 中的 token 已清除"
+              ? "AI_TODO_TOKEN is still active; unset AI_TODO_TOKEN to fully log out"
+              : "The token in settings.json was cleared"
         },
         null,
         2
@@ -176,10 +176,10 @@ export async function runLogout(ctx: CliContext): Promise<void> {
     return;
   }
 
-  console.log(`已清除 ${settingsPath()} 中的 token`);
+  console.log(`Cleared the token in ${settingsPath()}`);
   if (resolved.source === "env") {
-    console.log("注意：AI_TODO_TOKEN 环境变量仍然生效");
-    console.log("运行 unset AI_TODO_TOKEN 可完全退出授权");
+    console.log("Note: AI_TODO_TOKEN is still active in the environment.");
+    console.log("Run unset AI_TODO_TOKEN to fully log out.");
   }
 }
 
@@ -211,12 +211,12 @@ export async function runWhoami(ctx: CliContext): Promise<void> {
     if (!ctx.json) {
       const sourceLabel =
         resolved.source === "env"
-          ? "环境变量 AI_TODO_TOKEN"
-          : `配置文件 ${settingsPath()}`;
+          ? "AI_TODO_TOKEN environment variable"
+          : `settings file ${settingsPath()}`;
       console.log(`${data.user.displayName} (${data.user.id})`);
-      console.log(`API：${resolveApiUrl()}`);
-      console.log(`时区：${data.user.timezone}`);
-      console.log(`授权来源：${sourceLabel}`);
+      console.log(`API: ${resolveApiUrl()}`);
+      console.log(`Timezone: ${data.user.timezone}`);
+      console.log(`Auth source: ${sourceLabel}`);
     }
   });
 }
@@ -227,17 +227,17 @@ export async function runToday(ctx: CliContext): Promise<void> {
       return;
     }
     console.log(`${data.date} (${data.timezone})`);
-    console.log("提醒：");
+    console.log("Reminders:");
     if (data.reminders.length === 0) {
-      console.log("  暂无");
+      console.log("  None");
     } else {
       for (const reminder of data.reminders) {
         console.log(`  - [${reminder.status}] ${reminder.title} (${reminder.id})`);
       }
     }
-    console.log("日程：");
+    console.log("Calendar:");
     if (data.calendarEvents.length === 0) {
-      console.log("  暂无");
+      console.log("  None");
     } else {
       for (const event of data.calendarEvents) {
         const end = event.endAt ? ` - ${event.endAt}` : "";

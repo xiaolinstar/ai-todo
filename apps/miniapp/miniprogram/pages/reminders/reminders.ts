@@ -7,7 +7,8 @@ import {
   formatDateTime,
   formatIsoDateLabel,
   formatWeekdayLong,
-  isOverdueDueAt
+  isOverdueDueAt,
+  splitIsoDateTime
 } from "../../lib/format";
 import { updateTabBarSelected } from "../../lib/tab-bar";
 import { getWindowWidthPx } from "../../lib/window-metrics";
@@ -16,6 +17,7 @@ import { buildAppShareOptions, buildAppShareTimelineOptions } from "../../lib/sh
 interface ReminderView extends ReminderSummary {
   dueLabel: string;
   contactNames: string;
+  sourceLabel: string;
   subline: string;
   isOverdue: boolean;
   completing: boolean;
@@ -27,6 +29,12 @@ interface ReminderView extends ReminderSummary {
   deleteVisible: boolean;
 }
 
+interface ReminderGroup {
+  key: "overdue" | "today" | "future";
+  title: string;
+  items: ReminderView[];
+}
+
 const COMPLETE_HOLD_MS = 1200;
 const EXIT_ANIM_MS = 340;
 const SWIPE_OPEN_THRESHOLD_RATIO = 0.42;
@@ -34,6 +42,17 @@ const SWIPE_TRIGGER_PX = 28;
 const TAP_SLOP_PX = 12;
 
 type TabKey = "pending" | "completed";
+
+function sourceLabel(source?: string): string {
+  if (!source) return "";
+  const labels: Record<string, string> = {
+    email: "邮件",
+    jira: "工单",
+    agent: "Agent",
+    cli: "CLI"
+  };
+  return labels[source] || source;
+}
 
 function enrichReminder(item: ReminderSummary, timeZone: string): ReminderView {
   const completed = item.status === "completed";
@@ -47,6 +66,7 @@ function enrichReminder(item: ReminderSummary, timeZone: string): ReminderView {
     ...item,
     dueLabel,
     contactNames,
+    sourceLabel: sourceLabel(item.source),
     isOverdue,
     subline: buildReminderSubline({
       status: item.status,
@@ -63,6 +83,33 @@ function enrichReminder(item: ReminderSummary, timeZone: string): ReminderView {
     pressing: false,
     deleteVisible: false
   };
+}
+
+function groupPendingReminders(
+  items: ReminderView[],
+  today: string,
+  timeZone: string
+): ReminderGroup[] {
+  const groups: ReminderGroup[] = [
+    { key: "overdue", title: "逾期", items: [] },
+    { key: "today", title: "今天", items: [] },
+    { key: "future", title: "未来", items: [] }
+  ];
+
+  items.forEach((item) => {
+    if (item.isOverdue && !item.completing) {
+      groups[0].items.push(item);
+      return;
+    }
+    const dueDate = item.dueAt ? splitIsoDateTime(item.dueAt, timeZone).date : "";
+    if (dueDate === today) {
+      groups[1].items.push(item);
+      return;
+    }
+    groups[2].items.push(item);
+  });
+
+  return groups.filter((group) => group.items.length > 0);
 }
 
 function isDeleteRevealed(swipeX: number): boolean {
@@ -94,10 +141,12 @@ Page({
     dateLabel: "",
     weekdayLabel: "",
     timezone: "",
+    accountToday: "",
     activeTab: "pending" as TabKey,
     pendingCount: 0,
     completedCount: 0,
     overdueCount: 0,
+    pendingGroups: [] as ReminderGroup[],
     pending: [] as ReminderView[],
     completed: [] as ReminderView[]
   },
@@ -194,9 +243,11 @@ Page({
           dateLabel: formatIsoDateLabel(today),
           weekdayLabel: formatWeekdayLong(today),
           timezone,
+          accountToday: today,
           pendingCount: pending.length,
           completedCount: completed.length,
           overdueCount: pending.filter((item) => item.isOverdue).length,
+          pendingGroups: groupPendingReminders(pending, today, timezone),
           pending,
           completed
         });
@@ -239,7 +290,8 @@ Page({
     this.setData({
       pendingCount: pending.length,
       completedCount: completed.length,
-      overdueCount: pending.filter((item) => item.isOverdue && !item.completing).length
+      overdueCount: pending.filter((item) => item.isOverdue && !item.completing).length,
+      pendingGroups: groupPendingReminders(pending, this.data.accountToday, this.data.timezone)
     });
   },
 
@@ -247,7 +299,10 @@ Page({
     const pending = this.data.pending.map((item: ReminderView) =>
       item.id === id ? { ...item, ...patch } : item
     );
-    this.setData({ pending });
+    this.setData({
+      pending,
+      pendingGroups: groupPendingReminders(pending, this.data.accountToday, this.data.timezone)
+    });
     return pending;
   },
 
@@ -258,7 +313,11 @@ Page({
     const completed = this.data.completed.map((item: ReminderView) =>
       item.id === id ? { ...item, ...patch } : item
     );
-    this.setData({ pending, completed });
+    this.setData({
+      pending,
+      pendingGroups: groupPendingReminders(pending, this.data.accountToday, this.data.timezone),
+      completed
+    });
     return { pending, completed };
   },
 
@@ -273,8 +332,10 @@ Page({
       item.id === exceptId || item.swipeX === 0
         ? item
         : { ...item, swipeX: 0, swiping: false, pressing: false, deleteVisible: false };
+    const pending = this.data.pending.map(closeItem);
     this.setData({
-      pending: this.data.pending.map(closeItem),
+      pending,
+      pendingGroups: groupPendingReminders(pending, this.data.accountToday, this.data.timezone),
       completed: this.data.completed.map(closeItem)
     });
   },
@@ -310,7 +371,11 @@ Page({
       ...this.data.completed.filter((entry: ReminderView) => entry.id !== id)
     ];
 
-    this.setData({ pending, completed });
+    this.setData({
+      pending,
+      pendingGroups: groupPendingReminders(pending, this.data.accountToday, this.data.timezone),
+      completed
+    });
     this.updateCounts(pending, completed);
     this.clearCompleteTimer(id);
   },
@@ -492,7 +557,11 @@ Page({
         setTimeout(() => {
           const pending = this.data.pending.filter((entry: ReminderView) => entry.id !== id);
           const completed = this.data.completed.filter((entry: ReminderView) => entry.id !== id);
-          this.setData({ pending, completed });
+          this.setData({
+            pending,
+            pendingGroups: groupPendingReminders(pending, this.data.accountToday, this.data.timezone),
+            completed
+          });
           this.updateCounts(pending, completed);
           this.clearCompleteTimer(id);
           wx.showToast({ title: "已删除", icon: "success" });

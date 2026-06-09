@@ -22,7 +22,7 @@ export interface ContentPrefs {
 
 const DEFAULT_PREFS: ContentPrefs = {
   calendar: {
-    defaultHasEnd: false,
+    defaultHasEnd: true,
     defaultDurationMinutes: 60,
     selectTodayOnOpen: true
   },

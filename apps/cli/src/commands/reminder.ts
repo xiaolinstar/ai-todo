@@ -11,6 +11,60 @@ import {
 import { readListCursor, readListLimit } from "../pagination";
 import { renderReminderListPage } from "../render-list";
 
+type ReminderSortFlag = "created_at" | "due_at" | "completed_at";
+
+function readReminderSort(argv: string[], all: boolean, status?: ReminderStatus): ReminderSortFlag {
+  const raw = readFlagValue(argv, "--sort");
+  if (!raw) {
+    if (status === "completed") {
+      return "completed_at";
+    }
+    return all ? "created_at" : "due_at";
+  }
+  if (raw === "created" || raw === "created_at") {
+    return "created_at";
+  }
+  if (raw === "due" || raw === "due_at") {
+    return "due_at";
+  }
+  if (raw === "completed" || raw === "completed_at") {
+    return "completed_at";
+  }
+  console.error("Invalid --sort. Use one of: due, created, completed.");
+  process.exitCode = 1;
+  return all ? "created_at" : "due_at";
+}
+
+function sortedReminders<T extends { dueAt?: string; completedAt?: string; status: string }>(
+  items: T[],
+  sort: ReminderSortFlag,
+  showAll: boolean
+): T[] {
+  const statusRank: Record<string, number> = {
+    pending: 0,
+    completed: 1,
+    cancelled: 2
+  };
+  const timestamp = (value?: string): number => {
+    if (!value) return Number.POSITIVE_INFINITY;
+    const parsed = new Date(value).getTime();
+    return Number.isNaN(parsed) ? Number.POSITIVE_INFINITY : parsed;
+  };
+  return [...items].sort((a, b) => {
+    if (showAll) {
+      const rank = (statusRank[a.status] ?? 9) - (statusRank[b.status] ?? 9);
+      if (rank !== 0) return rank;
+    }
+    if (sort === "completed_at") {
+      return timestamp(a.completedAt) - timestamp(b.completedAt);
+    }
+    if (sort === "created_at") {
+      return 0;
+    }
+    return timestamp(a.dueAt) - timestamp(b.dueAt);
+  });
+}
+
 export async function runReminderCreate(ctx: CliContext, argv: string[]): Promise<void> {
   const title = readFlagValue(argv, "--title") ?? positionalAfter(argv, "add", "create");
   if (!title) {
@@ -40,13 +94,13 @@ export async function runReminderCreate(ctx: CliContext, argv: string[]): Promis
     }),
     (data) => {
       if (!ctx.json) {
-        console.log(`${data.created === false ? "已存在提醒" : "已创建提醒"}：${data.reminder.title}`);
-        console.log(`ID：${data.reminder.id}`);
+        console.log(`${data.created === false ? "Existing reminder" : "Created reminder"}: ${data.reminder.title}`);
+        console.log(`ID: ${data.reminder.id}`);
         if (data.reminder.dueAt) {
-          console.log(`截止：${data.reminder.dueAt}`);
+          console.log(`Due: ${data.reminder.dueAt}`);
         }
         if (data.reminder.source && data.reminder.externalId) {
-          console.log(`来源：${data.reminder.source} / ${data.reminder.externalId}`);
+          console.log(`Source: ${data.reminder.source} / ${data.reminder.externalId}`);
         }
       }
     }
@@ -54,7 +108,9 @@ export async function runReminderCreate(ctx: CliContext, argv: string[]): Promis
 }
 
 export async function runReminderList(ctx: CliContext, argv: string[]): Promise<void> {
-  const status = readFlagValue(argv, "--status") as ReminderStatus | undefined;
+  const all = hasFlag(argv, "-a") || hasFlag(argv, "--all");
+  const status = all ? undefined : ((readFlagValue(argv, "--status") as ReminderStatus | undefined) ?? "pending");
+  const sort = readReminderSort(argv, all, status);
   const limit = readListLimit(argv);
   const cursor = readListCursor(argv);
   if (process.exitCode) {
@@ -69,19 +125,20 @@ export async function runReminderList(ctx: CliContext, argv: string[]): Promise<
       from: readFlagValue(argv, "--from"),
       to: readFlagValue(argv, "--to"),
       limit,
-      cursor
+      cursor,
+      sort
     }),
     (data) => {
       if (ctx.json) {
         return;
       }
-      renderReminderListPage(data.items, {
-        label: "提醒",
+      renderReminderListPage(sortedReminders(data.items, sort, all), {
+        label: all ? "Reminders · all statuses" : `Reminders · ${status}`,
         totalCount: data.totalCount,
         hasMore: data.hasMore,
         nextCursor: data.nextCursor,
         nextPageHint: "ai-todo reminder list"
-      });
+      }, { showStatus: all });
     }
   );
 }
@@ -102,10 +159,10 @@ export async function runReminderFind(ctx: CliContext, argv: string[]): Promise<
   });
 }
 
-export async function runReminderShow(ctx: CliContext, argv: string[]): Promise<void> {
-  const id = positionalAfter(argv, "show");
+export async function runReminderShow(ctx: CliContext, argv: string[], anchor = "show"): Promise<void> {
+  const id = await resolveReminderId(ctx, argv, anchor, "inspect", "ls");
   if (!id) {
-    console.error("Usage: ai-todo reminder show <reminder_id>");
+    console.error("Usage: ai-todo reminder show|inspect <reminder_id_or_prefix>");
     process.exitCode = 1;
     return;
   }
@@ -115,22 +172,22 @@ export async function runReminderShow(ctx: CliContext, argv: string[]): Promise<
     }
     const r = data.reminder;
     console.log(`${r.title} (${r.id})`);
-    console.log(`状态：${r.status}`);
+    console.log(`Status: ${r.status}`);
     if (r.dueAt) {
-      console.log(`截止：${r.dueAt}`);
+      console.log(`Due: ${r.dueAt}`);
     }
     if (r.remindAt) {
-      console.log(`通知：${r.remindAt}`);
+      console.log(`Remind: ${r.remindAt}`);
     }
     if (r.source && r.externalId) {
-      console.log(`来源：${r.source} / ${r.externalId}`);
+      console.log(`Source: ${r.source} / ${r.externalId}`);
     }
     if (r.notes) {
-      console.log(`备注：${r.notes}`);
+      console.log(`Notes: ${r.notes}`);
     }
     if (r.contacts && r.contacts.length > 0) {
       console.log(
-        `联系人：${r.contacts.map((c) => `${c.displayName} (@${c.handle})`).join(", ")}`
+        `Contacts: ${r.contacts.map((c) => `${c.displayName} (@${c.handle})`).join(", ")}`
       );
     }
   });
@@ -145,8 +202,8 @@ export async function runReminderDone(ctx: CliContext, argv: string[]): Promise<
   }
   await handleApi(ctx, await ctx.client.completeReminder(id), (data) => {
     if (!ctx.json) {
-      console.log(`已完成提醒：${data.reminder.title}`);
-      console.log(`ID：${data.reminder.id}`);
+      console.log(`Completed reminder: ${data.reminder.title}`);
+      console.log(`ID: ${data.reminder.id}`);
     }
   });
 }
@@ -191,12 +248,12 @@ export async function runReminderUpdate(ctx: CliContext, argv: string[]): Promis
     (data) => {
       if (!ctx.json) {
         const r = data.reminder;
-        console.log(`已更新提醒：${r.title} (${r.id})`);
+        console.log(`Updated reminder: ${r.title} (${r.id})`);
         if (r.dueAt) {
-          console.log(`截止：${r.dueAt}`);
+          console.log(`Due: ${r.dueAt}`);
         }
         if (r.remindAt) {
-          console.log(`通知：${r.remindAt}`);
+          console.log(`Remind: ${r.remindAt}`);
         }
       }
     }
@@ -219,9 +276,9 @@ export async function runReminderReschedule(ctx: CliContext, argv: string[]): Pr
     await ctx.client.rescheduleReminder(id, { dueAt: due, remindAt: remind }),
     (data) => {
       if (!ctx.json) {
-        console.log(`已改期：${data.reminder.title}`);
+        console.log(`Rescheduled reminder: ${data.reminder.title}`);
         if (data.reminder.dueAt) {
-          console.log(`新截止：${data.reminder.dueAt}`);
+          console.log(`New due: ${data.reminder.dueAt}`);
         }
       }
     }
@@ -237,7 +294,7 @@ export async function runReminderDelete(ctx: CliContext, argv: string[]): Promis
   }
   await handleApi(ctx, await ctx.client.deleteReminder(id), (data) => {
     if (!ctx.json) {
-      console.log(`已删除提醒：${data.id}`);
+      console.log(`Deleted reminder: ${data.id}`);
     }
   });
 }
@@ -254,21 +311,21 @@ function renderReminderDetail(r: {
   contacts?: { displayName: string; handle: string }[];
 }): void {
   console.log(`${r.title} (${r.id})`);
-  console.log(`状态：${r.status}`);
+  console.log(`Status: ${r.status}`);
   if (r.dueAt) {
-    console.log(`截止：${r.dueAt}`);
+    console.log(`Due: ${r.dueAt}`);
   }
   if (r.remindAt) {
-    console.log(`通知：${r.remindAt}`);
+    console.log(`Remind: ${r.remindAt}`);
   }
   if (r.source && r.externalId) {
-    console.log(`来源：${r.source} / ${r.externalId}`);
+    console.log(`Source: ${r.source} / ${r.externalId}`);
   }
   if (r.notes) {
-    console.log(`备注：${r.notes}`);
+    console.log(`Notes: ${r.notes}`);
   }
   if (r.contacts && r.contacts.length > 0) {
-    console.log(`联系人：${r.contacts.map((c) => `${c.displayName} (@${c.handle})`).join(", ")}`);
+    console.log(`Contacts: ${r.contacts.map((c) => `${c.displayName} (@${c.handle})`).join(", ")}`);
   }
 }
 
@@ -297,7 +354,7 @@ async function resolveReminderId(
 ): Promise<string | undefined> {
   const id = positionalAfter(argv, ...anchors);
   if (id) {
-    return id;
+    return resolveReminderIdPrefix(ctx, id);
   }
 
   const source = readFlagValue(argv, "--source");
@@ -317,6 +374,49 @@ async function resolveReminderId(
     return undefined;
   }
   return response.data.reminder.id;
+}
+
+async function resolveReminderIdPrefix(ctx: CliContext, raw: string): Promise<string | undefined> {
+  const value = raw.trim();
+  if (!value) {
+    return undefined;
+  }
+  if (value.startsWith("rem_")) {
+    return value;
+  }
+  if (value.length < 4) {
+    console.error("Reminder ID prefix must be at least 4 characters.");
+    process.exitCode = 1;
+    return undefined;
+  }
+
+  const response = await ctx.client.listReminders({ limit: 500 });
+  if (!response.ok) {
+    await handleApi(ctx, response, () => {});
+    return undefined;
+  }
+
+  const matches = response.data.items.filter((item) => {
+    const short = item.id.startsWith("rem_") ? item.id.slice(4) : item.id;
+    return short.startsWith(value) || item.id.startsWith(value);
+  });
+
+  if (matches.length === 0) {
+    console.error(`No reminder matches ID prefix "${value}".`);
+    process.exitCode = 1;
+    return undefined;
+  }
+  if (matches.length > 1) {
+    const ids = matches
+      .slice(0, 8)
+      .map((item) => (item.id.startsWith("rem_") ? item.id.slice(4, 16) : item.id.slice(0, 12)))
+      .join(", ");
+    console.error(`ID prefix "${value}" is ambiguous. Matches: ${ids}`);
+    process.exitCode = 1;
+    return undefined;
+  }
+
+  return matches[0].id;
 }
 
 declare const process: { exitCode?: number };
