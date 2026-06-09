@@ -62,7 +62,12 @@ Shorthand (human): `ai-todo add "title only"` creates a reminder without due dat
 
 Programmatic catalog: `@ai-todo/agent-protocol` or `packages/agent-protocol/dist/agent-tools.json`.
 
-**MCP** (recommended when available): configure `ai-todo-mcp` per `docs/mcp-setup.md` — tools `whoami`, `today`, `reminder_find`, `reminder_create_sourced`, etc.
+## MCP vs CLI
+
+- **MCP** (when the host supports stdio MCP — Cursor, Claude Desktop, VS Code MCP, etc.): use registered tools (`whoami`, `today`, `reminder_find`, …). See `docs/mcp-setup.md`. MCP wraps CLI; same PAT. Prefer MCP for structured calls without shell.
+- **CLI** (always available): full command surface; use when MCP is not configured, for scripts/CI, or for commands not exposed as MCP tools (contact CRUD, token admin, etc.).
+
+MCP is not a simpler install than CLI — it is a **protocol adapter** for MCP-capable hosts. Do not assume Cursor-only.
 
 ## Example: user request → commands
 

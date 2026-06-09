@@ -1,6 +1,8 @@
-# Agent 使用指南（CLI + Skills）
+# Agent 使用指南（CLI + MCP + Skills）
 
-ai-todo **不提供**服务端自然语言解析。Agent（OpenClaw、Claude Code、Cursor 等）在本地理解用户意图后，调用 **结构化 CLI** 或 HTTP API。
+ai-todo **不提供**服务端自然语言解析。Agent 在本地理解用户意图后，通过 **结构化 CLI**、**MCP 工具**（支持 MCP 的 IDE / 桌面客户端）或 HTTP API 访问数据。
+
+接入方式选型见 [mcp-setup.md § CLI 与 MCP](./mcp-setup.md#cli-与-mcp何时用哪个)：CLI 通用完整；MCP 面向支持 stdio MCP 的宿主（Cursor、Claude Desktop、VS Code MCP 等），让模型零 shell 调用固定工具集。
 
 ## 安装 CLI
 
@@ -220,13 +222,15 @@ ai-todo reminder list --source email --status pending --json
 
 ## MCP 接入（v0.6.2+）
 
-Cursor / Claude Desktop 可通过 **stdio MCP** 调用 ai-todo，无需模型拼 shell。Server 包装 `ai-todo --json`，鉴权与 CLI 相同。
+支持 **stdio MCP** 的宿主（不限于 Cursor：Claude Desktop、VS Code MCP、Windsurf 等）可注册 `ai-todo` server，由模型调用具名 tool，无需拼 shell。Server 内部仍执行 `ai-todo --json`，**鉴权与 CLI 相同**（PAT / `settings.json`）。
 
-```bash
-pnpm mcp:build
-```
+| 场景 | 建议 |
+|------|------|
+| 宿主已配置 MCP，且任务在 P0 工具内 | 用 MCP tools |
+| 无 MCP、脚本/CI、需完整子命令 | 用 CLI + `--json` |
+| OpenClaw / Claude Code 等仅 Skill | 用本指南 + `skills/ai-todo/SKILL.md` |
 
-配置示例与工具列表见 [mcp-setup.md](./mcp-setup.md)。有 MCP 时优先用 MCP tools；否则用 Skill + shell。
+安装与各宿主配置：[mcp-setup.md](./mcp-setup.md)。仓库贡献者：`pnpm mcp:build`；终端用户待 `@xiaolinstar/ai-todo-mcp` npm 发布后可用 `npx`。
 
 ## 工具清单（程序化）
 
@@ -238,9 +242,9 @@ import { AI_TODO_AGENT_TOOLS, AI_TODO_AGENT_GUIDELINES } from "@ai-todo/agent-pr
 
 构建后 JSON 导出：`packages/agent-protocol/dist/agent-tools.json`（`pnpm --filter @ai-todo/agent-protocol build`）。
 
-## 安装 Skill（Cursor / Claude）
+## 安装 Skill（无 MCP 的 Agent）
 
-将仓库内 `skills/ai-todo/` 链接或复制到 Agent 的 skills 目录，详见 `skills/ai-todo/SKILL.md`。
+OpenClaw、Claude Code、或未配置 MCP 的宿主：将仓库内 `skills/ai-todo/` 链接或复制到 Agent 的 skills 目录，详见 `skills/ai-todo/SKILL.md`。已配置 MCP 的宿主可优先用 MCP tools，Skill 作补充。
 
 ## 本地验证（测试代替脚本灌数）
 
