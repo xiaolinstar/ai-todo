@@ -1,7 +1,6 @@
 {
-  "name": "@ai-todo/mcp",
+  "name": "@xiaolinstar/ai-todo-mcp",
   "version": "0.1.0",
-  "private": true,
   "description": "stdio MCP server for ai-todo (wraps ai-todo CLI)",
   "type": "commonjs",
   "bin": {
@@ -9,14 +8,34 @@
   },
   "files": [
     "dist/index.js",
-    "dist/index.js.map"
+    "dist/index.js.map",
+    "README.md"
   ],
   "scripts": {
     "build": "node scripts/bundle.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "tsc -p tsconfig.json --noEmit",
-    "smoke": "node scripts/smoke.mjs"
+    "smoke": "node scripts/smoke.mjs",
+    "prepublishOnly": "pnpm build && pnpm smoke"
   },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xiaolinstar/ai-todo.git",
+    "directory": "packages/mcp"
+  },
+  "keywords": [
+    "ai-todo",
+    "mcp",
+    "model-context-protocol",
+    "reminders",
+    "calendar",
+    "agent",
+    "cursor"
+  ],
+  "license": "MIT",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
     "zod": "^3.25.76"

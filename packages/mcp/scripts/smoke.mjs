@@ -27,7 +27,7 @@ const EXPECTED_TOOLS = [
 ];
 
 if (!fs.existsSync(distEntry)) {
-  console.error("Missing dist/index.js — run pnpm --filter @ai-todo/mcp build");
+  console.error("Missing dist/index.js — run pnpm --filter @xiaolinstar/ai-todo-mcp build");
   process.exit(1);
 }
 

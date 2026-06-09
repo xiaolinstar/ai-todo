@@ -19,7 +19,8 @@
 | releaseTag | api | cli | miniapp | 说明 |
 |------------|-----|-----|---------|------|
 | `v0.7.0` | `0.3.0` | `0.5.1` | `0.7.0` | 内测 UX 稳定版：登录错误提示、日历默认 1 小时结束时间与时间联动、长标题单行省略、提醒来源角标与逾期/今天/未来分组、CLI 英文输出。 |
-| `v0.6.2` | `0.3.0` | `0.5.0` | `0.6.0` | MCP stdio Server：`@ai-todo/mcp` 0.1.0、12 个 P0 tools、`docs/mcp-setup.md`；无 API/小程序变更。 |
+| `v0.6.2.1` | `0.3.0` | `0.5.1` | `0.7.0` | MCP npm 首发 `@xiaolinstar/ai-todo-mcp@0.1.0`；CLI npm `0.5.1`；文档默认 `npx` 路径。无 API/小程序变更。 |
+| `v0.6.2` | `0.3.0` | `0.5.0` | `0.6.0` | MCP stdio Server（仓库内）：12 个 P0 tools、`docs/mcp-setup.md`；无 API/小程序变更。 |
 | `v0.6.1` | `0.3.0` | `0.5.0` | `0.6.0` | Agent 工具链：`agent-protocol` 0.4.0 来源工具与 guidelines、Skill/文档；无 API/小程序变更。 |
 | `v0.6.0` | `0.3.0` | `0.5.0` | `0.6.0` | Reminder 来源外键与反查：`source/externalId/sourceMeta`、lookup、source list、CLI 快捷操作；小程序只读展示来源。npm `@xiaolinstar/ai-todo-cli@0.5.0`。 |
 | `v0.5.7` | `0.2.7` | `0.4.2` | `0.5.7` | 用户隐私保护指引审核通过；DevTools 告警与分享/TabBar 样式修复。 |

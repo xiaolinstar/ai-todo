@@ -230,7 +230,7 @@ ai-todo reminder list --source email --status pending --json
 | 无 MCP、脚本/CI、需完整子命令 | 用 CLI + `--json` |
 | OpenClaw / Claude Code 等仅 Skill | 用本指南 + `skills/ai-todo/SKILL.md` |
 
-安装与各宿主配置：[mcp-setup.md](./mcp-setup.md)。仓库贡献者：`pnpm mcp:build`；终端用户待 `@xiaolinstar/ai-todo-mcp` npm 发布后可用 `npx`。
+安装与各宿主配置：[mcp-setup.md](./mcp-setup.md)。终端用户：`npx -y @xiaolinstar/ai-todo-mcp`；仓库贡献者：`pnpm mcp:build`。
 
 ## 工具清单（程序化）
 
