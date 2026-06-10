@@ -25,6 +25,29 @@ class ReminderNotFoundError(Exception):
     pass
 
 
+VALID_REMINDER_STATUSES = frozenset({"pending", "in_progress", "completed", "cancelled"})
+
+
+def _validate_status_filter(status: str | None) -> None:
+    if status and status not in VALID_REMINDER_STATUSES:
+        raise ValueError(
+            "status must be one of: pending, in_progress, completed, cancelled"
+        )
+
+
+def _apply_status(reminder: ReminderModel, status: str) -> None:
+    if status not in VALID_REMINDER_STATUSES:
+        raise ValueError(
+            "status must be one of: pending, in_progress, completed, cancelled"
+        )
+    reminder.status = status
+    if status == "completed":
+        if reminder.completed_at is None:
+            reminder.completed_at = now_utc()
+    else:
+        reminder.completed_at = None
+
+
 class ReminderService:
     def __init__(
         self,
@@ -109,6 +132,7 @@ class ReminderService:
         cursor: str | None = None,
         sort: str = "created_at",
     ) -> ReminderListResult:
+        _validate_status_filter(status)
         cleaned_source = _clean_source(source)
         if from_date or to_date:
             return self._list_reminders_in_due_range(
@@ -262,11 +286,7 @@ class ReminderService:
             reminder.notes = _clean_optional(updates["notes"])
 
         if "status" in updates:
-            reminder.status = updates["status"]
-            if updates["status"] == "completed" and reminder.completed_at is None:
-                reminder.completed_at = now_utc()
-            if updates["status"] == "pending":
-                reminder.completed_at = None
+            _apply_status(reminder, updates["status"])
 
         if "due_at" in updates:
             reminder.due_at = _clean_optional(updates["due_at"])

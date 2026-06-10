@@ -22,7 +22,7 @@ def is_reminder_visible_today(
     timezone: str,
     today: str,
 ) -> bool:
-    if status != "pending":
+    if status not in {"pending", "in_progress"}:
         return False
 
     if not due_at:

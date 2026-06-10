@@ -18,11 +18,11 @@ Core:
 
 Reminders:
   ai-todo reminder create --title <text> [--due <iso>] [--remind <iso>] [--notes <text>] [--source <name>] [--external-id <id>]
-  ai-todo reminder list|ls [-a|--all] [--status pending|completed|cancelled] [--sort due|created|completed] [--source <name>] [--from YYYY-MM-DD] [--to YYYY-MM-DD] [--limit <n>] [--cursor <token>]
+  ai-todo reminder list|ls [-a|--all] [--status pending|in_progress|completed|cancelled] [--sort due|created|completed] [--source <name>] [--from YYYY-MM-DD] [--to YYYY-MM-DD] [--limit <n>] [--cursor <token>]
   ai-todo reminder find --source <name> --external-id <id>
   ai-todo reminder show|inspect|done|delete <id_or_prefix>
   ai-todo reminder done|delete --source <name> --external-id <id>
-  ai-todo reminder update <id> [--title <text>] [--notes <text>] [--due <iso>] [--remind <iso>] [--contact <id> ...]
+  ai-todo reminder update <id> [--title <text>] [--notes <text>] [--status pending|in_progress|completed] [--due <iso>] [--remind <iso>] [--contact <id> ...]
   ai-todo reminder reschedule <id> --due <iso> [--remind <iso>]
   ai-todo add <title>
 

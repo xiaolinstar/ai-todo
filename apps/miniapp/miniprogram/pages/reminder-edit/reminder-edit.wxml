@@ -19,6 +19,32 @@
         <text class="form-label">来源</text>
         <text class="form-value muted">{{sourceLabel}}</text>
       </view>
+      <view class="form-row stack">
+        <text class="form-label">状态</text>
+        <view class="segmented segmented-3 status-segment">
+          <view
+            class="segment pressable {{status === 'pending' ? 'active' : ''}}"
+            data-status="pending"
+            bindtap="onStatusChange"
+          >
+            未完成
+          </view>
+          <view
+            class="segment pressable {{status === 'in_progress' ? 'active' : ''}}"
+            data-status="in_progress"
+            bindtap="onStatusChange"
+          >
+            处理中
+          </view>
+          <view
+            class="segment pressable {{status === 'completed' ? 'active' : ''}}"
+            data-status="completed"
+            bindtap="onStatusChange"
+          >
+            已完成
+          </view>
+        </view>
+      </view>
       <view wx:if="{{!isCompleted}}" class="form-row">
         <text class="form-label">截止时间</text>
         <switch checked="{{hasDue}}" bindchange="onDueToggle" color="{{switchColor}}" />

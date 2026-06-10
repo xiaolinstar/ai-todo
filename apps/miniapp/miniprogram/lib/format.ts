@@ -263,6 +263,10 @@ export function buildReminderSubline(input: {
   const completed = input.status === "completed";
   const parts: string[] = [];
 
+  if (input.status === "in_progress") {
+    parts.push("处理中");
+  }
+
   if (!completed) {
     if (input.isOverdue) {
       parts.push("已逾期");

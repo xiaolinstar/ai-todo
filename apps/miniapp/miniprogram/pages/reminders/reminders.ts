@@ -1,4 +1,4 @@
-import { completeReminder, deleteReminder, fetchReminders } from "../../lib/api";
+import { completeReminder, deleteReminder, fetchReminders, updateReminder } from "../../lib/api";
 import { loadAccountDay } from "../../lib/account-day";
 import { TODO_MODAL_CONFIRM_DANGER } from "../../lib/design-tokens";
 import type { ReminderSummary } from "../../lib/api";
@@ -41,7 +41,7 @@ const SWIPE_OPEN_THRESHOLD_RATIO = 0.42;
 const SWIPE_TRIGGER_PX = 28;
 const TAP_SLOP_PX = 12;
 
-type TabKey = "pending" | "completed";
+type TabKey = "pending" | "in_progress" | "completed";
 
 function sourceLabel(source?: string): string {
   if (!source) return "";
@@ -144,10 +144,13 @@ Page({
     accountToday: "",
     activeTab: "pending" as TabKey,
     pendingCount: 0,
+    inProgressCount: 0,
     completedCount: 0,
     overdueCount: 0,
     pendingGroups: [] as ReminderGroup[],
+    inProgressGroups: [] as ReminderGroup[],
     pending: [] as ReminderView[],
+    inProgress: [] as ReminderView[],
     completed: [] as ReminderView[]
   },
 
@@ -207,15 +210,24 @@ Page({
     return Promise.all([
       loadAccountDay(),
       fetchReminders({ status: "pending", sort: "due_at" }),
+      fetchReminders({ status: "in_progress", sort: "due_at" }),
       fetchReminders({ status: "completed", sort: "completed_at" })
     ])
-      .then(([account, pendingRes, completedRes]) => {
-        if (!pendingRes.ok || !pendingRes.data || !completedRes.ok || !completedRes.data) {
+      .then(([account, pendingRes, inProgressRes, completedRes]) => {
+        if (
+          !pendingRes.ok ||
+          !pendingRes.data ||
+          !inProgressRes.ok ||
+          !inProgressRes.data ||
+          !completedRes.ok ||
+          !completedRes.data
+        ) {
           this.setData({
             loading: false,
             loaded: true,
             error:
               pendingRes.error?.message ||
+              inProgressRes.error?.message ||
               completedRes.error?.message ||
               "加载失败，请在「我的」页检查 API 地址"
           });
@@ -224,6 +236,9 @@ Page({
 
         const { timezone, today } = account;
         const pendingItems = pendingRes.data.items.map((item) => enrichReminder(item, timezone));
+        const inProgressItems = inProgressRes.data.items.map((item) =>
+          enrichReminder(item, timezone)
+        );
         const completedItems = completedRes.data.items.map((item) =>
           enrichReminder(item, timezone)
         );
@@ -235,7 +250,9 @@ Page({
           ...animating,
           ...pendingItems.filter((item) => !animatingIds.has(item.id))
         ];
+        const inProgress = inProgressItems;
         const completed = completedItems;
+        const openItems = [...pending, ...inProgress];
 
         this.setData({
           loading: false,
@@ -245,10 +262,13 @@ Page({
           timezone,
           accountToday: today,
           pendingCount: pending.length,
+          inProgressCount: inProgress.length,
           completedCount: completed.length,
-          overdueCount: pending.filter((item) => item.isOverdue).length,
+          overdueCount: openItems.filter((item) => item.isOverdue).length,
           pendingGroups: groupPendingReminders(pending, today, timezone),
+          inProgressGroups: groupPendingReminders(inProgress, today, timezone),
           pending,
+          inProgress,
           completed
         });
       })
@@ -274,6 +294,7 @@ Page({
   findReminderItem(id: string): ReminderView | undefined {
     return (
       this.data.pending.find((entry: ReminderView) => entry.id === id) ||
+      this.data.inProgress.find((entry: ReminderView) => entry.id === id) ||
       this.data.completed.find((entry: ReminderView) => entry.id === id)
     );
   },
@@ -286,12 +307,15 @@ Page({
     }
   },
 
-  updateCounts(pending: ReminderView[], completed: ReminderView[]) {
+  updateCounts(pending: ReminderView[], inProgress: ReminderView[], completed: ReminderView[]) {
+    const openItems = [...pending, ...inProgress];
     this.setData({
       pendingCount: pending.length,
+      inProgressCount: inProgress.length,
       completedCount: completed.length,
-      overdueCount: pending.filter((item) => item.isOverdue && !item.completing).length,
-      pendingGroups: groupPendingReminders(pending, this.data.accountToday, this.data.timezone)
+      overdueCount: openItems.filter((item) => item.isOverdue && !item.completing).length,
+      pendingGroups: groupPendingReminders(pending, this.data.accountToday, this.data.timezone),
+      inProgressGroups: groupPendingReminders(inProgress, this.data.accountToday, this.data.timezone)
     });
   },
 
@@ -310,15 +334,20 @@ Page({
     const pending = this.data.pending.map((item: ReminderView) =>
       item.id === id ? { ...item, ...patch } : item
     );
+    const inProgress = this.data.inProgress.map((item: ReminderView) =>
+      item.id === id ? { ...item, ...patch } : item
+    );
     const completed = this.data.completed.map((item: ReminderView) =>
       item.id === id ? { ...item, ...patch } : item
     );
     this.setData({
       pending,
+      inProgress,
       pendingGroups: groupPendingReminders(pending, this.data.accountToday, this.data.timezone),
+      inProgressGroups: groupPendingReminders(inProgress, this.data.accountToday, this.data.timezone),
       completed
     });
-    return { pending, completed };
+    return { pending, inProgress, completed };
   },
 
   resetRowGesture() {
@@ -333,9 +362,12 @@ Page({
         ? item
         : { ...item, swipeX: 0, swiping: false, pressing: false, deleteVisible: false };
     const pending = this.data.pending.map(closeItem);
+    const inProgress = this.data.inProgress.map(closeItem);
     this.setData({
       pending,
+      inProgress,
       pendingGroups: groupPendingReminders(pending, this.data.accountToday, this.data.timezone),
+      inProgressGroups: groupPendingReminders(inProgress, this.data.accountToday, this.data.timezone),
       completed: this.data.completed.map(closeItem)
     });
   },
@@ -354,7 +386,7 @@ Page({
   },
 
   finalizeCompletedItem(id: string) {
-    const item = this.data.pending.find((entry: ReminderView) => entry.id === id);
+    const item = this.findReminderItem(id);
     if (!item) return;
 
     const completedItem: ReminderView = enrichReminder(
@@ -366,6 +398,7 @@ Page({
     );
 
     const pending = this.data.pending.filter((entry: ReminderView) => entry.id !== id);
+    const inProgress = this.data.inProgress.filter((entry: ReminderView) => entry.id !== id);
     const completed = [
       completedItem,
       ...this.data.completed.filter((entry: ReminderView) => entry.id !== id)
@@ -373,24 +406,71 @@ Page({
 
     this.setData({
       pending,
+      inProgress,
       pendingGroups: groupPendingReminders(pending, this.data.accountToday, this.data.timezone),
+      inProgressGroups: groupPendingReminders(inProgress, this.data.accountToday, this.data.timezone),
       completed
     });
-    this.updateCounts(pending, completed);
+    this.updateCounts(pending, inProgress, completed);
     this.clearCompleteTimer(id);
   },
 
   revertCompletingItem(id: string) {
     this.clearCompleteTimer(id);
-    this.patchPendingItem(id, { completing: false, exiting: false });
+    this.patchOpenItem(id, { completing: false, exiting: false });
+  },
+
+  patchOpenItem(id: string, patch: Partial<ReminderView>) {
+    if (this.data.pending.some((entry: ReminderView) => entry.id === id)) {
+      return this.patchPendingItem(id, patch);
+    }
+    const inProgress = this.data.inProgress.map((item: ReminderView) =>
+      item.id === id ? { ...item, ...patch } : item
+    );
+    this.setData({
+      inProgress,
+      inProgressGroups: groupPendingReminders(inProgress, this.data.accountToday, this.data.timezone)
+    });
+    return inProgress;
+  },
+
+  onMarkInProgress(e: { currentTarget: { dataset: { id: string } } }) {
+    const id = e.currentTarget.dataset.id;
+    const item = this.findReminderItem(id);
+    if (!item || item.status !== "pending" || item.deleting) return;
+
+    updateReminder(id, { status: "in_progress" })
+      .then((response) => {
+        if (!response.ok || !response.data) {
+          wx.showToast({ title: response.error?.message || "操作失败", icon: "none" });
+          return;
+        }
+        const pending = this.data.pending.filter((entry: ReminderView) => entry.id !== id);
+        const moved = enrichReminder(response.data.reminder, this.data.timezone);
+        const inProgress = [
+          moved,
+          ...this.data.inProgress.filter((entry: ReminderView) => entry.id !== id)
+        ];
+        this.setData({
+          pending,
+          inProgress,
+          pendingGroups: groupPendingReminders(pending, this.data.accountToday, this.data.timezone),
+          inProgressGroups: groupPendingReminders(inProgress, this.data.accountToday, this.data.timezone)
+        });
+        this.updateCounts(pending, inProgress, this.data.completed);
+        wx.showToast({ title: "已标为处理中", icon: "success" });
+      })
+      .catch(() => wx.showToast({ title: "网络错误", icon: "none" }));
   },
 
   onComplete(e: { currentTarget: { dataset: { id: string } } }) {
     const id = e.currentTarget.dataset.id;
-    const item = this.data.pending.find((entry: ReminderView) => entry.id === id);
-    if (!item || item.completing || item.exiting || item.deleting) return;
+    const item = this.findReminderItem(id);
+    if (!item || item.completing || item.exiting || item.deleting || item.status === "completed") {
+      return;
+    }
 
-    this.patchPendingItem(id, { completing: true, pressing: false });
+    this.patchOpenItem(id, { completing: true, pressing: false });
 
     completeReminder(id)
       .then((response) => {
@@ -556,13 +636,16 @@ Page({
 
         setTimeout(() => {
           const pending = this.data.pending.filter((entry: ReminderView) => entry.id !== id);
+          const inProgress = this.data.inProgress.filter((entry: ReminderView) => entry.id !== id);
           const completed = this.data.completed.filter((entry: ReminderView) => entry.id !== id);
           this.setData({
             pending,
+            inProgress,
             pendingGroups: groupPendingReminders(pending, this.data.accountToday, this.data.timezone),
+            inProgressGroups: groupPendingReminders(inProgress, this.data.accountToday, this.data.timezone),
             completed
           });
-          this.updateCounts(pending, completed);
+          this.updateCounts(pending, inProgress, completed);
           this.clearCompleteTimer(id);
           wx.showToast({ title: "已删除", icon: "success" });
         }, EXIT_ANIM_MS);

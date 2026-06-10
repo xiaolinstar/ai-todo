@@ -9,7 +9,7 @@ import {
   readRepeatedFlag
 } from "../context";
 import { readListCursor, readListLimit } from "../pagination";
-import { renderReminderListPage } from "../render-list";
+import { formatReminderStatus, renderReminderListPage } from "../render-list";
 
 type ReminderSortFlag = "created_at" | "due_at" | "completed_at";
 
@@ -42,8 +42,9 @@ function sortedReminders<T extends { dueAt?: string; completedAt?: string; statu
 ): T[] {
   const statusRank: Record<string, number> = {
     pending: 0,
-    completed: 1,
-    cancelled: 2
+    in_progress: 1,
+    completed: 2,
+    cancelled: 3
   };
   const timestamp = (value?: string): number => {
     if (!value) return Number.POSITIVE_INFINITY;
@@ -133,7 +134,9 @@ export async function runReminderList(ctx: CliContext, argv: string[]): Promise<
         return;
       }
       renderReminderListPage(sortedReminders(data.items, sort, all), {
-        label: all ? "Reminders · all statuses" : `Reminders · ${status}`,
+        label: all
+          ? "Reminders · all statuses"
+          : `Reminders · ${status ? formatReminderStatus(status) : "all"}`,
         totalCount: data.totalCount,
         hasMore: data.hasMore,
         nextCursor: data.nextCursor,
@@ -172,7 +175,7 @@ export async function runReminderShow(ctx: CliContext, argv: string[], anchor = 
     }
     const r = data.reminder;
     console.log(`${r.title} (${r.id})`);
-    console.log(`Status: ${r.status}`);
+    console.log(`Status: ${formatReminderStatus(r.status)}`);
     if (r.dueAt) {
       console.log(`Due: ${r.dueAt}`);
     }
@@ -224,13 +227,15 @@ export async function runReminderUpdate(ctx: CliContext, argv: string[]): Promis
   const contactIds = readRepeatedFlag(argv, "--contact");
   const hasContacts = hasFlag(argv, "--contact");
   const hasNotes = hasFlag(argv, "--notes");
+  const status = readFlagValue(argv, "--status") as ReminderStatus | undefined;
 
   if (
     !title &&
     notes === undefined &&
     due === undefined &&
     remind === undefined &&
-    !hasContacts
+    !hasContacts &&
+    !status
   ) {
     console.error("Provide at least one field to update");
     process.exitCode = 1;
@@ -241,6 +246,7 @@ export async function runReminderUpdate(ctx: CliContext, argv: string[]): Promis
     await ctx.client.updateReminder(id, {
       title,
       notes: hasNotes ? notes : undefined,
+      status,
       dueAt: due,
       remindAt: remind,
       contactIds: hasContacts ? contactIds : undefined
@@ -311,7 +317,7 @@ function renderReminderDetail(r: {
   contacts?: { displayName: string; handle: string }[];
 }): void {
   console.log(`${r.title} (${r.id})`);
-  console.log(`Status: ${r.status}`);
+  console.log(`Status: ${formatReminderStatus(r.status)}`);
   if (r.dueAt) {
     console.log(`Due: ${r.dueAt}`);
   }

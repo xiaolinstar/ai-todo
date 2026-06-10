@@ -14,6 +14,7 @@ Page({
     reminderId: "",
     loading: true,
     isCompleted: false,
+    status: "pending" as "pending" | "in_progress" | "completed",
     title: "",
     notes: "",
     notesExpanded: false,
@@ -46,7 +47,8 @@ Page({
           return;
         }
         const reminder = response.data.reminder;
-        const isCompleted = reminder.status === "completed";
+        const status = (reminder.status || "pending") as "pending" | "in_progress" | "completed";
+        const isCompleted = status === "completed";
         const hasDue = Boolean(reminder.dueAt);
         const tz = account.timezone;
         const { date, time } = splitIsoDateTime(reminder.dueAt, tz);
@@ -54,6 +56,7 @@ Page({
         this.setData({
           loading: false,
           accountTimezone: tz,
+          status,
           isCompleted,
           title: reminder.title || "",
           notes: reminder.notes || "",
@@ -112,6 +115,16 @@ Page({
     this.setData({ selectedContact: null });
   },
 
+  onStatusChange(e: { currentTarget: { dataset: { status: string } } }) {
+    const status = e.currentTarget.dataset.status as "pending" | "in_progress" | "completed";
+    if (!status || status === this.data.status) return;
+    this.setData({
+      status,
+      isCompleted: status === "completed",
+      hasDue: status === "completed" ? false : this.data.hasDue
+    });
+  },
+
   onSubmit() {
     const title = this.data.title.trim();
     if (!title) {
@@ -122,11 +135,13 @@ Page({
     const payload: {
       title: string;
       notes: string;
+      status: string;
       dueAt?: string | null;
       contactIds: string[];
     } = {
       title,
       notes: this.data.notes.trim(),
+      status: this.data.status,
       contactIds: this.data.selectedContact ? [this.data.selectedContact.id] : []
     };
 

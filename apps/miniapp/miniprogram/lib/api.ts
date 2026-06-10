@@ -345,6 +345,7 @@ export function updateReminder(
   input: {
     title?: string;
     notes?: string;
+    status?: string;
     dueAt?: string | null;
     remindAt?: string | null;
     contactIds?: string[];

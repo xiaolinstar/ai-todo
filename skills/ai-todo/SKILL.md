@@ -45,6 +45,7 @@ Expect `ok: true` and `data.user.id` (dev: `user_dev`).
 | Show reminder | `ai-todo reminder show <reminder_id> --json` |
 | Update reminder | `ai-todo reminder update <id> [--title "…"] [--notes "…"] [--due "…"] [--remind "…"] [--contact <id> ...] --json` |
 | Update by source | `ai-todo reminder update --source "<source>" --external-id "<id>" [--title "…"] [--due "…"] --json` |
+| Mark in progress | `ai-todo reminder update <id> --status in_progress --json` |
 | Complete | `ai-todo reminder done <reminder_id> --json` |
 | Complete by source | `ai-todo reminder done --source "<source>" --external-id "<id>" --json` |
 | Reschedule | `ai-todo reminder reschedule <id> --due "…" [--remind "…"] --json` |

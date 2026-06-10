@@ -52,12 +52,14 @@ export const AI_TODO_AGENT_TOOLS: AgentToolSpec[] = [
   {
     name: "ai_todo_reminder_list_by_source",
     description: "List reminders filtered by business source (e.g. email, jira).",
-    command: 'ai-todo reminder list --source "<source>" [--status pending|completed|cancelled]',
+    command:
+      'ai-todo reminder list --source "<source>" [--status pending|in_progress|completed|cancelled]',
     jsonFlag: "--json"
   },
   {
     name: "ai_todo_reminder_list",
-    description: "List reminders; optional status pending|completed|cancelled.",
+    description:
+      "List reminders; optional status pending|in_progress|completed|cancelled.",
     command: "ai-todo reminder list [--status pending]",
     jsonFlag: "--json"
   },
@@ -71,14 +73,14 @@ export const AI_TODO_AGENT_TOOLS: AgentToolSpec[] = [
     name: "ai_todo_reminder_update",
     description: "Update reminder title, notes, due/remind times, or linked contacts by id.",
     command:
-      'ai-todo reminder update <reminder_id> [--title "<title>"] [--notes "<text>"] [--due "<iso>"] [--remind "<iso>"] [--contact <id> ...]',
+      'ai-todo reminder update <reminder_id> [--title "<title>"] [--notes "<text>"] [--status pending|in_progress|completed] [--due "<iso>"] [--remind "<iso>"] [--contact <id> ...]',
     jsonFlag: "--json"
   },
   {
     name: "ai_todo_reminder_update_by_source",
     description: "Update a reminder located by source + externalId.",
     command:
-      'ai-todo reminder update --source "<source>" --external-id "<external_id>" [--title "<title>"] [--notes "<text>"] [--due "<iso>"] [--remind "<iso>"] [--contact <id> ...]',
+      'ai-todo reminder update --source "<source>" --external-id "<external_id>" [--title "<title>"] [--notes "<text>"] [--status pending|in_progress|completed] [--due "<iso>"] [--remind "<iso>"] [--contact <id> ...]',
     jsonFlag: "--json"
   },
   {
@@ -171,5 +173,6 @@ export const AI_TODO_AGENT_GUIDELINES = [
   "Idempotent writes: run reminder find --source ... --external-id ... first; if found, update/done/delete by source; otherwise create with --source and --external-id.",
   "source_meta is optional JSON for display/audit only (e.g. email subject); the API does not parse natural language from it.",
   "source is not a fixed enum; use a stable lowercase slug per integrating system.",
-  "Pass --idempotency-key <uuid> (or HTTP Idempotency-Key) on create/update writes to survive agent retries."
+  "Pass --idempotency-key <uuid> (or HTTP Idempotency-Key) on create/update writes to survive agent retries.",
+  "Reminder status: pending (not started), in_progress (actively working), completed. Use reminder update --status in_progress when a ticket/email item is underway but not done."
 ] as const;

@@ -5,3 +5,33 @@
 .submit {
   margin-top: 16rpx;
 }
+
+.segmented {
+  display: flex;
+  gap: 8rpx;
+  padding: 6rpx;
+  border-radius: 18rpx;
+  background: var(--todo-fill-neutral-12);
+}
+
+.segmented .segment {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  min-height: 64rpx;
+  border-radius: 14rpx;
+  color: var(--todo-text-muted);
+  font-size: var(--todo-font-size-md);
+  font-weight: var(--todo-font-weight-semibold);
+}
+
+.segmented .segment.active {
+  background: var(--todo-surface);
+  box-shadow: var(--todo-shadow-card-strong);
+  color: var(--todo-text-primary);
+}
+
+.status-segment {
+  margin-top: 12rpx;
+}

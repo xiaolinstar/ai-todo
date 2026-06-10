@@ -2,7 +2,7 @@ export type EntityId = string;
 
 export type ClientSource = "miniapp" | "cli" | "agent" | "api";
 
-export type ReminderStatus = "pending" | "completed" | "cancelled";
+export type ReminderStatus = "pending" | "in_progress" | "completed" | "cancelled";
 
 export type ContactMethodType = "email" | "phone" | "wechat" | "other";
 

@@ -4,9 +4,11 @@ import { z } from "zod";
 import { resolveAuthError } from "./auth";
 import { formatToolResult, runAiTodoCli } from "./cli-bridge";
 
-const MCP_VERSION = "0.1.0";
+const MCP_VERSION = "0.2.0";
 
-const statusSchema = z.enum(["pending", "completed", "cancelled"]).optional();
+const statusSchema = z
+  .enum(["pending", "in_progress", "completed", "cancelled"])
+  .optional();
 
 function appendContacts(args: string[], contactIds?: string[]): string[] {
   if (!contactIds?.length) {
@@ -182,19 +184,21 @@ export function createMcpServer(): McpServer {
         external_id: z.string().min(1),
         title: z.string().optional(),
         notes: z.string().optional(),
+        status: statusSchema,
         due: z.string().optional(),
         remind: z.string().optional(),
         contact_ids: z.array(z.string()).optional(),
         idempotency_key: z.string().optional()
       }
     },
-    async ({ source, external_id, title, notes, due, remind, contact_ids, idempotency_key }) => {
+    async ({ source, external_id, title, notes, status, due, remind, contact_ids, idempotency_key }) => {
       const args = appendIdempotency(
         appendContacts(["reminder", "update", "--source", source, "--external-id", external_id], contact_ids),
         idempotency_key
       );
       if (title) args.push("--title", title);
       if (notes !== undefined) args.push("--notes", notes);
+      if (status) args.push("--status", status);
       if (due) args.push("--due", due);
       if (remind) args.push("--remind", remind);
       return invoke(args);

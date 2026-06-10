@@ -116,3 +116,41 @@ def test_list_invalid_sort(client: TestClient) -> None:
     response = client.get("/v1/reminders", params={"sort": "invalid"})
     assert response.status_code == 400
     assert response.json()["error"]["code"] == "VALIDATION_ERROR"
+
+
+def test_reminder_in_progress_status_flow(client: TestClient) -> None:
+    create = client.post("/v1/reminders", json={"title": "跟进客户邮件"})
+    assert create.status_code == 201
+    reminder_id = create.json()["data"]["reminder"]["id"]
+
+    in_progress = client.patch(
+        f"/v1/reminders/{reminder_id}",
+        json={"status": "in_progress"},
+    )
+    assert in_progress.status_code == 200
+    body = in_progress.json()["data"]["reminder"]
+    assert body["status"] == "in_progress"
+    assert body["completedAt"] is None
+
+    listed = client.get("/v1/reminders", params={"status": "in_progress"})
+    assert listed.status_code == 200
+    ids = {item["id"] for item in listed.json()["data"]["items"]}
+    assert reminder_id in ids
+
+    completed = client.patch(
+        f"/v1/reminders/{reminder_id}",
+        json={"status": "completed"},
+    )
+    assert completed.status_code == 200
+    done = completed.json()["data"]["reminder"]
+    assert done["status"] == "completed"
+    assert done["completedAt"] is not None
+
+    reopened = client.patch(
+        f"/v1/reminders/{reminder_id}",
+        json={"status": "pending"},
+    )
+    assert reopened.status_code == 200
+    pending = reopened.json()["data"]["reminder"]
+    assert pending["status"] == "pending"
+    assert pending["completedAt"] is None

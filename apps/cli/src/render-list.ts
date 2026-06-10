@@ -72,6 +72,21 @@ function shortId(id: string, prefix = ""): string {
   return normalized.length <= ID_MAX ? normalized : normalized.slice(0, ID_MAX);
 }
 
+export function formatReminderStatus(status: string): string {
+  switch (status) {
+    case "pending":
+      return "Not started";
+    case "in_progress":
+      return "In progress";
+    case "completed":
+      return "Completed";
+    case "cancelled":
+      return "Cancelled";
+    default:
+      return status;
+  }
+}
+
 export function formatHumanDateTime(value?: string): string {
   if (!value) {
     return "-";
@@ -165,7 +180,7 @@ export function renderReminderListPage(
         ? reminder.contacts.map((contact) => contact.displayName).join(", ")
         : "";
     const values: Array<[string | undefined, number]> = [];
-    if (options.showStatus) values.push([reminder.status, 10]);
+    if (options.showStatus) values.push([formatReminderStatus(reminder.status), 10]);
     values.push([truncateText(reminder.title, 48), 48]);
     if (hasSource) values.push([reminder.source, 12]);
     values.push([contacts, 18], [formatHumanDateTime(reminder.dueAt), 13], [shortId(reminder.id, "rem_"), ID_MAX]);

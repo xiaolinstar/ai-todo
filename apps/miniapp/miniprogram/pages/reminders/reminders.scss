@@ -11,6 +11,11 @@
   background: var(--todo-fill-neutral-12);
 }
 
+.segmented-3 .segment {
+  font-size: var(--todo-font-size-md);
+  min-height: 64rpx;
+}
+
 .segment {
   display: flex;
   flex: 1;
@@ -95,6 +100,13 @@
   flex: 1;
   justify-content: center;
   min-width: 0;
+}
+
+.status-action {
+  flex-shrink: 0;
+  margin-right: 16rpx;
+  font-size: var(--todo-font-size-sm);
+  white-space: nowrap;
 }
 
 .title-line {

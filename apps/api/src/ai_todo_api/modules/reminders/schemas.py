@@ -4,7 +4,7 @@ from ai_todo_api.modules.contacts.schemas import ContactSummary
 from ai_todo_api.schemas import CamelModel
 
 
-ReminderStatus = Literal["pending", "completed", "cancelled"]
+ReminderStatus = Literal["pending", "in_progress", "completed", "cancelled"]
 
 
 class ReminderSummary(CamelModel):
