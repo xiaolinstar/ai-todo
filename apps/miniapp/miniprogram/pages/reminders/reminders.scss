@@ -2,6 +2,11 @@
   padding-top: 8rpx;
 }
 
+.subtitle-overdue {
+  color: var(--todo-danger);
+  font-weight: var(--todo-font-weight-semibold);
+}
+
 .segmented {
   display: flex;
   gap: 8rpx;
@@ -100,13 +105,6 @@
   flex: 1;
   justify-content: center;
   min-width: 0;
-}
-
-.status-action {
-  flex-shrink: 0;
-  margin-right: 16rpx;
-  font-size: var(--todo-font-size-sm);
-  white-space: nowrap;
 }
 
 .title-line {

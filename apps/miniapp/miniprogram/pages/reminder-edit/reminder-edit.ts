@@ -1,5 +1,5 @@
 import { loadAccountDay } from "../../lib/account-day";
-import { fetchReminder, updateReminder } from "../../lib/api";
+import { fetchReminder, formatApiErrorMessage, updateReminder } from "../../lib/api";
 import type { ContactSummary } from "../../lib/api";
 import { combineDateTime, splitIsoDateTime } from "../../lib/format";
 import { todoPageThemeData } from "../../lib/theme";
@@ -164,7 +164,10 @@ Page({
       .then(async (response) => {
         this.setData({ submitting: false });
         if (!response.ok) {
-          wx.showToast({ title: response.error?.message || "保存失败", icon: "none" });
+          wx.showToast({
+            title: formatApiErrorMessage(response.error, "保存失败"),
+            icon: "none"
+          });
           return;
         }
         if (dueChanged && nextDueAt && this.data.notifyAvailable && this.data.reminderTemplateId) {

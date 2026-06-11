@@ -6,11 +6,12 @@
 
   <view class="large-title-wrap">
     <view class="large-title">提醒</view>
-    <view class="large-subtitle">{{dateLabel}} {{weekdayLabel}}<text wx:if="{{timezone}}"> · {{timezone}}</text></view>
-    <view class="summary-row" wx:if="{{loaded && !error}}">
-      <view class="summary-chip">{{pendingCount}} 条未完成</view>
-      <view wx:if="{{inProgressCount > 0}}" class="summary-chip">{{inProgressCount}} 条处理中</view>
-      <view wx:if="{{overdueCount > 0}}" class="summary-chip warn">{{overdueCount}} 条已逾期</view>
+    <view class="large-subtitle">
+      {{dateLabel}} {{weekdayLabel}}<text wx:if="{{timezone}}"> · {{timezone}}</text><text
+        wx:if="{{loaded && !error && overdueCount > 0 && activeTab !== 'pending'}}"
+        class="subtitle-overdue"
+        catchtap="onOverdueHintTap"
+      > · {{overdueCount}} 条已逾期</text>
     </view>
   </view>
 
@@ -21,7 +22,7 @@
       bindtap="onTabChange"
       hover-class="segment-press"
     >
-      未完成
+      未完成<text wx:if="{{pendingCount > 0}}" class="segment-badge">{{pendingCount}}</text>
     </view>
     <view
       class="segment pressable {{activeTab === 'in_progress' ? 'active' : ''}}"
@@ -107,14 +108,6 @@
                     {{item.subline}}
                   </view>
                 </view>
-                <text
-                  wx:if="{{!item.completing}}"
-                  class="status-action link-text"
-                  data-id="{{item.id}}"
-                  catchtap="onMarkInProgress"
-                >
-                  处理中
-                </text>
               </view>
             </view>
           </view>
@@ -128,7 +121,7 @@
       <view class="empty-state inset-group">
         <view class="empty-icon">◎</view>
         <view class="empty-title">暂无处理中提醒</view>
-        <view class="empty-desc">在未完成列表中可将事项标为处理中</view>
+        <view class="empty-desc">编辑提醒并将状态设为「处理中」</view>
       </view>
     </block>
     <block wx:else>

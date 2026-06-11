@@ -1,4 +1,4 @@
-import { completeReminder, deleteReminder, fetchReminders, updateReminder } from "../../lib/api";
+import { completeReminder, deleteReminder, fetchReminders } from "../../lib/api";
 import { loadAccountDay } from "../../lib/account-day";
 import { TODO_MODAL_CONFIRM_DANGER } from "../../lib/design-tokens";
 import type { ReminderSummary } from "../../lib/api";
@@ -287,6 +287,11 @@ Page({
     this.setData({ activeTab: tab });
   },
 
+  onOverdueHintTap() {
+    if (this.data.activeTab === "pending") return;
+    this.setData({ activeTab: "pending" });
+  },
+
   goMine() {
     wx.switchTab({ url: "/pages/mine/mine" });
   },
@@ -432,35 +437,6 @@ Page({
       inProgressGroups: groupPendingReminders(inProgress, this.data.accountToday, this.data.timezone)
     });
     return inProgress;
-  },
-
-  onMarkInProgress(e: { currentTarget: { dataset: { id: string } } }) {
-    const id = e.currentTarget.dataset.id;
-    const item = this.findReminderItem(id);
-    if (!item || item.status !== "pending" || item.deleting) return;
-
-    updateReminder(id, { status: "in_progress" })
-      .then((response) => {
-        if (!response.ok || !response.data) {
-          wx.showToast({ title: response.error?.message || "操作失败", icon: "none" });
-          return;
-        }
-        const pending = this.data.pending.filter((entry: ReminderView) => entry.id !== id);
-        const moved = enrichReminder(response.data.reminder, this.data.timezone);
-        const inProgress = [
-          moved,
-          ...this.data.inProgress.filter((entry: ReminderView) => entry.id !== id)
-        ];
-        this.setData({
-          pending,
-          inProgress,
-          pendingGroups: groupPendingReminders(pending, this.data.accountToday, this.data.timezone),
-          inProgressGroups: groupPendingReminders(inProgress, this.data.accountToday, this.data.timezone)
-        });
-        this.updateCounts(pending, inProgress, this.data.completed);
-        wx.showToast({ title: "已标为处理中", icon: "success" });
-      })
-      .catch(() => wx.showToast({ title: "网络错误", icon: "none" }));
   },
 
   onComplete(e: { currentTarget: { dataset: { id: string } } }) {

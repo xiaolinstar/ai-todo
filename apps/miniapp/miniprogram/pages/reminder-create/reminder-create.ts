@@ -14,7 +14,7 @@ Page({
     title: "",
     notes: "",
     notesExpanded: false,
-    hasDue: true,
+    hasDue: false,
     dueDate: "",
     dueTime: "",
     notifyEnabled: true,
