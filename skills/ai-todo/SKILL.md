@@ -34,7 +34,7 @@ Expect `ok: true` and `data.user.id` (dev: `user_dev`).
 
 ## MCP vs CLI
 
-- **MCP** (when the host supports stdio MCP — Cursor, Claude Desktop, VS Code MCP, etc.): use registered tools (`whoami`, `today`, `reminder_find`, …). See `docs/mcp-setup.md`. MCP wraps CLI; same PAT. Prefer MCP for structured calls without shell.
+- **MCP** (when the host supports stdio MCP — Cursor, Claude Desktop, VS Code MCP, etc.): use registered P0 tools — `whoami`, `today`, `reminder_find`, `reminder_create`, `reminder_create_sourced`, `reminder_list`, `reminder_list_by_source`, `reminder_update_by_source`, `reminder_complete_by_source`, `contact_search`, `calendar_today`, `calendar_create`. See `docs/mcp-setup.md`. MCP wraps CLI; same PAT. Prefer MCP for structured calls without shell. Contact CRUD, reminder delete, token admin, etc. still need CLI.
 - **CLI** (always available): full command surface; use when MCP is not configured, for scripts/CI, or for commands not exposed as MCP tools (contact CRUD, token admin, etc.).
 
 MCP is not a simpler install than CLI — it is a **protocol adapter** for MCP-capable hosts. Do not assume Cursor-only.
@@ -43,12 +43,12 @@ MCP is not a simpler install than CLI — it is a **protocol adapter** for MCP-c
 
 **One-sentence rule**: *Does this need to be ticked `done`? Yes → reminder. No → calendar event.*
 
-This is codified in the project's own `docs/initial-planning.md`: **Reminder 管「事情和完成」，Calendar 管「时间和安排」**. The strongest data-model difference is lifecycle — only `Reminder` has a `status` field (`pending` / `completed` / `cancelled`); `CalendarEvent` does not.
+This is codified in the project's own `docs/initial-planning.md`: **Reminder 管「事情和完成」，Calendar 管「时间和安排」**. The strongest data-model difference is lifecycle — only `Reminder` has a `status` field (`pending` / `in_progress` / `completed` / `cancelled`); `CalendarEvent` does not.
 
 | Aspect | Calendar event | Reminder |
 |---|---|---|
 | Nature | Time **block** (occupies start–end) | Action **item** / nudge |
-| Lifecycle | Expires naturally — no status field | `pending` → `completed` (or `cancelled`); needs explicit `done` |
+| Lifecycle | Expires naturally — no status field | `pending` → `in_progress` → `completed` (or back to `pending`; `cancelled` internal); needs explicit `done` |
 | Time | `start` required, `end` typical | `due` optional (no-due reminders show in `today`) |
 | Examples | Meetings, flights, appointments, on-call shifts, parties | Submit expenses, reply to email, buy supplies, call back, daily standup prep |
 
@@ -60,16 +60,16 @@ If unsure, ask the user. Default to event when the item has a specific start tim
 
 | Task | Command |
 |------|---------|
-| Today overview | `ai-todo today --json` |
-| Update user profile | `ai-todo profile update --name "…" [--avatar-url "…"] --json` |
+| Today overview | `ai-todo today --json` (open reminders + today's events) |
+| Read profile | `ai-todo whoami --json` (display name, timezone; edit avatar/name in WeChat miniapp **Mine**) |
 | Create reminder | `ai-todo reminder create --title "…" [--due "…"] [--remind "…"] [--notes "…"] [--contact <id> ...] --json` |
 | Create with source | `ai-todo reminder create --title "…" --source "<source>" --external-id "<id>" [--source-meta '{"subject":"…"}'] --idempotency-key <uuid> --json` |
 | Find by source | `ai-todo reminder find --source "<source>" --external-id "<id>" --json` |
-| List by source | `ai-todo reminder list --source "<source>" [--status pending] --json` |
-| List reminders | `ai-todo reminder list [--status pending\|completed\|cancelled] [--sort due\|created\|completed] [--from YYYY-MM-DD] [--to YYYY-MM-DD] --json` |
+| List by source | `ai-todo reminder list --source "<source>" [--status pending\|in_progress\|completed\|cancelled] --json` |
+| List reminders | `ai-todo reminder list [--status pending\|in_progress\|completed\|cancelled] [--sort due\|created\|completed] [--from YYYY-MM-DD] [--to YYYY-MM-DD] --json` |
 | Show reminder | `ai-todo reminder show <id> --json` |
-| Update reminder | `ai-todo reminder update <id> [--title "…"] [--notes "…"] [--due "…"] [--remind "…"] [--contact <id> ...] --json` |
-| Update by source | `ai-todo reminder update --source "<source>" --external-id "<id>" [--title "…"] [--due "…"] --json` |
+| Update reminder | `ai-todo reminder update <id> [--title "…"] [--notes "…"] [--status pending\|in_progress\|completed] [--due "…"] [--remind "…"] [--contact <id> ...] --json` |
+| Update by source | `ai-todo reminder update --source "<source>" --external-id "<id>" [--title "…"] [--status …] [--due "…"] --json` |
 | Mark in progress | `ai-todo reminder update <id> --status in_progress --json` |
 | Complete | `ai-todo reminder done <id> --json` |
 | Complete by source | `ai-todo reminder done --source "<source>" --external-id "<id>" --json` |
@@ -79,8 +79,11 @@ If unsure, ask the user. Default to event when the item has a specific start tim
 | Create event | `ai-todo calendar add --title "…" --start "…" [--end "…"] [--location "…"] [--contact <id> ...] --json` |
 | Update event | `ai-todo calendar update <event_id> [--title "…"] [--start "…"] [--end "…"] [--location "…"] [--description "…"] [--contact <id> ...] --json` |
 | Today's events | `ai-todo calendar today --json` |
+| Show event | `ai-todo calendar show <event_id> --json` |
 | Delete event | `ai-todo calendar delete <event_id> --json` |
+| List contacts | `ai-todo contact list [--limit <n>] [--cursor <token>] --json` |
 | Search contact | `ai-todo contact search "<query>" --json` |
+| Show contact | `ai-todo contact show <id_or_handle> --json` |
 | Add contact | `ai-todo contact add "<name>" [--handle "…"] [--email "…"] [--phone "…"] [--company "…"] [--job-title "…"] [--notes "…"] --json` |
 | Update contact | `ai-todo contact update <id_or_handle> [--name "…"] [--handle "…"] [--email "…"] [--phone "…"] [--company "…"] [--job-title "…"] [--notes "…"] [--alias "…"] --json` |
 | Delete contact | `ai-todo contact delete <id_or_handle> --json` |
@@ -104,6 +107,7 @@ A reminder is **an action item**. Title says what action; structured fields carr
 | `--contact <id_or_handle>` | Repeatable. Link the human(s) involved. The response returns `data.reminder.contacts[]` with `displayName` + `primaryEmail` already attached — **never stuff contact info into the title**. |
 | `--source` / `--external-id` | Business-origin key (e.g. `email` + `<Message-ID>`, `jira` + `PROJ-123`). Use together so the row is idempotent across syncs. |
 | `--source-meta` | JSON object with origin context (e.g. `{"subject":"…","from":"…"}`). **Must be a JSON object, not an array or scalar** (`VALIDATION_ERROR` otherwise). |
+| `--status` *(update only)* | `pending` (not started), `in_progress` (actively working), `completed`. Use on `reminder update` when the item is underway but not done. |
 | `--idempotency-key <uuid>` | Pass when the host supports it; protects against duplicate creates on retries. |
 
 Example:
@@ -213,9 +217,9 @@ ai-todo contact add "张松蕾" \
 - **No per-subcommand `--help` dispatcher.** `ai-todo <sub> --help` prints a one-line `Usage:` and exits with error code 1. There is no real help text per subcommand.
 - **Top-level `ai-todo --help` is also incomplete.** Missing: `--description` (calendar update), `--contact` (calendar add/update, reminder create), `--source-meta` (reminder create), and **all `contact` create/update flags**.
 - **Authoritative references** when in doubt:
-  - Patterns & workflows: `/home/xiaolin/AgentProjects/ai-todo/docs/agent-usage.md`
+  - Patterns & workflows: `docs/agent-usage.md` (in the ai-todo repo)
   - Data model & field semantics: `docs/data-model.md`
-  - Complete flag surface: source under `apps/cli/src/commands/`
+  - Complete flag surface: `apps/cli/src/commands/` and `apps/cli/src/help.ts`
 
 ## Errors
 
@@ -226,7 +230,7 @@ ai-todo contact add "张松蕾" \
 
 ## More detail
 
-Repository docs (`/home/xiaolin/AgentProjects/ai-todo/docs/`):
+Repository docs (`docs/` in the ai-todo repo):
 - **`data-model.md`** — entity fields, handle auto-generation, status enums
 - **`agent-usage.md`** — agent patterns, sourced reminders, idempotency-key
 - **`api-design.md`** — HTTP contract, error codes

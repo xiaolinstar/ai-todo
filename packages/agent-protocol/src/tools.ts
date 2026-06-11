@@ -19,7 +19,8 @@ export const AI_TODO_AGENT_TOOLS: AgentToolSpec[] = [
   },
   {
     name: "ai_todo_today",
-    description: "List today's pending reminders and calendar events.",
+    description:
+      "List today's open reminders (pending and in_progress) and calendar events.",
     command: "ai-todo today",
     jsonFlag: "--json"
   },

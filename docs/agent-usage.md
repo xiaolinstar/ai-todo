@@ -180,12 +180,13 @@ ai-todo reminder list --source email --status pending --json
 |------|------|
 | CLI / API 版本 | `ai-todo version --json`；API：`GET /v1/health` → `apiVersion` |
 | 当前用户 | `ai-todo whoami --json` |
-| 今日聚合 | `ai-todo today --json` |
+| 今日聚合 | `ai-todo today --json`（未完成类提醒 + 今日日程） |
 | 创建提醒 | `ai-todo reminder create --title … [--due …] [--contact …] [--source …] [--external-id …]` |
 | 按来源查找 | `ai-todo reminder find --source … --external-id …` |
-| 提醒列表 | `ai-todo reminder list [--status pending] [--source …]` |
+| 提醒列表 | `ai-todo reminder list [--status pending\|in_progress\|completed\|cancelled] [--source …]` |
 | 查看提醒 | `ai-todo reminder show <id>` |
-| 更新提醒 | `ai-todo reminder update <id> …` 或 `--source … --external-id …` |
+| 更新提醒 | `ai-todo reminder update <id> … [--status pending\|in_progress\|completed]` 或 `--source … --external-id …` |
+| 标为处理中 | `ai-todo reminder update <id> --status in_progress` |
 | 完成提醒 | `ai-todo reminder done <id>` 或 `--source … --external-id …` |
 | 改期提醒 | `ai-todo reminder reschedule <id> --due …` 或 `--source … --external-id …` |
 | 删除提醒 | `ai-todo reminder delete <id>` 或 `--source … --external-id …` |

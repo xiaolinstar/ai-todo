@@ -101,7 +101,7 @@ MVP 推荐作用域：
 | `user_id` | string | 归属用户 |
 | `title` | string | 标题 |
 | `notes` | string? | 备注 |
-| `status` | enum | `pending` / `completed` / `cancelled` |
+| `status` | enum | `pending` / `in_progress` / `completed` / `cancelled`（产品 UI：未完成 / 处理中 / 已完成） |
 | `due_at` | datetime? | 截止时间 |
 | `remind_at` | datetime? | 提醒触发时间 |
 | `priority` | enum? | `low` / `normal` / `high` |
