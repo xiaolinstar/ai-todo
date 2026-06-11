@@ -1,4 +1,5 @@
 import { fetchMe, updateProfile } from "../../lib/api";
+import { markPrivacyConsented } from "../../lib/privacy";
 import { markProfileSetupSeen } from "../../lib/config";
 import { TODO_COLORS } from "../../lib/design-tokens";
 import { avatarColor, getInitial } from "../../lib/format";
@@ -74,6 +75,7 @@ Page({
   },
 
   onPrivacyAgree() {
+    markPrivacyConsented();
     if (this._privacyResolve) {
       this._privacyResolve({ event: "agree", buttonId: "privacy-agree" });
       this._privacyResolve = undefined;

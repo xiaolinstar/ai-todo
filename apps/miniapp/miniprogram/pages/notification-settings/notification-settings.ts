@@ -1,25 +1,6 @@
-import {
-  fetchNotificationSettings,
-  fetchNotificationStatus,
-  updateNotificationSettings
-} from "../../lib/api";
+import { fetchNotificationSettings, updateNotificationSettings } from "../../lib/api";
+import { formatQuietHoursLabel } from "../../lib/notification-labels";
 import { todoPageThemeData } from "../../lib/theme";
-
-interface StatusRow {
-  id: string;
-  title: string;
-  meta: string;
-  statusClass: string;
-}
-
-const STATUS_LABELS: Record<string, string> = {
-  pending: "待发送",
-  sending: "发送中",
-  sent: "已发送",
-  failed: "发送失败",
-  no_quota: "配额不足",
-  skipped: "已跳过"
-};
 
 Page({
   data: {
@@ -29,8 +10,8 @@ Page({
     wechatEnabled: false,
     quietStart: "",
     quietEnd: "",
-    templateConfigured: true,
-    statusItems: [] as StatusRow[]
+    quietHoursLabel: "未设置",
+    templateConfigured: true
   },
 
   onShow() {
@@ -39,8 +20,8 @@ Page({
 
   loadSettings() {
     this.setData({ loading: true });
-    Promise.all([fetchNotificationSettings(), fetchNotificationStatus(10)])
-      .then(([settingsResponse, statusResponse]) => {
+    fetchNotificationSettings()
+      .then((settingsResponse) => {
         this.setData({ loading: false });
         if (!settingsResponse.ok || !settingsResponse.data) {
           wx.showToast({ title: settingsResponse.error?.message || "加载失败", icon: "none" });
@@ -48,14 +29,19 @@ Page({
           return;
         }
         const settings = settingsResponse.data.settings;
-        const statusItems = this.mapStatusItems(statusResponse.data?.items ?? []);
+        const quietStart = settings.quietStart || "";
+        const quietEnd = settings.quietEnd || "";
+        const wechatEnabled = settings.wechatEnabled && settings.defaultReminderEnabled;
         this.setData({
-          wechatEnabled: settings.wechatEnabled,
-          quietStart: settings.quietStart || "",
-          quietEnd: settings.quietEnd || "",
-          templateConfigured: Boolean(settings.wechatReminderTemplateId),
-          statusItems
+          wechatEnabled,
+          quietStart,
+          quietEnd,
+          quietHoursLabel: formatQuietHoursLabel(quietStart, quietEnd),
+          templateConfigured: Boolean(settings.wechatReminderTemplateId)
         });
+        if (settings.wechatEnabled !== wechatEnabled || settings.defaultReminderEnabled !== wechatEnabled) {
+          this.syncWechatReminder(wechatEnabled, { silent: true });
+        }
       })
       .catch(() => {
         this.setData({ loading: false });
@@ -63,122 +49,53 @@ Page({
       });
   },
 
-  mapStatusItems(
-    items: Array<{
-      id: string;
-      targetType: string;
-      targetId: string;
-      targetTitle?: string;
-      status: string;
-      scheduledAt: string;
-      attemptCount?: number;
-      errorCode?: string;
-    }>
-  ): StatusRow[] {
-    return items.map((item) => {
-      const typeLabel =
-        item.targetType === "calendar_event"
-          ? "日程"
-          : item.targetType === "reminder"
-            ? "提醒"
-            : item.targetType;
-      const name = (item.targetTitle || "").trim() || item.targetId.slice(0, 8);
-      const statusLabel = STATUS_LABELS[item.status] || item.status;
-      const statusClass =
-        item.status === "failed" || item.status === "no_quota" ? "danger" : "muted";
-      const hint = this.statusHint(item);
-      const attemptSuffix =
-        item.attemptCount && item.attemptCount > 0 ? ` · 第 ${item.attemptCount} 次` : "";
-      return {
-        id: item.id,
-        title: `${typeLabel} · ${name}`,
-        meta: `${statusLabel}${attemptSuffix} · ${item.scheduledAt}${hint ? ` · ${hint}` : ""}`,
-        statusClass
-      };
-    });
-  },
-
-  statusHint(item: { status: string; targetType: string }): string {
-    if (item.status === "no_quota") {
-      return "请重新编辑并授权微信提醒";
-    }
-    if (item.status === "failed") {
-      return "稍后自动重试，或重新编辑并授权";
-    }
-    return "";
-  },
-
-  saveSettings(patch: {
-    wechatEnabled?: boolean;
-    quietStart?: string | null;
-    quietEnd?: string | null;
-  }) {
+  syncWechatReminder(wechatEnabled: boolean, options?: { silent?: boolean }) {
     this.setData({ saving: true });
-    updateNotificationSettings(patch)
+    updateNotificationSettings({
+      wechatEnabled,
+      defaultReminderEnabled: wechatEnabled
+    })
       .then((response) => {
         this.setData({ saving: false });
         if (!response.ok || !response.data) {
-          wx.showToast({ title: response.error?.message || "保存失败", icon: "none" });
+          if (!options?.silent) {
+            wx.showToast({ title: response.error?.message || "保存失败", icon: "none" });
+          }
           this.loadSettings();
           return;
         }
         const settings = response.data.settings;
+        const quietStart = settings.quietStart || "";
+        const quietEnd = settings.quietEnd || "";
         this.setData({
-          wechatEnabled: settings.wechatEnabled,
-          quietStart: settings.quietStart || "",
-          quietEnd: settings.quietEnd || "",
+          wechatEnabled: settings.wechatEnabled && settings.defaultReminderEnabled,
+          quietStart,
+          quietEnd,
+          quietHoursLabel: formatQuietHoursLabel(quietStart, quietEnd),
           templateConfigured: Boolean(settings.wechatReminderTemplateId)
         });
-        wx.showToast({ title: "已保存", icon: "success" });
+        if (!options?.silent) {
+          wx.showToast({ title: "已保存", icon: "success" });
+        }
       })
       .catch(() => {
         this.setData({ saving: false });
-        wx.showToast({ title: "网络错误", icon: "none" });
+        if (!options?.silent) {
+          wx.showToast({ title: "网络错误", icon: "none" });
+        }
         this.loadSettings();
       });
   },
 
   onWechatEnabledChange(e: { detail: { value: boolean } }) {
-    const wechatEnabled = e.detail.value;
-    const patch: {
-      wechatEnabled: boolean;
-      defaultReminderEnabled?: boolean;
-    } = { wechatEnabled };
-    if (!wechatEnabled) {
-      patch.defaultReminderEnabled = false;
-    }
-    this.setData({ saving: true });
-    updateNotificationSettings(patch)
-      .then((response) => {
-        this.setData({ saving: false });
-        if (!response.ok || !response.data) {
-          wx.showToast({ title: response.error?.message || "保存失败", icon: "none" });
-          this.loadSettings();
-          return;
-        }
-        const settings = response.data.settings;
-        this.setData({
-          wechatEnabled: settings.wechatEnabled,
-          quietStart: settings.quietStart || "",
-          quietEnd: settings.quietEnd || ""
-        });
-        wx.showToast({ title: "已保存", icon: "success" });
-      })
-      .catch(() => {
-        this.setData({ saving: false });
-        wx.showToast({ title: "网络错误", icon: "none" });
-      });
+    this.syncWechatReminder(e.detail.value);
   },
 
-  onQuietStartChange(e: { detail: { value: string } }) {
-    const quietStart = e.detail.value || null;
-    this.setData({ quietStart: quietStart || "" });
-    this.saveSettings({ quietStart });
+  onOpenQuietHours() {
+    wx.navigateTo({ url: "/pages/notification-quiet-hours/notification-quiet-hours" });
   },
 
-  onQuietEndChange(e: { detail: { value: string } }) {
-    const quietEnd = e.detail.value || null;
-    this.setData({ quietEnd: quietEnd || "" });
-    this.saveSettings({ quietEnd });
+  onOpenDelivery() {
+    wx.navigateTo({ url: "/pages/notification-delivery/notification-delivery" });
   }
 });

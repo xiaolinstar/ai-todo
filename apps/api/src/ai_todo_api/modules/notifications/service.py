@@ -71,6 +71,11 @@ class NotificationDeliveryService:
             preference.wechat_enabled = bool(updates["wechat_enabled"])
         if "default_reminder_enabled" in updates:
             preference.default_reminder_enabled = bool(updates["default_reminder_enabled"])
+        if "wechat_enabled" in updates:
+            if not preference.wechat_enabled:
+                preference.default_reminder_enabled = False
+            elif "default_reminder_enabled" not in updates:
+                preference.default_reminder_enabled = True
         if "quiet_start" in updates:
             preference.quiet_start = _clean_optional(updates["quiet_start"])
         if "quiet_end" in updates:

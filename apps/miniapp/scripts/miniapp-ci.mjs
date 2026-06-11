@@ -9,7 +9,7 @@
  *
  * Usage (from apps/miniapp):
  *   pnpm preview [-- --page pages/reminders/reminders]
- *   pnpm upload [-- --desc "备注"]
+ *   pnpm upload [-- --desc "备注"]  (temporarily disabled — use WeChat DevTools)
  */
 import { createRequire } from "node:module";
 import { existsSync, mkdirSync, readFileSync, readdirSync } from "node:fs";
@@ -150,7 +150,14 @@ async function runPreview() {
   }
 }
 
+const UPLOAD_DISABLED_MESSAGE = [
+  "miniprogram-ci upload is temporarily disabled in this repo.",
+  "Upload releases with WeChat DevTools: 上传 → 填写版本号与备注.",
+  "See apps/miniapp/README.md §「生产 / 体验版」."
+].join("\n");
+
 async function runUpload() {
+  fail(UPLOAD_DISABLED_MESSAGE);
   const project = createProject();
   const version = readVersion();
   const result = await ci.upload({

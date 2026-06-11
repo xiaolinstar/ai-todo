@@ -16,7 +16,7 @@ import {
   markProfileSetupSeen,
   saveConfig
 } from "../../lib/config";
-import { requirePrivacyAuthorization } from "../../lib/privacy";
+import { markPrivacyConsented, requirePrivacyAuthorization } from "../../lib/privacy";
 import { TODO_COLORS } from "../../lib/design-tokens";
 import { updateTabBarSelected } from "../../lib/tab-bar";
 import { buildAppShareOptions, buildAppShareTimelineOptions } from "../../lib/share";
@@ -32,6 +32,7 @@ Page({
     userId: "",
     userUsername: "",
     avatarUrl: "",
+    avatarBroken: false,
     profileSubtitle: "微信登录以使用全部设置",
     showProfileSetup: false,
     showPrivacyAuthorization: false,
@@ -165,6 +166,7 @@ Page({
       userId: user.id,
       userUsername,
       avatarUrl: user.avatarUrl || "",
+      avatarBroken: false,
       timezone: user.timezone,
       initial: user.avatarUrl ? getInitial(user.displayName) : "微",
       avatarColor: avatarColor(user.displayName),
@@ -175,12 +177,20 @@ Page({
     }
   },
 
+  onAvatarError() {
+    this.setData({
+      avatarBroken: true,
+      initial: getInitial(this.data.userName || "微")
+    });
+  },
+
   resetProfile() {
     this.setData({
       userName: "",
       userId: "",
       userUsername: "",
       avatarUrl: "",
+      avatarBroken: false,
       showProfileSetup: false,
       setupAvatarUrl: "",
       setupNameInput: "",
@@ -220,6 +230,7 @@ Page({
   },
 
   onPrivacyAgree() {
+    markPrivacyConsented();
     if (this._privacyResolve) {
       this._privacyResolve({ event: "agree", buttonId: "privacy-agree" });
       this._privacyResolve = undefined;

@@ -56,14 +56,19 @@ def update_profile(
     user: CurrentUser = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> ApiResponse[UpdateProfileResult]:
+    updates = body.model_dump(exclude_unset=True)
+    profile_kwargs: dict[str, object] = {"user_id": user.id}
+    if "display_name" in updates:
+        profile_kwargs["display_name"] = updates["display_name"]
+    if "timezone" in updates:
+        profile_kwargs["timezone"] = updates["timezone"]
+    if updates.get("clear_avatar") is True:
+        profile_kwargs["clear_avatar"] = True
+    elif "avatar_url" in updates:
+        profile_kwargs["avatar_url"] = updates["avatar_url"]
+        profile_kwargs["avatar_url_set"] = True
     try:
-        updated = update_user_profile(
-            db,
-            user_id=user.id,
-            display_name=body.display_name,
-            avatar_url=body.avatar_url,
-            timezone=body.timezone,
-        )
+        updated = update_user_profile(db, **profile_kwargs)
     except ValueError as exc:
         raise HTTPException(
             status_code=400,

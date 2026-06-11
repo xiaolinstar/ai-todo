@@ -39,9 +39,11 @@ def update_user_profile(
     session: Session,
     *,
     user_id: str,
-    display_name: str | None,
-    avatar_url: str | None,
-    timezone: str | None,
+    display_name: str | None = None,
+    avatar_url: str | None = None,
+    timezone: str | None = None,
+    avatar_url_set: bool = False,
+    clear_avatar: bool = False,
 ) -> UserModel:
     user = get_user(session, user_id)
     if user is None:
@@ -53,9 +55,15 @@ def update_user_profile(
             raise ValueError("Display name cannot be empty.")
         user.display_name = cleaned[:255]
 
-    if avatar_url is not None:
-        cleaned_avatar = avatar_url.strip()
-        user.avatar_url = cleaned_avatar or None
+    if clear_avatar:
+        user.avatar_url = None
+    elif avatar_url_set:
+        if avatar_url is None:
+            user.avatar_url = None
+        else:
+            cleaned_avatar = avatar_url.strip()
+            if cleaned_avatar:
+                user.avatar_url = cleaned_avatar
 
     if timezone is not None:
         user.timezone = validate_timezone(timezone)

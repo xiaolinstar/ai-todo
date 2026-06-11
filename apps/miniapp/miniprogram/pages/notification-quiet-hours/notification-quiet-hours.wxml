@@ -1,0 +1,36 @@
+<view class="mine-subpage notification-quiet-hours-page">
+  <scroll-view scroll-y class="mine-subpage-scroll" enhanced show-scrollbar="{{false}}">
+    <view class="mine-subpage-inner">
+      <text wx:if="{{loading}}" class="subpage-hint">加载中…</text>
+      <block wx:else>
+        <view class="group-header">时段</view>
+        <view class="inset-group subpage-group">
+          <picker mode="time" value="{{quietStart}}" disabled="{{saving}}" bindchange="onQuietStartChange">
+            <view class="subpage-cell picker-row">
+              <text class="subpage-label">开始</text>
+              <text class="subpage-value">{{quietStart || '未设置'}}</text>
+              <view class="form-disclosure"></view>
+            </view>
+          </picker>
+          <picker mode="time" value="{{quietEnd}}" disabled="{{saving}}" bindchange="onQuietEndChange">
+            <view class="subpage-cell picker-row">
+              <text class="subpage-label">结束</text>
+              <text class="subpage-value">{{quietEnd || '未设置'}}</text>
+              <view class="form-disclosure"></view>
+            </view>
+          </picker>
+        </view>
+        <text class="subpage-hint">留空表示不限制；跨日时段如 22:00–08:00 表示夜间免打扰。</text>
+        <view wx:if="{{hasQuietHours}}" class="inset-group subpage-group">
+          <view
+            class="subpage-cell pressable"
+            hover-class="list-cell-hover"
+            bindtap="onClearQuietHours"
+          >
+            <text class="subpage-label danger">清除时段</text>
+          </view>
+        </view>
+      </block>
+    </view>
+  </scroll-view>
+</view>

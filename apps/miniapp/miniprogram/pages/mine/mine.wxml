@@ -7,8 +7,8 @@
         bindtap="onProfileCardTap"
       >
         <view class="profile-inner">
-          <view wx:if="{{avatarUrl}}" class="avatar avatar-lg avatar-image-wrap">
-            <image class="avatar-image" src="{{avatarUrl}}" mode="aspectFill" />
+          <view wx:if="{{avatarUrl && !avatarBroken}}" class="avatar avatar-lg avatar-image-wrap">
+            <image class="avatar-image" src="{{avatarUrl}}" mode="aspectFill" binderror="onAvatarError" />
           </view>
           <view wx:else class="avatar avatar-lg" style="background: {{avatarColor}};">{{initial}}</view>
           <view class="profile-text">

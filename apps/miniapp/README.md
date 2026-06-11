@@ -26,7 +26,7 @@ pnpm dev:api
 pnpm clean          # 删除 miniprogram 下本地 .js/.wxss
 pnpm check          # typecheck + 编译检查 + 静态规则
 pnpm preview        # miniprogram-ci 预览（需 ci.env）
-pnpm upload         # miniprogram-ci 上传
+# pnpm upload       # 暂不启用 — 请用微信开发者工具「上传」
 ```
 
 **仓库根目录快捷方式**（等价转发）：
@@ -35,7 +35,7 @@ pnpm upload         # miniprogram-ci 上传
 pnpm clean:wechat
 pnpm check:wechat   # 提交前
 pnpm miniapp:preview
-pnpm miniapp:upload
+# pnpm miniapp:upload  # 暂不启用，请用微信开发者工具上传
 ```
 
 开发者工具下 API 默认 `http://127.0.0.1:3100`（见 `lib/config.ts`）。
@@ -52,9 +52,11 @@ cp apps/miniapp/project.private.config.example.json apps/miniapp/project.private
 
 然后把 `project.private.config.json` 中的 `appid` 改为你的真实小程序 AppID。该文件已加入 `.gitignore`，不会提交到 GitHub。
 
-### 命令行预览 / 上传（miniprogram-ci）
+### 命令行预览（miniprogram-ci）
 
-无需打开微信开发者工具，可用官方 [miniprogram-ci](https://www.npmjs.com/package/miniprogram-ci) 生成体验版二维码或上传代码。
+可用官方 [miniprogram-ci](https://www.npmjs.com/package/miniprogram-ci) 生成体验版二维码。
+
+**上传**：`pnpm upload` / `pnpm miniapp:upload` **暂不启用**（IP 白名单与运维习惯原因）。发布请用 **微信开发者工具 → 上传**，版本号与 `miniprogram/lib/version.ts` 保持一致。
 
 **一次性准备：**
 
@@ -74,11 +76,8 @@ set -a && source ci.env && set +a   # 可省略，若密钥已在 apps/miniapp/ 
 ```bash
 pnpm preview                                      # 二维码 → .preview/preview.jpg
 pnpm preview -- --page pages/reminders/reminders
-pnpm upload -- --desc "v0.5.4 体验版"              # 版本号读 miniprogram/lib/version.ts
-
 # 仓库根目录快捷方式：
 pnpm miniapp:preview
-pnpm miniapp:upload -- --desc "v0.5.4 体验版"
 ```
 
 微信扫码即可真机调试。上传密钥 **IP 白名单**需包含本机公网 IP（含 IPv6；开发可临时填 `0.0.0.0/0`）。Node.js 25+ 需通过 `scripts/run-ci.mjs` 启动（`pnpm preview` 已封装）。

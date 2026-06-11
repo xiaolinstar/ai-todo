@@ -4,24 +4,6 @@
       <text wx:if="{{loading}}" class="subpage-hint">加载中…</text>
       <block wx:else>
         <view class="subpage-section">
-          <view class="group-header">提醒</view>
-          <view class="inset-group subpage-group">
-            <view class="subpage-cell">
-              <view class="subpage-cell-main">
-                <text class="subpage-label">新建提醒/日程默认开启微信通知</text>
-                <text class="subpage-meta">需通知总开关已开启且已配置模板</text>
-              </view>
-              <switch
-                checked="{{defaultReminderEnabled}}"
-                disabled="{{savingReminder || !wechatEnabled}}"
-                bindchange="onDefaultReminderChange"
-                color="{{switchColor}}"
-              />
-            </view>
-          </view>
-        </view>
-
-        <view class="subpage-section">
           <view class="group-header">日历</view>
           <view class="inset-group subpage-group">
             <view class="subpage-cell">

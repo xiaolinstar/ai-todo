@@ -17,7 +17,7 @@
     "clean:wechat": "pnpm --filter @ai-todo/miniapp clean",
     "check:wechat": "pnpm --filter @ai-todo/miniapp check",
     "miniapp:preview": "pnpm --filter @ai-todo/miniapp preview",
-    "miniapp:upload": "pnpm --filter @ai-todo/miniapp upload",
+    "miniapp:upload": "echo 'miniapp CLI upload disabled; use WeChat DevTools' && exit 1",
     "mcp:build": "pnpm --filter @xiaolinstar/ai-todo-mcp build",
     "mcp:smoke": "pnpm --filter @xiaolinstar/ai-todo-mcp smoke"
   }

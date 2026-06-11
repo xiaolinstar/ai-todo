@@ -1,8 +1,4 @@
 import {
-  fetchNotificationSettings,
-  updateNotificationSettings
-} from "../../lib/api";
-import {
   loadContentPrefs,
   saveContentPrefs,
   type CalendarContentPrefs,
@@ -19,11 +15,8 @@ Page({
   data: {
     ...todoPageThemeData(),
     loading: true,
-    savingReminder: false,
     savingCalendar: false,
     savingContacts: false,
-    wechatEnabled: false,
-    defaultReminderEnabled: false,
     defaultHasEnd: false,
     durationIndex: 1,
     durationLabels: DURATION_LABELS,
@@ -39,14 +32,8 @@ Page({
 
   loadAll() {
     this.setData({ loading: true });
-    Promise.all([fetchNotificationSettings(), loadContentPrefs()])
-      .then(([notifResponse, prefs]) => {
-        if (!notifResponse.ok || !notifResponse.data) {
-          wx.showToast({ title: notifResponse.error?.message || "加载失败", icon: "none" });
-          setTimeout(() => wx.navigateBack(), 600);
-          return;
-        }
-        const settings = notifResponse.data.settings;
+    loadContentPrefs()
+      .then((prefs) => {
         const durationIndex = Math.max(
           0,
           DURATION_MINUTES.indexOf(prefs.calendar.defaultDurationMinutes)
@@ -54,8 +41,6 @@ Page({
         const sortIndex = Math.max(0, SORT_MODES.indexOf(prefs.contacts.sortMode));
         this.setData({
           loading: false,
-          wechatEnabled: settings.wechatEnabled,
-          defaultReminderEnabled: settings.defaultReminderEnabled,
           defaultHasEnd: prefs.calendar.defaultHasEnd,
           durationIndex: durationIndex >= 0 ? durationIndex : 1,
           selectTodayOnOpen: prefs.calendar.selectTodayOnOpen,
@@ -67,33 +52,6 @@ Page({
         this.setData({ loading: false });
         wx.showToast({ title: "网络错误", icon: "none" });
       });
-  },
-
-  saveReminderPatch(patch: { defaultReminderEnabled?: boolean }) {
-    this.setData({ savingReminder: true });
-    updateNotificationSettings(patch)
-      .then((response) => {
-        this.setData({ savingReminder: false });
-        if (!response.ok || !response.data) {
-          wx.showToast({ title: response.error?.message || "保存失败", icon: "none" });
-          this.loadAll();
-          return;
-        }
-        const settings = response.data.settings;
-        this.setData({
-          defaultReminderEnabled: settings.defaultReminderEnabled,
-          wechatEnabled: settings.wechatEnabled
-        });
-        wx.showToast({ title: "已保存", icon: "success" });
-      })
-      .catch(() => {
-        this.setData({ savingReminder: false });
-        wx.showToast({ title: "网络错误", icon: "none" });
-      });
-  },
-
-  onDefaultReminderChange(e: { detail: { value: boolean } }) {
-    this.saveReminderPatch({ defaultReminderEnabled: e.detail.value });
   },
 
   saveCalendarPatch(patch: Partial<CalendarContentPrefs>) {

@@ -3,11 +3,12 @@
     <view class="mine-subpage-inner">
       <text wx:if="{{loading}}" class="subpage-hint">加载中…</text>
       <block wx:else>
+        <view class="group-header">微信通知</view>
         <view class="inset-group subpage-group">
           <view class="subpage-cell">
             <view class="subpage-cell-main">
-              <text class="subpage-label">微信通知总开关</text>
-              <text class="subpage-meta">关闭后不再提供微信提醒选项</text>
+              <text class="subpage-label">微信提醒</text>
+              <text class="subpage-meta">创建或修改提醒、日历时自动请求微信提醒</text>
             </view>
             <switch
               checked="{{wechatEnabled}}"
@@ -16,21 +17,17 @@
               color="{{switchColor}}"
             />
           </view>
-          <view class="subpage-cell">
+          <view
+            class="subpage-cell pressable"
+            hover-class="list-cell-hover"
+            bindtap="onOpenQuietHours"
+          >
             <view class="subpage-cell-main">
-              <text class="subpage-label">免打扰开始</text>
+              <text class="subpage-label">免打扰时段</text>
+              <text class="subpage-meta">该时段内不发送微信提醒</text>
             </view>
-            <picker mode="time" value="{{quietStart}}" disabled="{{saving}}" bindchange="onQuietStartChange">
-              <view class="picker-value">{{quietStart || '未设置'}}</view>
-            </picker>
-          </view>
-          <view class="subpage-cell">
-            <view class="subpage-cell-main">
-              <text class="subpage-label">免打扰结束</text>
-            </view>
-            <picker mode="time" value="{{quietEnd}}" disabled="{{saving}}" bindchange="onQuietEndChange">
-              <view class="picker-value">{{quietEnd || '未设置'}}</view>
-            </picker>
+            <text class="subpage-value">{{quietHoursLabel}}</text>
+            <text class="subpage-chevron">›</text>
           </view>
           <view wx:if="{{!templateConfigured}}" class="subpage-cell stack">
             <view class="subpage-cell-main">
@@ -40,19 +37,18 @@
           </view>
         </view>
 
-        <view wx:if="{{statusItems.length > 0}}" class="subpage-section">
-          <view class="group-header">最近送达</view>
-          <view class="inset-group subpage-group">
-            <view
-              class="subpage-cell stack"
-              wx:for="{{statusItems}}"
-              wx:key="id"
-            >
-              <view class="subpage-cell-main">
-                <text class="subpage-label">{{item.title}}</text>
-                <text class="subpage-meta {{item.statusClass === 'danger' ? 'status-danger' : 'status-muted'}}">{{item.meta}}</text>
-              </view>
+        <view class="group-header">记录</view>
+        <view class="inset-group subpage-group">
+          <view
+            class="subpage-cell pressable"
+            hover-class="list-cell-hover"
+            bindtap="onOpenDelivery"
+          >
+            <view class="subpage-cell-main">
+              <text class="subpage-label">最近送达</text>
+              <text class="subpage-meta">查看微信提醒推送记录</text>
             </view>
+            <text class="subpage-chevron">›</text>
           </view>
         </view>
       </block>

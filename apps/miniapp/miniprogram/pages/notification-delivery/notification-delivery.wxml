@@ -1,0 +1,24 @@
+<view class="mine-subpage notification-delivery-page">
+  <scroll-view scroll-y class="mine-subpage-scroll" enhanced show-scrollbar="{{false}}">
+    <view class="mine-subpage-inner">
+      <text wx:if="{{loading}}" class="subpage-hint">加载中…</text>
+      <block wx:elif="{{statusItems.length === 0}}">
+        <text class="subpage-hint">暂无推送记录</text>
+      </block>
+      <block wx:else>
+        <view class="inset-group subpage-group">
+          <view
+            class="subpage-cell stack"
+            wx:for="{{statusItems}}"
+            wx:key="id"
+          >
+            <view class="subpage-cell-main">
+              <text class="subpage-label">{{item.title}}</text>
+              <text class="subpage-meta {{item.statusClass === 'danger' ? 'status-danger' : ''}}">{{item.meta}}</text>
+            </view>
+          </view>
+        </view>
+      </block>
+    </view>
+  </scroll-view>
+</view>

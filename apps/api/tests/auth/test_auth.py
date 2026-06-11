@@ -33,4 +33,16 @@ def test_update_profile(client: TestClient) -> None:
     assert me_user["displayName"] == "小林"
     assert me_user["avatarUrl"] == "wxfile://avatar"
 
-    client.patch("/v1/me/profile", json={"displayName": "开发用户", "avatarUrl": ""})
+    noop = client.patch(
+        "/v1/me/profile",
+        json={"displayName": "小林", "avatarUrl": ""},
+    )
+    assert noop.status_code == 200
+    assert noop.json()["data"]["user"]["avatarUrl"] == "wxfile://avatar"
+
+    cleared = client.patch(
+        "/v1/me/profile",
+        json={"displayName": "开发用户", "clearAvatar": True},
+    )
+    assert cleared.status_code == 200
+    assert cleared.json()["data"]["user"]["avatarUrl"] is None

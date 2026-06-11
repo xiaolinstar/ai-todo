@@ -66,10 +66,6 @@ Page({
     this.setData({ dueTime: e.detail.value });
   },
 
-  onNotifyToggle(e: { detail: { value: boolean } }) {
-    this.setData({ notifyEnabled: e.detail.value });
-  },
-
   pickContact() {
     wx.navigateTo({
       url: "/pages/contact-picker/contact-picker",

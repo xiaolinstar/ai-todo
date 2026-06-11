@@ -89,9 +89,11 @@ export async function loadWechatNotificationPrefs(): Promise<{
   if (!response.ok || !settings?.wechatReminderTemplateId) {
     return { notifyAvailable: false, notifyEnabled: false, reminderTemplateId: "" };
   }
+  const wechatReminderEnabled =
+    settings.wechatEnabled && settings.defaultReminderEnabled;
   return {
-    notifyAvailable: settings.wechatEnabled,
-    notifyEnabled: settings.wechatEnabled && settings.defaultReminderEnabled,
+    notifyAvailable: wechatReminderEnabled,
+    notifyEnabled: wechatReminderEnabled,
     reminderTemplateId: settings.wechatReminderTemplateId
   };
 }

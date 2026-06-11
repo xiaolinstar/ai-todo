@@ -16,6 +16,8 @@
     "pages/settings-token-detail/settings-token-detail",
     "pages/settings-dev/settings-dev",
     "pages/notification-settings/notification-settings",
+    "pages/notification-quiet-hours/notification-quiet-hours",
+    "pages/notification-delivery/notification-delivery",
     "pages/about/about",
     "pages/profile-settings/profile-settings",
     "pages/settings-timezone/settings-timezone",

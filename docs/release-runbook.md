@@ -188,7 +188,7 @@ curl -sf https://xingxiaolin.cn/v1/health/db
 
 ```text
 1. pnpm check:wechat
-2. 开发者工具上传 → 体验版验证 → 提审
+2. 微信开发者工具上传 → 体验版验证 → 提审（`pnpm miniapp:upload` 暂不启用）
 ```
 
 ---

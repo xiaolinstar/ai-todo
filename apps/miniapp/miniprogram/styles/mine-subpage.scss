@@ -94,6 +94,14 @@
   line-height: var(--todo-line-height-relaxed);
 }
 
+.mine-subpage .subpage-section-desc {
+  display: block;
+  margin: 0 16rpx 16rpx;
+  color: var(--todo-text-muted);
+  font-size: var(--todo-font-size-md);
+  line-height: var(--todo-line-height-relaxed);
+}
+
 .mine-subpage .subpage-footer-actions {
   display: flex;
   flex-direction: column;

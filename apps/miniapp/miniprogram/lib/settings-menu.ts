@@ -50,8 +50,8 @@ const ALL_SECTIONS: SettingsMenuSection[] = [
     items: [
       {
         id: "notifications",
-        label: "通知设置",
-        subtitle: "微信提醒与免打扰",
+        label: "微信通知",
+        subtitle: "提醒与日历共用；微信提醒与免打扰",
         route: { kind: "page", path: "/pages/notification-settings/notification-settings" },
         requireLogin: true
       }
