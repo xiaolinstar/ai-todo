@@ -123,8 +123,8 @@ jobs:
         id: deploy_config
         env:
           CD_ENVIRONMENT: ${{ github.event.inputs.environment || 'production' }}
-          DEPLOY_HOST_PRESENT: ${{ secrets.DEPLOY_HOST != '' }}
-          DEPLOY_USER_PRESENT: ${{ secrets.DEPLOY_USER != '' }}
+          DEPLOY_HOST_PRESENT: ${{ vars.DEPLOY_HOST != '' || secrets.DEPLOY_HOST != '' }}
+          DEPLOY_USER_PRESENT: ${{ vars.DEPLOY_USER != '' || secrets.DEPLOY_USER != '' }}
           DEPLOY_SSH_KEY_PRESENT: ${{ secrets.DEPLOY_SSH_KEY != '' }}
           DEPLOY_PASSWORD_PRESENT: ${{ secrets.DEPLOY_PASSWORD != '' }}
         run: node scripts/cd/check-deploy-config.mjs
@@ -140,11 +140,11 @@ jobs:
         if: steps.deploy_config.outputs.configured == 'true'
         uses: appleboy/scp-action@v0.1.7
         with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_USER }}
+          host: ${{ vars.DEPLOY_HOST || secrets.DEPLOY_HOST }}
+          username: ${{ vars.DEPLOY_USER || secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           password: ${{ secrets.DEPLOY_PASSWORD }}
-          port: ${{ secrets.DEPLOY_PORT || 22 }}
+          port: ${{ vars.DEPLOY_PORT || secrets.DEPLOY_PORT || 22 }}
           source: manifest/deploy-manifest.json
           target: /tmp/
           strip_components: 1
@@ -158,16 +158,17 @@ jobs:
           CI_RUN_ID: ${{ needs.resolve-manifest.outputs.ci_run_id }}
           RELEASE_TAG: ${{ needs.resolve-manifest.outputs.release_tag }}
           GHCR_DEPLOY_TOKEN: ${{ secrets.GHCR_DEPLOY_TOKEN || github.token }}
-          GHCR_DEPLOY_USER: ${{ secrets.GHCR_DEPLOY_USER || github.actor }}
-          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          GHCR_DEPLOY_USER: ${{ vars.GHCR_DEPLOY_USER || secrets.GHCR_DEPLOY_USER || github.actor }}
+          DEPLOY_PATH: ${{ vars.DEPLOY_PATH || secrets.DEPLOY_PATH }}
           DEPLOY_MODE_INPUT: ${{ github.event.inputs.deploy_mode || 'auto' }}
+          CD_ENVIRONMENT: ${{ github.event.inputs.environment || 'production' }}
         with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_USER }}
+          host: ${{ vars.DEPLOY_HOST || secrets.DEPLOY_HOST }}
+          username: ${{ vars.DEPLOY_USER || secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           password: ${{ secrets.DEPLOY_PASSWORD }}
-          port: ${{ secrets.DEPLOY_PORT || 22 }}
-          envs: FINGERPRINT,CI_RUN_ID,RELEASE_TAG,GHCR_DEPLOY_TOKEN,GHCR_DEPLOY_USER,DEPLOY_PATH,DEPLOY_MODE_INPUT
+          port: ${{ vars.DEPLOY_PORT || secrets.DEPLOY_PORT || 22 }}
+          envs: FINGERPRINT,CI_RUN_ID,RELEASE_TAG,GHCR_DEPLOY_TOKEN,GHCR_DEPLOY_USER,DEPLOY_PATH,DEPLOY_MODE_INPUT,CD_ENVIRONMENT
           command_timeout: 10m
           script_stop: true
           script: |
@@ -199,7 +200,7 @@ jobs:
       - name: Run post-deploy smoke / black-box checks
         id: verify
         env:
-          CD_PUBLIC_API_URL: ${{ secrets.CD_PUBLIC_API_URL }}
+          CD_PUBLIC_API_URL: ${{ vars.CD_PUBLIC_API_URL || secrets.CD_PUBLIC_API_URL }}
           CD_SMOKE_PAT: ${{ secrets.CD_SMOKE_PAT }}
           RELEASE_TAG: ${{ needs.resolve-manifest.outputs.release_tag }}
         run: >
@@ -255,8 +256,8 @@ jobs:
         id: deploy_config
         env:
           CD_ENVIRONMENT: ${{ github.event.inputs.environment || 'production' }}
-          DEPLOY_HOST_PRESENT: ${{ secrets.DEPLOY_HOST != '' }}
-          DEPLOY_USER_PRESENT: ${{ secrets.DEPLOY_USER != '' }}
+          DEPLOY_HOST_PRESENT: ${{ vars.DEPLOY_HOST != '' || secrets.DEPLOY_HOST != '' }}
+          DEPLOY_USER_PRESENT: ${{ vars.DEPLOY_USER != '' || secrets.DEPLOY_USER != '' }}
           DEPLOY_SSH_KEY_PRESENT: ${{ secrets.DEPLOY_SSH_KEY != '' }}
           DEPLOY_PASSWORD_PRESENT: ${{ secrets.DEPLOY_PASSWORD != '' }}
         run: node scripts/cd/check-deploy-config.mjs
@@ -266,15 +267,16 @@ jobs:
         uses: appleboy/ssh-action@v1.2.0
         env:
           GHCR_DEPLOY_TOKEN: ${{ secrets.GHCR_DEPLOY_TOKEN || github.token }}
-          GHCR_DEPLOY_USER: ${{ secrets.GHCR_DEPLOY_USER || github.actor }}
-          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          GHCR_DEPLOY_USER: ${{ vars.GHCR_DEPLOY_USER || secrets.GHCR_DEPLOY_USER || github.actor }}
+          DEPLOY_PATH: ${{ vars.DEPLOY_PATH || secrets.DEPLOY_PATH }}
+          CD_ENVIRONMENT: ${{ github.event.inputs.environment || 'production' }}
         with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_USER }}
+          host: ${{ vars.DEPLOY_HOST || secrets.DEPLOY_HOST }}
+          username: ${{ vars.DEPLOY_USER || secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           password: ${{ secrets.DEPLOY_PASSWORD }}
-          port: ${{ secrets.DEPLOY_PORT || 22 }}
-          envs: GHCR_DEPLOY_TOKEN,GHCR_DEPLOY_USER,DEPLOY_PATH
+          port: ${{ vars.DEPLOY_PORT || secrets.DEPLOY_PORT || 22 }}
+          envs: GHCR_DEPLOY_TOKEN,GHCR_DEPLOY_USER,DEPLOY_PATH,CD_ENVIRONMENT
           command_timeout: 10m
           script_stop: true
           script: |
@@ -296,7 +298,7 @@ jobs:
 
       - name: Verify API after rollback
         env:
-          CD_PUBLIC_API_URL: ${{ secrets.CD_PUBLIC_API_URL }}
+          CD_PUBLIC_API_URL: ${{ vars.CD_PUBLIC_API_URL || secrets.CD_PUBLIC_API_URL }}
           CD_SMOKE_PAT: ${{ secrets.CD_SMOKE_PAT }}
         run: >
           python3 scripts/cd/post-deploy-verify.py
@@ -344,7 +346,7 @@ jobs:
           CD_GIT_SHA: ${{ needs.resolve-manifest.outputs.git_sha }}
           CD_FINGERPRINT: ${{ needs.resolve-manifest.outputs.fingerprint }}
           CD_CI_RUN_ID: ${{ needs.resolve-manifest.outputs.ci_run_id }}
-          CD_PUBLIC_API_URL: ${{ secrets.CD_PUBLIC_API_URL }}
+          CD_PUBLIC_API_URL: ${{ vars.CD_PUBLIC_API_URL || secrets.CD_PUBLIC_API_URL }}
           CD_STEP_RESOLVE_MANIFEST: ${{ needs.resolve-manifest.result }}
           CD_STEP_DEPLOY: ${{ needs.deploy.result }}
           CD_STEP_POST_DEPLOY_VERIFY: ${{ needs.post-deploy-verify.result }}

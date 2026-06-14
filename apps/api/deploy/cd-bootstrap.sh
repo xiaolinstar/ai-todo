@@ -7,6 +7,17 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 echo "CD action=${AI_TODO_CD_ACTION:-deploy} fingerprint=${FINGERPRINT:-} ci_run=${CI_RUN_ID:-} deploy_mode_input=${DEPLOY_MODE_INPUT:-auto}"
 
+cd_environment="${CD_ENVIRONMENT:-${AI_TODO_CD_ENVIRONMENT:-production}}"
+case "$cd_environment" in
+  staging)
+    export ENV_FILE="${ENV_FILE:-.env.staging}"
+    ;;
+  *)
+    export ENV_FILE="${ENV_FILE:-.env.production}"
+    ;;
+esac
+echo "CD_ENVIRONMENT=${cd_environment} ENV_FILE=${ENV_FILE}" >&2
+
 if [[ "${AI_TODO_CD_ACTION:-deploy}" == "rollback" ]]; then
   exec bash "$SCRIPT_DIR/deploy-from-manifest.sh" --rollback-to-previous
 fi
