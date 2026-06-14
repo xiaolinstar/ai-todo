@@ -35,6 +35,8 @@ jobs:
         env:
           ALERT_BASE_URL: ${{ vars.CD_PUBLIC_API_URL || secrets.CD_PUBLIC_API_URL }}
           ALERT_ENVIRONMENT: ${{ github.event.inputs.environment || 'production' }}
+          ALERT_TIMEOUT: ${{ vars.ALERT_TIMEOUT || 10 }}
+          ALERT_MAX_LATENCY_MS: ${{ vars.ALERT_MAX_LATENCY_MS || 1500 }}
           ALERT_WEBHOOK_URL: ${{ secrets.ALERT_WEBHOOK_URL }}
         run: python3 scripts/ops/check-alerts.py --json-out alert-result.json
 
