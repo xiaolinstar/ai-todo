@@ -23,14 +23,34 @@ if [[ ! -f "$ENV_FILE" ]]; then
   exit 1
 fi
 
+COMMON_ENV_FILE="${COMMON_ENV_FILE:-.env}"
+COMPOSE_ENV_FILES_VALUE="$ENV_FILE"
+if [[ -f "$COMMON_ENV_FILE" && "$COMMON_ENV_FILE" != "$ENV_FILE" ]]; then
+  COMPOSE_ENV_FILES_VALUE="${COMMON_ENV_FILE},${ENV_FILE}"
+fi
+
+env_value() {
+  local name="$1"
+  local value=""
+  if [[ -f "$COMMON_ENV_FILE" ]]; then
+    value="$(grep -E "^${name}=" "$COMMON_ENV_FILE" | tail -n1 | cut -d= -f2- || true)"
+  fi
+  local override=""
+  if grep -Eq "^${name}=" "$ENV_FILE"; then
+    override="$(grep -E "^${name}=" "$ENV_FILE" | tail -n1 | cut -d= -f2- || true)"
+    value="$override"
+  fi
+  echo "$value"
+}
+
 COMPOSE_FILES=(-f docker-compose.prod.yml)
 if [[ -f deploy/Caddyfile ]]; then
   COMPOSE_FILES+=(-f docker-compose.tls.yml)
 fi
 
-docker compose "${COMPOSE_FILES[@]}" --env-file "$ENV_FILE" up -d --build
+COMPOSE_ENV_FILES="$COMPOSE_ENV_FILES_VALUE" docker compose "${COMPOSE_FILES[@]}" up -d --build
 
-PUBLISH_PORT="$(grep -E '^AI_TODO_PUBLISH_PORT=' "$ENV_FILE" | cut -d= -f2- || true)"
+PUBLISH_PORT="$(env_value AI_TODO_PUBLISH_PORT)"
 PUBLISH_PORT="${PUBLISH_PORT:-8082}"
 curl -sf "http://127.0.0.1:${PUBLISH_PORT}/v1/health" >/dev/null
 

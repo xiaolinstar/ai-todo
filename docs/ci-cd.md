@@ -218,6 +218,12 @@ CD 里带 `environment: production` 的 Job **同时可读**：
 | **production** | `production` | 仅手动 workflow_dispatch，选择 production | `DEPLOY_*`、`GHCR_DEPLOY_*` |
 | **staging** | `staging` | 仅手动 workflow_dispatch，选择 staging | 在 Environment 中配置独立 `DEPLOY_*` |
 
+API 运行时环境文件按 `.env` → `.env.local/.env.staging/.env.production` 顺序加载，环境专属文件覆盖公共默认值。模板与 `gh secret set --env ...` 示例见 [env/README.md](./env/README.md)。
+
+## Monitor 告警
+
+`.github/workflows/monitor.yml` 每 15 分钟对 production 执行黑盒告警检查，也可手动选择 staging。检查脚本为 `scripts/ops/check-alerts.py`，会验证 `/v1/health`、`/v1/health/db` 与 `/metrics`。详细说明见 [ops-observability.md](./ops-observability.md)。
+
 **手动触发 CD**（workflow_dispatch）时若缺少 secrets，仍会 **失败并提示**，避免误以为已部署。
 
 启用手动 CD 前，在 GitHub **Settings → Secrets and variables → Actions**（仓库级即可；也可放在 Environment `production`）配置：

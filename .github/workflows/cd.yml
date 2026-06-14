@@ -102,7 +102,7 @@ jobs:
       - name: Staging environment notice
         if: github.event.inputs.environment == 'staging'
         run: |
-          echo "::warning::GitHub Environment 'staging' is not configured in this repository (only 'production' exists). CD will use repository-level secrets and may target the same host as production. Create Environment staging with separate DEPLOY_* / CD_PUBLIC_API_URL before relying on staging."
+          echo "::notice::Staging deploy selected. Ensure GitHub Environment 'staging' has independent DEPLOY_* and CD_PUBLIC_API_URL secrets before using it for release validation."
 
   deploy:
     name: 2 · Deploy

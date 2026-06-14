@@ -10,6 +10,7 @@ apps/cli/dist-tsc/
 .env.*
 !.env.example
 !.env.local.example
+!.env.staging.example
 !.env.production.example
 coverage/
 .coverage

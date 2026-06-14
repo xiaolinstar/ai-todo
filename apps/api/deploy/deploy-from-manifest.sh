@@ -80,7 +80,27 @@ if [[ ! -f "$ENV_FILE" ]]; then
   exit 1
 fi
 
-ALLOW_DEV_AUTH="$(grep -E '^AI_TODO_ALLOW_DEV_AUTH=' "$ENV_FILE" | tail -n1 | cut -d= -f2- || true)"
+COMMON_ENV_FILE="${COMMON_ENV_FILE:-.env}"
+COMPOSE_ENV_FILES_VALUE="$ENV_FILE"
+if [[ -f "$COMMON_ENV_FILE" && "$COMMON_ENV_FILE" != "$ENV_FILE" ]]; then
+  COMPOSE_ENV_FILES_VALUE="${COMMON_ENV_FILE},${ENV_FILE}"
+fi
+
+env_value() {
+  local name="$1"
+  local value=""
+  if [[ -f "$COMMON_ENV_FILE" ]]; then
+    value="$(grep -E "^${name}=" "$COMMON_ENV_FILE" | tail -n1 | cut -d= -f2- || true)"
+  fi
+  local override=""
+  if grep -Eq "^${name}=" "$ENV_FILE"; then
+    override="$(grep -E "^${name}=" "$ENV_FILE" | tail -n1 | cut -d= -f2- || true)"
+    value="$override"
+  fi
+  echo "$value"
+}
+
+ALLOW_DEV_AUTH="$(env_value AI_TODO_ALLOW_DEV_AUTH)"
 ALLOW_DEV_AUTH="${ALLOW_DEV_AUTH//\"/}"
 ALLOW_DEV_AUTH="${ALLOW_DEV_AUTH//\'/}"
 if [[ "${ALLOW_DEV_AUTH:-false}" != "false" ]]; then
@@ -88,12 +108,12 @@ if [[ "${ALLOW_DEV_AUTH:-false}" != "false" ]]; then
   exit 1
 fi
 
-if ! grep -Eq '^AI_TODO_WECHAT_APP_ID=.+$' "$ENV_FILE"; then
+if [[ -z "$(env_value AI_TODO_WECHAT_APP_ID)" ]]; then
   echo "Missing AI_TODO_WECHAT_APP_ID in $ENV_FILE" >&2
   exit 1
 fi
 
-if ! grep -Eq '^AI_TODO_WECHAT_APP_SECRET=.+$' "$ENV_FILE"; then
+if [[ -z "$(env_value AI_TODO_WECHAT_APP_SECRET)" ]]; then
   echo "Missing AI_TODO_WECHAT_APP_SECRET in $ENV_FILE" >&2
   exit 1
 fi
@@ -103,7 +123,7 @@ if [[ -n "${GHCR_DEPLOY_TOKEN:-}" ]]; then
   echo "$GHCR_DEPLOY_TOKEN" | docker login ghcr.io -u "$GHCR_LOGIN_USER" --password-stdin
 fi
 
-PULL_REGISTRY_MIRROR="$(grep -E '^AI_TODO_PULL_REGISTRY_MIRROR=' "$ENV_FILE" | tail -n1 | cut -d= -f2- | tr -d ' "'\''"' || true)"
+PULL_REGISTRY_MIRROR="$(env_value AI_TODO_PULL_REGISTRY_MIRROR | tr -d ' "'\''"')"
 # Public GHCR 默认走 NJU 镜像；CD 可 export 覆盖。设为 "none" 可禁用镜像站。
 if [[ -n "${AI_TODO_PULL_REGISTRY_MIRROR:-}" ]]; then
   if [[ "${AI_TODO_PULL_REGISTRY_MIRROR}" == "none" ]]; then
@@ -136,7 +156,7 @@ set_compose_files() {
 set_compose_files
 
 compose_notification_profile_args() {
-  if grep -Eq '^AI_TODO_WECHAT_REMINDER_TEMPLATE_ID=.+' "$ENV_FILE"; then
+  if [[ -n "$(env_value AI_TODO_WECHAT_REMINDER_TEMPLATE_ID)" ]]; then
     echo "Notification worker profile enabled (template ID configured)." >&2
     printf '%s\n' --profile notifications
   fi
@@ -145,10 +165,10 @@ compose_notification_profile_args() {
 compose_up() {
   # shellcheck disable=SC2207
   local profile_args=($(compose_notification_profile_args))
-  docker compose "${COMPOSE_FILES[@]}" "${profile_args[@]}" --env-file "$ENV_FILE" "$@"
+  COMPOSE_ENV_FILES="$COMPOSE_ENV_FILES_VALUE" docker compose "${COMPOSE_FILES[@]}" "${profile_args[@]}" "$@"
 }
 
-PUBLISH_PORT="$(grep -E '^AI_TODO_PUBLISH_PORT=' "$ENV_FILE" | cut -d= -f2- || true)"
+PUBLISH_PORT="$(env_value AI_TODO_PUBLISH_PORT)"
 PUBLISH_PORT="${PUBLISH_PORT:-8082}"
 
 rewrite_pull_ref() {

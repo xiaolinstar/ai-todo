@@ -7,6 +7,7 @@ class Settings(BaseSettings):
 
     host: str = Field(default="127.0.0.1")
     port: int = Field(default=3100)
+    environment: str = Field(default="local")
     timezone: str = Field(default="Asia/Shanghai")
     database_url: str = Field(
         default="postgresql+psycopg://ai_todo:ai_todo@127.0.0.1:5432/ai_todo"
@@ -27,6 +28,9 @@ class Settings(BaseSettings):
     notification_max_attempts: int = Field(default=3, ge=1)
     release_tag: str | None = Field(default=None)
     git_sha: str | None = Field(default=None)
+    structured_logs_enabled: bool = Field(default=True)
+    metrics_enabled: bool = Field(default=True)
+    metrics_path: str = Field(default="/metrics")
     icp_beian_text: str | None = Field(default="苏ICP备2026011017号-7")
     public_security_beian_text: str | None = Field(default="苏公网安备32010602012480号")
 

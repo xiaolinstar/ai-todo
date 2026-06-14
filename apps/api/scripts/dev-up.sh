@@ -10,4 +10,9 @@ if [ ! -f "$ENV_FILE" ]; then
   exit 1
 fi
 
-exec docker compose --env-file "$ENV_FILE" --profile notifications up -d --build "$@"
+COMPOSE_ENV_FILES_VALUE="$ENV_FILE"
+if [ -f .env ] && [ "$ENV_FILE" != ".env" ]; then
+  COMPOSE_ENV_FILES_VALUE=".env,$ENV_FILE"
+fi
+
+COMPOSE_ENV_FILES="$COMPOSE_ENV_FILES_VALUE" exec docker compose --profile notifications up -d --build "$@"

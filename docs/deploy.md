@@ -42,9 +42,12 @@ CLI 用户请将 `~/.ai-todo/settings.json` 中 `url` 改为 `https://xingxiaoli
 
 ```bash
 cd ~/AgentProjects/ai-todo/apps/api
+cp .env.example .env
 cp .env.production.example .env.production
 # 编辑 POSTGRES_PASSWORD、AI_TODO_WECHAT_APP_ID/SECRET
 ```
+
+`apps/api/.env` 存放非敏感公共默认值，`.env.production` 存放生产覆盖值和密钥。部署脚本会先加载 `.env`，再加载 `.env.production`，后者覆盖前者。staging 使用同一套 VPS 部署模型，但环境文件为 `.env.staging`，详见 [env/README.md](./env/README.md)。
 
 `.env.production` 关键项：
 

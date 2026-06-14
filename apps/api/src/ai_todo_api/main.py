@@ -4,7 +4,7 @@ from pathlib import Path
 
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import inspect, text
 from sqlalchemy.exc import SQLAlchemyError
@@ -18,6 +18,7 @@ from ai_todo_api.db.session import SessionLocal, get_db
 from ai_todo_api.modules.calendar.router import router as calendar_router
 from ai_todo_api.modules.contacts.router import router as contacts_router
 from ai_todo_api.modules.notifications.router import router as notifications_router
+from ai_todo_api.observability import install_observability, metrics_registry
 from ai_todo_api.modules.reminders.router import router as reminders_router
 from ai_todo_api.modules.today.router import router as today_router
 from ai_todo_api.preview import preview_page
@@ -53,6 +54,7 @@ async def lifespan(application: FastAPI):
 
 
 app = FastAPI(title="ai-todo API", version=get_api_version(), lifespan=lifespan)
+install_observability(app)
 logger = logging.getLogger(__name__)
 static_dir = Path(__file__).parent / "static"
 favicon_path = static_dir / "icons" / "ai-todo.svg"
@@ -137,11 +139,19 @@ def healthcheck() -> ApiResponse[dict[str, str | None]]:
         data={
             "service": "ai-todo-api",
             "status": "ok",
+            "environment": settings.environment,
             "apiVersion": get_api_version(),
             "releaseTag": settings.release_tag,
             "gitSha": settings.git_sha,
         }
     )
+
+
+@app.get(settings.metrics_path, include_in_schema=False)
+def metrics() -> PlainTextResponse:
+    if not settings.metrics_enabled:
+        raise HTTPException(status_code=404, detail="Metrics are disabled.")
+    return PlainTextResponse(metrics_registry.render_prometheus(), media_type="text/plain")
 
 
 @app.get("/v1/health/db")
