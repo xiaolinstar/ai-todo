@@ -98,18 +98,24 @@ git push origin v0.1.4
 
 ## 发布流程（修订）
 
+默认采用 **staging → production 晋升**；小程序体验版连 staging、正式版连 production。完整策略见 [staging-production-promotion.md](./staging-production-promotion.md)。
+
 1. 在 `main` 完成候选功能并通过门禁（`pnpm test:api`、`pnpm check:wechat` 等）。
 2. **仅 bump 有变更的组件** L1 版本号。
 3. 更新 `docs/releases/vX.Y.Z.md`、追加 [compatibility.md](./compatibility.md) 一行。
 4. 提交并创建 Git tag `vX.Y.Z`（CD 仍用此 `release_tag`）。
-5. 推送 `main` 与 tag；手动触发 CD（`release_tag=vX.Y.Z`）。
-6. 微信小程序上传，版本号 = **miniapp L1**。
-7. 验收核对：
+5. 推送 `main` 与 tag。
+6. **API 有变更**：手动 CD `environment=staging` → 体验版验收 → 满足晋升门槛后 CD `environment=production`（同一 `release_tag`）。
+7. **微信小程序**：上传版本号 = **miniapp L1**；可先提审，审核通过后发布正式版。
+8. 验收核对：
 
 ```bash
-curl -sS "$API_URL/v1/health" | jq '.data | {apiVersion, releaseTag, gitSha}'
+curl -sS "$STAGING_API_URL/v1/health" | jq '.data | {apiVersion, releaseTag, gitSha, environment}'
+curl -sS "$PRODUCTION_API_URL/v1/health" | jq '.data | {apiVersion, releaseTag, gitSha, environment}'
 ai-todo version --json
 ```
+
+**仅小程序 patch**（如 v0.8.2）且 production API 已兼容时，可跳过步骤 6 的 production CD。
 
 只有当 `main` 继续高风险开发且需长期 hotfix 已发布版本时，才考虑 release 分支。当前默认 `main` + tag。
 
@@ -117,4 +123,5 @@ ai-todo version --json
 
 - [compatibility.md](./compatibility.md) — 已验证的组件版本组合
 - [release-runbook.md](../release-runbook.md) — CD 与回滚
+- [staging-production-promotion.md](./staging-production-promotion.md) — staging → production 晋升策略
 - [deploy.md](../deploy.md) — `releaseTag` / `gitSha` 注入说明

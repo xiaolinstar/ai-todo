@@ -68,6 +68,8 @@ deploy/remote-deploy.sh
 GitHub Environment secrets can be set with `gh secret set --env staging KEY`, for example:
 
 ```bash
-gh secret set --env staging CD_PUBLIC_API_URL --body https://staging.example.com
-gh secret set --env staging DEPLOY_HOST --body your-vps-host-or-ip
+gh secret set --env staging CD_PUBLIC_API_URL --body https://staging.xingxiaolin.cn
+gh secret set --env staging DEPLOY_HOST --body your-staging-vps-host-or-ip
 ```
+
+发布晋升策略（staging 先、production 后）：[releases/staging-production-promotion.md](../releases/staging-production-promotion.md)。
