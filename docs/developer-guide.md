@@ -103,13 +103,19 @@ pnpm dev:api
 
 这种方式适合后端代码热调试；多服务联调仍建议优先用完整 Docker Compose。
 
-开发者工具 `develop` 环境下，小程序默认访问：
+开发者工具 **模拟器**（`platform === devtools`）下，小程序默认访问：
 
 ```text
 http://127.0.0.1:3100
 ```
 
-如需在「我的」页手动改 API 地址，只有 `develop` 环境会保存自定义地址；体验版和正式版固定使用 `https://xingxiaolin.cn`。
+手机扫 **预览** 或 **真机调试** 二维码时，虽仍是微信 `develop` 构建，但会自动连 **staging**：
+
+```text
+https://staging.xingxiaolin.cn
+```
+
+与体验版共用预发布后端，便于真机验收；模拟器仍走本地 API 以便热调试。仅模拟器可保存自定义 API 地址（如局域网 IP）；体验版/正式版/手机 develop 均固定远程地址。
 
 ### 4. 本地免微信登录开发
 

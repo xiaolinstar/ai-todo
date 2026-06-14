@@ -1,5 +1,5 @@
 import { ensureAuth } from "./lib/auth";
-import { getDefaultApiUrl, isDevelopEnv } from "./lib/config";
+import { isDevelopEnv, syncRuntimeConfig } from "./lib/config";
 import { enableShareMenu } from "./lib/share";
 
 type PrivacyAuthorizationResolve = (result: {
@@ -42,12 +42,7 @@ App({
   globalData: {},
   onLaunch() {
     setupPrivacyAuthorization();
-    const apiUrl = wx.getStorageSync("apiUrl");
-    if (!isDevelopEnv()) {
-      wx.setStorageSync("apiUrl", getDefaultApiUrl());
-    } else if (typeof apiUrl !== "string" || !apiUrl) {
-      wx.setStorageSync("apiUrl", getDefaultApiUrl());
-    }
+    syncRuntimeConfig();
     ensureAuth().catch(() => undefined);
     if (!isDevelopEnv()) {
       enableShareMenu();

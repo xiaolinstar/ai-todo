@@ -1,22 +1,26 @@
 /** Keep in sync with docs/privacy-compliance.md (latest approved version). */
+import { getConfig } from "./config";
+
 export const PRIVACY_POLICY_VERSION = "2026-06-07";
 
-const STORAGE_PRIVACY_CONSENT = "privacyConsentVersion";
+function privacyConsentKey(): string {
+  return `privacyConsentVersion:${getConfig().scope}`;
+}
 
 export function hasPrivacyConsent(): boolean {
   try {
-    return wx.getStorageSync(STORAGE_PRIVACY_CONSENT) === PRIVACY_POLICY_VERSION;
+    return wx.getStorageSync(privacyConsentKey()) === PRIVACY_POLICY_VERSION;
   } catch {
     return false;
   }
 }
 
 export function markPrivacyConsented(): void {
-  wx.setStorageSync(STORAGE_PRIVACY_CONSENT, PRIVACY_POLICY_VERSION);
+  wx.setStorageSync(privacyConsentKey(), PRIVACY_POLICY_VERSION);
 }
 
 export function clearPrivacyConsent(): void {
-  wx.removeStorageSync(STORAGE_PRIVACY_CONSENT);
+  wx.removeStorageSync(privacyConsentKey());
 }
 
 export function requirePrivacyAuthorization(): Promise<boolean> {

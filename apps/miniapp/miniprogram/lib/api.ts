@@ -508,6 +508,7 @@ export function revokeAllApiTokens() {
 export interface HealthResult {
   service: string;
   status: string;
+  environment?: string;
   apiVersion?: string;
   releaseTag?: string;
   gitSha?: string;

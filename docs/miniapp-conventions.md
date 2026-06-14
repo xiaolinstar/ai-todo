@@ -174,16 +174,21 @@ apps/miniapp/
 
 ## 网络与配置
 
-- API 基址与 Token 存 `wx.storage`（`lib/config.ts`）
+- API 基址与 Token 存 `wx.storage`（`lib/config.ts`），**按 API 环境分桶**（`production` / `staging` / `local`），体验版与正式版互不覆盖 token、隐私同意与资料引导状态
+- 启动与「我的」页会调用 `syncRuntimeConfig()`，将 `apiUrl` 对齐当前微信构建（develop / trial / release），并迁移旧版扁平 storage 键
 - 请求统一走 `lib/api.ts`，请求头含 `x-client-source: miniapp`
 - 本地开发：开发者工具勾选「不校验合法域名」；真机使用局域网 IP
 
-### 鉴权与环境（规划）
+### 鉴权与环境
 
 | 环境 | API 地址 | Token | 「我的」页 UI |
 |------|----------|-------|----------------|
-| **develop**（开发者工具） | 可改 `http://127.0.0.1:3100` | 可选；后端 `allow_dev_auth` 时可无 Token | 显示 API / Token / 签发 PAT |
-| **trial / release** | 固定 `https://xingxiaolin.cn`（代码内置） | **仅**微信登录后自动写入，用户不手填 | 只显示「微信登录」与连接状态 |
+| **develop + 开发者工具模拟器** | 默认 `http://127.0.0.1:3100`（可改局域网 IP） | 可选；`allow_dev_auth` 时可无 Token | 显示开发者选项 |
+| **develop + 手机预览 / 真机调试** | 固定 `https://staging.xingxiaolin.cn` | 微信登录 | 同体验版 |
+| **trial**（体验版） | 固定 `https://staging.xingxiaolin.cn` | **仅**微信登录后自动写入 | 只显示「微信登录」与连接状态 |
+| **release**（正式版） | 固定 `https://xingxiaolin.cn` | **仅**微信登录后自动写入 | 只显示「微信登录」与连接状态 |
+
+模拟器与手机虽同为微信 `develop` 构建，通过 `wx.getSystemInfoSync().platform === "devtools"` 区分：模拟器连本地 API，手机扫码预览/真机调试连 staging。
 
 生产用户流程：`wx.login` → `POST /v1/auth/wechat/login` → 保存 `accessToken` → 后续请求带 `Authorization: Bearer …`。  
 不需要、也不应要求用户配置域名或 Access Token。PAT 签发仅用于本地/Agent CLI 调试。

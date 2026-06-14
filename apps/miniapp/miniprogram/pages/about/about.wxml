@@ -11,6 +11,16 @@
           <text class="subpage-value">{{miniappVersion}}</text>
         </view>
         <view class="subpage-cell">
+          <text class="subpage-label">运行环境</text>
+          <text class="subpage-value">{{envLabel}}</text>
+        </view>
+        <view class="subpage-cell stack">
+          <view class="subpage-cell-main">
+            <text class="subpage-label">API 地址</text>
+            <text class="subpage-meta">{{apiUrl}}</text>
+          </view>
+        </view>
+        <view class="subpage-cell">
           <text class="subpage-label">API 服务</text>
           <text class="subpage-value">{{healthSummary}}</text>
         </view>

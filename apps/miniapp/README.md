@@ -104,7 +104,8 @@ pnpm miniapp:preview
 | 项 | 位置 |
 |----|------|
 | AppID | `project.private.config.json`（本地真实 AppID）；`project.config.json` 仅提交 `touristid` |
-| API 基址 | 代码默认 `https://xingxiaolin.cn`（体验版/正式版） |
+| API 基址 | 模拟器：`127.0.0.1:3100`；手机预览/真机调试/体验版：`staging.xingxiaolin.cn`；正式版：`xingxiaolin.cn`（见 `lib/config.ts`） |
+| 本地存储 | token / 隐私同意按 API 环境分桶；切换体验版与正式版互不覆盖登录态（v0.8.2+） |
 | 登录 | 「我的」→ **微信登录** |
 
 **域名切换**：自 0.4.0 起生产基址为 `xingxiaolin.cn`。若体验版仍连旧域，需重新上传小程序；网关侧 `wodi.games` 暂保留至全量切换完成。
@@ -123,7 +124,9 @@ pnpm check:wechat
 | `未找到 pages/.../xxx.js` | 确认 `project.config.json` 已启用 `useCompilerPlugins: ["typescript","sass"]`；DevTools 重新编译 |
 | 改了 .ts 没生效 | DevTools「编译」→「清缓存」→ 重新编译 |
 | 无法连接 API（本地） | 勾选「不校验合法域名」；API 用 `127.0.0.1:3100` |
+| 预览却连到生产 | 重新编译 v0.8.2+；手机 develop 预览/真机调试应显示 staging。关于页核对 API 地址 |
 | 无法连接 API（真机） | 公众平台配置 `xingxiaolin.cn`；确认 `https://xingxiaolin.cn/v1/health` |
+| 体验版/正式版登录态错乱 | v0.8.2+ 已按环境分桶；关于页可核对「运行环境」与 API 地址 |
 | Git 里出现 .js/.wxss | 勿提交；运行 `git rm --cached` 移除跟踪 |
 
 ## Tab 结构

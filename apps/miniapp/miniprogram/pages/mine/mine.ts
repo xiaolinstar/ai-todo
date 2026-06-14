@@ -14,7 +14,8 @@ import {
   hasSeenProfileSetup,
   isDevelopEnv,
   markProfileSetupSeen,
-  saveConfig
+  saveConfig,
+  syncRuntimeConfig
 } from "../../lib/config";
 import { markPrivacyConsented, requirePrivacyAuthorization } from "../../lib/privacy";
 import { TODO_COLORS } from "../../lib/design-tokens";
@@ -61,11 +62,8 @@ Page({
   onShow() {
     updateTabBarSelected(3);
     this.setData({ showDevControls: isDevelopEnv() });
-    if (getConfig().apiUrl) {
-      this.refreshSession(false);
-    } else {
-      this.syncMenu();
-    }
+    syncRuntimeConfig();
+    this.refreshSession(false);
   },
 
   syncMenu() {

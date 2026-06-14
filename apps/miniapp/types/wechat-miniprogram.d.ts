@@ -1,5 +1,6 @@
 declare const wx: {
   getStorageSync(key: string): unknown;
+  getStorageInfoSync(): { keys: string[] };
   setStorageSync(key: string, value: unknown): void;
   removeStorageSync(key: string): void;
   login(options: {
@@ -77,6 +78,9 @@ declare const wx: {
   }): void;
   getWindowInfo(): {
     windowWidth: number;
+  };
+  getSystemInfoSync(): {
+    platform: string;
   };
   getAccountInfoSync(): {
     miniProgram: {
