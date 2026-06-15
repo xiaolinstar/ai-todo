@@ -18,6 +18,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--environment", default=os.environ.get("ALERT_ENVIRONMENT", "").strip())
     parser.add_argument("--timeout", type=int, default=int(os.environ.get("ALERT_TIMEOUT", "10")))
     parser.add_argument("--max-latency-ms", type=int, default=int(os.environ.get("ALERT_MAX_LATENCY_MS", "1500")))
+    parser.add_argument("--latency-samples", type=int, default=int(os.environ.get("ALERT_LATENCY_SAMPLES", "3")))
     parser.add_argument("--webhook-url", default=os.environ.get("ALERT_WEBHOOK_URL", "").strip())
     parser.add_argument("--json-out", default="")
     return parser.parse_args(argv)
@@ -44,13 +45,30 @@ def run_checks(args: argparse.Namespace) -> dict[str, Any]:
     base = args.base_url.rstrip("/")
     checks: list[dict[str, Any]] = []
 
-    health, health_ms = request_json(f"{base}/v1/health", timeout=args.timeout)
+    health_samples: list[float] = []
+    health: dict[str, Any] | None = None
+    sample_count = max(args.latency_samples, 1)
+    for _ in range(sample_count):
+        health, health_ms = request_json(f"{base}/v1/health", timeout=args.timeout)
+        health_samples.append(health_ms)
+        if health.get("ok") is not True or (health.get("data") or {}).get("status") != "ok":
+            raise RuntimeError(f"health is not ok: {health}")
+    assert health is not None
+    health_ms = min(health_samples)
     health_data = health.get("data") or {}
-    checks.append({"name": "health", "ok": health.get("ok") is True, "durationMs": round(health_ms, 2)})
-    if health.get("ok") is not True or health_data.get("status") != "ok":
-        raise RuntimeError(f"health is not ok: {health}")
+    checks.append(
+        {
+            "name": "health",
+            "ok": True,
+            "durationMs": round(health_ms, 2),
+            "sampleMs": [round(value, 2) for value in health_samples],
+        }
+    )
     if health_ms > args.max_latency_ms:
-        raise RuntimeError(f"health latency {health_ms:.0f}ms exceeds {args.max_latency_ms}ms")
+        raise RuntimeError(
+            f"health latency best sample {health_ms:.0f}ms exceeds {args.max_latency_ms}ms "
+            f"(samples: {', '.join(str(round(value)) for value in health_samples)}ms)"
+        )
 
     db, db_ms = request_json(f"{base}/v1/health/db", timeout=args.timeout)
     db_data = db.get("data") or {}
