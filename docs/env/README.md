@@ -34,6 +34,7 @@ Keep `apps/api/.env` limited to non-secret defaults. Put secrets in environment-
 | `apps/api/.env.staging.example` | staging VPS overrides and secrets checklist |
 | `apps/api/.env.production.example` | production VPS overrides and secrets checklist |
 | `docs/env/github-environments.example.env` | GitHub Environment secrets checklist |
+| `docs/env/github-environments.md` | GitHub Variables / Secrets reference |
 | `docs/env/ops.example.env` | local shell variables for ops scripts |
 
 ## Commands
