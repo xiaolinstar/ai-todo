@@ -25,6 +25,16 @@ Keep `apps/api/.env` limited to non-secret defaults. Put secrets in environment-
 
 `docker compose --env-file <file>` replaces the default `.env` lookup. Project scripts therefore set `COMPOSE_ENV_FILES=.env,<environment-file>` internally instead of passing two `--env-file` flags.
 
+## Compose Name
+
+Set `AI_TODO_COMPOSE_PROJECT_NAME` in each environment file to avoid container, network, and volume name collisions on shared VPS hosts:
+
+```env
+AI_TODO_COMPOSE_PROJECT_NAME=ai-todo-staging
+```
+
+For an existing production deployment, changing this value creates a new Compose project name. Confirm the PostgreSQL volume migration or reuse plan before applying it on the server.
+
 ## Templates
 
 | Template | Purpose |

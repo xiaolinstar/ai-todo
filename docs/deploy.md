@@ -54,6 +54,7 @@ cp .env.production.example .env.production
 | 变量 | 说明 |
 |------|------|
 | `POSTGRES_PASSWORD` | 数据库强密码 |
+| `AI_TODO_COMPOSE_PROJECT_NAME` | Compose 项目名；决定容器 / 网络 / volume 前缀，已有环境修改前先确认 PostgreSQL volume |
 | `AI_TODO_PUBLISH_PORT` | `8082`（默认） |
 | `AI_TODO_ALLOW_DEV_AUTH` | `false` |
 | `AI_TODO_WECHAT_APP_ID` | 小程序 AppID |
@@ -216,6 +217,7 @@ ai_todo_api（pydantic Settings，读取 AI_TODO_* 环境变量）
 | `AI_TODO_WECHAT_APP_ID` | **必填** | 微信小程序 AppID |
 | `AI_TODO_WECHAT_APP_SECRET` | **必填** | 微信小程序 AppSecret |
 | `AI_TODO_WECHAT_REMINDER_TEMPLATE_ID` | 推荐填写 | 微信订阅消息模板 ID；为空时小程序不展示微信提醒开关 |
+| `AI_TODO_COMPOSE_PROJECT_NAME` | `ai-todo-production` | Compose 项目名；已有环境修改前先确认 PostgreSQL volume |
 | `AI_TODO_PUBLISH_PORT` | `8082` | 宿主机映射端口 |
 | `AI_TODO_PORT` | `3100` | 容器内端口 |
 | `PIP_INDEX_URL` | 腾讯云镜像 | server-build 时 pip 源 |
