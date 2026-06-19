@@ -142,6 +142,8 @@ curl https://xingxiaolin.cn/v1/health
 
 Postgres 官方镜像 **只在数据卷首次创建时** 读取 `POSTGRES_PASSWORD` 并初始化库。之后修改 `.env.production` 只会改变 API 容器使用的密码，**不会**自动更新卷里已存储的密码——这是 PostgreSQL Docker 的标准行为，不是 ai-todo 的 bug。
 
+PostgreSQL volume 是有状态生产资产；备份、恢复、volume 迁移与危险命令见 [ops-postgresql-data.md](./ops-postgresql-data.md)。
+
 | 场景 | 做法 |
 |------|------|
 | **首次部署** | 在 `.env.production` 设好密码 → `docker compose up` 即可 |

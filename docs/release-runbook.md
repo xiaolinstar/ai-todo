@@ -225,6 +225,7 @@ curl -sf https://xingxiaolin.cn/v1/health/db
 应急方式（GitHub Actions 不可用时）：在服务器本地执行 `remote-deploy.sh`。这种方式会在服务器上 build，速度和可追溯性都弱于 manifest 部署。
 
 注意：应用回滚不会回滚 PostgreSQL volume 中已经执行过的 schema/data migration。数据库变更必须按向前兼容方式设计，避免“新版本迁移后旧版本无法启动”。迁移规范见 [database-migrations.md](./database-migrations.md)。
+PostgreSQL volume、备份和恢复 runbook 见 [ops-postgresql-data.md](./ops-postgresql-data.md)。
 
 ### 数据库备份
 

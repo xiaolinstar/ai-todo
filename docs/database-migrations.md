@@ -2,6 +2,8 @@
 
 ai-todo 的 API 镜像是不可变制品，但 PostgreSQL 数据保存在 Docker volume 中，会随 Alembic migration 持续演进。应用可以按旧镜像回滚，数据库 schema 不会自动回滚，所以迁移必须默认向前兼容。
 
+运维视角的 PostgreSQL volume、备份、恢复与危险命令见 [ops-postgresql-data.md](./ops-postgresql-data.md)。
+
 ## 发布原则
 
 使用 expand / deploy / backfill / contract：
