@@ -100,6 +100,14 @@ env_value() {
   echo "$value"
 }
 
+if [[ -z "${AI_TODO_COMPOSE_PROJECT_NAME:-}" && -z "$(env_value AI_TODO_COMPOSE_PROJECT_NAME)" ]]; then
+  case "$ENV_FILE" in
+    *.staging)
+      export AI_TODO_COMPOSE_PROJECT_NAME=ai-todo-staging
+      ;;
+  esac
+fi
+
 ALLOW_DEV_AUTH="$(env_value AI_TODO_ALLOW_DEV_AUTH)"
 ALLOW_DEV_AUTH="${ALLOW_DEV_AUTH//\"/}"
 ALLOW_DEV_AUTH="${ALLOW_DEV_AUTH//\'/}"

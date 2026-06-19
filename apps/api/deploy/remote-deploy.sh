@@ -43,6 +43,14 @@ env_value() {
   echo "$value"
 }
 
+if [[ -z "${AI_TODO_COMPOSE_PROJECT_NAME:-}" && -z "$(env_value AI_TODO_COMPOSE_PROJECT_NAME)" ]]; then
+  case "$ENV_FILE" in
+    *.staging)
+      export AI_TODO_COMPOSE_PROJECT_NAME=ai-todo-staging
+      ;;
+  esac
+fi
+
 COMPOSE_FILES=(-f docker-compose.prod.yml)
 if [[ -f deploy/Caddyfile ]]; then
   COMPOSE_FILES+=(-f docker-compose.tls.yml)
