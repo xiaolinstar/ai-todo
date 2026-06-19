@@ -82,6 +82,11 @@ pnpm test:api
 
 Test coverage is 87%+. Tests are organized by business module in `apps/api/tests/`.
 
+## License
+
+This project is licensed under the [Apache License 2.0](LICENSE).  
+You do **not** need registered patents or software copyright (软著) before adopting this license. Copyright arises when you create the work; the patent grant in Apache 2.0 means that if you later hold relevant patents, users may still use the software under the license—it does not require you to own patents today.
+
 ---
 
 *[中文版本](README.md)*
