@@ -87,7 +87,8 @@ git push origin v0.1.4
 - `0.7.0`：内测 UX 稳定、来源角标、列表分组、CLI 英文输出（见 [v0.7.0.md](./v0.7.0.md)）。
 - `0.8.0`：提醒三态工作流 `pending` / `in_progress` / `completed`（见 [v0.8.0.md](./v0.8.0.md)）。
 - `0.8.1`：微信通知设置合并、头像持久性、隐私协议版本（见 [v0.8.1.md](./v0.8.1.md)）。
-- `0.8.2`（候选）：登录保活、会话 UI 同步、CLI `token list` polish（见 [v0.8.2-plan.md](./v0.8.2-plan.md)）。
+- `0.8.2`：多环境登录、staging/production API 分流（见 tag `v0.8.2`；保活项迁至 0.8.3）。
+- `0.8.3`（下一批）：登录保活、静默续登、会话续期、CLI `token list` polish（见 [v0.8.3-plan.md](./v0.8.3-plan.md)）。
 - `0.4.0`：CLI npm 全局安装、配置优先 UX、小程序复制 settings JSON（见 [v0.4.0-plan.md](./v0.4.0-plan.md)）。
 - `0.4.1`：Git 发布火车；npm 包名 `@xiaolinstar/ai-todo-cli` 与文档/CI 对齐（组件 L1 不变，见 [v0.4.1.md](./v0.4.1.md)）。
 - `0.4.3`：生产 API 域名 `xingxiaolin.cn`；API `0.2.2`（见 [v0.4.3.md](./v0.4.3.md)、[api-0.2.2.md](./api-0.2.2.md)）。
