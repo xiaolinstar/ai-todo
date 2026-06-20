@@ -46,6 +46,8 @@ function buildMarkdown(report) {
     `| Environment | ${report.environment} |`,
     `| Release tag | ${report.releaseTag || "—"} |`,
     `| Git SHA | \`${report.gitSha || "—"}\` |`,
+    `| Release class | **${report.classification.releaseClass || "unknown"}** |`,
+    `| DB backup recommended | ${report.classification.dbBackupRecommended ? "yes" : "no"} |`,
     `| Outcome | **${report.outcome}** |`,
     `| Public API | ${report.publicApiUrl || "—"} |`,
     `| Finished at | ${report.finishedAt} |`,
@@ -64,12 +66,22 @@ function buildMarkdown(report) {
     lines.push("", "### Verify error", "", "```", report.verifyError, "```");
   }
 
+  if (report.classification.hasSchemaChanges) {
+    lines.push(
+      "",
+      "### Database notice",
+      "",
+      "This release includes Alembic migration changes. CD rollback restores app code/image only; PostgreSQL schema and data are not automatically rolled back.",
+    );
+  }
+
   return lines.join("\n");
 }
 
 async function main() {
   const needs = {
     resolve_manifest: process.env.CD_STEP_RESOLVE_MANIFEST,
+    classify_release: process.env.CD_STEP_CLASSIFY_RELEASE,
     deploy: process.env.CD_STEP_DEPLOY,
     post_deploy_verify: process.env.CD_STEP_POST_DEPLOY_VERIFY,
     publish_accepted: process.env.CD_STEP_PUBLISH_ACCEPTED,
@@ -90,9 +102,19 @@ async function main() {
     fingerprint: process.env.CD_FINGERPRINT || null,
     ciRunId: process.env.CD_CI_RUN_ID || null,
     publicApiUrl: process.env.CD_PUBLIC_API_URL || null,
+    classification: {
+      releaseClass: process.env.CD_RELEASE_CLASS || null,
+      hasSchemaChanges: process.env.CD_HAS_SCHEMA_CHANGES === "true",
+      hasDbRuntimeChanges: process.env.CD_HAS_DB_RUNTIME_CHANGES === "true",
+      hasInfraChanges: process.env.CD_HAS_INFRA_CHANGES === "true",
+      dbBackupRecommended: process.env.CD_DB_BACKUP_RECOMMENDED === "true",
+      currentGitSha: process.env.CD_CURRENT_GIT_SHA || null,
+      compareBase: process.env.CD_COMPARE_BASE || null,
+    },
     outcome,
     steps: {
       resolveManifest: stepResult("resolve_manifest", needs),
+      classifyRelease: stepResult("classify_release", needs),
       deploy: stepResult("deploy", needs),
       postDeployVerify: stepResult("post_deploy_verify", needs),
       publishAccepted: stepResult("publish_accepted", needs),

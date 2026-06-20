@@ -104,9 +104,46 @@ jobs:
         run: |
           echo "::notice::Staging deploy selected. Ensure GitHub Environment 'staging' has independent DEPLOY_* and CD_PUBLIC_API_URL secrets before using it for release validation."
 
-  deploy:
-    name: 2 · Deploy
+  classify-release:
+    name: 2 · Classify release
     needs: [resolve-manifest]
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || 'production' }}
+    outputs:
+      release_class: ${{ steps.classify.outputs.release_class }}
+      has_schema_changes: ${{ steps.classify.outputs.has_schema_changes }}
+      has_db_runtime_changes: ${{ steps.classify.outputs.has_db_runtime_changes }}
+      has_infra_changes: ${{ steps.classify.outputs.has_infra_changes }}
+      db_backup_recommended: ${{ steps.classify.outputs.db_backup_recommended }}
+      current_git_sha: ${{ steps.classify.outputs.current_git_sha }}
+      compare_base: ${{ steps.classify.outputs.compare_base }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Classify release changes
+        id: classify
+        env:
+          TARGET_SHA: ${{ needs.resolve-manifest.outputs.git_sha }}
+          CD_PUBLIC_API_URL: ${{ vars.CD_PUBLIC_API_URL || secrets.CD_PUBLIC_API_URL }}
+          CD_CLASSIFICATION_DIR: cd-report
+        run: node scripts/cd/classify-release.mjs
+
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: cd-release-classification
+          path: cd-report/
+          retention-days: 30
+
+  deploy:
+    name: 3 · Deploy
+    needs: [resolve-manifest, classify-release]
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.environment || 'production' }}
     steps:
@@ -182,7 +219,7 @@ jobs:
             bash apps/api/deploy/cd-bootstrap.sh
 
   post-deploy-verify:
-    name: 3 · Verify (public API)
+    name: 4 · Verify (public API)
     needs: [resolve-manifest, deploy]
     if: needs.deploy.result == 'success'
     runs-on: ubuntu-latest
@@ -217,7 +254,7 @@ jobs:
           retention-days: 14
 
   publish-accepted:
-    name: 4a · Outcome published
+    name: 5a · Outcome published
     needs: [post-deploy-verify]
     if: needs.post-deploy-verify.result == 'success'
     runs-on: ubuntu-latest
@@ -227,7 +264,7 @@ jobs:
           echo "::notice title=Release published::Public API verification passed. This version is live."
 
   deploy-failed:
-    name: 4c · Outcome deploy failed
+    name: 5c · Outcome deploy failed
     needs: [deploy]
     if: needs.deploy.result != 'success'
     runs-on: ubuntu-latest
@@ -237,7 +274,7 @@ jobs:
           echo "::error title=Deploy failed::Deploy job did not succeed. Rollback branch was not run."
 
   rollback:
-    name: 4b · Rollback
+    name: 5b · Rollback
     needs: [deploy, post-deploy-verify]
     if: ${{ always() && needs.deploy.result == 'success' && needs.post-deploy-verify.result == 'failure' }}
     runs-on: ubuntu-latest
@@ -288,7 +325,7 @@ jobs:
             bash apps/api/deploy/cd-bootstrap.sh
 
   post-rollback-verify:
-    name: 5b · Verify after rollback
+    name: 6b · Verify after rollback
     needs: [rollback]
     if: ${{ needs.rollback.result == 'success' }}
     runs-on: ubuntu-latest
@@ -313,7 +350,7 @@ jobs:
           retention-days: 14
 
   release-not-adopted:
-    name: 6b · Outcome not adopted
+    name: 7b · Outcome not adopted
     needs: [rollback, post-rollback-verify]
     if: ${{ needs.rollback.result == 'success' && needs.post-rollback-verify.result == 'success' }}
     runs-on: ubuntu-latest
@@ -323,9 +360,10 @@ jobs:
           echo "::warning title=Release not adopted::Post-deploy checks failed; production was rolled back to the previous version."
 
   release-report:
-    name: 7 · Release report
+    name: 8 · Release report
     needs:
       - resolve-manifest
+      - classify-release
       - deploy
       - post-deploy-verify
       - publish-accepted
@@ -346,8 +384,16 @@ jobs:
           CD_GIT_SHA: ${{ needs.resolve-manifest.outputs.git_sha }}
           CD_FINGERPRINT: ${{ needs.resolve-manifest.outputs.fingerprint }}
           CD_CI_RUN_ID: ${{ needs.resolve-manifest.outputs.ci_run_id }}
+          CD_RELEASE_CLASS: ${{ needs.classify-release.outputs.release_class }}
+          CD_HAS_SCHEMA_CHANGES: ${{ needs.classify-release.outputs.has_schema_changes }}
+          CD_HAS_DB_RUNTIME_CHANGES: ${{ needs.classify-release.outputs.has_db_runtime_changes }}
+          CD_HAS_INFRA_CHANGES: ${{ needs.classify-release.outputs.has_infra_changes }}
+          CD_DB_BACKUP_RECOMMENDED: ${{ needs.classify-release.outputs.db_backup_recommended }}
+          CD_CURRENT_GIT_SHA: ${{ needs.classify-release.outputs.current_git_sha }}
+          CD_COMPARE_BASE: ${{ needs.classify-release.outputs.compare_base }}
           CD_PUBLIC_API_URL: ${{ vars.CD_PUBLIC_API_URL || secrets.CD_PUBLIC_API_URL }}
           CD_STEP_RESOLVE_MANIFEST: ${{ needs.resolve-manifest.result }}
+          CD_STEP_CLASSIFY_RELEASE: ${{ needs.classify-release.result }}
           CD_STEP_DEPLOY: ${{ needs.deploy.result }}
           CD_STEP_POST_DEPLOY_VERIFY: ${{ needs.post-deploy-verify.result }}
           CD_STEP_ROLLBACK: ${{ needs.rollback.result }}
