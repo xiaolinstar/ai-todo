@@ -79,7 +79,7 @@ git push origin v0.1.4
 - `0.2.1`：使用偏好（提醒/日历/通讯录合一）、通知渠道分工、账号与安全文案、提醒列表 P1。
 - `0.2.2`：账户时区切换与全站按账户时区显示；平台 username/建联推迟（见 [v0.2.2-plan.md](./v0.2.2-plan.md)、[platform-identity.md](../product/platform-identity.md)）。
 - `0.2.3`：CD 六步扩展（发布后拨测/黑盒 → 失败回滚 → 回滚复验 → 发布报告）；换域仅 **xiaolin-gateway** 运维（见 [v0.2.3-plan.md](./v0.2.3-plan.md)、[v0.2.3-cd-pipeline-plan.md](./v0.2.3-cd-pipeline-plan.md)）。
-- `0.3.0`：CLI 访问令牌生命周期、加密存储后可 reveal、小程序令牌 UI、`ai-todo token`（见 [v0.3.0-plan.md](./v0.3.0-plan.md)）。
+- `0.3.0`：CLI 访问令牌生命周期、加密存储后可 reveal、小程序令牌 UI、`ai-todo token`（**v0.8.3 起移除**，见 [v0.8.3-plan.md](./v0.8.3-plan.md)）。
 - `0.6.0`：提醒来源外键与反查（`source` / `externalId` / `sourceMeta`）；CLI 来源快捷操作；小程序编辑页只读来源（见 [v0.6.0.md](./v0.6.0.md)）。
 - `0.6.1`：Agent 工具链闭环（agent-protocol、Skill、文档对齐 v0.6.0 来源能力）；无 API/小程序变更（见 [v0.6.1-plan.md](./v0.6.1-plan.md)）。
 - `0.6.2`：MCP stdio Server（仓库内），宿主零 shell 调用 CLI 能力（见 [v0.6.2-plan.md](./v0.6.2-plan.md)）。
@@ -88,7 +88,7 @@ git push origin v0.1.4
 - `0.8.0`：提醒三态工作流 `pending` / `in_progress` / `completed`（见 [v0.8.0.md](./v0.8.0.md)）。
 - `0.8.1`：微信通知设置合并、头像持久性、隐私协议版本（见 [v0.8.1.md](./v0.8.1.md)）。
 - `0.8.2`：多环境登录、staging/production API 分流（见 tag `v0.8.2`；保活项迁至 0.8.3）。
-- `0.8.3`（下一批）：登录保活、静默续登、会话续期、CLI `token list` polish（见 [v0.8.3-plan.md](./v0.8.3-plan.md)）。
+- `0.8.3`（下一批）：登录保活、静默续登、CLI 移除 `token` 子命令、通知文案（见 [v0.8.3-plan.md](./v0.8.3-plan.md)）。
 - `0.4.0`：CLI npm 全局安装、配置优先 UX、小程序复制 settings JSON（见 [v0.4.0-plan.md](./v0.4.0-plan.md)）。
 - `0.4.1`：Git 发布火车；npm 包名 `@xiaolinstar/ai-todo-cli` 与文档/CI 对齐（组件 L1 不变，见 [v0.4.1.md](./v0.4.1.md)）。
 - `0.4.3`：生产 API 域名 `xingxiaolin.cn`；API `0.2.2`（见 [v0.4.3.md](./v0.4.3.md)、[api-0.2.2.md](./api-0.2.2.md)）。

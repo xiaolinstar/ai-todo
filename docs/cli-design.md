@@ -34,7 +34,42 @@ ai-todo <command> [options]
 | `--idempotency-key <key>` | 指定幂等键 |
 
 连接与认证写入 `~/.ai-todo/settings.json`（`url` + `token`），见 `apps/cli/settings.example.json`。  
-用户通过小程序创建 PAT 后编辑该文件即可；`ai-todo help` 不再展示 `login` / `token` 子命令（v0.4.0+）。
+**PAT 的创建、列表、吊销仅在微信小程序完成**；CLI 不提供 `ai-todo token` 子命令（v0.8.3+ 产品策略，见下文「PAT 生命周期」）。
+
+## PAT 生命周期与 CLI 边界（v0.8.3+）
+
+| 能力 | 入口 | 说明 |
+|------|------|------|
+| **创建 PAT** | 小程序 **我的 → Agent 令牌** | 明文仅显示一次；复制后写入本机 |
+| **列出 PAT** | 小程序 Agent 令牌页 | 含状态、到期、最后使用、吊销入口 |
+| **吊销单个 PAT** | 小程序令牌详情页 | 需微信登录身份 |
+| **批量吊销** | 小程序开发者选项（develop）或后续正式设置 | 应急清理 |
+| **本机写入 PAT** | `ai-todo login --token` | 粘贴小程序复制的密钥，**不是**在 CLI 签发 |
+| **本地开发签发** | `ai-todo login --issue-pat` | 仅 `allow_dev_auth` 环境；生产用户不使用 |
+| **本机清除配置** | `ai-todo logout` | 只删 `settings.json` 中的 token，**不**吊销服务端 PAT |
+
+**不提供**（自 v0.8.3 起从 CLI 移除）：
+
+```text
+ai-todo token list
+ai-todo token create
+ai-todo token revoke
+ai-todo token revoke-all
+```
+
+**理由**：
+
+1. PAT 属于**管理员级**凭据，应在已微信认证的小程序 UI 中操作，避免终端 history、多通道行为不一致。
+2. 小程序已覆盖完整生命周期 UI；CLI 重复 create/revoke 增加误操作与文档负担。
+3. CLI 专注 **消费 PAT**（reminder / calendar / contact / Agent `--json`），不负责签发与吊销。
+
+**推荐工作流（生产）**：
+
+```text
+小程序创建 PAT → 复制 aitodo_xxx → ai-todo login --token aitodo_xxx
+                → ai-todo whoami / ai-todo today
+需要吊销时     → 回到小程序 Agent 令牌页操作（非 CLI）
+```
 
 ## 登录与授权
 
@@ -42,15 +77,19 @@ ai-todo <command> [options]
 
 ```bash
 ai-todo login
+ai-todo login --token aitodo_xxx
+ai-todo login --url https://xingxiaolin.cn --token aitodo_xxx
 ```
 
-MVP 可先支持粘贴 API Token：
+将小程序签发的 PAT 写入 `~/.ai-todo/settings.json`。无 `--token` 时仅保存/检查 API URL，并提示去小程序创建令牌。
+
+**本地开发**（API `AI_TODO_ALLOW_DEV_AUTH=true`）可一键签发并写入本机：
 
 ```bash
-ai-todo login --token aitodo_xxx
+ai-todo login --issue-pat [--name "CLI Local"]
 ```
 
-后续可支持浏览器或小程序扫码授权。
+`--issue-pat` **不**面向生产用户；生产环境应使用小程序创建 PAT。
 
 ### whoami
 
@@ -88,7 +127,7 @@ ai-todo profile update --name xiaolinstar --avatar-url "wxfile://avatar"
 ai-todo logout
 ```
 
-只清理本地配置，不自动吊销服务端 token。吊销 token 应在小程序或控制台完成。
+只清理本地配置，不自动吊销服务端 token。吊销 PAT 请在微信小程序 **我的 → Agent 令牌** 操作。
 
 ## Reminder 命令
 

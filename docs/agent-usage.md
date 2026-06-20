@@ -40,7 +40,7 @@ export AI_TODO_API_URL=https://xingxiaolin.cn
 ```
 
 > 微信登录下发的是**会话 Token**（仅供小程序），不能用于 CLI。CLI 必须使用 PAT。  
-> 访问令牌在小程序内创建与管理；CLI 不再对外展示 `login` / `token` 子命令。
+> 访问令牌在小程序内创建、列表与吊销；CLI **不提供** `ai-todo token` 子命令（v0.8.3+）。写入本机可用 `ai-todo login --token` 或直接编辑 `settings.json`；本地开发可用 `ai-todo login --issue-pat`。
 
 配置完成后，日常命令**无需**再传 `--url`：
 

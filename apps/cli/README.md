@@ -21,7 +21,13 @@ Create `~/.ai-todo/settings.json` (see `settings.example.json` in this package):
 }
 ```
 
-Get a Personal Access Token in the WeChat miniapp: **Mine → CLI / Agent access tokens → Create**.
+Get a Personal Access Token in the WeChat miniapp: **Mine → CLI / Agent access tokens → Create**, then either edit `settings.json` or run:
+
+```bash
+ai-todo login --token aitodo_xxx
+```
+
+PAT listing and revocation are **miniapp-only** (no `ai-todo token` subcommand as of v0.8.3). Local dev with `AI_TODO_ALLOW_DEV_AUTH=true` may use `ai-todo login --issue-pat`.
 
 Environment variables override the file (useful for CI / agents):
 

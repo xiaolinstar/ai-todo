@@ -79,19 +79,19 @@ curl POST /v1/reminders   # 最直接
 9. **生产硬化（C3）**：✅ HTTPS/Caddy 模板、微信合法域名文档、CI、微信登录限流
 10. ~~自然语言解析~~：**不在路线图，交给调用方 Agent / Skill 实现**
 
-## 认证策略（2026-05-21）
+## 认证策略（2026-05-21，2026-06-14 修订）
 
 **Agent / CLI 采用 PAT 模式**（类似 GitHub PAT、`OPENAI_API_KEY`）：
 
-- 用户在生产环境通过 Web 控制台或小程序创建 PAT，写入 `AI_TODO_TOKEN`
-- 本地开发可用 `ai-todo login --issue-pat` 一次性签发（依赖 dev 旁路）
-- **不做** CLI `token list/revoke` 子命令——Token 生命周期由控制台 / 小程序管理
+- 用户在生产环境通过 **微信小程序**（我的 → Agent 令牌）创建 PAT，经 `ai-todo login --token` 或 `AI_TODO_TOKEN` 写入本机
+- 本地开发可用 `ai-todo login --issue-pat` 一次性签发（依赖 `allow_dev_auth` 旁路）
+- **不提供** CLI `ai-todo token` 子命令（含 list / create / revoke / revoke-all）——PAT 生命周期 **仅** 在小程序 UI 管理（v0.8.3+，见 [v0.8.3-plan.md](./releases/v0.8.3-plan.md)、[cli-design.md](./cli-design.md)）
 
 **规划中**（Phase C+）：OAuth 授权链接或扫码登录（类似 `gh auth login`），CLI 检测到未授权时引导用户完成浏览器授权，自动写入 Token。
 
 ## 待后续决定
 
-- CLI Token 创建入口（小程序 vs Web 控制台 vs OAuth 扫码）
+- OAuth / 扫码登录替代手动 `login --token` 粘贴流程
 - MCP Server 独立包 vs 仅维护 Skill 文档 + 调用 CLI
 
 ## 文档说明
