@@ -1,5 +1,5 @@
-import { ensureAuth } from "./lib/auth";
 import { isDevelopEnv, syncRuntimeConfig } from "./lib/config";
+import { restoreSession } from "./lib/session";
 import { enableShareMenu } from "./lib/share";
 
 type PrivacyAuthorizationResolve = (result: {
@@ -39,11 +39,13 @@ function setupPrivacyAuthorization() {
 }
 
 App({
-  globalData: {},
+  globalData: {
+    session: { loggedIn: false }
+  },
   onLaunch() {
     setupPrivacyAuthorization();
     syncRuntimeConfig();
-    ensureAuth().catch(() => undefined);
+    restoreSession().catch(() => undefined);
     if (!isDevelopEnv()) {
       enableShareMenu();
     }

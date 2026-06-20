@@ -1,5 +1,5 @@
-import { fetchMe, updateProfile } from "../../lib/api";
-import { hasValidSession, loginWithWechat } from "../../lib/auth";
+import { updateProfile } from "../../lib/api";
+import { loginWithWechat } from "../../lib/auth";
 import {
   buildMineMenuSections,
   navigateSettingsItem,
@@ -8,9 +8,7 @@ import {
 } from "../../lib/settings-menu";
 import { avatarColor, getInitial } from "../../lib/format";
 import {
-  clearToken,
   clearProfileSetupSeen,
-  getConfig,
   hasSeenProfileSetup,
   isDevelopEnv,
   markProfileSetupSeen,
@@ -18,6 +16,7 @@ import {
   syncRuntimeConfig
 } from "../../lib/config";
 import { markPrivacyConsented, requirePrivacyAuthorization } from "../../lib/privacy";
+import { onSessionChange, restoreSession } from "../../lib/session";
 import { TODO_COLORS } from "../../lib/design-tokens";
 import { updateTabBarSelected } from "../../lib/tab-bar";
 import { buildAppShareOptions, buildAppShareTimelineOptions } from "../../lib/share";
@@ -50,6 +49,28 @@ Page({
   },
 
   _privacyResolve: undefined as PrivacyAuthorizationResolve | undefined,
+  _unsubscribeSession: undefined as (() => void) | undefined,
+
+  onLoad() {
+    this._unsubscribeSession = onSessionChange((state) => {
+      if (state.loggedIn && state.user) {
+        this.applyUser(state.user, false);
+        this.syncMenu();
+        return;
+      }
+      if (!state.loggedIn) {
+        this.resetProfile();
+        this.syncMenu();
+      }
+    });
+  },
+
+  onUnload() {
+    if (this._unsubscribeSession) {
+      this._unsubscribeSession();
+      this._unsubscribeSession = undefined;
+    }
+  },
 
   onShareAppMessage() {
     return buildAppShareOptions();
@@ -114,30 +135,24 @@ Page({
   },
 
   refreshSession(showToast: boolean) {
-    return hasValidSession()
-      .then((loggedIn) => {
-        if (!loggedIn) {
-          if (getConfig().token) {
-            clearToken();
-          }
-          this.resetProfile();
+    return restoreSession()
+      .then((result) => {
+        if (result.ok && result.user) {
+          this.applyUser(result.user, showToast);
           this.syncMenu();
           return;
         }
-
-        return fetchMe().then((response) => {
-          if (!response.ok || !response.data) {
-            clearToken();
-            this.resetProfile();
-            this.syncMenu();
-            if (showToast) {
-              wx.showToast({ title: response.error?.message || "登录已过期", icon: "none" });
-            }
-            return;
+        if (result.reason === "network_error") {
+          if (showToast) {
+            wx.showToast({ title: "无法连接 API", icon: "none" });
           }
-          this.applyUser(response.data.user, showToast);
-          this.syncMenu();
-        });
+          return;
+        }
+        this.resetProfile();
+        this.syncMenu();
+        if (showToast && result.reason === "relogin_failed") {
+          wx.showToast({ title: "登录已过期", icon: "none" });
+        }
       })
       .catch(() => {
         this.resetProfile();

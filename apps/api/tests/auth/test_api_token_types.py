@@ -1,5 +1,6 @@
 from datetime import timedelta
 from unittest.mock import patch
+from zoneinfo import ZoneInfo
 
 from fastapi.testclient import TestClient
 
@@ -10,6 +11,7 @@ from ai_todo_api.config import settings
 from ai_todo_api.db.models import ApiTokenModel
 from ai_todo_api.db.session import get_db
 from ai_todo_api.main import app
+from ai_todo_api.common.security import hash_api_token
 from ai_todo_api.common.time import now_utc
 from ai_todo_api.modules.api_tokens.constants import TOKEN_TYPE_SESSION
 
@@ -153,6 +155,56 @@ def test_revoked_pats_remain_visible_with_status(client: TestClient, monkeypatch
     assert item["id"] == token_id
     assert item["status"] == "revoked"
     assert item["revokedAt"] is not None
+
+
+def test_session_token_sliding_renewal(client: TestClient, monkeypatch) -> None:
+    monkeypatch.setattr(settings, "wechat_app_id", "wx_test_app")
+    monkeypatch.setattr(settings, "wechat_app_secret", "test_secret")
+    monkeypatch.setattr(settings, "session_token_ttl_days", 30)
+    monkeypatch.setattr(settings, "session_token_max_ttl_days", 180)
+
+    with patch(
+        "ai_todo_api.auth.wechat_service.exchange_wechat_code",
+        return_value=WechatSession(openid="openid_slide", union_id=None),
+    ):
+        login = client.post("/v1/auth/wechat/login", json={"code": "code_slide"})
+
+    session_token = login.json()["data"]["accessToken"]
+    headers = {"Authorization": f"Bearer {session_token}", "X-Client-Source": "miniapp"}
+
+    db_gen = app.dependency_overrides[get_db]()
+    session = next(db_gen)
+    try:
+        token = session.scalar(
+            select(ApiTokenModel).where(
+                ApiTokenModel.token_hash == hash_api_token(session_token)
+            )
+        )
+        assert token is not None
+        token.expires_at = now_utc() + timedelta(days=1)
+        session.commit()
+    finally:
+        db_gen.close()
+
+    me = client.get("/v1/me", headers=headers)
+    assert me.status_code == 200
+
+    db_gen = app.dependency_overrides[get_db]()
+    session = next(db_gen)
+    try:
+        token = session.scalar(
+            select(ApiTokenModel).where(
+                ApiTokenModel.token_hash == hash_api_token(session_token)
+            )
+        )
+        assert token is not None
+        assert token.expires_at is not None
+        renewed = token.expires_at
+        if renewed.tzinfo is None:
+            renewed = renewed.replace(tzinfo=ZoneInfo("UTC"))
+        assert renewed > now_utc() + timedelta(days=20)
+    finally:
+        db_gen.close()
 
 
 def test_cli_rejects_session_token(client: TestClient, monkeypatch) -> None:

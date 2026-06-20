@@ -6,6 +6,7 @@
         <text class="subpage-hint">暂无推送记录</text>
       </block>
       <block wx:else>
+        <text class="subpage-hint">关闭微信提醒不会取消已在队列中的推送。</text>
         <view class="inset-group subpage-group">
           <view
             class="subpage-cell stack"

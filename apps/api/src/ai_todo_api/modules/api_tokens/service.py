@@ -215,6 +215,15 @@ def resolve_token(session: Session, bearer: str) -> ApiTokenModel | None:
         return None
 
     token.last_used_at = now
+    if token.token_type == TOKEN_TYPE_SESSION:
+        new_expires = now + timedelta(days=settings.session_token_ttl_days)
+        if settings.session_token_max_ttl_days is not None:
+            max_expires = _as_utc(token.created_at) + timedelta(
+                days=settings.session_token_max_ttl_days
+            )
+            if new_expires > max_expires:
+                new_expires = max_expires
+        token.expires_at = new_expires
     session.commit()
     return token
 

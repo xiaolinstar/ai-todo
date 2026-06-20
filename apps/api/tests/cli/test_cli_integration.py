@@ -70,35 +70,11 @@ def test_cli_whoami_with_dev_pat(cli_runner: CliRunner) -> None:
     assert body["data"]["user"]["id"] == "user_dev"
 
 
-def test_cli_token_lifecycle_commands(cli_runner: CliRunner, demo_suffix: str) -> None:
-    create = cli_runner.run(
-        "token",
-        "create",
-        "--name",
-        f"CLI Token {demo_suffix}",
-        "--max-idle-days",
-        "7",
-        json_output=True,
-    )
-    assert create.returncode == 0, create.stderr
-    created = create.json()["data"]
-    assert created["token"].startswith("aitodo_")
-    assert created["maxIdleDays"] == 7
-
-    token_id = created["id"]
-    listed = cli_runner.run("token", "list", json_output=True)
-    assert listed.returncode == 0, listed.stderr
-    items = listed.json()["data"]["items"]
-    assert any(item["id"] == token_id and item["status"] == "active" for item in items)
-
-    revoke = cli_runner.run("token", "revoke", token_id, json_output=True)
-    assert revoke.returncode == 0, revoke.stderr
-    assert revoke.json()["data"]["id"] == token_id
-
-    listed_after = cli_runner.run("token", "list", json_output=True)
-    assert listed_after.returncode == 0, listed_after.stderr
-    revoked = [item for item in listed_after.json()["data"]["items"] if item["id"] == token_id]
-    assert revoked[0]["status"] == "revoked"
+def test_cli_token_command_removed(cli_runner: CliRunner) -> None:
+    result = cli_runner.run("token", "list")
+    assert result.returncode == 1
+    assert "removed in CLI 0.6.1" in result.stderr
+    assert "WeChat miniapp" in result.stderr
 
 
 def test_cli_seeds_demo_dataset(cli_runner: CliRunner, demo_suffix: str) -> None:

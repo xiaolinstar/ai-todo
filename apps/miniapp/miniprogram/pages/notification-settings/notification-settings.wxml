@@ -8,7 +8,8 @@
           <view class="subpage-cell">
             <view class="subpage-cell-main">
               <text class="subpage-label">微信提醒</text>
-              <text class="subpage-meta">创建或修改提醒、日历时自动请求微信提醒</text>
+              <text class="subpage-meta" wx:if="{{wechatEnabled}}">创建或修改提醒、日历时自动请求微信提醒</text>
+              <text class="subpage-meta" wx:else>关闭后，新建或编辑事项不再请求微信提醒授权；此前已授权的提醒仍可能送达。</text>
             </view>
             <switch
               checked="{{wechatEnabled}}"

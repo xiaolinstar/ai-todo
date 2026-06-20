@@ -1,4 +1,5 @@
 import { clearToken } from "../../lib/config";
+import { notifyLoggedOut } from "../../lib/session";
 
 Page({
   onOpenAgent() {
@@ -12,6 +13,7 @@ Page({
       success: (result) => {
         if (!result.confirm) return;
         clearToken();
+        notifyLoggedOut();
         wx.showToast({ title: "已退出", icon: "none" });
         setTimeout(() => {
           wx.navigateBack();

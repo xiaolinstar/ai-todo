@@ -12,6 +12,8 @@ Config ${settingsPath()}:
 Flags: --json  --limit <n>  --cursor <token>  --idempotency-key <uuid>
 
 Core:
+  ai-todo login --token <pat>
+  ai-todo logout
   ai-todo today
   ai-todo whoami
   ai-todo version

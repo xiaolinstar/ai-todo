@@ -91,6 +91,8 @@ POST /v1/auth/wechat/login
 }
 ```
 
+**Session token 滑动续期（v0.8.3+）**：小程序 session（`token_type=session`）在每次 `resolve_token` 认证成功时，将 `expires_at` 设为 `now + session_token_ttl_days`（默认 30 天）。若配置 `session_token_max_ttl_days`（默认 180），则 `expires_at` 不得超过 `created_at + max_ttl`。PAT 不续期。
+
 ### CLI Token 认证
 
 CLI 使用 Bearer Token：

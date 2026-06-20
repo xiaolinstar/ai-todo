@@ -1,4 +1,5 @@
 import { getConfig } from "./config";
+import { silentWechatReLogin } from "./relogin";
 
 export interface ApiError {
   code: string;
@@ -249,7 +250,8 @@ function createIdempotencyKey(): string {
 
 export function request<T>(
   path: string,
-  options: { method?: string; data?: object } = {}
+  options: { method?: string; data?: object } = {},
+  internalRetry = false
 ): Promise<ApiResponse<T>> {
   return new Promise((resolve) => {
     const method = (options.method || "GET").toUpperCase();
@@ -266,19 +268,39 @@ export function request<T>(
       header,
       ...(hasBody ? { data: options.data } : {}),
       success(res: { statusCode: number; data: unknown }) {
+        const finish = (response: ApiResponse<T>) => {
+          if (
+            !internalRetry &&
+            path !== "/v1/auth/wechat/login" &&
+            getConfig().token &&
+            !response.ok &&
+            response.error?.code === "UNAUTHORIZED"
+          ) {
+            silentWechatReLogin().then((recovered) => {
+              if (recovered) {
+                request<T>(path, options, true).then(resolve);
+                return;
+              }
+              resolve(response);
+            });
+            return;
+          }
+          resolve(response);
+        };
+
         if (res.statusCode >= 400) {
           const apiError = parseApiErrorBody(res.data, res.statusCode);
           if (apiError) {
-            resolve(apiError);
+            finish(apiError as ApiResponse<T>);
             return;
           }
-          resolve({
+          finish({
             ok: false,
             error: { code: "HTTP_ERROR", message: `HTTP ${res.statusCode}` }
           });
           return;
         }
-        resolve(normalizeSuccessBody<T>(res.data, res.statusCode));
+        finish(normalizeSuccessBody<T>(res.data, res.statusCode));
       },
       fail(err: unknown) {
         resolve({
