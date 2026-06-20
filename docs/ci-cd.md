@@ -272,7 +272,7 @@ cat ~/.ssh/ai_todo_deploy.pub   # 追加到服务器 ~/.ssh/authorized_keys
 
 | 模式 | 行为 | 适用场景 |
 |------|------|----------|
-| **auto**（默认） | 先 `docker pull` manifest 中的 digest 镜像；pull 失败则 **自动 server-build** | 手动生产 CD、国内 VPS |
+| **auto**（默认） | 先 `docker pull` manifest 中的 digest 镜像；仅 pull 失败时 **自动 server-build** | 手动生产 CD、国内 VPS |
 | **pull** | 仅 pull，不兜底 build | 网络稳定、需严格 digest 部署 |
 | **server-build** | 跳过 pull，在 VPS `docker compose build`（仍校验 manifest 指纹与 `gitSha`） | GHCR 长期不可达时的明确选择 |
 
@@ -281,7 +281,7 @@ cat ~/.ssh/ai_todo_deploy.pub   # 追加到服务器 ~/.ssh/authorized_keys
 | 变量 | 默认 | 说明 |
 |------|------|------|
 | `AI_TODO_DEPLOY_MODE` | `pull` | `pull` / `server-build` |
-| `AI_TODO_DEPLOY_FALLBACK_SERVER_BUILD` | `true`（auto 时） | pull 失败后是否 server-build |
+| `AI_TODO_DEPLOY_FALLBACK_SERVER_BUILD` | `true`（auto 时） | pull 失败后是否 server-build；compose 启动/health 失败不会 fallback |
 | `AI_TODO_HEALTH_WAIT_SECONDS` | `90`（CD）/ `120`（脚本默认） | 启动后等待 health/db 的最长时间 |
 | `AI_TODO_PULL_RETRIES` | `2`（CD） | `docker pull` 重试次数 |
 | `AI_TODO_PULL_TIMEOUT_SECONDS` | `180`（CD） | 单次 pull 最长秒数（`timeout` 命令） |
@@ -289,6 +289,8 @@ cat ~/.ssh/ai_todo_deploy.pub   # 追加到服务器 ~/.ssh/authorized_keys
 | `AI_TODO_PULL_REGISTRY_MIRROR` | `ghcr.nju.edu.cn`（CD + 脚本默认） | public GHCR 的 NJU 加速；`none` 禁用 |
 
 CD workflow SSH **`command_timeout` 为 10m**：镜像站 pull 限时失败后尽快 **server-build**，避免长时间卡在跨境 `ghcr.io`。
+
+server-build fallback 只用于镜像拉取失败。若镜像已拉取成功，但 `docker compose up`、容器启动或 health/db 失败，CD 会直接进入应用回滚，不会再在 VPS 上构建一次。
 
 **无需为 CD 单独改 `.env.production`**：workflow 会通过 SSH 注入 `AI_TODO_PULL_REGISTRY_MIRROR=ghcr.nju.edu.cn` 等变量。仅在 **服务器手动** 执行 `remote-deploy.sh` / `deploy-from-manifest.sh` 且不走 CD 时，才建议在 `.env.production` 写上镜像站（或不写，使用脚本默认 `ghcr.nju.edu.cn`）。
 

@@ -349,7 +349,7 @@ pull_api_image() {
   return 1
 }
 
-deploy_image() {
+pull_deploy_image() {
   local image="$1"
   local digest="$2"
   if ! pull_api_image "$image" "$digest"; then
@@ -357,7 +357,17 @@ deploy_image() {
   fi
   export AI_TODO_API_IMAGE="${RESOLVED_API_IMAGE:-$image}"
   echo "compose image=${AI_TODO_API_IMAGE}" >&2
+}
+
+deploy_pulled_image() {
   compose_up up -d --no-build --pull never
+}
+
+deploy_image() {
+  local image="$1"
+  local digest="$2"
+  pull_deploy_image "$image" "$digest" || return 1
+  deploy_pulled_image
 }
 
 deploy_server_build() {
@@ -425,15 +435,22 @@ deploy_new_version() {
     return $?
   fi
 
-  if deploy_image "$API_IMAGE" "$API_DIGEST"; then
+  if ! pull_deploy_image "$API_IMAGE" "$API_DIGEST"; then
+    if [[ "${DEPLOY_FALLBACK_BUILD}" == "true" ]]; then
+      echo "docker pull failed; falling back to server-build." >&2
+      DEPLOY_MODE_RECORD="server-build-fallback"
+      deploy_server_build
+      return $?
+    fi
+    return 1
+  fi
+
+  if deploy_pulled_image; then
     return 0
   fi
 
   if [[ "${DEPLOY_FALLBACK_BUILD}" == "true" ]]; then
-    echo "docker pull deploy failed; falling back to server-build." >&2
-    DEPLOY_MODE_RECORD="server-build-fallback"
-    deploy_server_build
-    return $?
+    echo "compose startup failed after image pull; refusing server-build fallback and rolling back." >&2
   fi
 
   return 1
