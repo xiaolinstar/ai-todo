@@ -285,10 +285,10 @@ cat ~/.ssh/ai_todo_deploy.pub   # 追加到服务器 ~/.ssh/authorized_keys
 | `AI_TODO_HEALTH_WAIT_SECONDS` | `90`（CD）/ `120`（脚本默认） | 启动后等待 health/db 的最长时间 |
 | `AI_TODO_PULL_RETRIES` | `2`（CD） | `docker pull` 重试次数 |
 | `AI_TODO_PULL_TIMEOUT_SECONDS` | `180`（CD） | 单次 pull 最长秒数（`timeout` 命令） |
-| `AI_TODO_PULL_SKIP_CANONICAL_FALLBACK` | `true`（CD） | 镜像站失败后是否跳过慢速 `ghcr.io` |
+| `AI_TODO_PULL_SKIP_CANONICAL_FALLBACK` | `false`（CD） | 镜像站失败后是否跳过官方 `ghcr.io` 回退 |
 | `AI_TODO_PULL_REGISTRY_MIRROR` | `ghcr.nju.edu.cn`（CD + 脚本默认） | public GHCR 的 NJU 加速；`none` 禁用 |
 
-CD workflow SSH **`command_timeout` 为 10m**：镜像站 pull 限时失败后尽快 **server-build**，避免长时间卡在跨境 `ghcr.io`。
+CD workflow SSH **`command_timeout` 为 10m**：镜像站 pull 失败后默认再尝试官方 `ghcr.io`；若也失败，`auto` 模式才进入 **server-build** 兜底。需要极快失败时可设置 `AI_TODO_PULL_SKIP_CANONICAL_FALLBACK=true`。
 
 server-build fallback 只用于镜像拉取失败。若镜像已拉取成功，但 `docker compose up`、容器启动或 health/db 失败，CD 会直接进入应用回滚，不会再在 VPS 上构建一次。
 

@@ -330,7 +330,7 @@ pull_api_image() {
         fi
         echo "Mirror pull finished but digest verify failed for ${mirror_ref}." >&2
       fi
-      if [[ "${AI_TODO_PULL_SKIP_CANONICAL_FALLBACK:-true}" == "true" ]]; then
+      if [[ "${AI_TODO_PULL_SKIP_CANONICAL_FALLBACK:-false}" == "true" ]]; then
         echo "Mirror path failed; skipping canonical $CANONICAL_REGISTRY_HOST (fast-fail to server-build)." >&2
         return 1
       fi
