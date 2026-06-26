@@ -89,6 +89,7 @@ git push origin v0.1.4
 - `0.8.1`：微信通知设置合并、头像持久性、隐私协议版本（见 [v0.8.1.md](./v0.8.1.md)）。
 - `0.8.2`：多环境登录、staging/production API 分流（见 tag `v0.8.2`；保活项迁至 0.8.3）。
 - `0.8.3`：登录保活、静默续登、CLI 移除 `token` 子命令、通知文案（见 [v0.8.3.md](./v0.8.3.md)）。
+- `0.8.5`：低频使用体验补丁；小程序保留 CLI/API 多联系人，详情页长标题完整可读（见 [v0.8.5-plan.md](./v0.8.5-plan.md)）。
 - `0.4.0`：CLI npm 全局安装、配置优先 UX、小程序复制 settings JSON（见 [v0.4.0-plan.md](./v0.4.0-plan.md)）。
 - `0.4.1`：Git 发布火车；npm 包名 `@xiaolinstar/ai-todo-cli` 与文档/CI 对齐（组件 L1 不变，见 [v0.4.1.md](./v0.4.1.md)）。
 - `0.4.3`：生产 API 域名 `xingxiaolin.cn`；API `0.2.2`（见 [v0.4.3.md](./v0.4.3.md)、[api-0.2.2.md](./api-0.2.2.md)）。

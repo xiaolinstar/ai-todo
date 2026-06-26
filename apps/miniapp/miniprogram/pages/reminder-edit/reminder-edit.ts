@@ -16,6 +16,7 @@ Page({
     isCompleted: false,
     status: "pending" as "pending" | "in_progress" | "completed",
     title: "",
+    titleTextareaHeight: titleTextareaHeight(""),
     notes: "",
     notesExpanded: false,
     sourceLabel: "",
@@ -24,7 +25,8 @@ Page({
     dueTime: "",
     notifyAvailable: false,
     reminderTemplateId: "",
-    selectedContact: null as ContactSummary | null,
+    selectedContacts: [] as ContactSummary[],
+    contactLabel: "选择",
     accountTimezone: "",
     submitting: false
   },
@@ -59,13 +61,15 @@ Page({
           status,
           isCompleted,
           title: reminder.title || "",
+          titleTextareaHeight: titleTextareaHeight(reminder.title || ""),
           notes: reminder.notes || "",
           notesExpanded: Boolean(reminder.notes),
           sourceLabel: formatSourceLabel(reminder.source, reminder.externalId),
           hasDue: isCompleted ? false : hasDue,
           dueDate: date,
           dueTime: time,
-          selectedContact: reminder.contacts?.[0] || null,
+          selectedContacts: reminder.contacts || [],
+          contactLabel: formatContactLabel(reminder.contacts || []),
           notifyAvailable: prefs.notifyAvailable,
           reminderTemplateId: prefs.reminderTemplateId
         });
@@ -77,7 +81,10 @@ Page({
   },
 
   onTitleInput(e: { detail: { value: string } }) {
-    this.setData({ title: e.detail.value });
+    this.setData({
+      title: e.detail.value,
+      titleTextareaHeight: titleTextareaHeight(e.detail.value)
+    });
   },
 
   onNotesInput(e: { detail: { value: string } }) {
@@ -105,14 +112,21 @@ Page({
       url: "/pages/contact-picker/contact-picker",
       events: {
         selectContact: (data: unknown) => {
-          this.setData({ selectedContact: data as ContactSummary });
+          const contacts = [data as ContactSummary];
+          this.setData({
+            selectedContacts: contacts,
+            contactLabel: formatContactLabel(contacts)
+          });
         }
       }
     });
   },
 
   clearContact() {
-    this.setData({ selectedContact: null });
+    this.setData({
+      selectedContacts: [],
+      contactLabel: formatContactLabel([])
+    });
   },
 
   onStatusChange(e: { currentTarget: { dataset: { status: string } } }) {
@@ -142,7 +156,7 @@ Page({
       title,
       notes: this.data.notes.trim(),
       status: this.data.status,
-      contactIds: this.data.selectedContact ? [this.data.selectedContact.id] : []
+      contactIds: this.data.selectedContacts.map((contact: ContactSummary) => contact.id)
     };
 
     let nextDueAt: string | null = null;
@@ -195,6 +209,22 @@ Page({
       });
   }
 });
+
+function formatContactLabel(contacts: ContactSummary[]): string {
+  if (contacts.length === 0) {
+    return "选择";
+  }
+  if (contacts.length === 1) {
+    return contacts[0].displayName;
+  }
+  const names = contacts.slice(0, 2).map((contact) => contact.displayName).join("、");
+  return `${names}等 ${contacts.length} 人`;
+}
+
+function titleTextareaHeight(title: string): number {
+  const lines = Math.min(5, Math.max(2, Math.ceil(title.trim().length / 18)));
+  return 32 + lines * 45;
+}
 
 function formatSourceLabel(source?: string, externalId?: string): string {
   if (!source || !externalId) {

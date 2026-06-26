@@ -452,6 +452,23 @@ button::after {
   text-align: left;
 }
 
+.title-edit-row .form-label {
+  width: auto;
+}
+
+.form-title-textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 96rpx;
+  padding: 16rpx 20rpx;
+  border-radius: 12rpx;
+  background: var(--todo-surface-muted);
+  color: var(--todo-text-primary);
+  font-size: 30rpx;
+  line-height: 1.5;
+  text-align: left;
+}
+
 .form-textarea {
   box-sizing: border-box;
   width: 100%;
@@ -476,6 +493,15 @@ button::after {
   color: var(--todo-primary);
   font-size: 30rpx;
   text-align: right;
+}
+
+.contact-picker-button {
+  justify-content: flex-end;
+  min-height: 64rpx;
+  padding: 10rpx 18rpx;
+  line-height: 1.35;
+  text-align: right;
+  white-space: normal;
 }
 
 .datetime-inline {

@@ -15,6 +15,7 @@ Page({
     eventId: "",
     loading: true,
     title: "",
+    titleTextareaHeight: titleTextareaHeight(""),
     location: "",
     description: "",
     descriptionExpanded: false,
@@ -25,7 +26,8 @@ Page({
     hasEnd: false,
     notifyAvailable: false,
     reminderTemplateId: "",
-    selectedContact: null as ContactSummary | null,
+    selectedContacts: [] as ContactSummary[],
+    contactLabel: "选择",
     accountTimezone: "",
     submitting: false
   },
@@ -69,6 +71,7 @@ Page({
           notifyAvailable: prefs.notifyAvailable,
           reminderTemplateId: prefs.reminderTemplateId,
           title: event.title || "",
+          titleTextareaHeight: titleTextareaHeight(event.title || ""),
           location: event.location || "",
           description: event.description || "",
           descriptionExpanded: Boolean(event.description),
@@ -77,7 +80,8 @@ Page({
           endDate: end.date,
           endTime: end.time,
           hasEnd: Boolean(event.endAt),
-          selectedContact: event.contacts?.[0] || null
+          selectedContacts: event.contacts || [],
+          contactLabel: formatContactLabel(event.contacts || [])
         });
       })
       .catch(() => {
@@ -87,7 +91,10 @@ Page({
   },
 
   onTitleInput(e: { detail: { value: string } }) {
-    this.setData({ title: e.detail.value });
+    this.setData({
+      title: e.detail.value,
+      titleTextareaHeight: titleTextareaHeight(e.detail.value)
+    });
   },
 
   onLocationInput(e: { detail: { value: string } }) {
@@ -168,14 +175,21 @@ Page({
       url: "/pages/contact-picker/contact-picker",
       events: {
         selectContact: (data: unknown) => {
-          this.setData({ selectedContact: data as ContactSummary });
+          const contacts = [data as ContactSummary];
+          this.setData({
+            selectedContacts: contacts,
+            contactLabel: formatContactLabel(contacts)
+          });
         }
       }
     });
   },
 
   clearContact() {
-    this.setData({ selectedContact: null });
+    this.setData({
+      selectedContacts: [],
+      contactLabel: formatContactLabel([])
+    });
   },
 
   onSubmit() {
@@ -208,7 +222,7 @@ Page({
         : null,
       location: this.data.location.trim(),
       description: this.data.description.trim(),
-      contactIds: this.data.selectedContact ? [this.data.selectedContact.id] : []
+      contactIds: this.data.selectedContacts.map((contact: ContactSummary) => contact.id)
     };
 
     const nextStartAt = payload.startAt;
@@ -247,3 +261,19 @@ Page({
       });
   }
 });
+
+function formatContactLabel(contacts: ContactSummary[]): string {
+  if (contacts.length === 0) {
+    return "选择";
+  }
+  if (contacts.length === 1) {
+    return contacts[0].displayName;
+  }
+  const names = contacts.slice(0, 2).map((contact) => contact.displayName).join("、");
+  return `${names}等 ${contacts.length} 人`;
+}
+
+function titleTextareaHeight(title: string): number {
+  const lines = Math.min(5, Math.max(2, Math.ceil(title.trim().length / 18)));
+  return 32 + lines * 45;
+}

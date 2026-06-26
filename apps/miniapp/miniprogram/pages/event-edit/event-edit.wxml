@@ -3,9 +3,9 @@
   <block wx:else>
     <view class="group-header">日历详情</view>
     <view class="form-group">
-      <view class="form-row">
+      <view class="form-row stack title-edit-row">
         <text class="form-label">标题</text>
-        <input class="form-input" placeholder="必填，最多 80 字" maxlength="80" value="{{title}}" bindinput="onTitleInput" />
+        <textarea class="form-title-textarea" style="height: {{titleTextareaHeight}}rpx;" placeholder="必填，最多 80 字" maxlength="80" value="{{title}}" bindinput="onTitleInput" />
       </view>
       <view class="form-row">
         <text class="form-label">开始</text>
@@ -47,13 +47,13 @@
       </view>
       <view class="form-row">
         <text class="form-label">联系人</text>
-        <button class="todo-button todo-button-ghost todo-button-sm pick-inline" size="mini" hover-class="todo-button-hover" bindtap="pickContact">
-          {{selectedContact ? selectedContact.displayName : '选择'}}
+        <button class="todo-button todo-button-ghost todo-button-sm pick-inline contact-picker-button" size="mini" hover-class="todo-button-hover" bindtap="pickContact">
+          {{contactLabel}}
         </button>
       </view>
-      <view wx:if="{{selectedContact}}" class="form-row">
+      <view wx:if="{{selectedContacts.length > 0}}" class="form-row">
         <text class="form-label"></text>
-        <text class="chip-clear link-text" bindtap="clearContact">移除联系人</text>
+        <text class="chip-clear link-text" bindtap="clearContact">{{selectedContacts.length > 1 ? '移除全部联系人' : '移除联系人'}}</text>
       </view>
     </view>
 
