@@ -20,6 +20,7 @@ from ai_todo_api.config import settings
 from ai_todo_api.db.session import get_db
 from ai_todo_api.modules.api_tokens.constants import CLIENT_KIND_CLI
 from ai_todo_api.modules.api_tokens.service import create_pat_for_user
+from ai_todo_api.errors import ErrorCode, error_detail
 from ai_todo_api.schemas import ApiResponse
 
 
@@ -72,10 +73,7 @@ def update_profile(
     except ValueError as exc:
         raise HTTPException(
             status_code=400,
-            detail={
-                "ok": False,
-                "error": {"code": "VALIDATION_ERROR", "message": str(exc)},
-            },
+            detail=error_detail(ErrorCode.VAL_INVALID_INPUT, str(exc)),
         ) from exc
 
     return ApiResponse(data=UpdateProfileResult(user=_user_summary(updated)))

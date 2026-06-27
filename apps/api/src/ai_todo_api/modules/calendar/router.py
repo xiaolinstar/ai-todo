@@ -23,6 +23,7 @@ from ai_todo_api.modules.calendar.schemas import (
 from ai_todo_api.modules.calendar.service import CalendarEventNotFoundError, CalendarEventService
 from ai_todo_api.modules.notifications.notify_fields import resolve_wechat_notify_requested
 from ai_todo_api.modules.notifications.service import NotificationDeliveryService
+from ai_todo_api.errors import ErrorCode, wire_code
 from ai_todo_api.schemas import ApiError, ApiResponse, ErrorResponse
 
 
@@ -53,7 +54,7 @@ def _not_found(event_id: str) -> JSONResponse:
 
 
 def _validation_error(message: str) -> JSONResponse:
-    body = ErrorResponse(error=ApiError(code="VALIDATION_ERROR", message=message))
+    body = ErrorResponse(error=ApiError(code=wire_code(ErrorCode.VAL_INVALID_INPUT), message=message))
     return JSONResponse(status_code=400, content=body.model_dump(by_alias=True))
 
 
@@ -95,7 +96,7 @@ def list_calendar_events(
             cursor=cursor,
         )
     except InvalidCursorError as error:
-        body = ErrorResponse(error=ApiError(code="INVALID_CURSOR", message=str(error)))
+        body = ErrorResponse(error=ApiError(code=wire_code(ErrorCode.VAL_INVALID_CURSOR), message=str(error)))
         return JSONResponse(status_code=400, content=body.model_dump(by_alias=True))
     return ApiResponse(data=result)
 

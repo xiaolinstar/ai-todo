@@ -1,7 +1,8 @@
 """Central API error code registry (ADR-0005 / dev-standards api-error-codes).
 
 Batch 2+: AUTH wire responses use prefixed :class:`ErrorCode` values.
-Other families still emit legacy codes until batches 3–5.
+Batch 3+: VAL wire responses use prefixed :class:`ErrorCode` values.
+Other families still emit legacy codes until batches 4–5.
 """
 
 from enum import StrEnum

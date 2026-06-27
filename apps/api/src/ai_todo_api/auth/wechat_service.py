@@ -13,6 +13,7 @@ from ai_todo_api.common.time import now_utc
 from ai_todo_api.config import settings
 from ai_todo_api.db.models import IdentityModel, UserModel
 from ai_todo_api.auth.service import ensure_dev_user
+from ai_todo_api.errors import ErrorCode, error_detail
 from ai_todo_api.modules.api_tokens.constants import (
     DEV_SESSION_TOKEN_NAME,
     SESSION_TOKEN_NAME,
@@ -43,13 +44,10 @@ def login_with_wechat_code(session: Session, code: str) -> WechatLoginResult:
     if not code:
         raise HTTPException(
             status_code=422,
-            detail={
-                "ok": False,
-                "error": {
-                    "code": "VALIDATION_ERROR",
-                    "message": "WeChat login code is required.",
-                },
-            },
+            detail=error_detail(
+                ErrorCode.VAL_INVALID_INPUT,
+                "WeChat login code is required.",
+            ),
         )
 
     try:

@@ -27,6 +27,7 @@ from ai_todo_api.modules.reminders.schemas import (
 )
 from ai_todo_api.modules.reminders.service import ReminderNotFoundError, ReminderService
 from ai_todo_api.modules.notifications.notify_fields import resolve_wechat_notify_requested
+from ai_todo_api.errors import ErrorCode, wire_code
 from ai_todo_api.schemas import ApiError, ApiResponse, ErrorResponse
 
 
@@ -67,7 +68,7 @@ def _source_not_found(source: str, external_id: str) -> JSONResponse:
 
 
 def _validation_error(message: str) -> JSONResponse:
-    body = ErrorResponse(error=ApiError(code="VALIDATION_ERROR", message=message))
+    body = ErrorResponse(error=ApiError(code=wire_code(ErrorCode.VAL_INVALID_INPUT), message=message))
     return JSONResponse(status_code=400, content=body.model_dump(by_alias=True))
 
 
@@ -99,7 +100,7 @@ def list_reminders(
     if sort not in {"created_at", "due_at", "completed_at"}:
         body = ErrorResponse(
             error=ApiError(
-                code="VALIDATION_ERROR",
+                code=wire_code(ErrorCode.VAL_INVALID_INPUT),
                 message="sort must be one of: created_at, due_at, completed_at",
             )
         )
@@ -115,7 +116,7 @@ def list_reminders(
             sort=sort,
         )
     except InvalidCursorError as error:
-        body = ErrorResponse(error=ApiError(code="INVALID_CURSOR", message=str(error)))
+        body = ErrorResponse(error=ApiError(code=wire_code(ErrorCode.VAL_INVALID_CURSOR), message=str(error)))
         return JSONResponse(status_code=400, content=body.model_dump(by_alias=True))
     except ValueError as error:
         return _validation_error(str(error))

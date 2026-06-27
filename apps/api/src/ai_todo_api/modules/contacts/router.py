@@ -18,6 +18,7 @@ from ai_todo_api.modules.contacts.schemas import (
     UpdateContactResult,
 )
 from ai_todo_api.modules.contacts.service import ContactNotFoundError, ContactService
+from ai_todo_api.errors import ErrorCode, wire_code
 from ai_todo_api.schemas import ApiError, ApiResponse, ErrorResponse
 
 
@@ -44,7 +45,7 @@ def create_contact(
         try:
             contact = contact_service.create(input_data)
         except ValueError as error:
-            body = ErrorResponse(error=ApiError(code="VALIDATION_ERROR", message=str(error)))
+            body = ErrorResponse(error=ApiError(code=wire_code(ErrorCode.VAL_INVALID_INPUT), message=str(error)))
             return JSONResponse(status_code=400, content=body.model_dump(by_alias=True))
         body = ApiResponse(data=CreateContactResult(contact=contact))
         return JSONResponse(status_code=201, content=body.model_dump(by_alias=True))
@@ -73,7 +74,7 @@ def search_contacts(
     try:
         result = contact_service.list_contacts(q, limit=limit, cursor=cursor)
     except InvalidCursorError as error:
-        body = ErrorResponse(error=ApiError(code="INVALID_CURSOR", message=str(error)))
+        body = ErrorResponse(error=ApiError(code=wire_code(ErrorCode.VAL_INVALID_CURSOR), message=str(error)))
         return JSONResponse(status_code=400, content=body.model_dump(by_alias=True))
     return ApiResponse(data=result)
 
@@ -118,7 +119,7 @@ def update_contact(
             )
             return JSONResponse(status_code=404, content=body.model_dump(by_alias=True))
         except ValueError as error:
-            body = ErrorResponse(error=ApiError(code="VALIDATION_ERROR", message=str(error)))
+            body = ErrorResponse(error=ApiError(code=wire_code(ErrorCode.VAL_INVALID_INPUT), message=str(error)))
             return JSONResponse(status_code=400, content=body.model_dump(by_alias=True))
         body = ApiResponse(data=UpdateContactResult(contact=contact))
         return JSONResponse(status_code=200, content=body.model_dump(by_alias=True))

@@ -22,6 +22,7 @@ from ai_todo_api.observability import install_observability, metrics_registry
 from ai_todo_api.modules.reminders.router import router as reminders_router
 from ai_todo_api.modules.today.router import router as today_router
 from ai_todo_api.preview import preview_page
+from ai_todo_api.errors import ErrorCode, wire_code
 from ai_todo_api.schemas import ApiResponse
 from ai_todo_api.version import get_api_version
 
@@ -83,7 +84,7 @@ async def validation_exception_handler(
 ) -> JSONResponse:
     return _error_response(
         status_code=422,
-        code="VALIDATION_ERROR",
+        code=wire_code(ErrorCode.VAL_INVALID_INPUT),
         message="Request validation failed.",
     )
 

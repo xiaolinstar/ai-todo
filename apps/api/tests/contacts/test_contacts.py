@@ -88,7 +88,7 @@ def test_manual_contact_handle_must_be_unique(client: TestClient) -> None:
 
     assert first_response.status_code == 201
     assert second_response.status_code == 400
-    assert second_response.json()["error"]["code"] == "VALIDATION_ERROR"
+    assert second_response.json()["error"]["code"] == "VAL_INVALID_INPUT"
 
 
 def test_delete_contact_removes_it_from_list_and_show(client: TestClient) -> None:
@@ -167,4 +167,4 @@ def test_contact_list_supports_cursor_pagination(client: TestClient) -> None:
 def test_contact_list_rejects_invalid_cursor(client: TestClient) -> None:
     response = client.get("/v1/contacts", params={"limit": 10, "cursor": "not-a-cursor"})
     assert response.status_code == 400
-    assert response.json()["error"]["code"] == "INVALID_CURSOR"
+    assert response.json()["error"]["code"] == "VAL_INVALID_CURSOR"

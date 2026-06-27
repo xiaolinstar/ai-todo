@@ -66,7 +66,7 @@ def test_calendar_rejects_invalid_time_range(client: TestClient) -> None:
         },
     )
     assert response.status_code == 400
-    assert response.json()["error"]["code"] == "VALIDATION_ERROR"
+    assert response.json()["error"]["code"] == "VAL_INVALID_INPUT"
 
 
 def test_calendar_list_filters_by_date_range(client: TestClient) -> None:

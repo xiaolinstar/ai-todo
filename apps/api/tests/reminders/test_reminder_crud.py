@@ -115,7 +115,7 @@ def test_list_pending_sorted_by_due_at(client: TestClient) -> None:
 def test_list_invalid_sort(client: TestClient) -> None:
     response = client.get("/v1/reminders", params={"sort": "invalid"})
     assert response.status_code == 400
-    assert response.json()["error"]["code"] == "VALIDATION_ERROR"
+    assert response.json()["error"]["code"] == "VAL_INVALID_INPUT"
 
 
 def test_reminder_in_progress_status_flow(client: TestClient) -> None:

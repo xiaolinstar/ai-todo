@@ -87,4 +87,4 @@ def test_lookup_requires_valid_source_and_external_id(client: TestClient) -> Non
     )
 
     assert response.status_code == 400
-    assert response.json()["error"]["code"] == "VALIDATION_ERROR"
+    assert response.json()["error"]["code"] == "VAL_INVALID_INPUT"

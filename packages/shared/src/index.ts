@@ -3,9 +3,14 @@ export type EntityId = string;
 export {
   AuthErrorCode,
   isAuthFailureCode,
+  isInvalidCursorError,
   isUnauthorizedError,
+  isValidationError,
   matchesAuthErrorCode,
+  matchesValErrorCode,
+  ValErrorCode,
   type AuthErrorCodeValue,
+  type ValErrorCodeValue,
 } from "./errors";
 
 export type ClientSource = "miniapp" | "cli" | "agent" | "api";

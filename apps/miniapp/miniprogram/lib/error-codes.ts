@@ -1,4 +1,4 @@
-/** AUTH error matching — mirror of packages/shared/src/errors.ts (miniapp bundle isolation). */
+/** Error code matching — mirror of packages/shared/src/errors.ts (miniapp bundle isolation). */
 
 export const AuthErrorCode = {
   invalidToken: 'AUTH_INVALID_TOKEN',
@@ -41,4 +41,38 @@ export function isAuthFailureCode(wire: string | undefined): boolean {
     return true;
   }
   return wire in AUTH_LEGACY_ALIASES;
+}
+
+export const ValErrorCode = {
+  invalidInput: 'VAL_INVALID_INPUT',
+  invalidCursor: 'VAL_INVALID_CURSOR',
+  contactMethodRequired: 'VAL_CONTACT_METHOD_REQUIRED',
+} as const;
+
+type ValErrorCodeValue = (typeof ValErrorCode)[keyof typeof ValErrorCode];
+
+const VAL_LEGACY_ALIASES: Record<string, ValErrorCodeValue> = {
+  VALIDATION_ERROR: ValErrorCode.invalidInput,
+  INVALID_CURSOR: ValErrorCode.invalidCursor,
+};
+
+export function matchesValErrorCode(
+  wire: string | undefined,
+  canonical: ValErrorCodeValue,
+): boolean {
+  if (!wire) {
+    return false;
+  }
+  if (wire === canonical) {
+    return true;
+  }
+  return VAL_LEGACY_ALIASES[wire] === canonical;
+}
+
+export function isValidationError(wire: string | undefined): boolean {
+  return matchesValErrorCode(wire, ValErrorCode.invalidInput);
+}
+
+export function isInvalidCursorError(wire: string | undefined): boolean {
+  return matchesValErrorCode(wire, ValErrorCode.invalidCursor);
 }

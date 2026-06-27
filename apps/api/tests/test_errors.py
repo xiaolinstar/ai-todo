@@ -45,6 +45,12 @@ def test_matches_error_code_accepts_legacy_and_canonical() -> None:
     assert not matches_error_code("FORBIDDEN", ErrorCode.AUTH_INVALID_TOKEN)
 
 
+def test_matches_error_code_accepts_val_legacy_and_canonical() -> None:
+    assert matches_error_code("VALIDATION_ERROR", ErrorCode.VAL_INVALID_INPUT)
+    assert matches_error_code("VAL_INVALID_INPUT", ErrorCode.VAL_INVALID_INPUT)
+    assert matches_error_code("INVALID_CURSOR", ErrorCode.VAL_INVALID_CURSOR)
+
+
 def test_all_legacy_codes_from_p0_audit_are_registered() -> None:
     expected = {
         "UNAUTHORIZED",

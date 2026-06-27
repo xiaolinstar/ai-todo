@@ -57,7 +57,7 @@ def create_api_token(
             result = ApiTokenService(db).create(auth, input_data, client_kind=client_source)
         except ValueError as error:
             body = ErrorResponse(
-                error=ApiError(code="VALIDATION_ERROR", message=str(error)),
+                error=ApiError(code=wire_code(ErrorCode.VAL_INVALID_INPUT), message=str(error)),
             )
             return JSONResponse(status_code=400, content=body.model_dump(by_alias=True))
 

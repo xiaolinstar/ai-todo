@@ -65,6 +65,6 @@ def test_validation_error_body_includes_correlation_ids(client: TestClient) -> N
     assert response.status_code == 422
     body = response.json()
     assert body["ok"] is False
-    assert body["error"]["code"] == "VALIDATION_ERROR"
+    assert body["error"]["code"] == "VAL_INVALID_INPUT"
     assert body["requestId"] == "req_val_body_1"
     assert body["traceId"] == "req_val_body_1"

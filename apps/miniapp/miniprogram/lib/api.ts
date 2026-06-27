@@ -1,5 +1,5 @@
 import { getConfig } from './config';
-import { AuthErrorCode, isUnauthorizedError } from './error-codes';
+import { AuthErrorCode, isUnauthorizedError, matchesValErrorCode, ValErrorCode } from './error-codes';
 import { silentWechatReLogin } from './relogin';
 
 export interface ApiError {
@@ -169,7 +169,10 @@ export function formatApiErrorMessage(error: ApiError | undefined, fallback: str
   if (!error) {
     return fallback;
   }
-  if (error.code === 'VALIDATION_ERROR' && /validation failed/i.test(error.message)) {
+  if (
+    matchesValErrorCode(error.code, ValErrorCode.invalidInput) &&
+    /validation failed/i.test(error.message)
+  ) {
     return '服务端 API 版本过旧，请先部署 v0.8.0（API 0.4.0）';
   }
   return error.message || fallback;

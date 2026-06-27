@@ -18,6 +18,7 @@ from ai_todo_api.modules.notifications.service import (
     NotificationTargetNotFoundError,
     NotificationValidationError,
 )
+from ai_todo_api.errors import ErrorCode, wire_code
 from ai_todo_api.schemas import ApiError, ApiResponse, ErrorResponse
 
 
@@ -29,7 +30,7 @@ def _service(db: Session, user_id: str) -> NotificationDeliveryService:
 
 
 def _validation_error(message: str) -> JSONResponse:
-    body = ErrorResponse(error=ApiError(code="VALIDATION_ERROR", message=message))
+    body = ErrorResponse(error=ApiError(code=wire_code(ErrorCode.VAL_INVALID_INPUT), message=message))
     return JSONResponse(status_code=400, content=body.model_dump(by_alias=True))
 
 
