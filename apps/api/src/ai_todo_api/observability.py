@@ -145,6 +145,49 @@ def inject_correlation_ids(payload: object, request_id: str) -> object:
     return result
 
 
+async def _inject_correlation_ids_into_json_response(
+    response: Response,
+    request_id: str,
+) -> Response:
+    content_type = response.headers.get("content-type", "")
+    if not content_type.startswith("application/json"):
+        response.headers["X-Request-ID"] = request_id
+        return response
+
+    body = b""
+    async for chunk in response.body_iterator:
+        body += chunk
+
+    try:
+        payload = json.loads(body)
+    except json.JSONDecodeError:
+        headers = dict(response.headers)
+        headers["X-Request-ID"] = request_id
+        return Response(
+            content=body,
+            status_code=response.status_code,
+            headers=headers,
+            media_type=response.media_type,
+        )
+
+    enriched = inject_correlation_ids(payload, request_id)
+    encoded = json.dumps(enriched, ensure_ascii=False, separators=(",", ":")).encode()
+
+    headers = {
+        key: value
+        for key, value in response.headers.items()
+        if key.lower() != "content-length"
+    }
+    headers["X-Request-ID"] = request_id
+
+    return Response(
+        content=encoded,
+        status_code=response.status_code,
+        headers=headers,
+        media_type="application/json",
+    )
+
+
 def install_observability(app: FastAPI) -> None:
     configure_logging()
 
@@ -153,12 +196,15 @@ def install_observability(app: FastAPI) -> None:
         request: Request,
         call_next: RequestResponseEndpoint,
     ) -> Response:
-        request_id = request.headers.get("x-request-id") or f"req_{uuid4().hex[:16]}"
+        request_id = resolve_request_id(request)
+        request.state.request_id = request_id
         start = time.perf_counter()
         status_code = 500
+        response: Response | None = None
         try:
             response = await call_next(request)
             status_code = response.status_code
+            response = await _inject_correlation_ids_into_json_response(response, request_id)
             return response
         finally:
             duration = time.perf_counter() - start
@@ -184,8 +230,6 @@ def install_observability(app: FastAPI) -> None:
                         }
                     },
                 )
-            if "response" in locals():
-                response.headers["X-Request-ID"] = request_id
 
 
 def _route_path(request: Request) -> str:

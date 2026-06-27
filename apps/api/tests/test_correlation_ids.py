@@ -33,3 +33,40 @@ def test_inject_fills_missing_trace_id_when_request_id_present() -> None:
 
 def test_inject_no_op_for_non_dict() -> None:
     assert inject_correlation_ids([], "req_x") == []  # type: ignore[arg-type]
+
+
+from fastapi.testclient import TestClient
+
+
+def test_health_json_body_includes_correlation_ids(client: TestClient) -> None:
+    response = client.get("/v1/health", headers={"X-Request-ID": "req_health_body_1"})
+    assert response.status_code == 200
+    body = response.json()
+    assert response.headers["X-Request-ID"] == "req_health_body_1"
+    assert body["requestId"] == "req_health_body_1"
+    assert body["traceId"] == "req_health_body_1"
+
+
+def test_unauthorized_error_body_includes_correlation_ids(client: TestClient) -> None:
+    response = client.post(
+        "/v1/api-tokens",
+        json={"name": "no-auth", "scopes": ["read"]},
+        headers={"X-Request-ID": "req_unauth_body_1"},
+    )
+    assert response.status_code == 401
+    body = response.json()
+    assert body["ok"] is False
+    assert body["error"]["code"] == "UNAUTHORIZED"
+    assert response.headers["X-Request-ID"] == "req_unauth_body_1"
+    assert body["requestId"] == "req_unauth_body_1"
+    assert body["traceId"] == "req_unauth_body_1"
+
+
+def test_validation_error_body_includes_correlation_ids(client: TestClient) -> None:
+    response = client.post("/v1/auth/wechat/login", json={}, headers={"X-Request-ID": "req_val_body_1"})
+    assert response.status_code == 422
+    body = response.json()
+    assert body["ok"] is False
+    assert body["error"]["code"] == "VALIDATION_ERROR"
+    assert body["requestId"] == "req_val_body_1"
+    assert body["traceId"] == "req_val_body_1"
