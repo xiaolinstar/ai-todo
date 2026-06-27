@@ -126,6 +126,25 @@ class MetricsRegistry:
 metrics_registry = MetricsRegistry()
 
 
+def resolve_request_id(request: Request) -> str:
+    incoming = request.headers.get("x-request-id")
+    if incoming:
+        return incoming
+    return f"req_{uuid4().hex[:16]}"
+
+
+def inject_correlation_ids(payload: object, request_id: str) -> object:
+    if not isinstance(payload, dict):
+        return payload
+    result = dict(payload)
+    if not result.get("requestId") and not result.get("request_id"):
+        result["requestId"] = request_id
+    trace_source = result.get("traceId") or result.get("requestId") or result.get("request_id") or request_id
+    if not result.get("traceId"):
+        result["traceId"] = trace_source
+    return result
+
+
 def install_observability(app: FastAPI) -> None:
     configure_logging()
 
