@@ -5,7 +5,7 @@ from ai_todo_api.schemas import CamelModel
 
 
 ReminderStatus = Literal["pending", "in_progress", "completed", "cancelled"]
-WechatNotifyStatus = Literal["none", "pending", "sent", "failed", "no_quota", "skipped"]
+WechatNotifyStatus = Literal["none", "pending", "sending", "sent", "failed", "no_quota", "skipped"]
 
 
 class ReminderSummary(CamelModel):

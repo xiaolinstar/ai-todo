@@ -4,7 +4,7 @@ from ai_todo_api.modules.contacts.schemas import ContactSummary
 from ai_todo_api.schemas import CamelModel
 
 
-WechatNotifyStatus = Literal["none", "pending", "sent", "failed", "no_quota", "skipped"]
+WechatNotifyStatus = Literal["none", "pending", "sending", "sent", "failed", "no_quota", "skipped"]
 
 
 class CalendarEventSummary(CamelModel):

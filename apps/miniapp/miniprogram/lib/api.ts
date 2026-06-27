@@ -30,7 +30,14 @@ export interface ContactSummary {
   primaryPhone?: string;
 }
 
-export type WechatNotifyStatus = "none" | "pending" | "sent" | "failed" | "no_quota" | "skipped";
+export type WechatNotifyStatus =
+  | "none"
+  | "pending"
+  | "sending"
+  | "sent"
+  | "failed"
+  | "no_quota"
+  | "skipped";
 
 export interface ReminderSummary {
   id: string;

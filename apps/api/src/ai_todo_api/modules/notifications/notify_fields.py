@@ -22,7 +22,7 @@ from ai_todo_api.modules.notifications.service import (
 )
 
 
-WechatNotifyStatus = Literal["none", "pending", "sent", "failed", "no_quota", "skipped"]
+WechatNotifyStatus = Literal["none", "pending", "sending", "sent", "failed", "no_quota", "skipped"]
 
 
 def user_default_wechat_notify_enabled(session: Session, user_id: str) -> bool:

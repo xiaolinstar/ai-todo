@@ -84,7 +84,7 @@ export function deriveNotifyUi(options: {
   }
 
   const status = options.wechatNotifyStatus || "none";
-  if (status === "pending" || status === "sent") {
+  if (status === "pending" || status === "sending" || status === "sent") {
     return { showEnableButton: false, showEnabledLabel: true, showAwaitingBadge: false };
   }
 
