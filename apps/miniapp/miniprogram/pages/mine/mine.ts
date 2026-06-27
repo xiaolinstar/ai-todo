@@ -8,7 +8,6 @@ import {
 } from "../../lib/settings-menu";
 import { avatarColor, getInitial } from "../../lib/format";
 import {
-  clearProfileSetupSeen,
   hasSeenProfileSetup,
   isDevelopEnv,
   markProfileSetupSeen,

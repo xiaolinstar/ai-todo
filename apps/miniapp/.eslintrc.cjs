@@ -33,6 +33,12 @@ module.exports = {
     '.preview/',
     'types/', // 类型声明文件
   ],
+  overrides: [
+    {
+      files: ['scripts/**/*.mjs'],
+      env: { node: true },
+    },
+  ],
   rules: {
     '@typescript-eslint/no-explicit-any': 'warn',
     '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],

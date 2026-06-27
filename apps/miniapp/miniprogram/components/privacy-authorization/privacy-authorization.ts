@@ -21,11 +21,11 @@ Component({
     },
 
     onAgree() {
-      (this as any).triggerEvent("agree");
+      (this as { triggerEvent(name: string): void }).triggerEvent("agree");
     },
 
     onDisagree() {
-      (this as any).triggerEvent("disagree");
+      (this as { triggerEvent(name: string): void }).triggerEvent("disagree");
     }
   }
 });

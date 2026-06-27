@@ -5,7 +5,7 @@
   "description": "WeChat native miniapp for ai-todo (TypeScript + Sass)",
   "scripts": {
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "lint": "eslint \"miniprogram/**/*.ts\" \"scripts/**/*.mjs\" \"types/**/*.d.ts\" --max-warnings 0",
+    "lint": "eslint \"miniprogram/**/*.ts\" \"scripts/**/*.mjs\" --max-warnings 0",
     "lint:fix": "pnpm lint -- --fix",
     "format": "prettier --write \"miniprogram/**/*.{ts,scss,json}\" \"scripts/**/*.mjs\"",
     "format:check": "prettier --check \"miniprogram/**/*.{ts,scss,json}\" \"scripts/**/*.mjs\"",
