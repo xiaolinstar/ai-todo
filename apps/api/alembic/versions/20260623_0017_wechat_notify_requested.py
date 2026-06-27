@@ -29,5 +29,6 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.drop_column("calendar_events", "wechat_notify_requested")
-    op.drop_column("reminders", "wechat_notify_requested")
+    # Expand migration: keep the added columns on downgrade so application rollback
+    # does not discard user notification intent written after this migration.
+    pass
