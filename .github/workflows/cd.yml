@@ -54,7 +54,7 @@ jobs:
       target_sha: ${{ steps.ci_run.outputs.target_sha }}
       release_tag: ${{ steps.ci_run.outputs.release_tag }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - uses: pnpm/action-setup@v5
 
@@ -118,7 +118,7 @@ jobs:
       current_git_sha: ${{ steps.classify.outputs.current_git_sha }}
       compare_base: ${{ steps.classify.outputs.compare_base }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -148,7 +148,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.environment || 'production' }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - uses: pnpm/action-setup@v5
 
@@ -190,7 +190,7 @@ jobs:
 
       - name: Deploy to VPS
         if: steps.deploy_config.outputs.configured == 'true'
-        uses: appleboy/ssh-action@v1.2.0
+        uses: appleboy/ssh-action@v1.2.5
         env:
           FINGERPRINT: ${{ needs.resolve-manifest.outputs.fingerprint }}
           CI_RUN_ID: ${{ needs.resolve-manifest.outputs.ci_run_id }}
@@ -228,7 +228,7 @@ jobs:
     outputs:
       verify_error: ${{ steps.verify.outputs.error }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - uses: actions/download-artifact@v7
         with:
@@ -281,7 +281,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.environment || 'production' }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - uses: pnpm/action-setup@v5
 
@@ -302,7 +302,7 @@ jobs:
 
       - name: Rollback on VPS
         if: steps.deploy_config.outputs.configured == 'true'
-        uses: appleboy/ssh-action@v1.2.0
+        uses: appleboy/ssh-action@v1.2.5
         env:
           GHCR_DEPLOY_TOKEN: ${{ secrets.GHCR_DEPLOY_TOKEN || github.token }}
           GHCR_DEPLOY_USER: ${{ vars.GHCR_DEPLOY_USER || secrets.GHCR_DEPLOY_USER || github.actor }}
@@ -332,7 +332,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.environment || 'production' }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Verify API after rollback
         env:
@@ -376,7 +376,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.environment || 'production' }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Write release report
         env:
