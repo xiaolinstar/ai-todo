@@ -41,7 +41,8 @@ MVP API 需要覆盖：
 {
   "ok": true,
   "data": {},
-  "request_id": "req_123"
+  "requestId": "req_123",
+  "traceId": "req_123"
 }
 ```
 
@@ -55,9 +56,12 @@ MVP API 需要覆盖：
     "message": "Multiple contacts matched this name.",
     "details": {}
   },
-  "request_id": "req_123"
+  "requestId": "req_123",
+  "traceId": "req_123"
 }
 ```
+
+**关联 ID 命名：** Python 模型字段为 `request_id`；JSON wire 为 camelCase 的 `requestId` 与 `traceId`（同值）；HTTP header 为 `X-Request-ID`。与 `~/AgentProjects/dev-standards/playbook/api-error-codes.md` §traceId 对齐。
 
 ## 认证方式
 
@@ -535,17 +539,17 @@ GET /v1/today
 
 ## 错误码
 
-| 错误码 | 说明 |
-| --- | --- |
-| `UNAUTHORIZED` | 未登录或 token 无效 |
-| `FORBIDDEN` | 权限不足 |
-| `VALIDATION_ERROR` | 请求参数错误 |
-| `NOT_FOUND` | 资源不存在 |
-| `IDEMPOTENCY_CONFLICT` | 幂等键冲突 |
-| `CONTACT_NOT_FOUND` | 联系人不存在 |
-| `CONTACT_METHOD_REQUIRED` | 缺少所需联系方式 |
-| `CONFIRMATION_REQUIRED` | 需要用户确认 |
-| `RATE_LIMITED` | 请求过于频繁 |
+| 错误码                    | 说明                |
+| ------------------------- | ------------------- |
+| `UNAUTHORIZED`            | 未登录或 token 无效 |
+| `FORBIDDEN`               | 权限不足            |
+| `VALIDATION_ERROR`        | 请求参数错误        |
+| `NOT_FOUND`               | 资源不存在          |
+| `IDEMPOTENCY_CONFLICT`    | 幂等键冲突          |
+| `CONTACT_NOT_FOUND`       | 联系人不存在        |
+| `CONTACT_METHOD_REQUIRED` | 缺少所需联系方式    |
+| `CONFIRMATION_REQUIRED`   | 需要用户确认        |
+| `RATE_LIMITED`            | 请求过于频繁        |
 
 ## MVP 不做
 
