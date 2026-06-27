@@ -28,9 +28,9 @@ ai-todo <command> [options]
 
 通用参数：
 
-| 参数 | 说明 |
-| --- | --- |
-| `--json` | 输出 JSON |
+| 参数                      | 说明       |
+| ------------------------- | ---------- |
+| `--json`                  | 输出 JSON  |
 | `--idempotency-key <key>` | 指定幂等键 |
 
 连接与认证写入 `~/.ai-todo/settings.json`（`url` + `token`），见 `apps/cli/settings.example.json`。  
@@ -38,15 +38,15 @@ ai-todo <command> [options]
 
 ## PAT 生命周期与 CLI 边界（v0.8.3+）
 
-| 能力 | 入口 | 说明 |
-|------|------|------|
-| **创建 PAT** | 小程序 **我的 → Agent 令牌** | 明文仅显示一次；复制后写入本机 |
-| **列出 PAT** | 小程序 Agent 令牌页 | 含状态、到期、最后使用、吊销入口 |
-| **吊销单个 PAT** | 小程序令牌详情页 | 需微信登录身份 |
-| **批量吊销** | 小程序开发者选项（develop）或后续正式设置 | 应急清理 |
-| **本机写入 PAT** | `ai-todo login --token` | 粘贴小程序复制的密钥，**不是**在 CLI 签发 |
-| **本地开发签发** | `ai-todo login --issue-pat` | 仅 `allow_dev_auth` 环境；生产用户不使用 |
-| **本机清除配置** | `ai-todo logout` | 只删 `settings.json` 中的 token，**不**吊销服务端 PAT |
+| 能力             | 入口                                      | 说明                                                  |
+| ---------------- | ----------------------------------------- | ----------------------------------------------------- |
+| **创建 PAT**     | 小程序 **我的 → Agent 令牌**              | 明文仅显示一次；复制后写入本机                        |
+| **列出 PAT**     | 小程序 Agent 令牌页                       | 含状态、到期、最后使用、吊销入口                      |
+| **吊销单个 PAT** | 小程序令牌详情页                          | 需微信登录身份                                        |
+| **批量吊销**     | 小程序开发者选项（develop）或后续正式设置 | 应急清理                                              |
+| **本机写入 PAT** | `ai-todo login --token`                   | 粘贴小程序复制的密钥，**不是**在 CLI 签发             |
+| **本地开发签发** | `ai-todo login --issue-pat`               | 仅 `allow_dev_auth` 环境；生产用户不使用              |
+| **本机清除配置** | `ai-todo logout`                          | 只删 `settings.json` 中的 token，**不**吊销服务端 PAT |
 
 **不提供**（自 v0.8.3 起从 CLI 移除）：
 
@@ -230,13 +230,13 @@ ai-todo list --status pending
 
 常用参数：
 
-| 参数 | 说明 |
-| --- | --- |
-| `--status <status>` | `pending` / `completed` / `cancelled` |
-| `--from <date>` | 起始日期 |
-| `--to <date>` | 结束日期 |
-| `--contact <id_or_handle>` | 按联系人筛选 |
-| `--limit <n>` | 返回数量 |
+| 参数                       | 说明                                  |
+| -------------------------- | ------------------------------------- |
+| `--status <status>`        | `pending` / `completed` / `cancelled` |
+| `--from <date>`            | 起始日期                              |
+| `--to <date>`              | 结束日期                              |
+| `--contact <id_or_handle>` | 按联系人筛选                          |
+| `--limit <n>`              | 返回数量                              |
 
 ### done
 
@@ -451,18 +451,20 @@ ai-todo reminder create \
 
 ## 错误码
 
-| 错误码 | 说明 |
-| --- | --- |
-| `UNAUTHORIZED` | 未登录或 token 无效 |
-| `FORBIDDEN` | 权限不足 |
-| `VALIDATION_ERROR` | 参数错误 |
-| `NOT_FOUND` | 资源不存在 |
-| `CONTACT_NOT_FOUND` | 联系人不存在 |
-| `CONTACT_METHOD_REQUIRED` | 缺少所需联系方式 |
-| `CONFIRMATION_REQUIRED` | 需要用户确认 |
-| `IDEMPOTENCY_CONFLICT` | 幂等键冲突 |
-| `NETWORK_ERROR` | 网络错误 |
-| `SERVER_ERROR` | 服务端错误 |
+与 [api-design.md](./api-design.md) §错误码 一致（ADR-0005 前缀码）。CLI / `--json` 输出中的 `error.code` 与 API wire 相同。
+
+| 前缀     | 常见 code                  | 说明                        |
+| -------- | -------------------------- | --------------------------- |
+| AUTH     | `AUTH_INVALID_TOKEN`       | 未登录或 token 无效         |
+| AUTH     | `AUTH_FORBIDDEN`           | 权限不足                    |
+| VAL      | `VAL_INVALID_INPUT`        | 参数错误                    |
+| BIZ      | `BIZ_NOT_FOUND`            | 资源不存在                  |
+| BIZ      | `BIZ_CONTACT_NOT_FOUND`    | 联系人不存在                |
+| BIZ      | `BIZ_IDEMPOTENCY_CONFLICT` | 幂等键冲突                  |
+| CLI 本地 | `NETWORK_ERROR`            | 网络错误（非 API 返回）     |
+| CLI 本地 | `SERVER_ERROR`             | 服务端不可达（非 API 返回） |
+
+完整列表与 legacy alias 见 `api-design.md`。
 
 ## MVP 命令清单
 

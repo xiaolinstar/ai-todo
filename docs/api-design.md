@@ -52,7 +52,7 @@ MVP API 需要覆盖：
 {
   "ok": false,
   "error": {
-    "code": "CONTACT_AMBIGUOUS",
+    "code": "BIZ_CONTACT_AMBIGUOUS",
     "message": "Multiple contacts matched this name.",
     "details": {}
   },
@@ -539,17 +539,57 @@ GET /v1/today
 
 ## 错误码
 
-| 错误码                    | 说明                |
-| ------------------------- | ------------------- |
-| `UNAUTHORIZED`            | 未登录或 token 无效 |
-| `FORBIDDEN`               | 权限不足            |
-| `VALIDATION_ERROR`        | 请求参数错误        |
-| `NOT_FOUND`               | 资源不存在          |
-| `IDEMPOTENCY_CONFLICT`    | 幂等键冲突          |
-| `CONTACT_NOT_FOUND`       | 联系人不存在        |
-| `CONTACT_METHOD_REQUIRED` | 缺少所需联系方式    |
-| `CONFIRMATION_REQUIRED`   | 需要用户确认        |
-| `RATE_LIMITED`            | 请求过于频繁        |
+HTTP `error.code` 使用 [ADR-0005](~/AgentProjects/dev-standards/playbook/adr/0005-api-error-code-convention.md) 前缀码。真源：`apps/api/src/ai_todo_api/errors.py`。客户端（CLI / 小程序 / `@ai-todo/shared`）通过 `matches*ErrorCode` 仍兼容旧 wire 字符串（见各 batch plan 映射表）。
+
+### AUTH（401 / 403 / 429）
+
+| code                 | 说明                      | legacy alias                |
+| -------------------- | ------------------------- | --------------------------- |
+| `AUTH_INVALID_TOKEN` | 未登录或 token 无效       | `UNAUTHORIZED`              |
+| `AUTH_FORBIDDEN`     | 权限不足                  | `FORBIDDEN`                 |
+| `AUTH_SCOPE_DENIED`  | token 类型或 scope 不允许 | `SESSION_TOKEN_NOT_ALLOWED` |
+| `AUTH_RATE_LIMITED`  | 请求过于频繁              | `RATE_LIMITED`              |
+
+### VAL（400 / 422）
+
+| code                          | 说明             | legacy alias       |
+| ----------------------------- | ---------------- | ------------------ |
+| `VAL_INVALID_INPUT`           | 请求参数错误     | `VALIDATION_ERROR` |
+| `VAL_INVALID_CURSOR`          | 分页 cursor 无效 | `INVALID_CURSOR`   |
+| `VAL_CONTACT_METHOD_REQUIRED` | 缺少所需联系方式 | _(planned)_        |
+
+### BIZ（400 / 404 / 409）
+
+| code                             | 说明                      | legacy alias                 |
+| -------------------------------- | ------------------------- | ---------------------------- |
+| `BIZ_NOT_FOUND`                  | 资源不存在                | `NOT_FOUND`                  |
+| `BIZ_CONTACT_NOT_FOUND`          | 联系人不存在              | `CONTACT_NOT_FOUND`          |
+| `BIZ_IDEMPOTENCY_CONFLICT`       | 幂等键冲突                | `IDEMPOTENCY_CONFLICT`       |
+| `BIZ_CONTACT_AMBIGUOUS`          | 联系人匹配不唯一          | _(planned)_                  |
+| `BIZ_CONFIRMATION_REQUIRED`      | 需要用户确认              | _(planned)_                  |
+| `BIZ_REMINDER_INACTIVE`          | 提醒已完成/删除，通知跳过 | `REMINDER_INACTIVE`          |
+| `BIZ_REMINDER_NO_SCHEDULE`       | 提醒无到期时间，通知跳过  | `REMINDER_NO_SCHEDULE`       |
+| `BIZ_CALENDAR_EVENT_INACTIVE`    | 日程已删除，通知跳过      | `CALENDAR_EVENT_INACTIVE`    |
+| `BIZ_CALENDAR_EVENT_NO_SCHEDULE` | 日程无开始时间，通知跳过  | `CALENDAR_EVENT_NO_SCHEDULE` |
+| `BIZ_WECHAT_OPENID_MISSING`      | 用户无微信 identity       | `WECHAT_OPENID_MISSING`      |
+| `BIZ_INVALID_TARGET`             | 通知目标无效              | `INVALID_TARGET`             |
+
+### SYS（500 / 502 / 503）
+
+| code                        | 说明                          | legacy alias            |
+| --------------------------- | ----------------------------- | ----------------------- |
+| `SYS_DB_UNAVAILABLE`        | 数据库不可用或 schema 过旧    | `DATABASE_ERROR`        |
+| `SYS_INTERNAL_ERROR`        | 未预期服务端错误              | `INTERNAL_ERROR`        |
+| `SYS_HTTP_ERROR`            | 无结构化 detail 的 HTTP 异常  | `HTTP_ERROR`            |
+| `SYS_WECHAT_NOT_CONFIGURED` | 服务端未配置微信 AppID/Secret | `WECHAT_NOT_CONFIGURED` |
+
+### 其他
+
+| code                  | 说明                                     |
+| --------------------- | ---------------------------------------- |
+| `INVALID_WECHAT_CODE` | 微信 `code` 无效（登录专用，无前缀迁移） |
+
+通知 delivery 列表中的 `errorCode` 字段与上表 BIZ / SYS 码一致。
 
 ## MVP 不做
 

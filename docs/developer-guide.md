@@ -337,7 +337,9 @@ curl https://xingxiaolin.cn/v1/health/db
 
 ## 常见问题
 
-### 微信登录 503：`WECHAT_NOT_CONFIGURED`
+### 微信登录 503：`SYS_WECHAT_NOT_CONFIGURED`
+
+（legacy alias：`WECHAT_NOT_CONFIGURED`）
 
 生产环境未配置：
 

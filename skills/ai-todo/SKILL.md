@@ -128,7 +128,7 @@ A reminder is **an action item**. Title says what action; structured fields carr
 | `--notes`                    | Free-form context: links, qualifiers, multi-line background.                                                                                                                                |
 | `--contact <id_or_handle>`   | Repeatable. Link the human(s) involved. The response returns `data.reminder.contacts[]` with `displayName` + `primaryEmail` already attached — **never stuff contact info into the title**. |
 | `--source` / `--external-id` | Business-origin key (e.g. `email` + `<Message-ID>`, `jira` + `PROJ-123`). Use together so the row is idempotent across syncs.                                                               |
-| `--source-meta`              | JSON object with origin context (e.g. `{"subject":"…","from":"…"}`). **Must be a JSON object, not an array or scalar** (`VALIDATION_ERROR` otherwise).                                      |
+| `--source-meta`              | JSON object with origin context (e.g. `{"subject":"…","from":"…"}`). **Must be a JSON object, not an array or scalar** (`VAL_INVALID_INPUT` otherwise).                                     |
 | `--status` _(update only)_   | `pending` (not started), `in_progress` (actively working), `completed`. Use on `reminder update` when the item is underway but not done.                                                    |
 | `--idempotency-key <uuid>`   | Pass when the host supports it; protects against duplicate creates on retries.                                                                                                              |
 
@@ -264,10 +264,11 @@ ai-todo contact add "张松蕾" \
 
 ## Errors
 
-- If `ok: false`, show `error.code` and `error.message`; do not retry blindly on `VALIDATION_ERROR`.
-- `NOT_FOUND` → id may be wrong or deleted; for source lookups, create instead of update.
-- `CONTACT_NOT_FOUND` → unknown contact handle/id passed via `--contact`. Re-run `contact search`.
-- `VALIDATION_ERROR` on `sourceMeta` → must be a JSON object (not array, not scalar).
+- If `ok: false`, show `error.code` and `error.message`; do not retry blindly on `VAL_INVALID_INPUT`.
+- `BIZ_NOT_FOUND` → id may be wrong or deleted; for source lookups, create instead of update.
+- `BIZ_CONTACT_NOT_FOUND` → unknown contact handle/id passed via `--contact`. Re-run `contact search`.
+- `VAL_INVALID_INPUT` on `sourceMeta` → must be a JSON object (not array, not scalar).
+- Legacy wire strings (`NOT_FOUND`, `VALIDATION_ERROR`, etc.) may still appear in old logs; treat as equivalent when using `@ai-todo/shared` matchers.
 
 ## More detail
 

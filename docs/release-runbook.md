@@ -40,11 +40,11 @@
 
 **API 与小程序是两条发布线：**
 
-| 组件 | 发布方式 | 频率 |
-|------|----------|------|
-| API + Postgres | 手动 GitHub Actions CD → VPS Docker | 版本确认发布时 |
-| xiaolin-gateway | xiaolin-gateway 仓库 CD | 域名/证书/路由变更时 |
-| 微信小程序 | 微信开发者工具上传 → 公众平台提审 | 功能变更时 |
+| 组件            | 发布方式                            | 频率                 |
+| --------------- | ----------------------------------- | -------------------- |
+| API + Postgres  | 手动 GitHub Actions CD → VPS Docker | 版本确认发布时       |
+| xiaolin-gateway | xiaolin-gateway 仓库 CD             | 域名/证书/路由变更时 |
+| 微信小程序      | 微信开发者工具上传 → 公众平台提审   | 功能变更时           |
 
 ---
 
@@ -116,13 +116,13 @@ docker compose up -d
 
 ### Secrets（ai-todo 仓库）
 
-| Secret | 说明 |
-|--------|------|
-| `DEPLOY_HOST` | VPS IP |
-| `DEPLOY_USER` | SSH 用户名 |
-| `DEPLOY_SSH_KEY` | SSH **私钥全文**（不是登录密码） |
-| `DEPLOY_PASSWORD` | 可选：SSH 登录密码（与私钥二选一） |
-| `DEPLOY_PATH` | 可选；服务器仓库路径，默认 `$HOME/AgentProjects/ai-todo` |
+| Secret            | 说明                                                     |
+| ----------------- | -------------------------------------------------------- |
+| `DEPLOY_HOST`     | VPS IP                                                   |
+| `DEPLOY_USER`     | SSH 用户名                                               |
+| `DEPLOY_SSH_KEY`  | SSH **私钥全文**（不是登录密码）                         |
+| `DEPLOY_PASSWORD` | 可选：SSH 登录密码（与私钥二选一）                       |
+| `DEPLOY_PATH`     | 可选；服务器仓库路径，默认 `$HOME/AgentProjects/ai-todo` |
 
 验证：
 
@@ -265,16 +265,16 @@ docker compose -f apps/api/docker-compose.prod.yml exec postgres \
 
 ## 九、故障排查
 
-| 现象 | 可能原因 | 处理 |
-|------|----------|------|
-| Docker build pip 失败 | PyPI 网络超时 | 使用腾讯云镜像，见 deploy.md |
-| `password authentication failed` | `.env` 密码与 Postgres 卷不一致 | `python3 scripts/rotate_postgres_password.py`，见 deploy.md |
-| health 502 | gateway 未启动或 upstream 端口错 | 检查 `:8082` 与 gateway conf |
-| 微信登录 503 | 未配 AppID/Secret | 检查 `.env.production` |
-| 微信登录 500 / FK `identities_user_id_fkey` | 先写 `users` 再写 `identities` 失败或脏数据 | 见下方「微信登录 FK 修复」；部署最新 API 后重试 |
-| 微信登录 500 `DATABASE_ERROR` | 未跑迁移 | `docker compose ... exec api alembic upgrade head`；确认 `/v1/health/db` 中 `identitiesTable: true` |
-| 微信登录 500 其他 | AppID 与小程序不一致、库异常 | 对齐 AppID/Secret；查 API 日志 |
-| 小程序 request 失败 | 合法域名未配 | 公众平台填 `xingxiaolin.cn` |
+| 现象                                        | 可能原因                                    | 处理                                                                                                |
+| ------------------------------------------- | ------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| Docker build pip 失败                       | PyPI 网络超时                               | 使用腾讯云镜像，见 deploy.md                                                                        |
+| `password authentication failed`            | `.env` 密码与 Postgres 卷不一致             | `python3 scripts/rotate_postgres_password.py`，见 deploy.md                                         |
+| health 502                                  | gateway 未启动或 upstream 端口错            | 检查 `:8082` 与 gateway conf                                                                        |
+| 微信登录 503                                | 未配 AppID/Secret                           | 检查 `.env.production`                                                                              |
+| 微信登录 500 / FK `identities_user_id_fkey` | 先写 `users` 再写 `identities` 失败或脏数据 | 见下方「微信登录 FK 修复」；部署最新 API 后重试                                                     |
+| 微信登录 500 `SYS_DB_UNAVAILABLE`           | 未跑迁移                                    | `docker compose ... exec api alembic upgrade head`；确认 `/v1/health/db` 中 `identitiesTable: true` |
+| 微信登录 500 其他                           | AppID 与小程序不一致、库异常                | 对齐 AppID/Secret；查 API 日志                                                                      |
+| 小程序 request 失败                         | 合法域名未配                                | 公众平台填 `xingxiaolin.cn`                                                                         |
 
 ### 微信登录 FK 修复（`identities_user_id_fkey`）
 
@@ -307,9 +307,9 @@ docker compose -f docker-compose.prod.yml --env-file .env.production up -d api
 
 ## 十、相关文件
 
-| 文件 | 作用 |
-|------|------|
-| `apps/api/Dockerfile` | API 镜像（支持 `PIP_INDEX_URL`） |
-| `apps/api/docker-compose.prod.yml` | API + Postgres，宿主机 :8082 |
-| `apps/api/deploy/remote-deploy.sh` | VPS 部署脚本 |
-| `xiaolin-gateway/app/ai-todo/` | HTTPS 与反代配置 |
+| 文件                               | 作用                             |
+| ---------------------------------- | -------------------------------- |
+| `apps/api/Dockerfile`              | API 镜像（支持 `PIP_INDEX_URL`） |
+| `apps/api/docker-compose.prod.yml` | API + Postgres，宿主机 :8082     |
+| `apps/api/deploy/remote-deploy.sh` | VPS 部署脚本                     |
+| `xiaolin-gateway/app/ai-todo/`     | HTTPS 与反代配置                 |

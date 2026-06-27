@@ -119,11 +119,11 @@ ai-todo reminder delete rem_xxx --json
 
 邮件 Agent、工单 Agent 等外部系统写入提醒时，应使用 **`source` + `externalId`** 作为稳定业务键，而不是仅靠标题去重。
 
-| 字段 | 含义 |
-|------|------|
-| `source` | 业务来源 slug，如 `email`、`jira`、`wechat`（**不是** HTTP 头 `x-client-source`） |
-| `externalId` | 外部系统主键，如邮件 `Message-ID`、工单 `PROJ-123` |
-| `sourceMeta` | 可选 JSON，仅展示/审计（`subject`、`from` 等）；服务端不做 NL 解析 |
+| 字段         | 含义                                                                              |
+| ------------ | --------------------------------------------------------------------------------- |
+| `source`     | 业务来源 slug，如 `email`、`jira`、`wechat`（**不是** HTTP 头 `x-client-source`） |
+| `externalId` | 外部系统主键，如邮件 `Message-ID`、工单 `PROJ-123`                                |
+| `sourceMeta` | 可选 JSON，仅展示/审计（`subject`、`from` 等）；服务端不做 NL 解析                |
 
 ### 推荐流程
 
@@ -166,39 +166,39 @@ ai-todo reminder list --source email --status pending --json
 
 ### HTTP 对照
 
-| CLI | API |
-|-----|-----|
-| `reminder find --source S --external-id E` | `GET /v1/reminders/lookup?source=S&externalId=E` |
-| `reminder list --source S` | `GET /v1/reminders?source=S` |
-| `create … --source S --external-id E` | `POST /v1/reminders` body 含 `source`、`external_id` |
+| CLI                                        | API                                                  |
+| ------------------------------------------ | ---------------------------------------------------- |
+| `reminder find --source S --external-id E` | `GET /v1/reminders/lookup?source=S&externalId=E`     |
+| `reminder list --source S`                 | `GET /v1/reminders?source=S`                         |
+| `create … --source S --external-id E`      | `POST /v1/reminders` body 含 `source`、`external_id` |
 
 工具规格见 `@ai-todo/agent-protocol`（`AI_TODO_AGENT_TOOLS`）或 `packages/agent-protocol/dist/agent-tools.json`。
 
 ## 命令索引
 
-| 意图 | 命令 |
-|------|------|
-| CLI / API 版本 | `ai-todo version --json`；API：`GET /v1/health` → `apiVersion` |
-| 当前用户 | `ai-todo whoami --json` |
-| 今日聚合 | `ai-todo today --json`（未完成类提醒 + 今日日程） |
-| 创建提醒 | `ai-todo reminder create --title … [--due …] [--contact …] [--source …] [--external-id …]` |
-| 按来源查找 | `ai-todo reminder find --source … --external-id …` |
-| 提醒列表 | `ai-todo reminder list [--status pending\|in_progress\|completed\|cancelled] [--source …]` |
-| 查看提醒 | `ai-todo reminder show <id>` |
-| 更新提醒 | `ai-todo reminder update <id> … [--status pending\|in_progress\|completed]` 或 `--source … --external-id …` |
-| 标为处理中 | `ai-todo reminder update <id> --status in_progress` |
-| 完成提醒 | `ai-todo reminder done <id>` 或 `--source … --external-id …` |
-| 改期提醒 | `ai-todo reminder reschedule <id> --due …` 或 `--source … --external-id …` |
-| 删除提醒 | `ai-todo reminder delete <id>` 或 `--source … --external-id …` |
-| 创建日程 | `ai-todo calendar add --title … --start …` |
-| 更新日程 | `ai-todo calendar update <id> [--title …] [--start …]` |
-| 今日日程 | `ai-todo calendar today --json` |
-| 联系人列表 | `ai-todo contact list --json` |
-| 搜索联系人 | `ai-todo contact search "<q>"` |
-| 查看联系人 | `ai-todo contact show <id_or_handle>` |
-| 创建联系人 | `ai-todo contact add "<name>" [--handle …] --email …` |
-| 更新联系人 | `ai-todo contact update <id_or_handle> [--handle …] [--name …] [--email …]` |
-| 删除联系人 | `ai-todo contact delete <id_or_handle>` |
+| 意图           | 命令                                                                                                        |
+| -------------- | ----------------------------------------------------------------------------------------------------------- |
+| CLI / API 版本 | `ai-todo version --json`；API：`GET /v1/health` → `apiVersion`                                              |
+| 当前用户       | `ai-todo whoami --json`                                                                                     |
+| 今日聚合       | `ai-todo today --json`（未完成类提醒 + 今日日程）                                                           |
+| 创建提醒       | `ai-todo reminder create --title … [--due …] [--contact …] [--source …] [--external-id …]`                  |
+| 按来源查找     | `ai-todo reminder find --source … --external-id …`                                                          |
+| 提醒列表       | `ai-todo reminder list [--status pending\|in_progress\|completed\|cancelled] [--source …]`                  |
+| 查看提醒       | `ai-todo reminder show <id>`                                                                                |
+| 更新提醒       | `ai-todo reminder update <id> … [--status pending\|in_progress\|completed]` 或 `--source … --external-id …` |
+| 标为处理中     | `ai-todo reminder update <id> --status in_progress`                                                         |
+| 完成提醒       | `ai-todo reminder done <id>` 或 `--source … --external-id …`                                                |
+| 改期提醒       | `ai-todo reminder reschedule <id> --due …` 或 `--source … --external-id …`                                  |
+| 删除提醒       | `ai-todo reminder delete <id>` 或 `--source … --external-id …`                                              |
+| 创建日程       | `ai-todo calendar add --title … --start …`                                                                  |
+| 更新日程       | `ai-todo calendar update <id> [--title …] [--start …]`                                                      |
+| 今日日程       | `ai-todo calendar today --json`                                                                             |
+| 联系人列表     | `ai-todo contact list --json`                                                                               |
+| 搜索联系人     | `ai-todo contact search "<q>"`                                                                              |
+| 查看联系人     | `ai-todo contact show <id_or_handle>`                                                                       |
+| 创建联系人     | `ai-todo contact add "<name>" [--handle …] --email …`                                                       |
+| 更新联系人     | `ai-todo contact update <id_or_handle> [--handle …] [--name …] [--email …]`                                 |
+| 删除联系人     | `ai-todo contact delete <id_or_handle>`                                                                     |
 
 完整列表：`ai-todo help`
 
@@ -215,21 +215,28 @@ ai-todo reminder list --source email --status pending --json
 ```json
 {
   "ok": false,
-  "error": { "code": "NOT_FOUND", "message": "..." }
+  "error": { "code": "BIZ_NOT_FOUND", "message": "..." }
 }
 ```
 
-常见 `error.code`：`VALIDATION_ERROR`、`NOT_FOUND`、`CONTACT_NOT_FOUND`。
+常见 `error.code`（优先用前缀码；legacy 字符串见 `api-design.md` §错误码）：
+
+| code                    | 场景                                      |
+| ----------------------- | ----------------------------------------- |
+| `VAL_INVALID_INPUT`     | 参数错误；`sourceMeta` 必须是 JSON object |
+| `BIZ_NOT_FOUND`         | id 错误或已删除                           |
+| `BIZ_CONTACT_NOT_FOUND` | `--contact` 无效                          |
+| `AUTH_INVALID_TOKEN`    | 未配置 token 或已失效                     |
 
 ## MCP 接入（v0.6.2+）
 
 支持 **stdio MCP** 的宿主（不限于 Cursor：Claude Desktop、VS Code MCP、Windsurf 等）可注册 `ai-todo` server，由模型调用具名 tool，无需拼 shell。Server 内部仍执行 `ai-todo --json`，**鉴权与 CLI 相同**（PAT / `settings.json`）。
 
-| 场景 | 建议 |
-|------|------|
-| 宿主已配置 MCP，且任务在 P0 工具内 | 用 MCP tools |
-| 无 MCP、脚本/CI、需完整子命令 | 用 CLI + `--json` |
-| OpenClaw / Claude Code 等仅 Skill | 用本指南 + `skills/ai-todo/SKILL.md` |
+| 场景                               | 建议                                 |
+| ---------------------------------- | ------------------------------------ |
+| 宿主已配置 MCP，且任务在 P0 工具内 | 用 MCP tools                         |
+| 无 MCP、脚本/CI、需完整子命令      | 用 CLI + `--json`                    |
+| OpenClaw / Claude Code 等仅 Skill  | 用本指南 + `skills/ai-todo/SKILL.md` |
 
 安装与各宿主配置：[mcp-setup.md](./mcp-setup.md)。终端用户：`npx -y @xiaolinstar/ai-todo-mcp`；仓库贡献者：`pnpm mcp:build`。
 
@@ -238,7 +245,10 @@ ai-todo reminder list --source email --status pending --json
 TypeScript 导出见 `@ai-todo/agent-protocol`：
 
 ```ts
-import { AI_TODO_AGENT_TOOLS, AI_TODO_AGENT_GUIDELINES } from "@ai-todo/agent-protocol";
+import {
+  AI_TODO_AGENT_TOOLS,
+  AI_TODO_AGENT_GUIDELINES,
+} from "@ai-todo/agent-protocol";
 ```
 
 构建后 JSON 导出：`packages/agent-protocol/dist/agent-tools.json`（`pnpm --filter @ai-todo/agent-protocol build`）。
