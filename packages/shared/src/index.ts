@@ -2,14 +2,19 @@ export type EntityId = string;
 
 export {
   AuthErrorCode,
+  BizErrorCode,
   isAuthFailureCode,
+  isContactNotFoundError,
   isInvalidCursorError,
+  isNotFoundError,
   isUnauthorizedError,
   isValidationError,
   matchesAuthErrorCode,
+  matchesBizErrorCode,
   matchesValErrorCode,
   ValErrorCode,
   type AuthErrorCodeValue,
+  type BizErrorCodeValue,
   type ValErrorCodeValue,
 } from "./errors";
 

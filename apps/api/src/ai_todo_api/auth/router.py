@@ -87,13 +87,7 @@ def dev_issue_pat(
     if not settings.allow_dev_auth:
         raise HTTPException(
             status_code=404,
-            detail={
-                "ok": False,
-                "error": {
-                    "code": "NOT_FOUND",
-                    "message": "Dev PAT issuance is disabled.",
-                },
-            },
+            detail=error_detail(ErrorCode.BIZ_NOT_FOUND, "Dev PAT issuance is disabled."),
         )
 
     user = ensure_dev_user(

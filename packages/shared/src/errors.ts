@@ -78,3 +78,51 @@ export function isValidationError(wire: string | undefined): boolean {
 export function isInvalidCursorError(wire: string | undefined): boolean {
   return matchesValErrorCode(wire, ValErrorCode.invalidCursor);
 }
+
+export const BizErrorCode = {
+  notFound: "BIZ_NOT_FOUND",
+  contactNotFound: "BIZ_CONTACT_NOT_FOUND",
+  idempotencyConflict: "BIZ_IDEMPOTENCY_CONFLICT",
+  reminderInactive: "BIZ_REMINDER_INACTIVE",
+  reminderNoSchedule: "BIZ_REMINDER_NO_SCHEDULE",
+  calendarEventInactive: "BIZ_CALENDAR_EVENT_INACTIVE",
+  calendarEventNoSchedule: "BIZ_CALENDAR_EVENT_NO_SCHEDULE",
+  wechatOpenidMissing: "BIZ_WECHAT_OPENID_MISSING",
+  invalidTarget: "BIZ_INVALID_TARGET",
+} as const;
+
+export type BizErrorCodeValue =
+  (typeof BizErrorCode)[keyof typeof BizErrorCode];
+
+const BIZ_LEGACY_ALIASES: Record<string, BizErrorCodeValue> = {
+  NOT_FOUND: BizErrorCode.notFound,
+  CONTACT_NOT_FOUND: BizErrorCode.contactNotFound,
+  IDEMPOTENCY_CONFLICT: BizErrorCode.idempotencyConflict,
+  REMINDER_INACTIVE: BizErrorCode.reminderInactive,
+  REMINDER_NO_SCHEDULE: BizErrorCode.reminderNoSchedule,
+  CALENDAR_EVENT_INACTIVE: BizErrorCode.calendarEventInactive,
+  CALENDAR_EVENT_NO_SCHEDULE: BizErrorCode.calendarEventNoSchedule,
+  WECHAT_OPENID_MISSING: BizErrorCode.wechatOpenidMissing,
+  INVALID_TARGET: BizErrorCode.invalidTarget,
+};
+
+export function matchesBizErrorCode(
+  wire: string | undefined,
+  canonical: BizErrorCodeValue,
+): boolean {
+  if (!wire) {
+    return false;
+  }
+  if (wire === canonical) {
+    return true;
+  }
+  return BIZ_LEGACY_ALIASES[wire] === canonical;
+}
+
+export function isNotFoundError(wire: string | undefined): boolean {
+  return matchesBizErrorCode(wire, BizErrorCode.notFound);
+}
+
+export function isContactNotFoundError(wire: string | undefined): boolean {
+  return matchesBizErrorCode(wire, BizErrorCode.contactNotFound);
+}

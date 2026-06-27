@@ -2,7 +2,8 @@
 
 Batch 2+: AUTH wire responses use prefixed :class:`ErrorCode` values.
 Batch 3+: VAL wire responses use prefixed :class:`ErrorCode` values.
-Other families still emit legacy codes until batches 4–5.
+Batch 4+: BIZ wire responses use prefixed :class:`ErrorCode` values.
+SYS family still emits legacy codes until batch 5.
 """
 
 from enum import StrEnum

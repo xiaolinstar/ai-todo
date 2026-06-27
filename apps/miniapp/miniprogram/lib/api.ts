@@ -1,5 +1,11 @@
 import { getConfig } from './config';
-import { AuthErrorCode, isUnauthorizedError, matchesValErrorCode, ValErrorCode } from './error-codes';
+import {
+  AuthErrorCode,
+  BizErrorCode,
+  isUnauthorizedError,
+  matchesValErrorCode,
+  ValErrorCode,
+} from './error-codes';
 import { silentWechatReLogin } from './relogin';
 
 export interface ApiError {
@@ -237,7 +243,7 @@ function parseApiErrorBody(body: unknown, statusCode: number): ApiResponse<never
   if (statusCode === 404) {
     return {
       ok: false,
-      error: { code: 'NOT_FOUND', message: '接口不存在或资源未找到' },
+      error: { code: BizErrorCode.notFound, message: '接口不存在或资源未找到' },
     };
   }
   return null;

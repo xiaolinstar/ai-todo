@@ -247,7 +247,7 @@ def test_sync_reminder_target_skips_delivery_when_completed(client):
     items = status_response.json()["data"]["items"]
     assert len(items) == 1
     assert items[0]["status"] == "skipped"
-    assert items[0]["errorCode"] == "REMINDER_INACTIVE"
+    assert items[0]["errorCode"] == "BIZ_REMINDER_INACTIVE"
 
 
 def test_wechat_subscription_accept_creates_calendar_delivery(client):
@@ -343,7 +343,7 @@ def test_sync_calendar_event_target_skips_delivery_when_deleted(client):
     items = status_response.json()["data"]["items"]
     assert len(items) == 1
     assert items[0]["status"] == "skipped"
-    assert items[0]["errorCode"] == "CALENDAR_EVENT_INACTIVE"
+    assert items[0]["errorCode"] == "BIZ_CALENDAR_EVENT_INACTIVE"
     assert items[0]["targetTitle"] == "删除日程"
 
 

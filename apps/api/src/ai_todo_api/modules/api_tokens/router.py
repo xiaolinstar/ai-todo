@@ -121,7 +121,7 @@ def revoke_api_token(
             revoked_id = ApiTokenService(db).revoke_pat(auth.user_id, token_id)
         except ApiTokenNotFoundError:
             body = ErrorResponse(
-                error=ApiError(code="NOT_FOUND", message=f"API token {token_id} was not found."),
+                error=ApiError(code=wire_code(ErrorCode.BIZ_NOT_FOUND), message=f"API token {token_id} was not found."),
             )
             return JSONResponse(status_code=404, content=body.model_dump(by_alias=True))
 

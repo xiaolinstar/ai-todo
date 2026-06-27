@@ -10,6 +10,7 @@ from ai_todo_api.auth.wechat_service import WECHAT_PROVIDER
 from ai_todo_api.common.quiet_hours import is_in_quiet_hours
 from ai_todo_api.common.time import now_utc
 from ai_todo_api.config import settings
+from ai_todo_api.errors import ErrorCode, wire_code
 from ai_todo_api.db.models import (
     CalendarEventModel,
     IdentityModel,
@@ -250,7 +251,7 @@ class NotificationDeliveryService:
                 if delivery.status in {STATUS_PENDING, STATUS_SENDING, STATUS_FAILED, STATUS_NO_QUOTA}:
                     self._mark_delivery_skipped(
                         delivery,
-                        code="REMINDER_INACTIVE",
+                        code=wire_code(ErrorCode.BIZ_REMINDER_INACTIVE),
                         message="Reminder was completed or deleted.",
                         now=now,
                     )
@@ -263,7 +264,7 @@ class NotificationDeliveryService:
                 if delivery.status in {STATUS_PENDING, STATUS_SENDING, STATUS_FAILED, STATUS_NO_QUOTA}:
                     self._mark_delivery_skipped(
                         delivery,
-                        code="REMINDER_NO_SCHEDULE",
+                        code=wire_code(ErrorCode.BIZ_REMINDER_NO_SCHEDULE),
                         message="Reminder no longer has a due or reminder time.",
                         now=now,
                     )
@@ -295,7 +296,7 @@ class NotificationDeliveryService:
                 if delivery.status in {STATUS_PENDING, STATUS_SENDING, STATUS_FAILED, STATUS_NO_QUOTA}:
                     self._mark_delivery_skipped(
                         delivery,
-                        code="CALENDAR_EVENT_INACTIVE",
+                        code=wire_code(ErrorCode.BIZ_CALENDAR_EVENT_INACTIVE),
                         message="Calendar event was deleted.",
                         now=now,
                     )
@@ -308,7 +309,7 @@ class NotificationDeliveryService:
                 if delivery.status in {STATUS_PENDING, STATUS_SENDING, STATUS_FAILED, STATUS_NO_QUOTA}:
                     self._mark_delivery_skipped(
                         delivery,
-                        code="CALENDAR_EVENT_NO_SCHEDULE",
+                        code=wire_code(ErrorCode.BIZ_CALENDAR_EVENT_NO_SCHEDULE),
                         message="Calendar event no longer has a start time.",
                         now=now,
                     )

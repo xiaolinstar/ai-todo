@@ -48,7 +48,7 @@ def _sync_calendar_notifications(db: Session, user_id: str, event_id: str) -> No
 
 def _not_found(event_id: str) -> JSONResponse:
     body = ErrorResponse(
-        error=ApiError(code="NOT_FOUND", message=f"Calendar event {event_id} was not found."),
+        error=ApiError(code=wire_code(ErrorCode.BIZ_NOT_FOUND), message=f"Calendar event {event_id} was not found."),
     )
     return JSONResponse(status_code=404, content=body.model_dump(by_alias=True))
 
@@ -60,7 +60,7 @@ def _validation_error(message: str) -> JSONResponse:
 
 def _contact_not_found(contact_id: str) -> JSONResponse:
     body = ErrorResponse(
-        error=ApiError(code="CONTACT_NOT_FOUND", message=f"Contact {contact_id} was not found."),
+        error=ApiError(code=wire_code(ErrorCode.BIZ_CONTACT_NOT_FOUND), message=f"Contact {contact_id} was not found."),
     )
     return JSONResponse(status_code=404, content=body.model_dump(by_alias=True))
 

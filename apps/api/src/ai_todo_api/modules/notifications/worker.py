@@ -6,6 +6,7 @@ from zoneinfo import ZoneInfo
 from sqlalchemy import select
 
 from ai_todo_api.config import settings
+from ai_todo_api.errors import ErrorCode, wire_code
 from ai_todo_api.db.models import CalendarEventModel, NotificationDeliveryModel, ReminderModel
 from ai_todo_api.db.session import SessionLocal
 from ai_todo_api.modules.notifications.service import (
@@ -58,7 +59,7 @@ def _process_delivery(delivery_id: str) -> None:
         if not openid:
             dispatcher.mark_skipped(
                 delivery,
-                code="WECHAT_OPENID_MISSING",
+                code=wire_code(ErrorCode.BIZ_WECHAT_OPENID_MISSING),
                 message="User has no WeChat identity.",
             )
             return
@@ -70,7 +71,11 @@ def _process_delivery(delivery_id: str) -> None:
         try:
             page, data = _build_wechat_message(session, delivery)
         except ValueError as exc:
-            dispatcher.mark_skipped(delivery, code="INVALID_TARGET", message=str(exc))
+            dispatcher.mark_skipped(
+                delivery,
+                code=wire_code(ErrorCode.BIZ_INVALID_TARGET),
+                message=str(exc),
+            )
             return
 
         try:

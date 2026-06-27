@@ -36,7 +36,7 @@ def _validation_error(message: str) -> JSONResponse:
 
 def _target_not_found(target_id: str) -> JSONResponse:
     body = ErrorResponse(
-        error=ApiError(code="NOT_FOUND", message=f"Notification target {target_id} was not found."),
+        error=ApiError(code=wire_code(ErrorCode.BIZ_NOT_FOUND), message=f"Notification target {target_id} was not found."),
     )
     return JSONResponse(status_code=404, content=body.model_dump(by_alias=True))
 

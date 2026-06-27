@@ -51,6 +51,12 @@ def test_matches_error_code_accepts_val_legacy_and_canonical() -> None:
     assert matches_error_code("INVALID_CURSOR", ErrorCode.VAL_INVALID_CURSOR)
 
 
+def test_matches_error_code_accepts_biz_legacy_and_canonical() -> None:
+    assert matches_error_code("NOT_FOUND", ErrorCode.BIZ_NOT_FOUND)
+    assert matches_error_code("BIZ_CONTACT_NOT_FOUND", ErrorCode.BIZ_CONTACT_NOT_FOUND)
+    assert matches_error_code("IDEMPOTENCY_CONFLICT", ErrorCode.BIZ_IDEMPOTENCY_CONFLICT)
+
+
 def test_all_legacy_codes_from_p0_audit_are_registered() -> None:
     expected = {
         "UNAUTHORIZED",

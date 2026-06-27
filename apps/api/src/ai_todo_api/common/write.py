@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from ai_todo_api.audit.service import CommandLogService
 from ai_todo_api.auth.context import AuthContext
 from ai_todo_api.common.idempotency import IdempotencyConflictError, IdempotencyStore
+from ai_todo_api.errors import ErrorCode, wire_code
 from ai_todo_api.schemas import ApiError, ErrorResponse
 
 
@@ -31,7 +32,7 @@ def run_write(
             )
         except IdempotencyConflictError as error:
             body = ErrorResponse(
-                error=ApiError(code="IDEMPOTENCY_CONFLICT", message=str(error)),
+                error=ApiError(code=wire_code(ErrorCode.BIZ_IDEMPOTENCY_CONFLICT), message=str(error)),
             )
             return JSONResponse(status_code=409, content=body.model_dump(by_alias=True))
 

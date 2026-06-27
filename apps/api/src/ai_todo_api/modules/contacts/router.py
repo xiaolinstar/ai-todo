@@ -91,7 +91,7 @@ def get_contact(
         contact = contact_service.get(contact_id)
     except ContactNotFoundError:
         body = ErrorResponse(
-            error=ApiError(code="CONTACT_NOT_FOUND", message=f"Contact {contact_id} was not found."),
+            error=ApiError(code=wire_code(ErrorCode.BIZ_CONTACT_NOT_FOUND), message=f"Contact {contact_id} was not found."),
         )
         return JSONResponse(status_code=404, content=body.model_dump(by_alias=True))
 
@@ -115,7 +115,7 @@ def update_contact(
             contact = contact_service.update(contact_id, input_data)
         except ContactNotFoundError:
             body = ErrorResponse(
-                error=ApiError(code="CONTACT_NOT_FOUND", message=f"Contact {contact_id} was not found."),
+                error=ApiError(code=wire_code(ErrorCode.BIZ_CONTACT_NOT_FOUND), message=f"Contact {contact_id} was not found."),
             )
             return JSONResponse(status_code=404, content=body.model_dump(by_alias=True))
         except ValueError as error:
@@ -151,7 +151,7 @@ def delete_contact(
             deleted_id = contact_service.delete(contact_id)
         except ContactNotFoundError:
             body = ErrorResponse(
-                error=ApiError(code="CONTACT_NOT_FOUND", message=f"Contact {contact_id} was not found."),
+                error=ApiError(code=wire_code(ErrorCode.BIZ_CONTACT_NOT_FOUND), message=f"Contact {contact_id} was not found."),
             )
             return JSONResponse(status_code=404, content=body.model_dump(by_alias=True))
         body = ApiResponse(data=DeleteContactResult(id=deleted_id))

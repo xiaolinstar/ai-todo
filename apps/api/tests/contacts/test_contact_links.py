@@ -100,7 +100,7 @@ def test_reminder_create_with_unknown_contact_returns_404(client: TestClient) ->
         json={"title": "无效联系人", "contactIds": ["ct_missing"]},
     )
     assert response.status_code == 404
-    assert response.json()["error"]["code"] == "CONTACT_NOT_FOUND"
+    assert response.json()["error"]["code"] == "BIZ_CONTACT_NOT_FOUND"
 
 
 def test_calendar_event_with_contact(client: TestClient) -> None:
