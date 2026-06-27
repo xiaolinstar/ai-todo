@@ -20,6 +20,9 @@ def test_response_includes_request_id(client: TestClient) -> None:
 
     assert response.status_code == 200
     assert response.headers["X-Request-ID"] == "req_test_123"
+    body = response.json()
+    assert body["requestId"] == "req_test_123"
+    assert body["traceId"] == "req_test_123"
 
 
 def test_metrics_endpoint_exposes_prometheus_text(client: TestClient) -> None:
