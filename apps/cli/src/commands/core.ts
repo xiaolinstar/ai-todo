@@ -3,6 +3,7 @@ import { handleApi, persistApiUrl, readFlagValue } from "../context";
 import { printAuthHint, resolveTokenSource } from "../auth";
 import { clearToken, resolveApiUrl, saveSettings, settingsPath } from "../settings";
 import { getCliVersion } from "../version";
+import { AuthErrorCode } from "@ai-todo/shared";
 
 function readLoginUrl(argv: string[]): string | undefined {
   return readFlagValue(argv, "--url") ?? readFlagValue(argv, "--api-url");
@@ -192,7 +193,7 @@ export async function runWhoami(ctx: CliContext): Promise<void> {
           {
             ok: false,
             error: {
-              code: "UNAUTHORIZED",
+              code: AuthErrorCode.invalidToken,
               message: "No API token configured."
             }
           },

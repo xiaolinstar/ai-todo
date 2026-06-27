@@ -1,8 +1,20 @@
 export type EntityId = string;
 
+export {
+  AuthErrorCode,
+  isAuthFailureCode,
+  isUnauthorizedError,
+  matchesAuthErrorCode,
+  type AuthErrorCodeValue,
+} from "./errors";
+
 export type ClientSource = "miniapp" | "cli" | "agent" | "api";
 
-export type ReminderStatus = "pending" | "in_progress" | "completed" | "cancelled";
+export type ReminderStatus =
+  | "pending"
+  | "in_progress"
+  | "completed"
+  | "cancelled";
 
 export type ContactMethodType = "email" | "phone" | "wechat" | "other";
 

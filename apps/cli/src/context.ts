@@ -1,5 +1,6 @@
 import { AiTodoClient } from "@ai-todo/api-client";
 import type { ApiResponse } from "@ai-todo/shared";
+import { isUnauthorizedError } from "@ai-todo/shared";
 
 import { printAuthHint, resolveTokenSource } from "./auth";
 import { loadSettings, resolveApiUrl, saveSettings } from "./settings";
@@ -146,7 +147,7 @@ export async function handleApi<T>(
   if (!response.ok) {
     const code = response.error.code ? `[${response.error.code}] ` : "";
     console.error(`${code}${response.error.message}`);
-    if (response.error.code === "UNAUTHORIZED") {
+    if (isUnauthorizedError(response.error.code)) {
       printAuthHint("invalid");
     }
     process.exitCode = 1;

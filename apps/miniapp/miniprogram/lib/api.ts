@@ -1,4 +1,5 @@
 import { getConfig } from './config';
+import { AuthErrorCode, isUnauthorizedError } from './error-codes';
 import { silentWechatReLogin } from './relogin';
 
 export interface ApiError {
@@ -188,7 +189,7 @@ function parseApiErrorBody(body: unknown, statusCode: number): ApiResponse<never
       ? {
           ok: false as const,
           error: {
-            code: 'UNAUTHORIZED',
+            code: AuthErrorCode.invalidToken,
             message: '请先登录后继续使用',
           },
         }
@@ -200,7 +201,11 @@ function parseApiErrorBody(body: unknown, statusCode: number): ApiResponse<never
   const payload = body as Record<string, unknown>;
   if (payload.ok === false && payload.error) {
     const error = payload.error as Record<string, unknown>;
-    if (statusCode === 401 || statusCode === 403 || error.code === 'UNAUTHORIZED') {
+    if (
+      statusCode === 401 ||
+      statusCode === 403 ||
+      isUnauthorizedError(typeof error.code === 'string' ? error.code : undefined)
+    ) {
       return authError;
     }
     return body as ApiResponse<never>;
@@ -210,7 +215,11 @@ function parseApiErrorBody(body: unknown, statusCode: number): ApiResponse<never
     const nested = detail as Record<string, unknown>;
     if (nested.ok === false && nested.error) {
       const error = nested.error as Record<string, unknown>;
-      if (statusCode === 401 || statusCode === 403 || error.code === 'UNAUTHORIZED') {
+      if (
+      statusCode === 401 ||
+      statusCode === 403 ||
+      isUnauthorizedError(typeof error.code === 'string' ? error.code : undefined)
+    ) {
         return authError;
       }
       return nested as unknown as ApiResponse<never>;
@@ -281,7 +290,7 @@ export function request<T>(
             path !== '/v1/auth/wechat/login' &&
             getConfig().token &&
             !response.ok &&
-            response.error?.code === 'UNAUTHORIZED'
+            isUnauthorizedError(response.error?.code)
           ) {
             silentWechatReLogin().then((recovered) => {
               if (recovered) {
