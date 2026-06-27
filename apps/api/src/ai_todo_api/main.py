@@ -95,7 +95,11 @@ async def sqlalchemy_exception_handler(_: Request, exc: SQLAlchemyError) -> JSON
     message = "Database error."
     if "username" in str(exc).lower() or "identities" in str(exc).lower():
         message = "Database schema is out of date. Run alembic upgrade head on the API host."
-    return _error_response(status_code=500, code="DATABASE_ERROR", message=message)
+    return _error_response(
+        status_code=500,
+        code=wire_code(ErrorCode.SYS_DB_UNAVAILABLE),
+        message=message,
+    )
 
 
 @app.exception_handler(HTTPException)
@@ -106,7 +110,7 @@ async def http_exception_handler(_: object, exc: HTTPException) -> JSONResponse:
         status_code=exc.status_code,
         content={
             "ok": False,
-            "error": {"code": "HTTP_ERROR", "message": str(exc.detail)},
+            "error": {"code": wire_code(ErrorCode.SYS_HTTP_ERROR), "message": str(exc.detail)},
         },
     )
 
@@ -118,7 +122,7 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
     logger.exception("unhandled error")
     return _error_response(
         status_code=500,
-        code="INTERNAL_ERROR",
+        code=wire_code(ErrorCode.SYS_INTERNAL_ERROR),
         message="Unexpected server error.",
     )
 

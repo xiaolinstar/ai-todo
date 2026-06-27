@@ -39,7 +39,7 @@ def test_wechat_login_requires_server_config(client: TestClient, monkeypatch) ->
 
     response = client.post("/v1/auth/wechat/login", json={"code": "code_1"})
     assert response.status_code == 503
-    assert response.json()["error"]["code"] == "WECHAT_NOT_CONFIGURED"
+    assert response.json()["error"]["code"] == "SYS_WECHAT_NOT_CONFIGURED"
 
 
 def test_wechat_login_dev_fallback_without_wechat_config(

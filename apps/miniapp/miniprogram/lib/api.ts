@@ -4,6 +4,7 @@ import {
   BizErrorCode,
   isUnauthorizedError,
   matchesValErrorCode,
+  SysErrorCode,
   ValErrorCode,
 } from './error-codes';
 import { silentWechatReLogin } from './relogin';
@@ -237,7 +238,7 @@ function parseApiErrorBody(body: unknown, statusCode: number): ApiResponse<never
   if (typeof detail === 'string' && detail.trim()) {
     return {
       ok: false,
-      error: { code: 'HTTP_ERROR', message: detail },
+      error: { code: SysErrorCode.httpError, message: detail },
     };
   }
   if (statusCode === 404) {
@@ -321,7 +322,7 @@ export function request<T>(
           }
           finish({
             ok: false,
-            error: { code: 'HTTP_ERROR', message: `HTTP ${res.statusCode}` },
+            error: { code: SysErrorCode.httpError, message: `HTTP ${res.statusCode}` },
           });
           return;
         }

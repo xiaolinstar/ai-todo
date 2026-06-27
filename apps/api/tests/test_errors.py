@@ -57,6 +57,12 @@ def test_matches_error_code_accepts_biz_legacy_and_canonical() -> None:
     assert matches_error_code("IDEMPOTENCY_CONFLICT", ErrorCode.BIZ_IDEMPOTENCY_CONFLICT)
 
 
+def test_matches_error_code_accepts_sys_legacy_and_canonical() -> None:
+    assert matches_error_code("DATABASE_ERROR", ErrorCode.SYS_DB_UNAVAILABLE)
+    assert matches_error_code("SYS_INTERNAL_ERROR", ErrorCode.SYS_INTERNAL_ERROR)
+    assert matches_error_code("HTTP_ERROR", ErrorCode.SYS_HTTP_ERROR)
+
+
 def test_all_legacy_codes_from_p0_audit_are_registered() -> None:
     expected = {
         "UNAUTHORIZED",

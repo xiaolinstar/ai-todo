@@ -31,13 +31,10 @@ def login_with_wechat_code(session: Session, code: str) -> WechatLoginResult:
             return _login_with_dev_user(session)
         raise HTTPException(
             status_code=503,
-            detail={
-                "ok": False,
-                "error": {
-                    "code": "WECHAT_NOT_CONFIGURED",
-                    "message": "WeChat login is not configured on the server.",
-                },
-            },
+            detail=error_detail(
+                ErrorCode.SYS_WECHAT_NOT_CONFIGURED,
+                "WeChat login is not configured on the server.",
+            ),
         )
 
     code = code.strip()
@@ -173,13 +170,10 @@ def _get_or_create_user(
         if user is None:
             raise HTTPException(
                 status_code=500,
-                detail={
-                    "ok": False,
-                    "error": {
-                        "code": "INTERNAL_ERROR",
-                        "message": "Linked user record is missing.",
-                    },
-                },
+                detail=error_detail(
+                    ErrorCode.SYS_INTERNAL_ERROR,
+                    "Linked user record is missing.",
+                ),
             )
         return user
 
@@ -220,13 +214,7 @@ def _integrity_http_error(exc: IntegrityError) -> HTTPException:
         message = "Failed to create WeChat user. Please retry."
     return HTTPException(
         status_code=500,
-        detail={
-            "ok": False,
-            "error": {
-                "code": "INTERNAL_ERROR",
-                "message": message,
-            },
-        },
+        detail=error_detail(ErrorCode.SYS_INTERNAL_ERROR, message),
     )
 
 
@@ -237,8 +225,5 @@ def _database_http_error(exc: SQLAlchemyError) -> HTTPException:
         message = "Database schema is out of date. Run alembic upgrade head on the API host."
     return HTTPException(
         status_code=500,
-        detail={
-            "ok": False,
-            "error": {"code": "DATABASE_ERROR", "message": message},
-        },
+        detail=error_detail(ErrorCode.SYS_DB_UNAVAILABLE, message),
     )

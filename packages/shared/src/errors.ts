@@ -126,3 +126,37 @@ export function isNotFoundError(wire: string | undefined): boolean {
 export function isContactNotFoundError(wire: string | undefined): boolean {
   return matchesBizErrorCode(wire, BizErrorCode.contactNotFound);
 }
+
+export const SysErrorCode = {
+  dbUnavailable: "SYS_DB_UNAVAILABLE",
+  internalError: "SYS_INTERNAL_ERROR",
+  wechatNotConfigured: "SYS_WECHAT_NOT_CONFIGURED",
+  httpError: "SYS_HTTP_ERROR",
+} as const;
+
+export type SysErrorCodeValue =
+  (typeof SysErrorCode)[keyof typeof SysErrorCode];
+
+const SYS_LEGACY_ALIASES: Record<string, SysErrorCodeValue> = {
+  DATABASE_ERROR: SysErrorCode.dbUnavailable,
+  INTERNAL_ERROR: SysErrorCode.internalError,
+  WECHAT_NOT_CONFIGURED: SysErrorCode.wechatNotConfigured,
+  HTTP_ERROR: SysErrorCode.httpError,
+};
+
+export function matchesSysErrorCode(
+  wire: string | undefined,
+  canonical: SysErrorCodeValue,
+): boolean {
+  if (!wire) {
+    return false;
+  }
+  if (wire === canonical) {
+    return true;
+  }
+  return SYS_LEGACY_ALIASES[wire] === canonical;
+}
+
+export function isDatabaseUnavailableError(wire: string | undefined): boolean {
+  return matchesSysErrorCode(wire, SysErrorCode.dbUnavailable);
+}

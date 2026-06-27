@@ -5,6 +5,7 @@ import urllib.request
 from dataclasses import dataclass
 
 from ai_todo_api.config import settings
+from ai_todo_api.errors import ErrorCode, wire_code
 
 
 class WechatSubscribeMessageError(Exception):
@@ -28,7 +29,7 @@ def send_subscribe_message(
 ) -> WechatSendResult:
     if not settings.wechat_app_id or not settings.wechat_app_secret:
         raise WechatSubscribeMessageError(
-            "WECHAT_NOT_CONFIGURED",
+            wire_code(ErrorCode.SYS_WECHAT_NOT_CONFIGURED),
             "WeChat app id or secret is not configured.",
         )
 

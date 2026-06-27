@@ -1,5 +1,6 @@
 import { updateProfile } from '../../lib/api';
 import { loginWithWechat } from '../../lib/auth';
+import { isDatabaseUnavailableError } from '../../lib/error-codes';
 import {
   buildMineMenuSections,
   navigateSettingsItem,
@@ -114,7 +115,7 @@ Page({
           const code = response.error?.code || '';
           const hint = response.error?.message || '微信登录失败';
           const title =
-            code === 'DATABASE_ERROR' ? '数据库需迁移' : hint.length > 20 ? '微信登录失败' : hint;
+            isDatabaseUnavailableError(code) ? '数据库需迁移' : hint.length > 20 ? '微信登录失败' : hint;
           wx.showToast({ title, icon: 'none', duration: 2500 });
           return;
         }
