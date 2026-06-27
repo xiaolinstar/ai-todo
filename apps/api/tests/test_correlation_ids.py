@@ -1,4 +1,5 @@
 from ai_todo_api.observability import inject_correlation_ids
+from fastapi.testclient import TestClient
 
 
 def test_inject_adds_request_id_and_trace_id_to_success_envelope() -> None:
@@ -33,9 +34,6 @@ def test_inject_fills_missing_trace_id_when_request_id_present() -> None:
 
 def test_inject_no_op_for_non_dict() -> None:
     assert inject_correlation_ids([], "req_x") == []  # type: ignore[arg-type]
-
-
-from fastapi.testclient import TestClient
 
 
 def test_health_json_body_includes_correlation_ids(client: TestClient) -> None:
