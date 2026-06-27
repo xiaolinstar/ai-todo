@@ -23,16 +23,29 @@
 
 生产环境必须配置真实微信 AppID / AppSecret，并关闭开发用户旁路。
 
+## 本地 Git hooks（首次拉代码）
+
+仓库根目录用 **Husky 9 + lint-staged + commitlint**（见 [CLAUDE.md](../CLAUDE.md) §本地 Git hooks）：
+
+```bash
+pnpm install --frozen-lockfile   # 自动触发 husky prepare
+```
+
+- `pre-commit`：gitleaks（本地未装时降级）+ lint-staged
+- `commit-msg`：conventional commits（`feat:` / `fix:` / `ci:` 等）
+
+推荐本地安装 gitleaks：`brew install gitleaks`（Linux 见 [gitleaks 文档](https://github.com/gitleaks/gitleaks#installation)）。
+
 ## 配置分层
 
-| 配置 | 放在哪里 | 是否提交 | 说明 |
-|------|----------|----------|------|
-| 小程序共享工程配置 | `apps/miniapp/project.config.json` | 是 | 固定使用 `touristid`，不放真实 AppID |
-| 小程序本地 AppID | `apps/miniapp/project.private.config.json` | 否 | 本地覆盖真实 AppID，已被 `.gitignore` 忽略 |
-| 小程序 private 示例 | `apps/miniapp/project.private.config.example.json` | 是 | 给开发者复制使用 |
-| API 本地环境变量 | shell / 本地 `.env` 载入方式 | 否 | 数据库、dev auth、可选微信密钥 |
-| API 生产环境变量 | `apps/api/.env.production` | 否 | 生产数据库、微信 AppSecret、端口等 |
-| API 环境变量模板 | `.env.example` / `.env.production.example` | 是 | 只放字段名和默认值，不放真实密钥 |
+| 配置                | 放在哪里                                           | 是否提交 | 说明                                       |
+| ------------------- | -------------------------------------------------- | -------- | ------------------------------------------ |
+| 小程序共享工程配置  | `apps/miniapp/project.config.json`                 | 是       | 固定使用 `touristid`，不放真实 AppID       |
+| 小程序本地 AppID    | `apps/miniapp/project.private.config.json`         | 否       | 本地覆盖真实 AppID，已被 `.gitignore` 忽略 |
+| 小程序 private 示例 | `apps/miniapp/project.private.config.example.json` | 是       | 给开发者复制使用                           |
+| API 本地环境变量    | shell / 本地 `.env` 载入方式                       | 否       | 数据库、dev auth、可选微信密钥             |
+| API 生产环境变量    | `apps/api/.env.production`                         | 否       | 生产数据库、微信 AppSecret、端口等         |
+| API 环境变量模板    | `.env.example` / `.env.production.example`         | 是       | 只放字段名和默认值，不放真实密钥           |
 
 AppID 不算密钥，但当前项目采用策略 B：共享配置不提交真实 AppID，本地用 private config 覆盖。
 
@@ -285,12 +298,12 @@ python3 -m venv .venv
 
 **工作区关键配置**
 
-| 设置 | 值 | 说明 |
-|------|-----|------|
-| `python.defaultInterpreterPath` | `apps/api/.venv/bin/python` | 使用 API 虚拟环境 |
-| `python.testing.cwd` | `apps/api` | 在 API 目录执行 pytest，才能加载 `pyproject.toml` 中的 `testpaths` / `pythonpath` |
-| `python.testing.pytestArgs` | `[]` | 不要从仓库根传入 `apps` 等路径，否则易出现 `ModuleNotFoundError: No module named 'tests'` |
-| `python.testing.pytestEnabled` | `true` | 启用 pytest 发现 |
+| 设置                            | 值                          | 说明                                                                                      |
+| ------------------------------- | --------------------------- | ----------------------------------------------------------------------------------------- |
+| `python.defaultInterpreterPath` | `apps/api/.venv/bin/python` | 使用 API 虚拟环境                                                                         |
+| `python.testing.cwd`            | `apps/api`                  | 在 API 目录执行 pytest，才能加载 `pyproject.toml` 中的 `testpaths` / `pythonpath`         |
+| `python.testing.pytestArgs`     | `[]`                        | 不要从仓库根传入 `apps` 等路径，否则易出现 `ModuleNotFoundError: No module named 'tests'` |
+| `python.testing.pytestEnabled`  | `true`                      | 启用 pytest 发现                                                                          |
 
 **使用方式**
 

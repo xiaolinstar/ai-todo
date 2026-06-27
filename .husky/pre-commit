@@ -1,0 +1,26 @@
+#!/usr/bin/env sh
+# Pre-commit hook for ai-todo monorepo
+# 1. gitleaks: 扫暂存区，阻止 secret 漏库（本地无 gitleaks 时降级，CI 兜底）
+# 2. lint-staged: 对暂存文件跑 eslint --fix + prettier --write
+
+# Source husky.sh for v8 compat; v9 is no-op
+. "$(dirname -- "$0")/_/husky.sh" 2>/dev/null || true
+
+# ── 1. Secret scan (staged content) ───────────────────────────────
+if command -v gitleaks >/dev/null 2>&1; then
+  echo "🔒 Running gitleaks on staged content..."
+  if ! gitleaks protect --staged --redact --no-banner; then
+    echo ""
+    echo "❌ gitleaks found secrets in staged files. Commit aborted."
+    echo "   Remove the secret and amend the commit (or use --no-verify to bypass)."
+    exit 1
+  fi
+else
+  echo "⚠️  gitleaks not installed locally; skipping pre-commit secret scan."
+  echo "   Install: brew install gitleaks  (https://github.com/gitleaks/gitleaks)"
+  echo "   CI 兜底：.github/workflows/ci.yml § scan-secrets"
+fi
+
+# ── 2. Lint / format staged files ─────────────────────────────────
+echo "🎨 Running lint-staged..."
+npx --no -- lint-staged

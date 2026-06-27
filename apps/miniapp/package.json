@@ -5,15 +5,25 @@
   "description": "WeChat native miniapp for ai-todo (TypeScript + Sass)",
   "scripts": {
     "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint \"miniprogram/**/*.ts\" \"scripts/**/*.mjs\" \"types/**/*.d.ts\" --max-warnings 0",
+    "lint:fix": "pnpm lint -- --fix",
+    "format": "prettier --write \"miniprogram/**/*.{ts,scss,json}\" \"scripts/**/*.mjs\"",
+    "format:check": "prettier --check \"miniprogram/**/*.{ts,scss,json}\" \"scripts/**/*.mjs\"",
     "build:check": "node scripts/build-wechat-miniprogram.mjs",
     "clean": "node scripts/clean-wechat-miniprogram.mjs",
-    "check": "pnpm typecheck && pnpm build:check && node scripts/check-wechat-miniprogram.mjs",
+    "check": "pnpm typecheck && pnpm lint && pnpm format:check && pnpm build:check && node scripts/check-wechat-miniprogram.mjs",
+    "bump-version": "node scripts/bump-version.mjs",
     "preview": "node scripts/run-ci.mjs preview",
     "upload": "node scripts/run-ci.mjs upload",
     "upload:disabled-note": "CLI upload disabled; use WeChat DevTools to upload"
   },
   "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^7.18.0",
+    "@typescript-eslint/parser": "^7.18.0",
+    "eslint": "^8.57.1",
+    "eslint-config-prettier": "^9.1.0",
     "miniprogram-ci": "^2.1.31",
+    "prettier": "^3.3.3",
     "sass": "^1.89.2",
     "typescript": "^5.6.3"
   }

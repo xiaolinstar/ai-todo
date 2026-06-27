@@ -3,10 +3,7 @@
   "miniprogramRoot": "miniprogram/",
   "compileType": "miniprogram",
   "setting": {
-    "useCompilerPlugins": [
-      "typescript",
-      "sass"
-    ],
+    "useCompilerPlugins": ["typescript", "sass"],
     "ignoreUploadUnusedFiles": true,
     "compileHotReLoad": false,
     "es6": false,
@@ -33,5 +30,6 @@
   },
   "appid": "touristid",
   "projectname": "ai-todo",
+  "versionName": "0.8.3",
   "libVersion": "3.15.0"
 }

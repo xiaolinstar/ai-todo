@@ -7,6 +7,8 @@
     "build": "pnpm -r build",
     "typecheck": "pnpm -r typecheck",
     "lint": "pnpm -r lint",
+    "format": "pnpm --filter @ai-todo/miniapp format && prettier --write \"**/*.{json,md,yml,yaml,cjs}\" --ignore-path .gitignore",
+    "format:check": "pnpm --filter @ai-todo/miniapp format:check && prettier --check \"**/*.{json,md,yml,yaml,cjs}\" --ignore-path .gitignore",
     "dev:api": "apps/api/.venv/bin/python -m ai_todo_api",
     "cleanup:local-tokens": "apps/api/.venv/bin/python apps/api/scripts/cleanup_local_tokens.py",
     "dev:cli": "pnpm --filter @xiaolinstar/ai-todo-cli build && pnpm --filter @xiaolinstar/ai-todo-cli dev",
@@ -19,6 +21,31 @@
     "miniapp:preview": "pnpm --filter @ai-todo/miniapp preview",
     "miniapp:upload": "echo 'miniapp CLI upload disabled; use WeChat DevTools' && exit 1",
     "mcp:build": "pnpm --filter @xiaolinstar/ai-todo-mcp build",
-    "mcp:smoke": "pnpm --filter @xiaolinstar/ai-todo-mcp smoke"
+    "mcp:smoke": "pnpm --filter @xiaolinstar/ai-todo-mcp smoke",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^19.5.0",
+    "@commitlint/config-conventional": "^19.5.0",
+    "husky": "^9.1.6",
+    "lint-staged": "^15.2.10",
+    "prettier": "^3.3.3"
+  },
+  "lint-staged": {
+    "apps/miniapp/miniprogram/**/*.ts": [
+      "eslint -c apps/miniapp/.eslintrc.cjs --fix --max-warnings 0"
+    ],
+    "apps/miniapp/**/*.{scss,json}": [
+      "prettier --write"
+    ],
+    "apps/cli/**/*.ts": [
+      "pnpm --filter @xiaolinstar/ai-todo-cli exec tsc -b tsconfig.json --pretty false"
+    ],
+    "packages/**/*.ts": [
+      "prettier --write"
+    ],
+    "**/*.{json,md,yml,yaml,cjs}": [
+      "prettier --write"
+    ]
   }
 }

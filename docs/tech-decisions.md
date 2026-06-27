@@ -55,10 +55,11 @@ curl POST /v1/reminders   # 最直接
 
 ### 认证与用户
 
-- **MVP：固定开发用户**，不实现微信登录与 CLI Token
-- 默认用户 ID：`user_dev`（可通过 `AI_TODO_DEV_USER_ID` 配置）
-- 所有业务数据按 `user_id` 隔离；后续再接入微信登录与 Bearer Token
-- 当前请求无需 `Authorization` 头，服务端自动解析为开发用户
+- **生产**：微信小程序 `wx.login` → `POST /v1/auth/wechat/login` → session token；Agent/CLI 用 PAT（小程序 UI 创建，`AI_TODO_TOKEN` / `login --token`）
+- **本地开发旁路**：未配置微信密钥且 `AI_TODO_ALLOW_DEV_AUTH=true` 时，可降级为固定开发用户（`user_dev`，见 `developer-guide.md`）
+- 所有业务数据按 `user_id` 隔离；请求带 `Authorization: Bearer ...`（生产必需）
+
+> 早期 MVP 曾仅固定开发用户、无微信登录——见下方「推荐推进顺序」C2 已 ✅。
 
 ### 后端
 
