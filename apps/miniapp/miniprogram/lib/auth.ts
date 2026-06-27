@@ -1,4 +1,4 @@
-import { request } from "./api";
+import { request } from './api';
 
 export interface WechatLoginResult {
   accessToken: string;
@@ -10,24 +10,24 @@ export interface WechatLoginResult {
   };
 }
 
-export function loginWithWechat(): Promise<import("./api").ApiResponse<WechatLoginResult>> {
+export function loginWithWechat(): Promise<import('./api').ApiResponse<WechatLoginResult>> {
   return new Promise((resolve, reject) => {
     wx.login({
       success(res) {
         if (!res.code) {
-          reject(new Error("WeChat login did not return a code."));
+          reject(new Error('WeChat login did not return a code.'));
           return;
         }
-        request<WechatLoginResult>("/v1/auth/wechat/login", {
-          method: "POST",
-          data: { code: res.code }
+        request<WechatLoginResult>('/v1/auth/wechat/login', {
+          method: 'POST',
+          data: { code: res.code },
         })
           .then(resolve)
           .catch(reject);
       },
       fail(err) {
         reject(err);
-      }
+      },
     });
   });
 }

@@ -1,8 +1,8 @@
 export const TAB_PAGES = [
-  "/pages/reminders/reminders",
-  "/pages/calendar/calendar",
-  "/pages/contacts/contacts",
-  "/pages/mine/mine"
+  '/pages/reminders/reminders',
+  '/pages/calendar/calendar',
+  '/pages/contacts/contacts',
+  '/pages/mine/mine',
 ] as const;
 
 interface TabBarLike {

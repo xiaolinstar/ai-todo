@@ -1,12 +1,12 @@
-import { createPat } from "../../lib/api";
-import { getConfig } from "../../lib/config";
+import { createPat } from '../../lib/api';
+import { getConfig } from '../../lib/config';
 import {
   TOKEN_PRESETS,
   buildSettingsSnippet,
   defaultTokenName,
   expiresAtFromDays,
-  findTokenPreset
-} from "../../lib/token-presets";
+  findTokenPreset,
+} from '../../lib/token-presets';
 
 interface CreatedTokenPayload {
   token: string;
@@ -18,28 +18,28 @@ interface CreatedTokenPayload {
 Page({
   data: {
     presets: TOKEN_PRESETS,
-    selectedPreset: "daily",
-    selectedPresetLabel: findTokenPreset("daily").description,
+    selectedPreset: 'daily',
+    selectedPresetLabel: findTokenPreset('daily').description,
     name: defaultTokenName(),
     submitting: false,
-    createdToken: "",
-    createdName: "",
-    createdTokenHint: "",
-    settingsSnippet: ""
+    createdToken: '',
+    createdName: '',
+    createdTokenHint: '',
+    settingsSnippet: '',
   },
 
   onLoad(query: { preset?: string; name?: string }) {
-    const preset = findTokenPreset(query.preset || "daily");
+    const preset = findTokenPreset(query.preset || 'daily');
     const name = query.name ? decodeURIComponent(query.name) : defaultTokenName();
     this.setData({
       selectedPreset: preset.id,
       selectedPresetLabel: preset.description,
-      name
+      name,
     });
 
     const eventChannel = this.getOpenerEventChannel?.();
-    if (eventChannel && typeof eventChannel.on === "function") {
-      eventChannel.on("created", (payload: CreatedTokenPayload) => {
+    if (eventChannel && typeof eventChannel.on === 'function') {
+      eventChannel.on('created', (payload: CreatedTokenPayload) => {
         this.applyCreatedResult(payload);
       });
     }
@@ -50,11 +50,11 @@ Page({
       createdToken: payload.token,
       createdName: payload.name,
       createdTokenHint: payload.tokenHint,
-      settingsSnippet: payload.settingsSnippet
+      settingsSnippet: payload.settingsSnippet,
     });
     wx.setClipboardData({
       data: payload.settingsSnippet,
-      success: () => wx.showToast({ title: "已复制配置", icon: "success" })
+      success: () => wx.showToast({ title: '已复制配置', icon: 'success' }),
     });
   },
 
@@ -66,7 +66,7 @@ Page({
     const preset = findTokenPreset(e.currentTarget.dataset.id);
     this.setData({
       selectedPreset: preset.id,
-      selectedPresetLabel: preset.description
+      selectedPresetLabel: preset.description,
     });
   },
 
@@ -74,7 +74,7 @@ Page({
     if (this.data.submitting) return;
     const name = this.data.name.trim();
     if (!name) {
-      wx.showToast({ title: "请输入令牌名称", icon: "none" });
+      wx.showToast({ title: '请输入令牌名称', icon: 'none' });
       return;
     }
 
@@ -83,12 +83,12 @@ Page({
     createPat({
       name,
       expiresAt: expiresAtFromDays(preset.ttlDays),
-      maxIdleDays: preset.maxIdleDays
+      maxIdleDays: preset.maxIdleDays,
     })
       .then((response) => {
         this.setData({ submitting: false });
         if (!response.ok || !response.data) {
-          wx.showToast({ title: response.error?.message || "创建失败", icon: "none" });
+          wx.showToast({ title: response.error?.message || '创建失败', icon: 'none' });
           return;
         }
         const token = response.data.token;
@@ -97,12 +97,12 @@ Page({
           token,
           name: response.data.name,
           tokenHint: response.data.tokenHint || `aitodo_****${token.slice(-4)}`,
-          settingsSnippet: buildSettingsSnippet(apiUrl, token)
+          settingsSnippet: buildSettingsSnippet(apiUrl, token),
         });
       })
       .catch(() => {
         this.setData({ submitting: false });
-        wx.showToast({ title: "网络错误", icon: "none" });
+        wx.showToast({ title: '网络错误', icon: 'none' });
       });
   },
 
@@ -110,7 +110,7 @@ Page({
     if (!this.data.createdToken) return;
     wx.setClipboardData({
       data: this.data.createdToken,
-      success: () => wx.showToast({ title: "已复制", icon: "success" })
+      success: () => wx.showToast({ title: '已复制', icon: 'success' }),
     });
   },
 
@@ -118,11 +118,11 @@ Page({
     if (!this.data.settingsSnippet) return;
     wx.setClipboardData({
       data: this.data.settingsSnippet,
-      success: () => wx.showToast({ title: "已复制配置", icon: "success" })
+      success: () => wx.showToast({ title: '已复制配置', icon: 'success' }),
     });
   },
 
   onDone() {
     wx.navigateBack();
-  }
+  },
 });

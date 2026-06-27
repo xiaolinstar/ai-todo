@@ -1,7 +1,7 @@
 /** Keep in sync with docs/privacy-compliance.md (latest approved version). */
-import { getConfig } from "./config";
+import { getConfig } from './config';
 
-export const PRIVACY_POLICY_VERSION = "2026-06-07";
+export const PRIVACY_POLICY_VERSION = '2026-06-07';
 
 function privacyConsentKey(): string {
   return `privacyConsentVersion:${getConfig().scope}`;
@@ -40,7 +40,7 @@ export function requirePrivacyAuthorization(): Promise<boolean> {
         markPrivacyConsented();
         resolve(true);
       },
-      fail: () => resolve(false)
+      fail: () => resolve(false),
     });
   });
 }

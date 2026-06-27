@@ -1,4 +1,4 @@
-@use "../styles/todo-design-tokens" as *;
+@use '../styles/todo-design-tokens' as *;
 
 .todo-theme {
   @include todo-design-tokens;
@@ -77,7 +77,7 @@
 .icon-contacts::after,
 .icon-mine::before,
 .icon-mine::after {
-  content: "";
+  content: '';
   position: absolute;
   box-sizing: border-box;
 }
@@ -98,7 +98,9 @@
   height: 3rpx;
   border-radius: 999rpx;
   background: var(--todo-text-subtle);
-  box-shadow: 0 8rpx 0 var(--todo-text-subtle), 0 16rpx 0 var(--todo-text-subtle);
+  box-shadow:
+    0 8rpx 0 var(--todo-text-subtle),
+    0 16rpx 0 var(--todo-text-subtle);
 }
 
 .icon-calendar::before {

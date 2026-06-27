@@ -1,8 +1,8 @@
-import { fetchMe } from "./api";
+import { fetchMe } from './api';
 
-const STORAGE_PREFIX = "contentPrefs:v1:";
+const STORAGE_PREFIX = 'contentPrefs:v1:';
 
-export type ContactSortMode = "name" | "updated";
+export type ContactSortMode = 'name' | 'updated';
 
 export interface CalendarContentPrefs {
   defaultHasEnd: boolean;
@@ -24,18 +24,18 @@ const DEFAULT_PREFS: ContentPrefs = {
   calendar: {
     defaultHasEnd: true,
     defaultDurationMinutes: 60,
-    selectTodayOnOpen: true
+    selectTodayOnOpen: true,
   },
   contacts: {
-    sortMode: "name",
-    showHandleInList: true
-  }
+    sortMode: 'name',
+    showHandleInList: true,
+  },
 };
 
-let cachedUserId = "";
+let cachedUserId = '';
 
 function storageKey(userId: string): string {
-  return `${STORAGE_PREFIX}${userId || "guest"}`;
+  return `${STORAGE_PREFIX}${userId || 'guest'}`;
 }
 
 function normalizePrefs(raw: Partial<ContentPrefs> | null): ContentPrefs {
@@ -45,17 +45,17 @@ function normalizePrefs(raw: Partial<ContentPrefs> | null): ContentPrefs {
     calendar.defaultDurationMinutes = 60;
   }
   const contacts = { ...DEFAULT_PREFS.contacts, ...raw?.contacts };
-  if (contacts.sortMode !== "name" && contacts.sortMode !== "updated") {
-    contacts.sortMode = "name";
+  if (contacts.sortMode !== 'name' && contacts.sortMode !== 'updated') {
+    contacts.sortMode = 'name';
   }
   return { calendar, contacts };
 }
 
 export function readContentPrefsSync(userId?: string): ContentPrefs {
-  const id = userId || cachedUserId || "guest";
+  const id = userId || cachedUserId || 'guest';
   try {
     const stored = wx.getStorageSync(storageKey(id));
-    if (stored && typeof stored === "object") {
+    if (stored && typeof stored === 'object') {
       return normalizePrefs(stored as Partial<ContentPrefs>);
     }
   } catch {
@@ -65,7 +65,7 @@ export function readContentPrefsSync(userId?: string): ContentPrefs {
 }
 
 export function writeContentPrefs(prefs: ContentPrefs, userId?: string): void {
-  const id = userId || cachedUserId || "guest";
+  const id = userId || cachedUserId || 'guest';
   wx.setStorageSync(storageKey(id), prefs);
 }
 
@@ -87,7 +87,7 @@ export function saveContentPrefs(patch: {
   return loadContentPrefs().then((current) => {
     const next = normalizePrefs({
       calendar: { ...current.calendar, ...patch.calendar },
-      contacts: { ...current.contacts, ...patch.contacts }
+      contacts: { ...current.contacts, ...patch.contacts },
     });
     writeContentPrefs(next, cachedUserId);
     return next;
@@ -96,11 +96,11 @@ export function saveContentPrefs(patch: {
 
 export function sortContacts<T extends { displayName: string; handle: string }>(
   items: T[],
-  mode: ContactSortMode
+  mode: ContactSortMode,
 ): T[] {
   const copy = [...items];
-  if (mode === "name") {
-    copy.sort((a, b) => a.displayName.localeCompare(b.displayName, "zh-CN"));
+  if (mode === 'name') {
+    copy.sort((a, b) => a.displayName.localeCompare(b.displayName, 'zh-CN'));
     return copy;
   }
   return copy;
@@ -113,7 +113,7 @@ export function buildContactSubtitle(
     primaryPhone?: string;
     company?: string;
   },
-  prefs: ContactsContentPrefs
+  prefs: ContactsContentPrefs,
 ): string {
   const parts: string[] = [];
   if (prefs.showHandleInList && item.handle) {
@@ -122,24 +122,26 @@ export function buildContactSubtitle(
   if (item.primaryEmail) parts.push(item.primaryEmail);
   if (item.primaryPhone) parts.push(item.primaryPhone);
   if (item.company) parts.push(item.company);
-  return parts.join(" · ");
+  return parts.join(' · ');
 }
 
 export function applyDefaultEventEnd(
   startDate: string,
   startTime: string,
-  prefs: CalendarContentPrefs
+  prefs: CalendarContentPrefs,
 ): { hasEnd: boolean; endDate: string; endTime: string } {
   if (!prefs.defaultHasEnd) {
     return { hasEnd: false, endDate: startDate, endTime: startTime };
   }
-  const [h, m] = startTime.split(":").map((v) => parseInt(v, 10) || 0);
-  const start = new Date(`${startDate}T${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:00`);
+  const [h, m] = startTime.split(':').map((v) => parseInt(v, 10) || 0);
+  const start = new Date(
+    `${startDate}T${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:00`,
+  );
   const end = new Date(start.getTime() + prefs.defaultDurationMinutes * 60 * 1000);
-  const pad = (n: number) => String(n).padStart(2, "0");
+  const pad = (n: number) => String(n).padStart(2, '0');
   return {
     hasEnd: true,
     endDate: `${end.getFullYear()}-${pad(end.getMonth() + 1)}-${pad(end.getDate())}`,
-    endTime: `${pad(end.getHours())}:${pad(end.getMinutes())}`
+    endTime: `${pad(end.getHours())}:${pad(end.getMinutes())}`,
   };
 }

@@ -1,5 +1,5 @@
-import { getConfig, saveConfig } from "./config";
-import type { ApiResponse } from "./api";
+import { getConfig, saveConfig } from './config';
+import type { ApiResponse } from './api';
 
 interface WechatLoginPayload {
   accessToken: string;
@@ -7,7 +7,7 @@ interface WechatLoginPayload {
 
 function buildUrl(path: string): string {
   const { apiUrl } = getConfig();
-  return `${apiUrl.replace(/\/$/, "")}${path}`;
+  return `${apiUrl.replace(/\/$/, '')}${path}`;
 }
 
 let reloginPromise: Promise<boolean> | null = null;
@@ -26,11 +26,11 @@ export function silentWechatReLogin(): Promise<boolean> {
           return;
         }
         wx.request({
-          url: buildUrl("/v1/auth/wechat/login"),
-          method: "POST",
+          url: buildUrl('/v1/auth/wechat/login'),
+          method: 'POST',
           header: {
-            "content-type": "application/json",
-            "x-client-source": "miniapp"
+            'content-type': 'application/json',
+            'x-client-source': 'miniapp',
           },
           data: { code: res.code },
           success(loginRes: { statusCode: number; data: unknown }) {
@@ -48,12 +48,12 @@ export function silentWechatReLogin(): Promise<boolean> {
           },
           fail() {
             resolve(false);
-          }
+          },
         });
       },
       fail() {
         resolve(false);
-      }
+      },
     });
   }).finally(() => {
     reloginPromise = null;

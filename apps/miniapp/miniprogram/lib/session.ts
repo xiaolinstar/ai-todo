@@ -1,8 +1,8 @@
-import { fetchMe, type UserSummary } from "./api";
-import { clearToken, getConfig, isDevelopEnv, syncRuntimeConfig } from "./config";
-import { silentWechatReLogin } from "./relogin";
+import { fetchMe, type UserSummary } from './api';
+import { clearToken, getConfig, isDevelopEnv, syncRuntimeConfig } from './config';
+import { silentWechatReLogin } from './relogin';
 
-export type RestoreSessionReason = "no_token" | "relogin_failed" | "network_error";
+export type RestoreSessionReason = 'no_token' | 'relogin_failed' | 'network_error';
 
 export interface SessionState {
   loggedIn: boolean;
@@ -48,7 +48,7 @@ export function notifySession(state: SessionState): void {
 }
 
 function isNetworkError(response: { ok: boolean; error?: { code: string } }): boolean {
-  return !response.ok && response.error?.code === "NETWORK_ERROR";
+  return !response.ok && response.error?.code === 'NETWORK_ERROR';
 }
 
 export async function restoreSession(): Promise<RestoreSessionResult> {
@@ -65,7 +65,7 @@ export async function restoreSession(): Promise<RestoreSessionResult> {
       }
     }
     notifySession({ loggedIn: false });
-    return { ok: false, reason: "no_token" };
+    return { ok: false, reason: 'no_token' };
   }
 
   let meResponse = await fetchMe();
@@ -76,7 +76,7 @@ export async function restoreSession(): Promise<RestoreSessionResult> {
   }
 
   if (isNetworkError(meResponse)) {
-    return { ok: false, reason: "network_error" };
+    return { ok: false, reason: 'network_error' };
   }
 
   const reloginOk = await silentWechatReLogin();
@@ -91,7 +91,7 @@ export async function restoreSession(): Promise<RestoreSessionResult> {
 
   clearToken();
   notifySession({ loggedIn: false });
-  return { ok: false, reason: "relogin_failed" };
+  return { ok: false, reason: 'relogin_failed' };
 }
 
 export function notifyLoggedOut(): void {

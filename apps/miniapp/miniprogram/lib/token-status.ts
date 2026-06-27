@@ -1,13 +1,13 @@
-import { ApiTokenSummary } from "./api";
-import { formatShortDate } from "./format";
+import { ApiTokenSummary } from './api';
+import { formatShortDate } from './format';
 
-export type TokenStatus = ApiTokenSummary["status"];
+export type TokenStatus = ApiTokenSummary['status'];
 
 export const TOKEN_STATUS_LABELS: Record<string, string> = {
-  active: "有效",
-  expired: "已过期",
-  revoked: "已吊销",
-  idle_revoked: "久未使用失效"
+  active: '有效',
+  expired: '已过期',
+  revoked: '已吊销',
+  idle_revoked: '久未使用失效',
 };
 
 type RawTokenFields = {
@@ -37,7 +37,7 @@ export function normalizeApiTokenSummary(item: ApiTokenSummary): ApiTokenSummary
     expiresAt,
     maxIdleDays,
     createdAt,
-    lastUsedAt
+    lastUsedAt,
   });
 
   return {
@@ -47,7 +47,7 @@ export function normalizeApiTokenSummary(item: ApiTokenSummary): ApiTokenSummary
     expiresAt,
     maxIdleDays,
     createdAt,
-    lastUsedAt
+    lastUsedAt,
   };
 }
 
@@ -59,7 +59,7 @@ export function resolveTokenStatus(item: RawTokenFields): TokenStatus {
 
   const revokedAt = item.revokedAt ?? item.revoked_at;
   if (revokedAt) {
-    return "revoked";
+    return 'revoked';
   }
 
   const now = Date.now();
@@ -67,7 +67,7 @@ export function resolveTokenStatus(item: RawTokenFields): TokenStatus {
   if (expiresAt) {
     const expiresMs = Date.parse(expiresAt);
     if (!Number.isNaN(expiresMs) && expiresMs < now) {
-      return "expired";
+      return 'expired';
     }
   }
 
@@ -78,51 +78,55 @@ export function resolveTokenStatus(item: RawTokenFields): TokenStatus {
     if (!Number.isNaN(activityMs)) {
       const idleCutoffMs = activityMs + maxIdleDays * 24 * 60 * 60 * 1000;
       if (idleCutoffMs < now) {
-        return "idle_revoked";
+        return 'idle_revoked';
       }
     }
   }
 
-  return "active";
+  return 'active';
 }
 
 export function isActiveTokenStatus(status: string): boolean {
-  return status === "active";
+  return status === 'active';
 }
 
 export function tokenStatusClass(status: string): string {
-  if (status === "active") return "status-active";
-  if (status === "idle_revoked") return "status-warning";
-  return "status-muted";
+  if (status === 'active') return 'status-active';
+  if (status === 'idle_revoked') return 'status-warning';
+  return 'status-muted';
 }
 
 function formatOptionalDate(value?: string): string {
-  return value ? formatShortDate(value) : "";
+  return value ? formatShortDate(value) : '';
 }
 
-function idleDeadlineLabel(item: Pick<ApiTokenSummary, "createdAt" | "lastUsedAt" | "maxIdleDays">): string {
-  if (!item.maxIdleDays) return "";
+function idleDeadlineLabel(
+  item: Pick<ApiTokenSummary, 'createdAt' | 'lastUsedAt' | 'maxIdleDays'>,
+): string {
+  if (!item.maxIdleDays) return '';
   const activityAt = item.lastUsedAt || item.createdAt;
-  if (!activityAt) return "";
+  if (!activityAt) return '';
   const activityMs = Date.parse(activityAt);
-  if (Number.isNaN(activityMs)) return "";
-  return formatShortDate(new Date(activityMs + item.maxIdleDays * 24 * 60 * 60 * 1000).toISOString());
+  if (Number.isNaN(activityMs)) return '';
+  return formatShortDate(
+    new Date(activityMs + item.maxIdleDays * 24 * 60 * 60 * 1000).toISOString(),
+  );
 }
 
 export function buildTokenInactiveSummary(item: ApiTokenSummary): string {
-  if (item.status === "revoked") {
+  if (item.status === 'revoked') {
     const revokedAt = formatOptionalDate(item.revokedAt);
-    return revokedAt ? `于 ${revokedAt} 手动吊销` : "已手动吊销";
+    return revokedAt ? `于 ${revokedAt} 手动吊销` : '已手动吊销';
   }
-  if (item.status === "expired") {
+  if (item.status === 'expired') {
     const expiresAt = formatOptionalDate(item.expiresAt);
-    return expiresAt ? `于 ${expiresAt} 到期` : "已到期";
+    return expiresAt ? `于 ${expiresAt} 到期` : '已到期';
   }
-  if (item.status === "idle_revoked") {
-    const idleDays = item.maxIdleDays ? `${item.maxIdleDays} 天未使用` : "长期未使用";
-    const lastUsedAt = item.lastUsedAt ? formatShortDate(item.lastUsedAt) : "从未使用";
+  if (item.status === 'idle_revoked') {
+    const idleDays = item.maxIdleDays ? `${item.maxIdleDays} 天未使用` : '长期未使用';
+    const lastUsedAt = item.lastUsedAt ? formatShortDate(item.lastUsedAt) : '从未使用';
     const deadline = idleDeadlineLabel(item);
-    const deadlineText = deadline ? `，${deadline} 起不可用` : "";
+    const deadlineText = deadline ? `，${deadline} 起不可用` : '';
     return `${idleDays}（最后使用 ${lastUsedAt}${deadlineText}）`;
   }
   return TOKEN_STATUS_LABELS[item.status] || item.status;

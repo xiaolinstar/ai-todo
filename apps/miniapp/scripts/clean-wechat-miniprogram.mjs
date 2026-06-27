@@ -1,11 +1,11 @@
-import { existsSync, readdirSync, statSync, unlinkSync } from "node:fs";
-import { dirname, extname, relative, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { existsSync, readdirSync, statSync, unlinkSync } from 'node:fs';
+import { dirname, extname, relative, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
-const miniappRoot = resolve(scriptDir, "..");
-const repoRoot = resolve(miniappRoot, "../..");
-const miniprogramRoot = resolve(miniappRoot, "miniprogram");
+const miniappRoot = resolve(scriptDir, '..');
+const repoRoot = resolve(miniappRoot, '../..');
+const miniprogramRoot = resolve(miniappRoot, 'miniprogram');
 
 function walk(dir) {
   const files = [];
@@ -26,7 +26,7 @@ if (!existsSync(miniprogramRoot)) {
 let removed = 0;
 for (const file of walk(miniprogramRoot)) {
   const ext = extname(file);
-  if (ext !== ".js" && ext !== ".wxss") continue;
+  if (ext !== '.js' && ext !== '.wxss') continue;
   unlinkSync(file);
   removed += 1;
   console.log(`removed ${relative(repoRoot, file)}`);

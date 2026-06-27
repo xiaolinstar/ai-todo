@@ -1,16 +1,16 @@
-import { getConfig, getApiEnvironmentLabel, syncRuntimeConfig } from "../../lib/config";
-import { fetchHealth, fetchMe } from "../../lib/api";
-import { MINIAPP_VERSION } from "../../lib/version";
-import { buildAppShareOptions, buildAppShareTimelineOptions } from "../../lib/share";
+import { getConfig, getApiEnvironmentLabel, syncRuntimeConfig } from '../../lib/config';
+import { fetchHealth, fetchMe } from '../../lib/api';
+import { MINIAPP_VERSION } from '../../lib/version';
+import { buildAppShareOptions, buildAppShareTimelineOptions } from '../../lib/share';
 
 Page({
   data: {
     miniappVersion: MINIAPP_VERSION,
-    envLabel: "",
-    apiUrl: "",
-    userId: "",
+    envLabel: '',
+    apiUrl: '',
+    userId: '',
     loggedIn: false,
-    healthSummary: "检查中…"
+    healthSummary: '检查中…',
   },
 
   onShareAppMessage() {
@@ -25,7 +25,7 @@ Page({
     const { apiUrl } = syncRuntimeConfig();
     this.setData({
       envLabel: getApiEnvironmentLabel(apiUrl),
-      apiUrl
+      apiUrl,
     });
 
     const { token } = getConfig();
@@ -34,35 +34,35 @@ Page({
         if (response.ok && response.data) {
           this.setData({
             loggedIn: true,
-            userId: response.data.user.id
+            userId: response.data.user.id,
           });
         } else {
-          this.setData({ loggedIn: false, userId: "" });
+          this.setData({ loggedIn: false, userId: '' });
         }
       });
     } else {
-      this.setData({ loggedIn: false, userId: "" });
+      this.setData({ loggedIn: false, userId: '' });
     }
     this.loadHealth();
   },
 
   loadHealth() {
-    this.setData({ healthSummary: "检查中…" });
+    this.setData({ healthSummary: '检查中…' });
     fetchHealth()
       .then((response) => {
         if (!response.ok || !response.data) {
-          this.setData({ healthSummary: response.error?.message || "无法连接 API" });
+          this.setData({ healthSummary: response.error?.message || '无法连接 API' });
           return;
         }
         const d = response.data;
-        const parts = [d.status === "ok" ? "已连接" : d.status || "unknown"];
+        const parts = [d.status === 'ok' ? '已连接' : d.status || 'unknown'];
         if (d.apiVersion) parts.push(`API ${d.apiVersion}`);
         if (d.releaseTag) parts.push(d.releaseTag);
         if (d.environment) parts.push(d.environment);
-        this.setData({ healthSummary: parts.join(" · ") });
+        this.setData({ healthSummary: parts.join(' · ') });
       })
       .catch(() => {
-        this.setData({ healthSummary: "无法连接 API" });
+        this.setData({ healthSummary: '无法连接 API' });
       });
   },
 
@@ -71,7 +71,7 @@ Page({
     if (!userId) return;
     wx.setClipboardData({
       data: userId,
-      success: () => wx.showToast({ title: "已复制", icon: "success" })
+      success: () => wx.showToast({ title: '已复制', icon: 'success' }),
     });
-  }
+  },
 });

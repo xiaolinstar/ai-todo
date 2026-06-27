@@ -1,14 +1,10 @@
-import { deleteContact, searchContacts } from "../../lib/api";
-import type { ContactSummary } from "../../lib/api";
-import {
-  buildContactSubtitle,
-  loadContentPrefs,
-  sortContacts
-} from "../../lib/content-prefs";
-import { avatarColor, getInitial } from "../../lib/format";
-import { SwipeListGesture, withSwipeRow, type SwipeListRowState } from "../../lib/swipe-list";
-import { updateTabBarSelected } from "../../lib/tab-bar";
-import { buildAppShareOptions, buildAppShareTimelineOptions } from "../../lib/share";
+import { deleteContact, searchContacts } from '../../lib/api';
+import type { ContactSummary } from '../../lib/api';
+import { buildContactSubtitle, loadContentPrefs, sortContacts } from '../../lib/content-prefs';
+import { avatarColor, getInitial } from '../../lib/format';
+import { SwipeListGesture, withSwipeRow, type SwipeListRowState } from '../../lib/swipe-list';
+import { updateTabBarSelected } from '../../lib/tab-bar';
+import { buildAppShareOptions, buildAppShareTimelineOptions } from '../../lib/share';
 
 interface ContactView extends ContactSummary, SwipeListRowState {
   subtitle: string;
@@ -18,12 +14,12 @@ interface ContactView extends ContactSummary, SwipeListRowState {
 
 Page({
   data: {
-    query: "",
+    query: '',
     loading: false,
     loaded: false,
-    error: "",
+    error: '',
     totalCount: 0,
-    items: [] as ContactView[]
+    items: [] as ContactView[],
   },
 
   _swipeList: null as SwipeListGesture<ContactView> | null,
@@ -34,19 +30,19 @@ Page({
       setItems: (items) => this.setData({ items }),
       isDisabled: (item) => item.deleting || item.exiting,
       getDeleteModal: (item) => ({
-        title: "删除联系人",
-        content: `确定删除“${item.displayName}”？`
+        title: '删除联系人',
+        content: `确定删除“${item.displayName}”？`,
       }),
       requestDelete: async (id) => {
         const response = await deleteContact(id);
         return {
           ok: Boolean(response.ok),
-          message: response.error?.message
+          message: response.error?.message,
         };
       },
       openEdit: (id) => {
         wx.navigateTo({ url: `/pages/contact-edit/contact-edit?id=${encodeURIComponent(id)}` });
-      }
+      },
     });
     this._swipeList.updateDeleteActionWidth();
   },
@@ -78,19 +74,19 @@ Page({
   },
 
   onClearSearch() {
-    this.setData({ query: "" });
+    this.setData({ query: '' });
     this.loadContacts();
   },
 
   loadContacts(query?: string) {
-    this.setData({ loading: true, error: "" });
+    this.setData({ loading: true, error: '' });
     return Promise.all([searchContacts(query), loadContentPrefs()])
       .then(([response, prefs]) => {
         if (!response.ok || !response.data) {
           this.setData({
             loading: false,
             loaded: true,
-            error: response.error?.message || "加载失败"
+            error: response.error?.message || '加载失败',
           });
           return;
         }
@@ -104,13 +100,13 @@ Page({
               ...item,
               subtitle: buildContactSubtitle(item, prefs.contacts),
               initial: getInitial(item.displayName),
-              avatarColor: avatarColor(item.displayName)
-            })
-          )
+              avatarColor: avatarColor(item.displayName),
+            }),
+          ),
         });
       })
       .catch(() => {
-        this.setData({ loading: false, loaded: true, error: "无法连接 API" });
+        this.setData({ loading: false, loaded: true, error: '无法连接 API' });
       });
   },
 
@@ -137,5 +133,5 @@ Page({
 
   onDeleteTap(e: { currentTarget: { dataset: { id: string } } }) {
     this._swipeList?.onDeleteTap(e);
-  }
+  },
 });

@@ -1,5 +1,5 @@
-export const APP_SHARE_TITLE = "ai-todo — AI 原生的待办与日历";
-export const APP_SHARE_PATH = "/pages/reminders/reminders";
+export const APP_SHARE_TITLE = 'ai-todo — AI 原生的待办与日历';
+export const APP_SHARE_PATH = '/pages/reminders/reminders';
 
 export interface ShareOptions {
   title: string;
@@ -17,16 +17,16 @@ export interface ShareTimelineOptions {
  * DevTools 基础库 3.15.1+ 对 showShareMenu(shareTimeline) 易报 WAServiceMainContext timeout，故省略。
  */
 export function enableShareMenu(): void {
-  if (typeof wx.showShareMenu !== "function") {
+  if (typeof wx.showShareMenu !== 'function') {
     return;
   }
 
   const show = () => {
     wx.showShareMenu({
-      menus: ["shareAppMessage"],
+      menus: ['shareAppMessage'],
       fail(err) {
-        console.warn("showShareMenu failed", err);
-      }
+        console.warn('showShareMenu failed', err);
+      },
     });
   };
 
@@ -36,15 +36,15 @@ export function enableShareMenu(): void {
 export function buildAppShareOptions(overrides?: Partial<ShareOptions>): ShareOptions {
   return {
     title: overrides?.title ?? APP_SHARE_TITLE,
-    path: overrides?.path ?? APP_SHARE_PATH
+    path: overrides?.path ?? APP_SHARE_PATH,
   };
 }
 
 export function buildAppShareTimelineOptions(
-  overrides?: Partial<ShareTimelineOptions>
+  overrides?: Partial<ShareTimelineOptions>,
 ): ShareTimelineOptions {
   return {
     title: overrides?.title ?? APP_SHARE_TITLE,
-    query: overrides?.query ?? ""
+    query: overrides?.query ?? '',
   };
 }

@@ -1,28 +1,25 @@
-import { loadAccountDay } from "../../lib/account-day";
-import { createReminder } from "../../lib/api";
-import type { ContactSummary } from "../../lib/api";
-import { combineDateTime } from "../../lib/format";
-import { todoPageThemeData } from "../../lib/theme";
-import {
-  loadWechatNotificationPrefs,
-  requestReminderNotification
-} from "../../lib/wechat-notify";
+import { loadAccountDay } from '../../lib/account-day';
+import { createReminder } from '../../lib/api';
+import type { ContactSummary } from '../../lib/api';
+import { combineDateTime } from '../../lib/format';
+import { todoPageThemeData } from '../../lib/theme';
+import { loadWechatNotificationPrefs, requestReminderNotification } from '../../lib/wechat-notify';
 
 Page({
   data: {
     ...todoPageThemeData(),
-    title: "",
-    notes: "",
+    title: '',
+    notes: '',
     notesExpanded: false,
     hasDue: false,
-    dueDate: "",
-    dueTime: "",
+    dueDate: '',
+    dueTime: '',
     notifyEnabled: true,
     notifyAvailable: false,
-    reminderTemplateId: "",
+    reminderTemplateId: '',
     selectedContact: null as ContactSummary | null,
-    accountTimezone: "",
-    submitting: false
+    accountTimezone: '',
+    submitting: false,
   },
 
   onLoad() {
@@ -30,14 +27,14 @@ Page({
       this.setData({
         accountTimezone: timezone,
         dueDate: today,
-        dueTime: nowTime
+        dueTime: nowTime,
       });
     });
     loadWechatNotificationPrefs().then((prefs) => {
       this.setData({
         notifyAvailable: prefs.notifyAvailable,
         notifyEnabled: prefs.notifyEnabled,
-        reminderTemplateId: prefs.reminderTemplateId
+        reminderTemplateId: prefs.reminderTemplateId,
       });
     });
   },
@@ -72,12 +69,12 @@ Page({
 
   pickContact() {
     wx.navigateTo({
-      url: "/pages/contact-picker/contact-picker",
+      url: '/pages/contact-picker/contact-picker',
       events: {
         selectContact: (data: unknown) => {
           this.setData({ selectedContact: data as ContactSummary });
-        }
-      }
+        },
+      },
     });
   },
 
@@ -88,7 +85,7 @@ Page({
   onSubmit() {
     const title = this.data.title.trim();
     if (!title) {
-      wx.showToast({ title: "请输入标题", icon: "none" });
+      wx.showToast({ title: '请输入标题', icon: 'none' });
       return;
     }
 
@@ -100,7 +97,8 @@ Page({
       contactIds?: string[];
     } = {
       title,
-      wechatNotifyRequested: this.data.hasDue && this.data.notifyAvailable && this.data.notifyEnabled
+      wechatNotifyRequested:
+        this.data.hasDue && this.data.notifyAvailable && this.data.notifyEnabled,
     };
     const notes = this.data.notes.trim();
     if (notes) {
@@ -110,7 +108,7 @@ Page({
       payload.dueAt = combineDateTime(
         this.data.dueDate,
         this.data.dueTime,
-        this.data.accountTimezone || undefined
+        this.data.accountTimezone || undefined,
       );
     }
     if (this.data.selectedContact) {
@@ -122,7 +120,7 @@ Page({
       .then(async (response) => {
         this.setData({ submitting: false });
         if (!response.ok) {
-          wx.showToast({ title: response.error?.message || "创建失败", icon: "none" });
+          wx.showToast({ title: response.error?.message || '创建失败', icon: 'none' });
           return;
         }
         await this.notifyAfterSave(response.data?.reminder.id);
@@ -130,7 +128,7 @@ Page({
       })
       .catch(() => {
         this.setData({ submitting: false });
-        wx.showToast({ title: "网络错误", icon: "none" });
+        wx.showToast({ title: '网络错误', icon: 'none' });
       });
   },
 
@@ -143,7 +141,7 @@ Page({
       Boolean(this.data.reminderTemplateId);
 
     if (!shouldNotify || !reminderId) {
-      wx.showToast({ title: "已创建", icon: "success" });
+      wx.showToast({ title: '已创建', icon: 'success' });
       return;
     }
 
@@ -151,14 +149,14 @@ Page({
       const { accepted } = await requestReminderNotification({
         reminderId,
         templateId: this.data.reminderTemplateId,
-        enabled: true
+        enabled: true,
       });
       wx.showToast({
-        title: accepted ? "已创建并开启提醒" : "已创建，未开启微信提醒",
-        icon: accepted ? "success" : "none"
+        title: accepted ? '已创建并开启提醒' : '已创建，未开启微信提醒',
+        icon: accepted ? 'success' : 'none',
       });
     } catch {
-      wx.showToast({ title: "已创建，提醒授权同步失败", icon: "none" });
+      wx.showToast({ title: '已创建，提醒授权同步失败', icon: 'none' });
     }
-  }
+  },
 });

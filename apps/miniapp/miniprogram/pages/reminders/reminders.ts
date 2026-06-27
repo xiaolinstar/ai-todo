@@ -1,23 +1,23 @@
-import { completeReminder, deleteReminder, fetchReminders } from "../../lib/api";
-import { loadAccountDay } from "../../lib/account-day";
-import { TODO_MODAL_CONFIRM_DANGER } from "../../lib/design-tokens";
-import type { ReminderSummary } from "../../lib/api";
+import { completeReminder, deleteReminder, fetchReminders } from '../../lib/api';
+import { loadAccountDay } from '../../lib/account-day';
+import { TODO_MODAL_CONFIRM_DANGER } from '../../lib/design-tokens';
+import type { ReminderSummary } from '../../lib/api';
 import {
   buildReminderSubline,
   formatDateTime,
   formatIsoDateLabel,
   formatWeekdayLong,
   isOverdueDueAt,
-  splitIsoDateTime
-} from "../../lib/format";
-import { updateTabBarSelected } from "../../lib/tab-bar";
-import { getWindowWidthPx } from "../../lib/window-metrics";
-import { buildAppShareOptions, buildAppShareTimelineOptions } from "../../lib/share";
+  splitIsoDateTime,
+} from '../../lib/format';
+import { updateTabBarSelected } from '../../lib/tab-bar';
+import { getWindowWidthPx } from '../../lib/window-metrics';
+import { buildAppShareOptions, buildAppShareTimelineOptions } from '../../lib/share';
 import {
   deriveNotifyUi,
   enableWechatNotifyForTarget,
-  loadWechatNotificationPrefs
-} from "../../lib/wechat-notify";
+  loadWechatNotificationPrefs,
+} from '../../lib/wechat-notify';
 
 interface ReminderView extends ReminderSummary {
   dueLabel: string;
@@ -38,7 +38,7 @@ interface ReminderView extends ReminderSummary {
 }
 
 interface ReminderGroup {
-  key: "overdue" | "today" | "future";
+  key: 'overdue' | 'today' | 'future';
   title: string;
   items: ReminderView[];
 }
@@ -49,25 +49,29 @@ const SWIPE_OPEN_THRESHOLD_RATIO = 0.42;
 const SWIPE_TRIGGER_PX = 28;
 const TAP_SLOP_PX = 12;
 
-type TabKey = "pending" | "in_progress" | "completed";
+type TabKey = 'pending' | 'in_progress' | 'completed';
 
 function sourceLabel(source?: string): string {
-  if (!source) return "";
+  if (!source) return '';
   const labels: Record<string, string> = {
-    email: "邮件",
-    jira: "工单",
-    agent: "Agent",
-    cli: "CLI"
+    email: '邮件',
+    jira: '工单',
+    agent: 'Agent',
+    cli: 'CLI',
   };
   return labels[source] || source;
 }
 
-function enrichReminder(item: ReminderSummary, timeZone: string, notifyAvailable: boolean): ReminderView {
-  const completed = item.status === "completed";
+function enrichReminder(
+  item: ReminderSummary,
+  timeZone: string,
+  notifyAvailable: boolean,
+): ReminderView {
+  const completed = item.status === 'completed';
   const dueLabel = formatDateTime(item.dueAt, timeZone);
   const contactNames = (item.contacts || [])
     .map((c) => (c.handle ? c.handle : c.displayName))
-    .join("、");
+    .join('、');
   const isOverdue = isOverdueDueAt(item.dueAt, completed);
 
   const base: ReminderView = {
@@ -81,7 +85,7 @@ function enrichReminder(item: ReminderSummary, timeZone: string, notifyAvailable
       dueAt: item.dueAt,
       dueLabel,
       contactNames,
-      isOverdue
+      isOverdue,
     }),
     completing: false,
     exiting: false,
@@ -92,14 +96,14 @@ function enrichReminder(item: ReminderSummary, timeZone: string, notifyAvailable
     deleteVisible: false,
     showEnableButton: false,
     showEnabledLabel: false,
-    showAwaitingBadge: false
+    showAwaitingBadge: false,
   };
 
   const notifyUi = deriveNotifyUi({
     notifyAvailable,
     wechatNotifyRequested: item.wechatNotifyRequested,
     wechatNotifyStatus: item.wechatNotifyStatus,
-    scheduleAt: item.remindAt || item.dueAt
+    scheduleAt: item.remindAt || item.dueAt,
   });
   return { ...base, ...notifyUi };
 }
@@ -107,12 +111,12 @@ function enrichReminder(item: ReminderSummary, timeZone: string, notifyAvailable
 function groupPendingReminders(
   items: ReminderView[],
   today: string,
-  timeZone: string
+  timeZone: string,
 ): ReminderGroup[] {
   const groups: ReminderGroup[] = [
-    { key: "overdue", title: "逾期", items: [] },
-    { key: "today", title: "今天", items: [] },
-    { key: "future", title: "未来", items: [] }
+    { key: 'overdue', title: '逾期', items: [] },
+    { key: 'today', title: '今天', items: [] },
+    { key: 'future', title: '未来', items: [] },
   ];
 
   items.forEach((item) => {
@@ -120,7 +124,7 @@ function groupPendingReminders(
       groups[0].items.push(item);
       return;
     }
-    const dueDate = item.dueAt ? splitIsoDateTime(item.dueAt, timeZone).date : "";
+    const dueDate = item.dueAt ? splitIsoDateTime(item.dueAt, timeZone).date : '';
     if (dueDate === today) {
       groups[1].items.push(item);
       return;
@@ -156,12 +160,12 @@ Page({
   data: {
     loading: false,
     loaded: false,
-    error: "",
-    dateLabel: "",
-    weekdayLabel: "",
-    timezone: "",
-    accountToday: "",
-    activeTab: "pending" as TabKey,
+    error: '',
+    dateLabel: '',
+    weekdayLabel: '',
+    timezone: '',
+    accountToday: '',
+    activeTab: 'pending' as TabKey,
     pendingCount: 0,
     inProgressCount: 0,
     completedCount: 0,
@@ -172,20 +176,20 @@ Page({
     inProgress: [] as ReminderView[],
     completed: [] as ReminderView[],
     notifyAvailable: false,
-    reminderTemplateId: ""
+    reminderTemplateId: '',
   },
 
   _completeTimers: {} as Record<string, ReturnType<typeof setTimeout>>,
   _touchStartX: 0,
   _touchStartY: 0,
   _startSwipeX: 0,
-  _activeRowId: "",
+  _activeRowId: '',
   _gestureSwipeActive: false,
   _deleteActionWidthPx: 86,
-  _pendingReminderId: "",
+  _pendingReminderId: '',
 
   onLoad(options: { reminderId?: string }) {
-    const reminderId = (options?.reminderId || "").trim();
+    const reminderId = (options?.reminderId || '').trim();
     if (reminderId) {
       this._pendingReminderId = reminderId;
     }
@@ -210,9 +214,9 @@ Page({
     if (!reminderId) {
       return;
     }
-    this._pendingReminderId = "";
+    this._pendingReminderId = '';
     wx.navigateTo({
-      url: `/pages/reminder-edit/reminder-edit?id=${encodeURIComponent(reminderId)}`
+      url: `/pages/reminder-edit/reminder-edit?id=${encodeURIComponent(reminderId)}`,
     });
   },
 
@@ -227,13 +231,13 @@ Page({
   },
 
   loadReminders() {
-    this.setData({ loading: true, error: "" });
+    this.setData({ loading: true, error: '' });
     return Promise.all([
       loadAccountDay(),
       loadWechatNotificationPrefs(),
-      fetchReminders({ status: "pending", sort: "due_at" }),
-      fetchReminders({ status: "in_progress", sort: "due_at" }),
-      fetchReminders({ status: "completed", sort: "completed_at" })
+      fetchReminders({ status: 'pending', sort: 'due_at' }),
+      fetchReminders({ status: 'in_progress', sort: 'due_at' }),
+      fetchReminders({ status: 'completed', sort: 'completed_at' }),
     ])
       .then(([account, notifyPrefs, pendingRes, inProgressRes, completedRes]) => {
         if (
@@ -251,7 +255,7 @@ Page({
               pendingRes.error?.message ||
               inProgressRes.error?.message ||
               completedRes.error?.message ||
-              "加载失败，请在「我的」页检查 API 地址"
+              '加载失败，请在「我的」页检查 API 地址',
           });
           return;
         }
@@ -259,21 +263,21 @@ Page({
         const { timezone, today } = account;
         const notifyAvailable = notifyPrefs.notifyAvailable;
         const pendingItems = pendingRes.data.items.map((item) =>
-          enrichReminder(item, timezone, notifyAvailable)
+          enrichReminder(item, timezone, notifyAvailable),
         );
         const inProgressItems = inProgressRes.data.items.map((item) =>
-          enrichReminder(item, timezone, notifyAvailable)
+          enrichReminder(item, timezone, notifyAvailable),
         );
         const completedItems = completedRes.data.items.map((item) =>
-          enrichReminder(item, timezone, false)
+          enrichReminder(item, timezone, false),
         );
         const animating = this.data.pending.filter(
-          (item: ReminderView) => item.completing || item.exiting
+          (item: ReminderView) => item.completing || item.exiting,
         );
         const animatingIds = new Set(animating.map((item: ReminderView) => item.id));
         const pending = [
           ...animating,
-          ...pendingItems.filter((item) => !animatingIds.has(item.id))
+          ...pendingItems.filter((item) => !animatingIds.has(item.id)),
         ];
         const inProgress = inProgressItems;
         const completed = completedItems;
@@ -296,14 +300,14 @@ Page({
           inProgress,
           completed,
           notifyAvailable,
-          reminderTemplateId: notifyPrefs.reminderTemplateId
+          reminderTemplateId: notifyPrefs.reminderTemplateId,
         });
       })
       .catch(() => {
         this.setData({
           loading: false,
           loaded: true,
-          error: "无法连接 API，请在「我的」页配置地址并开启「不校验合法域名」"
+          error: '无法连接 API，请在「我的」页配置地址并开启「不校验合法域名」',
         });
       });
   },
@@ -315,12 +319,12 @@ Page({
   },
 
   onOverdueHintTap() {
-    if (this.data.activeTab === "pending") return;
-    this.setData({ activeTab: "pending" });
+    if (this.data.activeTab === 'pending') return;
+    this.setData({ activeTab: 'pending' });
   },
 
   goMine() {
-    wx.switchTab({ url: "/pages/mine/mine" });
+    wx.switchTab({ url: '/pages/mine/mine' });
   },
 
   findReminderItem(id: string): ReminderView | undefined {
@@ -347,48 +351,56 @@ Page({
       completedCount: completed.length,
       overdueCount: openItems.filter((item) => item.isOverdue && !item.completing).length,
       pendingGroups: groupPendingReminders(pending, this.data.accountToday, this.data.timezone),
-      inProgressGroups: groupPendingReminders(inProgress, this.data.accountToday, this.data.timezone)
+      inProgressGroups: groupPendingReminders(
+        inProgress,
+        this.data.accountToday,
+        this.data.timezone,
+      ),
     });
   },
 
   patchPendingItem(id: string, patch: Partial<ReminderView>) {
     const pending = this.data.pending.map((item: ReminderView) =>
-      item.id === id ? { ...item, ...patch } : item
+      item.id === id ? { ...item, ...patch } : item,
     );
     this.setData({
       pending,
-      pendingGroups: groupPendingReminders(pending, this.data.accountToday, this.data.timezone)
+      pendingGroups: groupPendingReminders(pending, this.data.accountToday, this.data.timezone),
     });
     return pending;
   },
 
   patchReminderItem(id: string, patch: Partial<ReminderView>) {
     const pending = this.data.pending.map((item: ReminderView) =>
-      item.id === id ? { ...item, ...patch } : item
+      item.id === id ? { ...item, ...patch } : item,
     );
     const inProgress = this.data.inProgress.map((item: ReminderView) =>
-      item.id === id ? { ...item, ...patch } : item
+      item.id === id ? { ...item, ...patch } : item,
     );
     const completed = this.data.completed.map((item: ReminderView) =>
-      item.id === id ? { ...item, ...patch } : item
+      item.id === id ? { ...item, ...patch } : item,
     );
     this.setData({
       pending,
       inProgress,
       pendingGroups: groupPendingReminders(pending, this.data.accountToday, this.data.timezone),
-      inProgressGroups: groupPendingReminders(inProgress, this.data.accountToday, this.data.timezone),
-      completed
+      inProgressGroups: groupPendingReminders(
+        inProgress,
+        this.data.accountToday,
+        this.data.timezone,
+      ),
+      completed,
     });
     return { pending, inProgress, completed };
   },
 
   resetRowGesture() {
-    this._activeRowId = "";
+    this._activeRowId = '';
     this._gestureSwipeActive = false;
     this._startSwipeX = 0;
   },
 
-  closeOpenSwipes(exceptId = "") {
+  closeOpenSwipes(exceptId = '') {
     const closeItem = (item: ReminderView) =>
       item.id === exceptId || item.swipeX === 0
         ? item
@@ -399,8 +411,12 @@ Page({
       pending,
       inProgress,
       pendingGroups: groupPendingReminders(pending, this.data.accountToday, this.data.timezone),
-      inProgressGroups: groupPendingReminders(inProgress, this.data.accountToday, this.data.timezone),
-      completed: this.data.completed.map(closeItem)
+      inProgressGroups: groupPendingReminders(
+        inProgress,
+        this.data.accountToday,
+        this.data.timezone,
+      ),
+      completed: this.data.completed.map(closeItem),
     });
   },
 
@@ -424,25 +440,29 @@ Page({
     const completedItem: ReminderView = enrichReminder(
       {
         ...item,
-        status: "completed"
+        status: 'completed',
       },
       this.data.timezone,
-      false
+      false,
     );
 
     const pending = this.data.pending.filter((entry: ReminderView) => entry.id !== id);
     const inProgress = this.data.inProgress.filter((entry: ReminderView) => entry.id !== id);
     const completed = [
       completedItem,
-      ...this.data.completed.filter((entry: ReminderView) => entry.id !== id)
+      ...this.data.completed.filter((entry: ReminderView) => entry.id !== id),
     ];
 
     this.setData({
       pending,
       inProgress,
       pendingGroups: groupPendingReminders(pending, this.data.accountToday, this.data.timezone),
-      inProgressGroups: groupPendingReminders(inProgress, this.data.accountToday, this.data.timezone),
-      completed
+      inProgressGroups: groupPendingReminders(
+        inProgress,
+        this.data.accountToday,
+        this.data.timezone,
+      ),
+      completed,
     });
     this.updateCounts(pending, inProgress, completed);
     this.clearCompleteTimer(id);
@@ -458,11 +478,15 @@ Page({
       return this.patchPendingItem(id, patch);
     }
     const inProgress = this.data.inProgress.map((item: ReminderView) =>
-      item.id === id ? { ...item, ...patch } : item
+      item.id === id ? { ...item, ...patch } : item,
     );
     this.setData({
       inProgress,
-      inProgressGroups: groupPendingReminders(inProgress, this.data.accountToday, this.data.timezone)
+      inProgressGroups: groupPendingReminders(
+        inProgress,
+        this.data.accountToday,
+        this.data.timezone,
+      ),
     });
     return inProgress;
   },
@@ -470,7 +494,7 @@ Page({
   onComplete(e: { currentTarget: { dataset: { id: string } } }) {
     const id = e.currentTarget.dataset.id;
     const item = this.findReminderItem(id);
-    if (!item || item.completing || item.exiting || item.deleting || item.status === "completed") {
+    if (!item || item.completing || item.exiting || item.deleting || item.status === 'completed') {
       return;
     }
 
@@ -480,7 +504,7 @@ Page({
       .then((response) => {
         if (!response.ok) {
           this.revertCompletingItem(id);
-          wx.showToast({ title: response.error?.message || "操作失败", icon: "none" });
+          wx.showToast({ title: response.error?.message || '操作失败', icon: 'none' });
           return;
         }
 
@@ -494,7 +518,7 @@ Page({
       })
       .catch(() => {
         this.revertCompletingItem(id);
-        wx.showToast({ title: "网络错误", icon: "none" });
+        wx.showToast({ title: '网络错误', icon: 'none' });
       });
   },
 
@@ -518,7 +542,7 @@ Page({
     this.patchReminderItem(id, {
       pressing: true,
       swiping: false,
-      deleteVisible: isDeleteRevealed(item.swipeX)
+      deleteVisible: isDeleteRevealed(item.swipeX),
     });
   },
 
@@ -535,21 +559,16 @@ Page({
     if (Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaY) > 10) return;
 
     const canSwipe =
-      this._gestureSwipeActive ||
-      this._startSwipeX !== 0 ||
-      Math.abs(deltaX) >= SWIPE_TRIGGER_PX;
+      this._gestureSwipeActive || this._startSwipeX !== 0 || Math.abs(deltaX) >= SWIPE_TRIGGER_PX;
     if (!canSwipe) return;
 
     this._gestureSwipeActive = true;
-    const swipeX = Math.max(
-      -this._deleteActionWidthPx,
-      Math.min(0, this._startSwipeX + deltaX)
-    );
+    const swipeX = Math.max(-this._deleteActionWidthPx, Math.min(0, this._startSwipeX + deltaX));
     this.patchReminderItem(id, {
       swipeX,
       swiping: true,
       pressing: false,
-      deleteVisible: isDeleteRevealed(swipeX)
+      deleteVisible: isDeleteRevealed(swipeX),
     });
   },
 
@@ -570,14 +589,11 @@ Page({
     }
 
     const point = changedTouchPoint(e);
-    const moved = point
-      ? Math.hypot(point.x - this._touchStartX, point.y - this._touchStartY)
-      : 0;
+    const moved = point ? Math.hypot(point.x - this._touchStartX, point.y - this._touchStartY) : 0;
 
     let swipeX = item.swipeX;
     if (this._gestureSwipeActive) {
-      const shouldOpen =
-        Math.abs(swipeX) >= this._deleteActionWidthPx * SWIPE_OPEN_THRESHOLD_RATIO;
+      const shouldOpen = Math.abs(swipeX) >= this._deleteActionWidthPx * SWIPE_OPEN_THRESHOLD_RATIO;
       swipeX = shouldOpen ? -this._deleteActionWidthPx : 0;
     } else if (moved < TAP_SLOP_PX) {
       swipeX = 0;
@@ -592,7 +608,7 @@ Page({
       swipeX,
       swiping: false,
       pressing: false,
-      deleteVisible: isDeleteRevealed(swipeX)
+      deleteVisible: isDeleteRevealed(swipeX),
     });
     this.resetRowGesture();
   },
@@ -609,9 +625,9 @@ Page({
     if (!item || item.deleting || item.completing || item.exiting) return;
 
     wx.showModal({
-      title: "删除提醒",
+      title: '删除提醒',
       content: `确定删除“${item.title}”？`,
-      confirmText: "删除",
+      confirmText: '删除',
       confirmColor: TODO_MODAL_CONFIRM_DANGER,
       success: (res) => {
         if (!res.confirm) {
@@ -619,7 +635,7 @@ Page({
           return;
         }
         this.deleteItem(id);
-      }
+      },
     });
   },
 
@@ -628,13 +644,13 @@ Page({
       deleting: true,
       exiting: true,
       swiping: false,
-      deleteVisible: false
+      deleteVisible: false,
     });
     deleteReminder(id)
       .then((response) => {
         if (!response.ok) {
           this.patchReminderItem(id, { deleting: false, exiting: false, swipeX: 0 });
-          wx.showToast({ title: response.error?.message || "删除失败", icon: "none" });
+          wx.showToast({ title: response.error?.message || '删除失败', icon: 'none' });
           return;
         }
 
@@ -645,18 +661,26 @@ Page({
           this.setData({
             pending,
             inProgress,
-            pendingGroups: groupPendingReminders(pending, this.data.accountToday, this.data.timezone),
-            inProgressGroups: groupPendingReminders(inProgress, this.data.accountToday, this.data.timezone),
-            completed
+            pendingGroups: groupPendingReminders(
+              pending,
+              this.data.accountToday,
+              this.data.timezone,
+            ),
+            inProgressGroups: groupPendingReminders(
+              inProgress,
+              this.data.accountToday,
+              this.data.timezone,
+            ),
+            completed,
           });
           this.updateCounts(pending, inProgress, completed);
           this.clearCompleteTimer(id);
-          wx.showToast({ title: "已删除", icon: "success" });
+          wx.showToast({ title: '已删除', icon: 'success' });
         }, EXIT_ANIM_MS);
       })
       .catch(() => {
         this.patchReminderItem(id, { deleting: false, exiting: false, swipeX: 0 });
-        wx.showToast({ title: "网络错误", icon: "none" });
+        wx.showToast({ title: '网络错误', icon: 'none' });
       });
   },
 
@@ -667,21 +691,21 @@ Page({
       return;
     }
     enableWechatNotifyForTarget({
-      targetType: "reminder",
+      targetType: 'reminder',
       targetId: reminderId,
-      templateId
+      templateId,
     })
       .then(({ accepted }) => {
         wx.showToast({
-          title: accepted ? "已开启微信提醒" : "未授权微信提醒",
-          icon: accepted ? "success" : "none"
+          title: accepted ? '已开启微信提醒' : '未授权微信提醒',
+          icon: accepted ? 'success' : 'none',
         });
         if (accepted) {
           this.loadReminders();
         }
       })
       .catch(() => {
-        wx.showToast({ title: "提醒授权失败", icon: "none" });
+        wx.showToast({ title: '提醒授权失败', icon: 'none' });
       });
-  }
+  },
 });

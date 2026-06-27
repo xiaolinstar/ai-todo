@@ -1,6 +1,6 @@
-@use "./styles/tokens.scss";
-@use "./styles/typography.scss";
-@use "./styles/username-display.scss";
+@use './styles/tokens.scss';
+@use './styles/typography.scss';
+@use './styles/username-display.scss';
 
 view,
 text,
@@ -106,7 +106,10 @@ button::after {
 }
 
 .pressable {
-  transition: transform 0.12s ease, opacity 0.12s ease, background 0.12s ease;
+  transition:
+    transform 0.12s ease,
+    opacity 0.12s ease,
+    background 0.12s ease;
 }
 
 .pressable-active {
@@ -275,7 +278,9 @@ button::after {
   color: var(--todo-text-primary);
   font-size: 30rpx;
   font-weight: 500;
-  transition: background 0.15s ease, transform 0.12s ease;
+  transition:
+    background 0.15s ease,
+    transform 0.12s ease;
 }
 
 .week-day-hover .day-circle {

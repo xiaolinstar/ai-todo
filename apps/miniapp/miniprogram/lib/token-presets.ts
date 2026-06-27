@@ -9,28 +9,28 @@ export interface TokenPreset {
 
 export const TOKEN_PRESETS: TokenPreset[] = [
   {
-    id: "daily",
-    label: "日常使用",
-    description: "180 天到期 · 90 天未用失效",
-    actionLabel: "日常使用（180 天）",
+    id: 'daily',
+    label: '日常使用',
+    description: '180 天到期 · 90 天未用失效',
+    actionLabel: '日常使用（180 天）',
     ttlDays: 180,
-    maxIdleDays: 90
+    maxIdleDays: 90,
   },
   {
-    id: "debug",
-    label: "短期调试",
-    description: "30 天到期 · 30 天未用失效",
-    actionLabel: "短期调试（30 天）",
+    id: 'debug',
+    label: '短期调试',
+    description: '30 天到期 · 30 天未用失效',
+    actionLabel: '短期调试（30 天）',
     ttlDays: 30,
-    maxIdleDays: 30
+    maxIdleDays: 30,
   },
   {
-    id: "long",
-    label: "长期使用",
-    description: "永不过期 · 90 天未用失效",
-    actionLabel: "长期使用（不过期）",
-    maxIdleDays: 90
-  }
+    id: 'long',
+    label: '长期使用',
+    description: '永不过期 · 90 天未用失效',
+    actionLabel: '长期使用（不过期）',
+    maxIdleDays: 90,
+  },
 ];
 
 export function findTokenPreset(id: string): TokenPreset {
@@ -40,8 +40,8 @@ export function findTokenPreset(id: string): TokenPreset {
 export function defaultTokenName(): string {
   const now = new Date();
   const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const day = String(now.getDate()).padStart(2, "0");
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
   return `CLI ${year}-${month}-${day}`;
 }
 
@@ -51,12 +51,12 @@ export function expiresAtFromDays(days?: number): string | undefined {
   return expiresAt.toISOString();
 }
 
-export const CLI_SETTINGS_PATH = "~/.ai-todo/settings.json";
+export const CLI_SETTINGS_PATH = '~/.ai-todo/settings.json';
 
 export function buildSettingsSnippet(apiUrl: string, token: string): string {
   return JSON.stringify({ url: apiUrl, token }, null, 2);
 }
 
 export function buildSettingsTemplate(apiUrl: string): string {
-  return JSON.stringify({ url: apiUrl, token: "aitodo_xxx" }, null, 2);
+  return JSON.stringify({ url: apiUrl, token: 'aitodo_xxx' }, null, 2);
 }

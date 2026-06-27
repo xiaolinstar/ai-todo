@@ -1,9 +1,9 @@
-import { isDevelopEnv, syncRuntimeConfig } from "./lib/config";
-import { restoreSession } from "./lib/session";
-import { enableShareMenu } from "./lib/share";
+import { isDevelopEnv, syncRuntimeConfig } from './lib/config';
+import { restoreSession } from './lib/session';
+import { enableShareMenu } from './lib/share';
 
 type PrivacyAuthorizationResolve = (result: {
-  event: "agree" | "disagree";
+  event: 'agree' | 'disagree';
   buttonId?: string;
 }) => void;
 
@@ -15,32 +15,32 @@ function setupPrivacyAuthorization() {
   wx.onNeedPrivacyAuthorization((resolve: PrivacyAuthorizationResolve) => {
     const pages = getCurrentPages();
     const currentPage = pages[pages.length - 1];
-    if (currentPage && typeof currentPage.showPrivacyAuthorization === "function") {
+    if (currentPage && typeof currentPage.showPrivacyAuthorization === 'function') {
       currentPage.showPrivacyAuthorization(resolve);
       return;
     }
 
     wx.showModal({
-      title: "用户隐私保护提示",
-      content: "继续使用前，请先阅读并同意本小程序的隐私保护指引。",
-      confirmText: "同意",
-      cancelText: "拒绝",
+      title: '用户隐私保护提示',
+      content: '继续使用前，请先阅读并同意本小程序的隐私保护指引。',
+      confirmText: '同意',
+      cancelText: '拒绝',
       success(result) {
         resolve({
-          event: result.confirm ? "agree" : "disagree",
-          buttonId: result.confirm ? "privacy-modal-agree" : "privacy-modal-disagree"
+          event: result.confirm ? 'agree' : 'disagree',
+          buttonId: result.confirm ? 'privacy-modal-agree' : 'privacy-modal-disagree',
         });
       },
       fail() {
-        resolve({ event: "disagree", buttonId: "privacy-modal-fail" });
-      }
+        resolve({ event: 'disagree', buttonId: 'privacy-modal-fail' });
+      },
     });
   });
 }
 
 App({
   globalData: {
-    session: { loggedIn: false }
+    session: { loggedIn: false },
   },
   onLaunch() {
     setupPrivacyAuthorization();
@@ -49,5 +49,5 @@ App({
     if (!isDevelopEnv()) {
       enableShareMenu();
     }
-  }
+  },
 });

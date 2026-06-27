@@ -1,5 +1,5 @@
-import { TODO_MODAL_CONFIRM_DANGER } from "./design-tokens";
-import { getWindowWidthPx } from "./window-metrics";
+import { TODO_MODAL_CONFIRM_DANGER } from './design-tokens';
+import { getWindowWidthPx } from './window-metrics';
 
 export interface SwipeListRowState {
   id: string;
@@ -33,7 +33,7 @@ export function withSwipeRow<T extends { id: string }>(item: T): T & SwipeListRo
     pressing: false,
     deleteVisible: false,
     deleting: false,
-    exiting: false
+    exiting: false,
   };
 }
 
@@ -59,7 +59,7 @@ function changedTouchPoint(e: {
 }
 
 export class SwipeListGesture<T extends SwipeListRowState> {
-  private _activeRowId = "";
+  private _activeRowId = '';
   private _gestureSwipeActive = false;
   private _touchStartX = 0;
   private _touchStartY = 0;
@@ -78,7 +78,7 @@ export class SwipeListGesture<T extends SwipeListRowState> {
 
   patchItem(id: string, patch: Partial<T>): void {
     this.adapter.setItems(
-      this.adapter.getItems().map((item) => (item.id === id ? { ...item, ...patch } : item))
+      this.adapter.getItems().map((item) => (item.id === id ? { ...item, ...patch } : item)),
     );
   }
 
@@ -86,18 +86,20 @@ export class SwipeListGesture<T extends SwipeListRowState> {
     return this.adapter.getItems().find((item) => item.id === id);
   }
 
-  closeOpenSwipes(exceptId = ""): void {
+  closeOpenSwipes(exceptId = ''): void {
     this.adapter.setItems(
-      this.adapter.getItems().map((item) =>
-        item.id === exceptId || item.swipeX === 0
-          ? item
-          : { ...item, swipeX: 0, swiping: false, pressing: false, deleteVisible: false }
-      )
+      this.adapter
+        .getItems()
+        .map((item) =>
+          item.id === exceptId || item.swipeX === 0
+            ? item
+            : { ...item, swipeX: 0, swiping: false, pressing: false, deleteVisible: false },
+        ),
     );
   }
 
   resetGesture(): void {
-    this._activeRowId = "";
+    this._activeRowId = '';
     this._gestureSwipeActive = false;
     this._startSwipeX = 0;
   }
@@ -121,7 +123,7 @@ export class SwipeListGesture<T extends SwipeListRowState> {
     this.patchItem(id, {
       pressing: true,
       swiping: false,
-      deleteVisible: isDeleteRevealed(item.swipeX)
+      deleteVisible: isDeleteRevealed(item.swipeX),
     } as Partial<T>);
   }
 
@@ -138,21 +140,16 @@ export class SwipeListGesture<T extends SwipeListRowState> {
     if (Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaY) > 10) return;
 
     const canSwipe =
-      this._gestureSwipeActive ||
-      this._startSwipeX !== 0 ||
-      Math.abs(deltaX) >= SWIPE_TRIGGER_PX;
+      this._gestureSwipeActive || this._startSwipeX !== 0 || Math.abs(deltaX) >= SWIPE_TRIGGER_PX;
     if (!canSwipe) return;
 
     this._gestureSwipeActive = true;
-    const swipeX = Math.max(
-      -this._deleteActionWidthPx,
-      Math.min(0, this._startSwipeX + deltaX)
-    );
+    const swipeX = Math.max(-this._deleteActionWidthPx, Math.min(0, this._startSwipeX + deltaX));
     this.patchItem(id, {
       swipeX,
       swiping: true,
       pressing: false,
-      deleteVisible: isDeleteRevealed(swipeX)
+      deleteVisible: isDeleteRevealed(swipeX),
     } as Partial<T>);
   }
 
@@ -173,14 +170,11 @@ export class SwipeListGesture<T extends SwipeListRowState> {
     }
 
     const point = changedTouchPoint(e);
-    const moved = point
-      ? Math.hypot(point.x - this._touchStartX, point.y - this._touchStartY)
-      : 0;
+    const moved = point ? Math.hypot(point.x - this._touchStartX, point.y - this._touchStartY) : 0;
 
     let swipeX = item.swipeX;
     if (this._gestureSwipeActive) {
-      const shouldOpen =
-        Math.abs(swipeX) >= this._deleteActionWidthPx * SWIPE_OPEN_THRESHOLD_RATIO;
+      const shouldOpen = Math.abs(swipeX) >= this._deleteActionWidthPx * SWIPE_OPEN_THRESHOLD_RATIO;
       swipeX = shouldOpen ? -this._deleteActionWidthPx : 0;
     } else if (moved < TAP_SLOP_PX) {
       swipeX = 0;
@@ -195,7 +189,7 @@ export class SwipeListGesture<T extends SwipeListRowState> {
       swipeX,
       swiping: false,
       pressing: false,
-      deleteVisible: isDeleteRevealed(swipeX)
+      deleteVisible: isDeleteRevealed(swipeX),
     } as Partial<T>);
     this.resetGesture();
   }
@@ -209,7 +203,7 @@ export class SwipeListGesture<T extends SwipeListRowState> {
     wx.showModal({
       title: modal.title,
       content: modal.content,
-      confirmText: "删除",
+      confirmText: '删除',
       confirmColor: TODO_MODAL_CONFIRM_DANGER,
       success: (res) => {
         if (!res.confirm) {
@@ -217,7 +211,7 @@ export class SwipeListGesture<T extends SwipeListRowState> {
           return;
         }
         this.deleteItem(id);
-      }
+      },
     });
   }
 
@@ -226,7 +220,7 @@ export class SwipeListGesture<T extends SwipeListRowState> {
       deleting: true,
       exiting: true,
       swiping: false,
-      deleteVisible: false
+      deleteVisible: false,
     } as Partial<T>);
 
     this.adapter
@@ -234,18 +228,18 @@ export class SwipeListGesture<T extends SwipeListRowState> {
       .then((result) => {
         if (!result.ok) {
           this.patchItem(id, { deleting: false, exiting: false, swipeX: 0 } as Partial<T>);
-          wx.showToast({ title: result.message || "删除失败", icon: "none" });
+          wx.showToast({ title: result.message || '删除失败', icon: 'none' });
           return;
         }
 
         setTimeout(() => {
           this.adapter.setItems(this.adapter.getItems().filter((item) => item.id !== id));
-          wx.showToast({ title: "已删除", icon: "success" });
+          wx.showToast({ title: '已删除', icon: 'success' });
         }, EXIT_ANIM_MS);
       })
       .catch(() => {
         this.patchItem(id, { deleting: false, exiting: false, swipeX: 0 } as Partial<T>);
-        wx.showToast({ title: "删除失败", icon: "none" });
+        wx.showToast({ title: '删除失败', icon: 'none' });
       });
   }
 }

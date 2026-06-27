@@ -1,50 +1,50 @@
-import { updateProfile } from "../../lib/api";
-import { loginWithWechat } from "../../lib/auth";
+import { updateProfile } from '../../lib/api';
+import { loginWithWechat } from '../../lib/auth';
 import {
   buildMineMenuSections,
   navigateSettingsItem,
   type SettingsMenuItem,
-  type SettingsMenuSection
-} from "../../lib/settings-menu";
-import { avatarColor, getInitial } from "../../lib/format";
+  type SettingsMenuSection,
+} from '../../lib/settings-menu';
+import { avatarColor, getInitial } from '../../lib/format';
 import {
   hasSeenProfileSetup,
   isDevelopEnv,
   markProfileSetupSeen,
   saveConfig,
-  syncRuntimeConfig
-} from "../../lib/config";
-import { markPrivacyConsented, requirePrivacyAuthorization } from "../../lib/privacy";
-import { onSessionChange, restoreSession } from "../../lib/session";
-import { TODO_COLORS } from "../../lib/design-tokens";
-import { updateTabBarSelected } from "../../lib/tab-bar";
-import { buildAppShareOptions, buildAppShareTimelineOptions } from "../../lib/share";
+  syncRuntimeConfig,
+} from '../../lib/config';
+import { markPrivacyConsented, requirePrivacyAuthorization } from '../../lib/privacy';
+import { onSessionChange, restoreSession } from '../../lib/session';
+import { TODO_COLORS } from '../../lib/design-tokens';
+import { updateTabBarSelected } from '../../lib/tab-bar';
+import { buildAppShareOptions, buildAppShareTimelineOptions } from '../../lib/share';
 
 type PrivacyAuthorizationResolve = (result: {
-  event: "agree" | "disagree";
+  event: 'agree' | 'disagree';
   buttonId?: string;
 }) => void;
 
 Page({
   data: {
-    userName: "",
-    userId: "",
-    userUsername: "",
-    avatarUrl: "",
+    userName: '',
+    userId: '',
+    userUsername: '',
+    avatarUrl: '',
     avatarBroken: false,
-    profileSubtitle: "微信登录以使用全部设置",
+    profileSubtitle: '微信登录以使用全部设置',
     showProfileSetup: false,
     showPrivacyAuthorization: false,
-    setupAvatarUrl: "",
-    setupNameInput: "",
-    timezone: "",
-    initial: "?",
+    setupAvatarUrl: '',
+    setupNameInput: '',
+    timezone: '',
+    initial: '?',
     avatarColor: TODO_COLORS.primary,
     loggedIn: false,
     loggingIn: false,
     profileSaving: false,
     showDevControls: false,
-    menuSections: [] as SettingsMenuSection[]
+    menuSections: [] as SettingsMenuSection[],
   },
 
   _privacyResolve: undefined as PrivacyAuthorizationResolve | undefined,
@@ -88,17 +88,17 @@ Page({
 
   syncMenu() {
     const { loggedIn, showDevControls } = this.data;
-    const profileSubtitle = loggedIn ? "" : "微信登录以使用全部设置";
+    const profileSubtitle = loggedIn ? '' : '微信登录以使用全部设置';
     this.setData({
       menuSections: buildMineMenuSections(loggedIn, showDevControls),
-      profileSubtitle
+      profileSubtitle,
     });
   },
 
   onWechatLogin() {
     requirePrivacyAuthorization().then((authorized) => {
       if (!authorized) {
-        wx.showToast({ title: "需同意隐私指引后登录", icon: "none" });
+        wx.showToast({ title: '需同意隐私指引后登录', icon: 'none' });
         return;
       }
       this.startWechatLogin();
@@ -111,15 +111,11 @@ Page({
       .then((response) => {
         this.setData({ loggingIn: false });
         if (!response.ok || !response.data) {
-          const code = response.error?.code || "";
-          const hint = response.error?.message || "微信登录失败";
+          const code = response.error?.code || '';
+          const hint = response.error?.message || '微信登录失败';
           const title =
-            code === "DATABASE_ERROR"
-              ? "数据库需迁移"
-              : hint.length > 20
-                ? "微信登录失败"
-                : hint;
-          wx.showToast({ title, icon: "none", duration: 2500 });
+            code === 'DATABASE_ERROR' ? '数据库需迁移' : hint.length > 20 ? '微信登录失败' : hint;
+          wx.showToast({ title, icon: 'none', duration: 2500 });
           return;
         }
         saveConfig({ token: response.data.accessToken });
@@ -129,7 +125,7 @@ Page({
       })
       .catch(() => {
         this.setData({ loggingIn: false });
-        wx.showToast({ title: "微信登录失败", icon: "none" });
+        wx.showToast({ title: '微信登录失败', icon: 'none' });
       });
   },
 
@@ -141,23 +137,23 @@ Page({
           this.syncMenu();
           return;
         }
-        if (result.reason === "network_error") {
+        if (result.reason === 'network_error') {
           if (showToast) {
-            wx.showToast({ title: "无法连接 API", icon: "none" });
+            wx.showToast({ title: '无法连接 API', icon: 'none' });
           }
           return;
         }
         this.resetProfile();
         this.syncMenu();
-        if (showToast && result.reason === "relogin_failed") {
-          wx.showToast({ title: "登录已过期", icon: "none" });
+        if (showToast && result.reason === 'relogin_failed') {
+          wx.showToast({ title: '登录已过期', icon: 'none' });
         }
       })
       .catch(() => {
         this.resetProfile();
         this.syncMenu();
         if (showToast) {
-          wx.showToast({ title: "无法连接 API", icon: "none" });
+          wx.showToast({ title: '无法连接 API', icon: 'none' });
         }
       });
   },
@@ -170,47 +166,47 @@ Page({
       timezone: string;
       avatarUrl?: string;
     },
-    showToast: boolean
+    showToast: boolean,
   ) {
-    const userUsername = (user.username || "").trim() || user.id;
+    const userUsername = (user.username || '').trim() || user.id;
     this.setData({
       userName: user.displayName,
       userId: user.id,
       userUsername,
-      avatarUrl: user.avatarUrl || "",
+      avatarUrl: user.avatarUrl || '',
       avatarBroken: false,
       timezone: user.timezone,
-      initial: user.avatarUrl ? getInitial(user.displayName) : "微",
+      initial: user.avatarUrl ? getInitial(user.displayName) : '微',
       avatarColor: avatarColor(user.displayName),
-      loggedIn: true
+      loggedIn: true,
     });
     if (showToast) {
-      wx.showToast({ title: "已登录", icon: "success" });
+      wx.showToast({ title: '已登录', icon: 'success' });
     }
   },
 
   onAvatarError() {
     this.setData({
       avatarBroken: true,
-      initial: getInitial(this.data.userName || "微")
+      initial: getInitial(this.data.userName || '微'),
     });
   },
 
   resetProfile() {
     this.setData({
-      userName: "",
-      userId: "",
-      userUsername: "",
-      avatarUrl: "",
+      userName: '',
+      userId: '',
+      userUsername: '',
+      avatarUrl: '',
       avatarBroken: false,
       showProfileSetup: false,
-      setupAvatarUrl: "",
-      setupNameInput: "",
-      timezone: "",
-      initial: "?",
+      setupAvatarUrl: '',
+      setupNameInput: '',
+      timezone: '',
+      initial: '?',
       avatarColor: TODO_COLORS.primary,
       loggedIn: false,
-      profileSaving: false
+      profileSaving: false,
     });
   },
 
@@ -219,18 +215,16 @@ Page({
       this.onWechatLogin();
       return;
     }
-    wx.navigateTo({ url: "/pages/profile-settings/profile-settings" });
+    wx.navigateTo({ url: '/pages/profile-settings/profile-settings' });
   },
 
   onMenuItemTap(e: { currentTarget: { dataset: { sectionId: string; itemId: string } } }) {
     const { sectionId, itemId } = e.currentTarget.dataset;
-    const section = this.data.menuSections.find(
-      (s: SettingsMenuSection) => s.id === sectionId
-    );
+    const section = this.data.menuSections.find((s: SettingsMenuSection) => s.id === sectionId);
     const item = section?.items.find((i: SettingsMenuItem) => i.id === itemId);
     if (!item) return;
     if (item.requireLogin && !this.data.loggedIn) {
-      wx.showToast({ title: "请先微信登录", icon: "none" });
+      wx.showToast({ title: '请先微信登录', icon: 'none' });
       return;
     }
     navigateSettingsItem(item);
@@ -244,7 +238,7 @@ Page({
   onPrivacyAgree() {
     markPrivacyConsented();
     if (this._privacyResolve) {
-      this._privacyResolve({ event: "agree", buttonId: "privacy-agree" });
+      this._privacyResolve({ event: 'agree', buttonId: 'privacy-agree' });
       this._privacyResolve = undefined;
     }
     this.setData({ showPrivacyAuthorization: false });
@@ -252,23 +246,23 @@ Page({
 
   onPrivacyDisagree() {
     if (this._privacyResolve) {
-      this._privacyResolve({ event: "disagree", buttonId: "privacy-disagree" });
+      this._privacyResolve({ event: 'disagree', buttonId: 'privacy-disagree' });
       this._privacyResolve = undefined;
     }
     this.setData({ showPrivacyAuthorization: false });
-    wx.showToast({ title: "已取消隐私授权", icon: "none" });
+    wx.showToast({ title: '已取消隐私授权', icon: 'none' });
   },
 
   openProfileSetup() {
     if (!this.data.userId) return;
     const setupNameInput =
-      !this.data.userName || this.data.userName === "微信用户"
+      !this.data.userName || this.data.userName === '微信用户'
         ? this.data.userId
         : this.data.userName;
     this.setData({
       showProfileSetup: true,
       setupAvatarUrl: this.data.avatarUrl,
-      setupNameInput
+      setupNameInput,
     });
   },
 
@@ -280,7 +274,7 @@ Page({
   },
 
   onChooseSetupAvatar(e: { detail: { avatarUrl?: string } }) {
-    const avatarUrl = e.detail.avatarUrl || "";
+    const avatarUrl = e.detail.avatarUrl || '';
     if (!avatarUrl) return;
     this.setData({ setupAvatarUrl: avatarUrl }, () => {
       this.trySaveProfileSetup();
@@ -316,18 +310,18 @@ Page({
       .then((response) => {
         this.setData({ profileSaving: false });
         if (!response.ok || !response.data) {
-          wx.showToast({ title: response.error?.message || "保存失败", icon: "none" });
+          wx.showToast({ title: response.error?.message || '保存失败', icon: 'none' });
           return;
         }
         this.applyUser(response.data.user, false);
         markProfileSetupSeen(response.data.user.id);
         this.setData({ showProfileSetup: false });
         this.syncMenu();
-        wx.showToast({ title: "资料已更新", icon: "success" });
+        wx.showToast({ title: '资料已更新', icon: 'success' });
       })
       .catch(() => {
         this.setData({ profileSaving: false });
-        wx.showToast({ title: "网络错误", icon: "none" });
+        wx.showToast({ title: '网络错误', icon: 'none' });
       });
-  }
+  },
 });

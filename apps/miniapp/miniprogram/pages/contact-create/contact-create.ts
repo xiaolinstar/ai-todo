@@ -1,15 +1,15 @@
-import { createContact } from "../../lib/api";
+import { createContact } from '../../lib/api';
 
 Page({
   data: {
-    displayName: "",
-    company: "",
-    title: "",
-    email: "",
-    phone: "",
-    notes: "",
+    displayName: '',
+    company: '',
+    title: '',
+    email: '',
+    phone: '',
+    notes: '',
     notesExpanded: false,
-    submitting: false
+    submitting: false,
   },
 
   onDisplayNameInput(e: { detail: { value: string } }) {
@@ -43,7 +43,7 @@ Page({
   onSubmit() {
     const displayName = this.data.displayName.trim();
     if (!displayName) {
-      wx.showToast({ title: "请输入姓名", icon: "none" });
+      wx.showToast({ title: '请输入姓名', icon: 'none' });
       return;
     }
 
@@ -51,10 +51,10 @@ Page({
     const email = this.data.email.trim();
     const phone = this.data.phone.trim();
     if (email) {
-      methods.push({ type: "email", value: email, isPrimary: true });
+      methods.push({ type: 'email', value: email, isPrimary: true });
     }
     if (phone) {
-      methods.push({ type: "phone", value: phone, isPrimary: true });
+      methods.push({ type: 'phone', value: phone, isPrimary: true });
     }
 
     const payload: {
@@ -65,7 +65,7 @@ Page({
       methods?: Array<{ type: string; value: string; isPrimary?: boolean }>;
     } = { displayName };
 
-    for (const key of ["company", "title", "notes"] as const) {
+    for (const key of ['company', 'title', 'notes'] as const) {
       const value = this.data[key].trim();
       if (value) {
         payload[key] = value;
@@ -81,15 +81,15 @@ Page({
       .then((response) => {
         this.setData({ submitting: false });
         if (!response.ok) {
-          wx.showToast({ title: response.error?.message || "添加失败", icon: "none" });
+          wx.showToast({ title: response.error?.message || '添加失败', icon: 'none' });
           return;
         }
-        wx.showToast({ title: "已添加", icon: "success" });
+        wx.showToast({ title: '已添加', icon: 'success' });
         setTimeout(() => wx.navigateBack(), 500);
       })
       .catch(() => {
         this.setData({ submitting: false });
-        wx.showToast({ title: "网络错误", icon: "none" });
+        wx.showToast({ title: '网络错误', icon: 'none' });
       });
-  }
+  },
 });

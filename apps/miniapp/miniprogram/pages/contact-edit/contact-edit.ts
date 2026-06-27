@@ -1,23 +1,23 @@
-import { fetchContact, updateContact } from "../../lib/api";
+import { fetchContact, updateContact } from '../../lib/api';
 
 Page({
   data: {
-    contactId: "",
+    contactId: '',
     loading: true,
-    displayName: "",
-    company: "",
-    title: "",
-    email: "",
-    phone: "",
-    notes: "",
+    displayName: '',
+    company: '',
+    title: '',
+    email: '',
+    phone: '',
+    notes: '',
     notesExpanded: false,
-    submitting: false
+    submitting: false,
   },
 
   onLoad(options: { id?: string }) {
-    const contactId = (options.id || "").trim();
+    const contactId = (options.id || '').trim();
     if (!contactId) {
-      wx.showToast({ title: "缺少联系人 ID", icon: "none" });
+      wx.showToast({ title: '缺少联系人 ID', icon: 'none' });
       setTimeout(() => wx.navigateBack(), 800);
       return;
     }
@@ -26,32 +26,28 @@ Page({
       .then((response) => {
         if (!response.ok || !response.data) {
           this.setData({ loading: false });
-          wx.showToast({ title: response.error?.message || "加载失败", icon: "none" });
+          wx.showToast({ title: response.error?.message || '加载失败', icon: 'none' });
           return;
         }
         const contact = response.data.contact;
         const email =
-          contact.primaryEmail ||
-          contact.methods?.find((m) => m.type === "email")?.value ||
-          "";
+          contact.primaryEmail || contact.methods?.find((m) => m.type === 'email')?.value || '';
         const phone =
-          contact.primaryPhone ||
-          contact.methods?.find((m) => m.type === "phone")?.value ||
-          "";
+          contact.primaryPhone || contact.methods?.find((m) => m.type === 'phone')?.value || '';
         this.setData({
           loading: false,
-          displayName: contact.displayName || "",
-          company: contact.company || "",
-          title: contact.title || "",
+          displayName: contact.displayName || '',
+          company: contact.company || '',
+          title: contact.title || '',
           email,
           phone,
-          notes: contact.notes || "",
-          notesExpanded: Boolean(contact.notes)
+          notes: contact.notes || '',
+          notesExpanded: Boolean(contact.notes),
         });
       })
       .catch(() => {
         this.setData({ loading: false });
-        wx.showToast({ title: "网络错误", icon: "none" });
+        wx.showToast({ title: '网络错误', icon: 'none' });
       });
   },
 
@@ -86,7 +82,7 @@ Page({
   onSubmit() {
     const displayName = this.data.displayName.trim();
     if (!displayName) {
-      wx.showToast({ title: "请输入姓名", icon: "none" });
+      wx.showToast({ title: '请输入姓名', icon: 'none' });
       return;
     }
 
@@ -94,10 +90,10 @@ Page({
     const email = this.data.email.trim();
     const phone = this.data.phone.trim();
     if (email) {
-      methods.push({ type: "email", value: email, isPrimary: true });
+      methods.push({ type: 'email', value: email, isPrimary: true });
     }
     if (phone) {
-      methods.push({ type: "phone", value: phone, isPrimary: true });
+      methods.push({ type: 'phone', value: phone, isPrimary: true });
     }
 
     this.setData({ submitting: true });
@@ -106,20 +102,20 @@ Page({
       company: this.data.company.trim(),
       title: this.data.title.trim(),
       notes: this.data.notes.trim(),
-      methods
+      methods,
     })
       .then((response) => {
         this.setData({ submitting: false });
         if (!response.ok) {
-          wx.showToast({ title: response.error?.message || "保存失败", icon: "none" });
+          wx.showToast({ title: response.error?.message || '保存失败', icon: 'none' });
           return;
         }
-        wx.showToast({ title: "已保存", icon: "success" });
+        wx.showToast({ title: '已保存', icon: 'success' });
         setTimeout(() => wx.navigateBack(), 500);
       })
       .catch(() => {
         this.setData({ submitting: false });
-        wx.showToast({ title: "网络错误", icon: "none" });
+        wx.showToast({ title: '网络错误', icon: 'none' });
       });
-  }
+  },
 });

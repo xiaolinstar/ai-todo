@@ -32,7 +32,10 @@
   color: var(--todo-text-muted);
   font-size: var(--todo-font-size-lg);
   font-weight: var(--todo-font-weight-semibold);
-  transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .segment-press {

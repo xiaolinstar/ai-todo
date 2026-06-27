@@ -2,14 +2,14 @@ import {
   loadContentPrefs,
   saveContentPrefs,
   type CalendarContentPrefs,
-  type ContactsContentPrefs
-} from "../../lib/content-prefs";
-import { todoPageThemeData } from "../../lib/theme";
+  type ContactsContentPrefs,
+} from '../../lib/content-prefs';
+import { todoPageThemeData } from '../../lib/theme';
 
 const DURATION_MINUTES = [30, 60, 90] as const;
-const DURATION_LABELS = ["30 分钟", "60 分钟", "90 分钟"];
-const SORT_LABELS = ["按姓名", "按列表顺序"];
-const SORT_MODES = ["name", "updated"] as const;
+const DURATION_LABELS = ['30 分钟', '60 分钟', '90 分钟'];
+const SORT_LABELS = ['按姓名', '按列表顺序'];
+const SORT_MODES = ['name', 'updated'] as const;
 
 Page({
   data: {
@@ -23,7 +23,7 @@ Page({
     selectTodayOnOpen: true,
     sortIndex: 0,
     sortLabels: SORT_LABELS,
-    showHandleInList: true
+    showHandleInList: true,
   },
 
   onShow() {
@@ -36,7 +36,7 @@ Page({
       .then((prefs) => {
         const durationIndex = Math.max(
           0,
-          DURATION_MINUTES.indexOf(prefs.calendar.defaultDurationMinutes)
+          DURATION_MINUTES.indexOf(prefs.calendar.defaultDurationMinutes),
         );
         const sortIndex = Math.max(0, SORT_MODES.indexOf(prefs.contacts.sortMode));
         this.setData({
@@ -45,12 +45,12 @@ Page({
           durationIndex: durationIndex >= 0 ? durationIndex : 1,
           selectTodayOnOpen: prefs.calendar.selectTodayOnOpen,
           sortIndex: sortIndex >= 0 ? sortIndex : 0,
-          showHandleInList: prefs.contacts.showHandleInList
+          showHandleInList: prefs.contacts.showHandleInList,
         });
       })
       .catch(() => {
         this.setData({ loading: false });
-        wx.showToast({ title: "网络错误", icon: "none" });
+        wx.showToast({ title: '网络错误', icon: 'none' });
       });
   },
 
@@ -60,19 +60,19 @@ Page({
       .then((prefs) => {
         const durationIndex = Math.max(
           0,
-          DURATION_MINUTES.indexOf(prefs.calendar.defaultDurationMinutes)
+          DURATION_MINUTES.indexOf(prefs.calendar.defaultDurationMinutes),
         );
         this.setData({
           savingCalendar: false,
           defaultHasEnd: prefs.calendar.defaultHasEnd,
           durationIndex: durationIndex >= 0 ? durationIndex : 1,
-          selectTodayOnOpen: prefs.calendar.selectTodayOnOpen
+          selectTodayOnOpen: prefs.calendar.selectTodayOnOpen,
         });
-        wx.showToast({ title: "已保存", icon: "success" });
+        wx.showToast({ title: '已保存', icon: 'success' });
       })
       .catch(() => {
         this.setData({ savingCalendar: false });
-        wx.showToast({ title: "保存失败", icon: "none" });
+        wx.showToast({ title: '保存失败', icon: 'none' });
       });
   },
 
@@ -99,24 +99,24 @@ Page({
         this.setData({
           savingContacts: false,
           sortIndex: sortIndex >= 0 ? sortIndex : 0,
-          showHandleInList: prefs.contacts.showHandleInList
+          showHandleInList: prefs.contacts.showHandleInList,
         });
-        wx.showToast({ title: "已保存", icon: "success" });
+        wx.showToast({ title: '已保存', icon: 'success' });
       })
       .catch(() => {
         this.setData({ savingContacts: false });
-        wx.showToast({ title: "保存失败", icon: "none" });
+        wx.showToast({ title: '保存失败', icon: 'none' });
       });
   },
 
   onSortChange(e: { detail: { value: number } }) {
     const index = Number(e.detail.value) || 0;
-    const mode = SORT_MODES[index] ?? "name";
+    const mode = SORT_MODES[index] ?? 'name';
     this.setData({ sortIndex: index });
     this.saveContactsPatch({ sortMode: mode });
   },
 
   onShowHandleChange(e: { detail: { value: boolean } }) {
     this.saveContactsPatch({ showHandleInList: e.detail.value });
-  }
+  },
 });

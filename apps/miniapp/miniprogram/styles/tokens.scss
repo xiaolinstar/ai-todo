@@ -2,7 +2,7 @@
  * Page-level design tokens (includes `page` selector — do not @use in components).
  * Components: @use "./todo-design-tokens" and @include on a root class.
  */
-@use "./todo-design-tokens" as *;
+@use './todo-design-tokens' as *;
 
 page {
   @include todo-design-tokens;

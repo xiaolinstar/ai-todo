@@ -11,22 +11,22 @@
  *   pnpm preview [-- --page pages/reminders/reminders]
  *   pnpm upload [-- --desc "备注"]  (temporarily disabled — use WeChat DevTools)
  */
-import { createRequire } from "node:module";
-import { existsSync, mkdirSync, readFileSync, readdirSync } from "node:fs";
-import { dirname, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { createRequire } from 'node:module';
+import { existsSync, mkdirSync, readFileSync, readdirSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const require = createRequire(import.meta.url);
-const ci = require("miniprogram-ci");
+const ci = require('miniprogram-ci');
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
-const miniappRoot = resolve(scriptDir, "..");
-const privateConfigPath = resolve(miniappRoot, "project.private.config.json");
-const previewDir = resolve(miniappRoot, ".preview");
-const previewQrPath = resolve(previewDir, "preview.jpg");
+const miniappRoot = resolve(scriptDir, '..');
+const privateConfigPath = resolve(miniappRoot, 'project.private.config.json');
+const previewDir = resolve(miniappRoot, '.preview');
+const previewQrPath = resolve(previewDir, 'preview.jpg');
 
 function readJson(path) {
-  return JSON.parse(readFileSync(path, "utf8"));
+  return JSON.parse(readFileSync(path, 'utf8'));
 }
 
 function readAppId() {
@@ -34,11 +34,11 @@ function readAppId() {
     return process.env.WECHAT_CI_APPID.trim();
   }
   if (!existsSync(privateConfigPath)) {
-    fail("Missing appid. Create project.private.config.json or set WECHAT_CI_APPID.");
+    fail('Missing appid. Create project.private.config.json or set WECHAT_CI_APPID.');
   }
   const appid = readJson(privateConfigPath).appid?.trim();
-  if (!appid || appid === "touristid") {
-    fail("Set a real appid in project.private.config.json (not touristid).");
+  if (!appid || appid === 'touristid') {
+    fail('Set a real appid in project.private.config.json (not touristid).');
   }
   return appid;
 }
@@ -46,7 +46,7 @@ function readAppId() {
 function readPrivateKeyPath() {
   const configured = process.env.WECHAT_CI_PRIVATE_KEY_PATH?.trim();
   if (configured) {
-    const resolved = configured.startsWith("./")
+    const resolved = configured.startsWith('./')
       ? resolve(miniappRoot, configured.slice(2))
       : configured;
     if (!existsSync(resolved)) {
@@ -63,23 +63,23 @@ function readPrivateKeyPath() {
   }
   if (candidates.length > 1) {
     fail(
-      "Multiple private.wx*.key files in apps/miniapp — set WECHAT_CI_PRIVATE_KEY_PATH in ci.env"
+      'Multiple private.wx*.key files in apps/miniapp — set WECHAT_CI_PRIVATE_KEY_PATH in ci.env',
     );
   }
 
   fail(
     [
-      "Set WECHAT_CI_PRIVATE_KEY_PATH in ci.env, or place private.wxYOUR_APPID.key in apps/miniapp/.",
-      "Download from 微信公众平台 → 开发管理 → 小程序代码上传 → 上传密钥",
-      "Example: WECHAT_CI_PRIVATE_KEY_PATH=./private.wxYOUR_APPID.key"
-    ].join("\n")
+      'Set WECHAT_CI_PRIVATE_KEY_PATH in ci.env, or place private.wxYOUR_APPID.key in apps/miniapp/.',
+      'Download from 微信公众平台 → 开发管理 → 小程序代码上传 → 上传密钥',
+      'Example: WECHAT_CI_PRIVATE_KEY_PATH=./private.wxYOUR_APPID.key',
+    ].join('\n'),
   );
 }
 
 function readVersion() {
-  const versionFile = resolve(miniappRoot, "miniprogram/lib/version.ts");
-  const match = readFileSync(versionFile, "utf8").match(/MINIAPP_VERSION\s*=\s*"([^"]+)"/);
-  return match?.[1] ?? readJson(resolve(miniappRoot, "package.json")).version ?? "0.0.0";
+  const versionFile = resolve(miniappRoot, 'miniprogram/lib/version.ts');
+  const match = readFileSync(versionFile, 'utf8').match(/MINIAPP_VERSION\s*=\s*"([^"]+)"/);
+  return match?.[1] ?? readJson(resolve(miniappRoot, 'package.json')).version ?? '0.0.0';
 }
 
 function readFlag(name) {
@@ -96,34 +96,32 @@ function fail(message) {
 function createProject() {
   return new ci.Project({
     appid: readAppId(),
-    type: "miniProgram",
+    type: 'miniProgram',
     projectPath: miniappRoot,
     privateKeyPath: readPrivateKeyPath(),
-    ignores: ["node_modules/**/*", ".preview/**/*"]
+    ignores: ['node_modules/**/*', '.preview/**/*'],
   });
 }
 
 function baseOptions(project) {
-  const robot = Number.parseInt(process.env.WECHAT_CI_ROBOT ?? "1", 10);
-  const pagePath = readFlag("--page");
-  const searchQuery = readFlag("--query");
+  const robot = Number.parseInt(process.env.WECHAT_CI_ROBOT ?? '1', 10);
+  const pagePath = readFlag('--page');
+  const searchQuery = readFlag('--query');
   const desc =
-    readFlag("--desc") ??
-    process.env.WECHAT_CI_DESC ??
-    `ai-todo ${readVersion()} local ci`;
+    readFlag('--desc') ?? process.env.WECHAT_CI_DESC ?? `ai-todo ${readVersion()} local ci`;
 
   const options = {
     project,
     desc,
     setting: {
-      useProjectConfig: true
+      useProjectConfig: true,
     },
     robot: Number.isFinite(robot) ? robot : 1,
     onProgressUpdate: (event) => {
       if (event?.message) {
         console.log(event.message);
       }
-    }
+    },
   };
 
   if (pagePath) {
@@ -141,20 +139,20 @@ async function runPreview() {
   const project = createProject();
   const result = await ci.preview({
     ...baseOptions(project),
-    qrcodeFormat: "image",
-    qrcodeOutputDest: previewQrPath
+    qrcodeFormat: 'image',
+    qrcodeOutputDest: previewQrPath,
   });
   console.log(`Preview QR saved: ${previewQrPath}`);
   if (result?.subPackageInfo) {
-    console.log("Subpackages:", JSON.stringify(result.subPackageInfo));
+    console.log('Subpackages:', JSON.stringify(result.subPackageInfo));
   }
 }
 
 const UPLOAD_DISABLED_MESSAGE = [
-  "miniprogram-ci upload is temporarily disabled in this repo.",
-  "Upload releases with WeChat DevTools: 上传 → 填写版本号与备注.",
-  "See apps/miniapp/README.md §「生产 / 体验版」."
-].join("\n");
+  'miniprogram-ci upload is temporarily disabled in this repo.',
+  'Upload releases with WeChat DevTools: 上传 → 填写版本号与备注.',
+  'See apps/miniapp/README.md §「生产 / 体验版」.',
+].join('\n');
 
 async function runUpload() {
   fail(UPLOAD_DISABLED_MESSAGE);
@@ -162,25 +160,25 @@ async function runUpload() {
   const version = readVersion();
   const result = await ci.upload({
     ...baseOptions(project),
-    version
+    version,
   });
   console.log(`Uploaded version ${version}`);
   if (result?.subPackageInfo) {
-    console.log("Subpackages:", JSON.stringify(result.subPackageInfo));
+    console.log('Subpackages:', JSON.stringify(result.subPackageInfo));
   }
 }
 
 async function main() {
   const command = process.argv[2];
-  if (command === "preview") {
+  if (command === 'preview') {
     await runPreview();
     return;
   }
-  if (command === "upload") {
+  if (command === 'upload') {
     await runUpload();
     return;
   }
-  fail("Usage: node scripts/miniapp-ci.mjs <preview|upload> [-- --page PATH] [-- --desc TEXT]");
+  fail('Usage: node scripts/miniapp-ci.mjs <preview|upload> [-- --page PATH] [-- --desc TEXT]');
 }
 
 main().catch((error) => {

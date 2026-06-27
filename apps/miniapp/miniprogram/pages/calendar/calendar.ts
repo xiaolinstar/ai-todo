@@ -1,10 +1,10 @@
-import { loadAccountDay } from "../../lib/account-day";
+import { loadAccountDay } from '../../lib/account-day';
 import {
   deleteCalendarEvent,
   fetchCalendarByDate,
   fetchCalendarToday,
-  type CalendarEventSummary
-} from "../../lib/api";
+  type CalendarEventSummary,
+} from '../../lib/api';
 import {
   buildWeekStrip,
   eventAccentColor,
@@ -13,17 +13,17 @@ import {
   formatMonthYear,
   formatWeekdayLong,
   isTodayIsoDate,
-  type WeekDayItem
-} from "../../lib/format";
-import { loadContentPrefs } from "../../lib/content-prefs";
-import { SwipeListGesture, withSwipeRow, type SwipeListRowState } from "../../lib/swipe-list";
-import { updateTabBarSelected } from "../../lib/tab-bar";
-import { buildAppShareOptions, buildAppShareTimelineOptions } from "../../lib/share";
+  type WeekDayItem,
+} from '../../lib/format';
+import { loadContentPrefs } from '../../lib/content-prefs';
+import { SwipeListGesture, withSwipeRow, type SwipeListRowState } from '../../lib/swipe-list';
+import { updateTabBarSelected } from '../../lib/tab-bar';
+import { buildAppShareOptions, buildAppShareTimelineOptions } from '../../lib/share';
 import {
   deriveNotifyUi,
   enableWechatNotifyForTarget,
-  loadWechatNotificationPrefs
-} from "../../lib/wechat-notify";
+  loadWechatNotificationPrefs,
+} from '../../lib/wechat-notify';
 
 interface EventView extends CalendarEventSummary, SwipeListRowState {
   timeLabel: string;
@@ -38,24 +38,24 @@ Page({
   data: {
     loading: false,
     loaded: false,
-    error: "",
-    selectedDate: "",
-    dateLabel: "",
-    monthLabel: "",
-    weekdayLabel: "",
+    error: '',
+    selectedDate: '',
+    dateLabel: '',
+    monthLabel: '',
+    weekdayLabel: '',
     isToday: true,
-    timezone: "",
+    timezone: '',
     weekDays: [] as WeekDayItem[],
     events: [] as EventView[],
     notifyAvailable: false,
-    reminderTemplateId: ""
+    reminderTemplateId: '',
   },
 
   _swipeList: null as SwipeListGesture<EventView> | null,
-  _pendingEventId: "",
+  _pendingEventId: '',
 
   onLoad(options: { eventId?: string }) {
-    const eventId = (options?.eventId || "").trim();
+    const eventId = (options?.eventId || '').trim();
     if (eventId) {
       this._pendingEventId = eventId;
     }
@@ -64,19 +64,19 @@ Page({
       setItems: (events) => this.setData({ events }),
       isDisabled: (item) => item.deleting || item.exiting,
       getDeleteModal: (item) => ({
-        title: "删除日程",
-        content: `确定删除“${item.title}”？`
+        title: '删除日程',
+        content: `确定删除“${item.title}”？`,
       }),
       requestDelete: async (id) => {
         const response = await deleteCalendarEvent(id);
         return {
           ok: Boolean(response.ok),
-          message: response.error?.message
+          message: response.error?.message,
         };
       },
       openEdit: (id) => {
         wx.navigateTo({ url: `/pages/event-edit/event-edit?id=${encodeURIComponent(id)}` });
-      }
+      },
     });
     this._swipeList.updateDeleteActionWidth();
   },
@@ -97,7 +97,7 @@ Page({
       if (openToday) {
         return loadAccountDay().then(({ today }) => {
           this.setData({ selectedDate: today }, () =>
-            this.loadEvents().then(() => this.openPendingEventIfNeeded())
+            this.loadEvents().then(() => this.openPendingEventIfNeeded()),
           );
         });
       }
@@ -110,9 +110,9 @@ Page({
     if (!eventId) {
       return;
     }
-    this._pendingEventId = "";
+    this._pendingEventId = '';
     wx.navigateTo({
-      url: `/pages/event-edit/event-edit?id=${encodeURIComponent(eventId)}`
+      url: `/pages/event-edit/event-edit?id=${encodeURIComponent(eventId)}`,
     });
   },
 
@@ -121,7 +121,7 @@ Page({
   },
 
   loadEvents() {
-    this.setData({ loading: true, error: "" });
+    this.setData({ loading: true, error: '' });
 
     return Promise.all([loadAccountDay(), loadWechatNotificationPrefs()])
       .then(([{ timezone, today: accountToday }, notifyPrefs]) => {
@@ -136,7 +136,7 @@ Page({
             this.setData({
               loading: false,
               loaded: true,
-              error: eventsRes.error?.message || "加载失败，请在「我的」页检查 API 地址"
+              error: eventsRes.error?.message || '加载失败，请在「我的」页检查 API 地址',
             });
             return;
           }
@@ -158,16 +158,16 @@ Page({
                 notifyAvailable: notifyPrefs.notifyAvailable,
                 wechatNotifyRequested: item.wechatNotifyRequested,
                 wechatNotifyStatus: item.wechatNotifyStatus,
-                scheduleAt: item.startAt
+                scheduleAt: item.startAt,
               });
               return withSwipeRow({
                 ...item,
                 timeLabel: formatEventTimeRange(item.startAt, item.endAt, timezone),
-                contactNames: (item.contacts || []).map((c) => c.displayName).join("、"),
+                contactNames: (item.contacts || []).map((c) => c.displayName).join('、'),
                 accentColor: eventAccentColor(index),
-                ...notifyUi
+                ...notifyUi,
               });
-            })
+            }),
           });
         });
       })
@@ -175,7 +175,7 @@ Page({
         this.setData({
           loading: false,
           loaded: true,
-          error: "无法连接 API，请在「我的」页配置地址并开启「不校验合法域名」"
+          error: '无法连接 API，请在「我的」页配置地址并开启「不校验合法域名」',
         });
       });
   },
@@ -187,11 +187,11 @@ Page({
   },
 
   goToday() {
-    this.setData({ selectedDate: "" }, () => this.loadEvents());
+    this.setData({ selectedDate: '' }, () => this.loadEvents());
   },
 
   goMine() {
-    wx.switchTab({ url: "/pages/mine/mine" });
+    wx.switchTab({ url: '/pages/mine/mine' });
   },
 
   onRowTouchStart(e: {
@@ -226,21 +226,21 @@ Page({
       return;
     }
     enableWechatNotifyForTarget({
-      targetType: "calendar_event",
+      targetType: 'calendar_event',
       targetId: eventId,
-      templateId
+      templateId,
     })
       .then(({ accepted }) => {
         wx.showToast({
-          title: accepted ? "已开启微信提醒" : "未授权微信提醒",
-          icon: accepted ? "success" : "none"
+          title: accepted ? '已开启微信提醒' : '未授权微信提醒',
+          icon: accepted ? 'success' : 'none',
         });
         if (accepted) {
           this.loadEvents();
         }
       })
       .catch(() => {
-        wx.showToast({ title: "提醒授权失败", icon: "none" });
+        wx.showToast({ title: '提醒授权失败', icon: 'none' });
       });
-  }
+  },
 });

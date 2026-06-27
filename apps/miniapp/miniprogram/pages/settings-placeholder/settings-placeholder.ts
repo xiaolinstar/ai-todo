@@ -1,26 +1,26 @@
-import { fetchMe } from "../../lib/api";
-import { todayIsoDate, todayIsoDateInTimezone } from "../../lib/format";
-import { getPlaceholderMeta } from "../../lib/settings-placeholders";
+import { fetchMe } from '../../lib/api';
+import { todayIsoDate, todayIsoDateInTimezone } from '../../lib/format';
+import { getPlaceholderMeta } from '../../lib/settings-placeholders';
 
 Page({
   data: {
-    lead: "",
+    lead: '',
     bullets: [] as string[],
-    plannedVersion: "",
-    extraNote: ""
+    plannedVersion: '',
+    extraNote: '',
   },
 
   onLoad(query: { slot?: string }) {
-    const slot = query.slot ? decodeURIComponent(query.slot) : "";
+    const slot = query.slot ? decodeURIComponent(query.slot) : '';
     const meta = getPlaceholderMeta(slot);
     wx.setNavigationBarTitle({ title: meta.title });
     this.setData({
       lead: meta.lead,
       bullets: meta.bullets,
-      plannedVersion: meta.plannedVersion || "",
-      extraNote: ""
+      plannedVersion: meta.plannedVersion || '',
+      extraNote: '',
     });
-    if (slot === "timezone") {
+    if (slot === 'timezone') {
       fetchMe().then((response) => {
         if (!response.ok || !response.data?.user.timezone) {
           return;
@@ -35,5 +35,5 @@ Page({
         this.setData({ extraNote });
       });
     }
-  }
+  },
 });

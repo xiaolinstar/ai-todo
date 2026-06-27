@@ -1,14 +1,14 @@
-const STORAGE_API_URL = "apiUrl";
-const LEGACY_STORAGE_TOKEN = "token";
-const PROFILE_SETUP_PREFIX = "profileSetupSeen:";
+const STORAGE_API_URL = 'apiUrl';
+const LEGACY_STORAGE_TOKEN = 'token';
+const PROFILE_SETUP_PREFIX = 'profileSetupSeen:';
 
 /** 生产环境 API（经 xiaolin-gateway 反代，宿主机 :8082） */
-export const PRODUCTION_API_URL = "https://xingxiaolin.cn";
+export const PRODUCTION_API_URL = 'https://xingxiaolin.cn';
 /** 预发布 / 体验版 API（经 xiaolin-gateway 反代，宿主机 :8083） */
-export const STAGING_API_URL = "https://staging.xingxiaolin.cn";
-export const LOCAL_API_URL = "http://127.0.0.1:3100";
+export const STAGING_API_URL = 'https://staging.xingxiaolin.cn';
+export const LOCAL_API_URL = 'http://127.0.0.1:3100';
 
-const LEGACY_PRODUCTION_API_URL = "https://www.xingxiaolin.cn";
+const LEGACY_PRODUCTION_API_URL = 'https://www.xingxiaolin.cn';
 
 export interface AppConfig {
   apiUrl: string;
@@ -21,23 +21,23 @@ export function getMiniProgramEnvVersion(): string {
   try {
     return wx.getAccountInfoSync().miniProgram.envVersion;
   } catch {
-    return "release";
+    return 'release';
   }
 }
 
 export function isDevelopEnv(): boolean {
-  return getMiniProgramEnvVersion() === "develop";
+  return getMiniProgramEnvVersion() === 'develop';
 }
 
 export function isTrialEnv(): boolean {
-  return getMiniProgramEnvVersion() === "trial";
+  return getMiniProgramEnvVersion() === 'trial';
 }
 
 /** True when running inside WeChat DevTools simulator (platform === devtools). */
 export function isDevtoolsSimulator(): boolean {
   try {
     const platform = wx.getSystemInfoSync().platform;
-    return typeof platform === "string" && platform.toLowerCase() === "devtools";
+    return typeof platform === 'string' && platform.toLowerCase() === 'devtools';
   } catch {
     return false;
   }
@@ -59,7 +59,7 @@ export function getDefaultApiUrl(): string {
 }
 
 function normalizeApiUrl(apiUrl: string): string {
-  const trimmed = apiUrl.trim().replace(/\/$/, "");
+  const trimmed = apiUrl.trim().replace(/\/$/, '');
   if (trimmed === LEGACY_PRODUCTION_API_URL) {
     return PRODUCTION_API_URL;
   }
@@ -87,16 +87,16 @@ function resolveDevelopApiUrl(): string {
 export function getStorageScope(apiUrl: string): string {
   const url = normalizeApiUrl(apiUrl);
   if (!url || url === PRODUCTION_API_URL) {
-    return "production";
+    return 'production';
   }
   if (url === STAGING_API_URL) {
-    return "staging";
+    return 'staging';
   }
   if (url === LOCAL_API_URL) {
-    return "local";
+    return 'local';
   }
   const hostMatch = url.match(/^https?:\/\/([^/]+)/i);
-  return hostMatch ? `host:${hostMatch[1]}` : "custom";
+  return hostMatch ? `host:${hostMatch[1]}` : 'custom';
 }
 
 function scopedStorageKey(base: string, scope: string): string {
@@ -104,12 +104,12 @@ function scopedStorageKey(base: string, scope: string): string {
 }
 
 function tokenStorageKey(scope: string): string {
-  return scopedStorageKey("token", scope);
+  return scopedStorageKey('token', scope);
 }
 
 function readStorageString(key: string): string {
   const value = wx.getStorageSync(key);
-  return typeof value === "string" ? value : "";
+  return typeof value === 'string' ? value : '';
 }
 
 export function getEffectiveApiUrl(): string {
@@ -133,13 +133,17 @@ function migrateLegacyStorage(apiUrl: string): void {
     wx.removeStorageSync(LEGACY_STORAGE_TOKEN);
   }
 
-  const legacyPrivacy = readStorageString("privacyConsentVersion");
-  const scopedPrivacyKey = scopedStorageKey("privacyConsentVersion", scope);
-  if (legacyPrivacy && readStorageString(scopedPrivacyKey) !== legacyPrivacy && legacyScope === scope) {
+  const legacyPrivacy = readStorageString('privacyConsentVersion');
+  const scopedPrivacyKey = scopedStorageKey('privacyConsentVersion', scope);
+  if (
+    legacyPrivacy &&
+    readStorageString(scopedPrivacyKey) !== legacyPrivacy &&
+    legacyScope === scope
+  ) {
     wx.setStorageSync(scopedPrivacyKey, legacyPrivacy);
   }
   if (legacyPrivacy) {
-    wx.removeStorageSync("privacyConsentVersion");
+    wx.removeStorageSync('privacyConsentVersion');
   }
 
   const legacyProfilePrefix = `${PROFILE_SETUP_PREFIX}`;
@@ -150,7 +154,7 @@ function migrateLegacyStorage(apiUrl: string): void {
         continue;
       }
       const suffix = key.slice(legacyProfilePrefix.length);
-      if (!suffix || suffix.includes(":")) {
+      if (!suffix || suffix.includes(':')) {
         continue;
       }
       const scopedKey = `${PROFILE_SETUP_PREFIX}${scope}:${suffix}`;
@@ -173,7 +177,7 @@ export function syncRuntimeConfig(): AppConfig {
   return {
     apiUrl,
     scope,
-    token: readStorageString(tokenStorageKey(scope))
+    token: readStorageString(tokenStorageKey(scope)),
   };
 }
 
@@ -183,7 +187,7 @@ export function getConfig(): AppConfig {
   return {
     apiUrl,
     scope,
-    token: readStorageString(tokenStorageKey(scope))
+    token: readStorageString(tokenStorageKey(scope)),
   };
 }
 
@@ -211,12 +215,12 @@ export function clearToken(): void {
 
 export function hasSeenProfileSetup(userId: string): boolean {
   const { scope } = getConfig();
-  return wx.getStorageSync(`${PROFILE_SETUP_PREFIX}${scope}:${userId}`) === "1";
+  return wx.getStorageSync(`${PROFILE_SETUP_PREFIX}${scope}:${userId}`) === '1';
 }
 
 export function markProfileSetupSeen(userId: string): void {
   const { scope } = getConfig();
-  wx.setStorageSync(`${PROFILE_SETUP_PREFIX}${scope}:${userId}`, "1");
+  wx.setStorageSync(`${PROFILE_SETUP_PREFIX}${scope}:${userId}`, '1');
 }
 
 export function clearProfileSetupSeen(userId: string): void {
@@ -225,15 +229,15 @@ export function clearProfileSetupSeen(userId: string): void {
 }
 
 const SCOPE_LABELS: Record<string, string> = {
-  production: "生产 API",
-  staging: "预发布 API",
-  local: "本地 API"
+  production: '生产 API',
+  staging: '预发布 API',
+  local: '本地 API',
 };
 
 const BUILD_LABELS: Record<string, string> = {
-  develop: "开发版",
-  trial: "体验版",
-  release: "正式版"
+  develop: '开发版',
+  trial: '体验版',
+  release: '正式版',
 };
 
 export function getApiEnvironmentLabel(apiUrl?: string): string {

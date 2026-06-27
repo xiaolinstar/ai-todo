@@ -10,19 +10,19 @@ function asTabBar(ctx: unknown): TabBarInstance {
 
 Component({
   data: {
-    selected: 0
+    selected: 0,
   },
 
   lifetimes: {
     attached() {
       asTabBar(this).syncSelectedFromRoute();
-    }
+    },
   },
 
   pageLifetimes: {
     show() {
       asTabBar(this).syncSelectedFromRoute();
-    }
+    },
   },
 
   methods: {
@@ -30,12 +30,12 @@ Component({
       const self = asTabBar(this);
       const pages = getCurrentPages();
       const current = pages[pages.length - 1] as { route?: string } | undefined;
-      const route = current?.route || "";
+      const route = current?.route || '';
       const indexMap: Record<string, number> = {
-        "pages/reminders/reminders": 0,
-        "pages/calendar/calendar": 1,
-        "pages/contacts/contacts": 2,
-        "pages/mine/mine": 3
+        'pages/reminders/reminders': 0,
+        'pages/calendar/calendar': 1,
+        'pages/contacts/contacts': 2,
+        'pages/mine/mine': 3,
       };
       const selected = indexMap[route];
       if (selected !== undefined && selected !== self.data.selected) {
@@ -49,10 +49,10 @@ Component({
       if (Number.isNaN(index) || index === self.data.selected) return;
 
       const pages = [
-        "/pages/reminders/reminders",
-        "/pages/calendar/calendar",
-        "/pages/contacts/contacts",
-        "/pages/mine/mine"
+        '/pages/reminders/reminders',
+        '/pages/calendar/calendar',
+        '/pages/contacts/contacts',
+        '/pages/mine/mine',
       ];
 
       wx.switchTab({ url: pages[index] });
@@ -61,21 +61,21 @@ Component({
 
     onCreateTap() {
       wx.showActionSheet({
-        itemList: ["新建提醒", "新建日程", "添加联系人"],
+        itemList: ['新建提醒', '新建日程', '添加联系人'],
         success: (res) => {
           if (res.tapIndex === 0) {
-            wx.navigateTo({ url: "/pages/reminder-create/reminder-create" });
+            wx.navigateTo({ url: '/pages/reminder-create/reminder-create' });
             return;
           }
           if (res.tapIndex === 1) {
-            wx.navigateTo({ url: "/pages/event-create/event-create" });
+            wx.navigateTo({ url: '/pages/event-create/event-create' });
             return;
           }
           if (res.tapIndex === 2) {
-            wx.navigateTo({ url: "/pages/contact-create/contact-create" });
+            wx.navigateTo({ url: '/pages/contact-create/contact-create' });
           }
-        }
+        },
       });
-    }
-  }
+    },
+  },
 });

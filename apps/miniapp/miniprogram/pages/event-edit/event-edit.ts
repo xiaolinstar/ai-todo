@@ -1,48 +1,45 @@
-import { loadAccountDay } from "../../lib/account-day";
-import { fetchCalendarEvent, updateCalendarEvent } from "../../lib/api";
-import type { ContactSummary } from "../../lib/api";
-import { combineDateTime, splitIsoDateTime } from "../../lib/format";
-import { applyDefaultEventEnd } from "../../lib/content-prefs";
-import { todoPageThemeData } from "../../lib/theme";
-import {
-  loadWechatNotificationPrefs,
-  enableWechatNotifyForTarget
-} from "../../lib/wechat-notify";
+import { loadAccountDay } from '../../lib/account-day';
+import { fetchCalendarEvent, updateCalendarEvent } from '../../lib/api';
+import type { ContactSummary } from '../../lib/api';
+import { combineDateTime, splitIsoDateTime } from '../../lib/format';
+import { applyDefaultEventEnd } from '../../lib/content-prefs';
+import { todoPageThemeData } from '../../lib/theme';
+import { loadWechatNotificationPrefs, enableWechatNotifyForTarget } from '../../lib/wechat-notify';
 
 Page({
   data: {
     ...todoPageThemeData(),
-    eventId: "",
+    eventId: '',
     loading: true,
-    title: "",
-    titleTextareaHeight: titleTextareaHeight(""),
-    location: "",
-    description: "",
+    title: '',
+    titleTextareaHeight: titleTextareaHeight(''),
+    location: '',
+    description: '',
     descriptionExpanded: false,
-    startDate: "",
-    startTime: "",
-    endDate: "",
-    endTime: "",
+    startDate: '',
+    startTime: '',
+    endDate: '',
+    endTime: '',
     hasEnd: false,
     notifyAvailable: false,
     notifyEnabled: false,
-    reminderTemplateId: "",
+    reminderTemplateId: '',
     selectedContacts: [] as ContactSummary[],
-    contactLabel: "选择",
-    accountTimezone: "",
-    submitting: false
+    contactLabel: '选择',
+    accountTimezone: '',
+    submitting: false,
   },
 
-  _originalStartAt: "",
+  _originalStartAt: '',
   _endTouched: false,
   _originalDurationMinutes: 60,
   _autoSubscribe: false,
 
   onLoad(options: { id?: string; subscribe?: string }) {
-    const eventId = (options.id || "").trim();
-    const autoSubscribe = (options.subscribe || "").trim() === "1";
+    const eventId = (options.id || '').trim();
+    const autoSubscribe = (options.subscribe || '').trim() === '1';
     if (!eventId) {
-      wx.showToast({ title: "缺少日程 ID", icon: "none" });
+      wx.showToast({ title: '缺少日程 ID', icon: 'none' });
       setTimeout(() => wx.navigateBack(), 800);
       return;
     }
@@ -52,7 +49,7 @@ Page({
       .then(([account, response, prefs]) => {
         if (!response.ok || !response.data) {
           this.setData({ loading: false });
-          wx.showToast({ title: response.error?.message || "加载失败", icon: "none" });
+          wx.showToast({ title: response.error?.message || '加载失败', icon: 'none' });
           return;
         }
         const event = response.data.calendarEvent;
@@ -65,8 +62,8 @@ Page({
           ? Math.max(
               1,
               Math.round(
-                (new Date(event.endAt).getTime() - new Date(event.startAt).getTime()) / 60000
-              )
+                (new Date(event.endAt).getTime() - new Date(event.startAt).getTime()) / 60000,
+              ),
             )
           : 60;
         this.setData({
@@ -75,10 +72,10 @@ Page({
           notifyAvailable: prefs.notifyAvailable,
           notifyEnabled: Boolean(event.wechatNotifyRequested),
           reminderTemplateId: prefs.reminderTemplateId,
-          title: event.title || "",
-          titleTextareaHeight: titleTextareaHeight(event.title || ""),
-          location: event.location || "",
-          description: event.description || "",
+          title: event.title || '',
+          titleTextareaHeight: titleTextareaHeight(event.title || ''),
+          location: event.location || '',
+          description: event.description || '',
           descriptionExpanded: Boolean(event.description),
           startDate: start.date,
           startTime: start.time,
@@ -86,39 +83,39 @@ Page({
           endTime: end.time,
           hasEnd: Boolean(event.endAt),
           selectedContacts: event.contacts || [],
-          contactLabel: formatContactLabel(event.contacts || [])
+          contactLabel: formatContactLabel(event.contacts || []),
         });
         if (this._autoSubscribe && prefs.notifyAvailable && prefs.reminderTemplateId) {
           this.setData({ notifyEnabled: true });
           updateCalendarEvent(eventId, { wechatNotifyRequested: true })
             .then(() =>
               enableWechatNotifyForTarget({
-                targetType: "calendar_event",
+                targetType: 'calendar_event',
                 targetId: eventId,
-                templateId: prefs.reminderTemplateId
-              })
+                templateId: prefs.reminderTemplateId,
+              }),
             )
             .then(({ accepted }) => {
               wx.showToast({
-                title: accepted ? "已开启微信提醒" : "未授权微信提醒",
-                icon: accepted ? "success" : "none"
+                title: accepted ? '已开启微信提醒' : '未授权微信提醒',
+                icon: accepted ? 'success' : 'none',
               });
             })
             .catch(() => {
-              wx.showToast({ title: "提醒授权失败", icon: "none" });
+              wx.showToast({ title: '提醒授权失败', icon: 'none' });
             });
         }
       })
       .catch(() => {
         this.setData({ loading: false });
-        wx.showToast({ title: "网络错误", icon: "none" });
+        wx.showToast({ title: '网络错误', icon: 'none' });
       });
   },
 
   onTitleInput(e: { detail: { value: string } }) {
     this.setData({
       title: e.detail.value,
-      titleTextareaHeight: titleTextareaHeight(e.detail.value)
+      titleTextareaHeight: titleTextareaHeight(e.detail.value),
     });
   },
 
@@ -144,12 +141,12 @@ Page({
       const endDefaults = applyDefaultEventEnd(this.data.startDate, this.data.startTime, {
         defaultHasEnd: true,
         defaultDurationMinutes: this.normalizeDuration(this._originalDurationMinutes),
-        selectTodayOnOpen: true
+        selectTodayOnOpen: true,
       });
       this.setData({
         hasEnd,
         endDate: endDefaults.endDate,
-        endTime: endDefaults.endTime
+        endTime: endDefaults.endTime,
       });
       return;
     }
@@ -189,42 +186,42 @@ Page({
     const endDefaults = applyDefaultEventEnd(startDate, startTime, {
       defaultHasEnd: true,
       defaultDurationMinutes: this.normalizeDuration(this._originalDurationMinutes),
-      selectTodayOnOpen: true
+      selectTodayOnOpen: true,
     });
     this.setData({
       startDate,
       startTime,
       endDate: endDefaults.endDate,
-      endTime: endDefaults.endTime
+      endTime: endDefaults.endTime,
     });
   },
 
   pickContact() {
     wx.navigateTo({
-      url: "/pages/contact-picker/contact-picker",
+      url: '/pages/contact-picker/contact-picker',
       events: {
         selectContact: (data: unknown) => {
           const contacts = [data as ContactSummary];
           this.setData({
             selectedContacts: contacts,
-            contactLabel: formatContactLabel(contacts)
+            contactLabel: formatContactLabel(contacts),
           });
-        }
-      }
+        },
+      },
     });
   },
 
   clearContact() {
     this.setData({
       selectedContacts: [],
-      contactLabel: formatContactLabel([])
+      contactLabel: formatContactLabel([]),
     });
   },
 
   onSubmit() {
     const title = this.data.title.trim();
     if (!title) {
-      wx.showToast({ title: "请输入标题", icon: "none" });
+      wx.showToast({ title: '请输入标题', icon: 'none' });
       return;
     }
 
@@ -241,68 +238,69 @@ Page({
       startAt: combineDateTime(
         this.data.startDate,
         this.data.startTime,
-        this.data.accountTimezone || undefined
+        this.data.accountTimezone || undefined,
       ),
       endAt: this.data.hasEnd
         ? combineDateTime(
             this.data.endDate,
             this.data.endTime,
-            this.data.accountTimezone || undefined
+            this.data.accountTimezone || undefined,
           )
         : null,
       location: this.data.location.trim(),
       description: this.data.description.trim(),
       wechatNotifyRequested: this.data.notifyEnabled,
-      contactIds: this.data.selectedContacts.map((contact: ContactSummary) => contact.id)
+      contactIds: this.data.selectedContacts.map((contact: ContactSummary) => contact.id),
     };
 
     const shouldSubscribe =
-      this.data.notifyEnabled &&
-      this.data.notifyAvailable &&
-      Boolean(this.data.reminderTemplateId);
+      this.data.notifyEnabled && this.data.notifyAvailable && Boolean(this.data.reminderTemplateId);
 
     this.setData({ submitting: true });
     updateCalendarEvent(this.data.eventId, payload)
       .then(async (response) => {
         this.setData({ submitting: false });
         if (!response.ok) {
-          wx.showToast({ title: response.error?.message || "保存失败", icon: "none" });
+          wx.showToast({ title: response.error?.message || '保存失败', icon: 'none' });
           return;
         }
         if (shouldSubscribe) {
           try {
             const { accepted } = await enableWechatNotifyForTarget({
-              targetType: "calendar_event",
+              targetType: 'calendar_event',
               targetId: this.data.eventId,
-              templateId: this.data.reminderTemplateId
+              templateId: this.data.reminderTemplateId,
             });
             wx.showToast({
-              title: accepted ? "已保存并更新微信提醒" : "已保存，未重新授权微信提醒",
-              icon: accepted ? "success" : "none"
+              title: accepted ? '已保存并更新微信提醒' : '已保存，未重新授权微信提醒',
+              icon: accepted ? 'success' : 'none',
             });
           } catch {
-            wx.showToast({ title: "已保存，提醒授权同步失败", icon: "none" });
+            wx.showToast({ title: '已保存，提醒授权同步失败', icon: 'none' });
           }
         } else {
-          wx.showToast({ title: "已保存", icon: "success" });
+          wx.showToast({ title: '已保存', icon: 'success' });
         }
         setTimeout(() => wx.navigateBack(), 500);
       })
       .catch(() => {
         this.setData({ submitting: false });
-        wx.showToast({ title: "网络错误", icon: "none" });
+        wx.showToast({ title: '网络错误', icon: 'none' });
       });
-  }
+  },
 });
 
 function formatContactLabel(contacts: ContactSummary[]): string {
   if (contacts.length === 0) {
-    return "选择";
+    return '选择';
   }
   if (contacts.length === 1) {
     return contacts[0].displayName;
   }
-  const names = contacts.slice(0, 2).map((contact) => contact.displayName).join("、");
+  const names = contacts
+    .slice(0, 2)
+    .map((contact) => contact.displayName)
+    .join('、');
   return `${names}等 ${contacts.length} 人`;
 }
 

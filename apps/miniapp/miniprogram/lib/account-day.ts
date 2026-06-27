@@ -1,5 +1,5 @@
-import { fetchMe, fetchToday } from "./api";
-import { formatNowClock, todayIsoDate, todayIsoDateInTimezone } from "./format";
+import { fetchMe, fetchToday } from './api';
+import { formatNowClock, todayIsoDate, todayIsoDateInTimezone } from './format';
 
 export interface AccountDay {
   timezone: string;
@@ -15,7 +15,7 @@ export async function loadAccountDay(): Promise<AccountDay> {
     return {
       timezone,
       today: todayRes.data.date,
-      nowTime: formatNowClock(timezone)
+      nowTime: formatNowClock(timezone),
     };
   }
 
@@ -25,9 +25,9 @@ export async function loadAccountDay(): Promise<AccountDay> {
     return {
       timezone,
       today: todayIsoDateInTimezone(timezone),
-      nowTime: formatNowClock(timezone)
+      nowTime: formatNowClock(timezone),
     };
   }
 
-  return { timezone: "", today: todayIsoDate(), nowTime: "" };
+  return { timezone: '', today: todayIsoDate(), nowTime: '' };
 }

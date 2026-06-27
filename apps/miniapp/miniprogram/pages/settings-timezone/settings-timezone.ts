@@ -1,24 +1,24 @@
-import { fetchMe, updateProfile } from "../../lib/api";
-import { formatNowClock, todayIsoDate, todayIsoDateInTimezone } from "../../lib/format";
-import { TIMEZONE_OPTIONS, timezoneIndex, timezoneLabel } from "../../lib/timezones";
-import { todoPageThemeData } from "../../lib/theme";
+import { fetchMe, updateProfile } from '../../lib/api';
+import { formatNowClock, todayIsoDate, todayIsoDateInTimezone } from '../../lib/format';
+import { TIMEZONE_OPTIONS, timezoneIndex, timezoneLabel } from '../../lib/timezones';
+import { todoPageThemeData } from '../../lib/theme';
 
 Page({
   data: {
     ...todoPageThemeData(),
     loading: true,
     saving: false,
-    timezoneId: "Asia/Shanghai",
-    timezoneLabel: timezoneLabel("Asia/Shanghai"),
+    timezoneId: 'Asia/Shanghai',
+    timezoneLabel: timezoneLabel('Asia/Shanghai'),
     timezoneIndex: 0,
     timezoneLabels: TIMEZONE_OPTIONS.map((item) => item.label),
-    nowClock: "",
-    accountToday: "",
-    deviceToday: todayIsoDate()
+    nowClock: '',
+    accountToday: '',
+    deviceToday: todayIsoDate(),
   },
 
   _clockTimer: 0 as ReturnType<typeof setInterval> | 0,
-  _savedTimezoneId: "Asia/Shanghai",
+  _savedTimezoneId: 'Asia/Shanghai',
 
   onShow() {
     this.loadTimezone();
@@ -42,7 +42,7 @@ Page({
       this.setData({
         nowClock: formatNowClock(tz),
         accountToday: todayIsoDateInTimezone(tz),
-        deviceToday: todayIsoDate()
+        deviceToday: todayIsoDate(),
       });
     };
     tick();
@@ -54,11 +54,11 @@ Page({
     fetchMe()
       .then((response) => {
         if (!response.ok || !response.data) {
-          wx.showToast({ title: response.error?.message || "加载失败", icon: "none" });
+          wx.showToast({ title: response.error?.message || '加载失败', icon: 'none' });
           setTimeout(() => wx.navigateBack(), 600);
           return;
         }
-        const timezoneId = response.data.user.timezone || "Asia/Shanghai";
+        const timezoneId = response.data.user.timezone || 'Asia/Shanghai';
         const index = timezoneIndex(timezoneId);
         this._savedTimezoneId = timezoneId;
         this.setData({
@@ -67,12 +67,12 @@ Page({
           timezoneIndex: index,
           timezoneLabel: timezoneLabel(timezoneId),
           nowClock: formatNowClock(timezoneId),
-          accountToday: todayIsoDateInTimezone(timezoneId)
+          accountToday: todayIsoDateInTimezone(timezoneId),
         });
       })
       .catch(() => {
         this.setData({ loading: false });
-        wx.showToast({ title: "无法连接 API", icon: "none" });
+        wx.showToast({ title: '无法连接 API', icon: 'none' });
       });
   },
 
@@ -85,7 +85,7 @@ Page({
       timezoneId: option.id,
       timezoneLabel: option.label,
       nowClock: formatNowClock(option.id),
-      accountToday: todayIsoDateInTimezone(option.id)
+      accountToday: todayIsoDateInTimezone(option.id),
     });
     this.persistTimezone(option.id);
   },
@@ -97,17 +97,17 @@ Page({
       .then((response) => {
         this.setData({ saving: false });
         if (!response.ok) {
-          wx.showToast({ title: response.error?.message || "保存失败", icon: "none" });
+          wx.showToast({ title: response.error?.message || '保存失败', icon: 'none' });
           this.loadTimezone();
           return;
         }
         this._savedTimezoneId = timezoneId;
-        wx.showToast({ title: "已更新", icon: "success" });
+        wx.showToast({ title: '已更新', icon: 'success' });
       })
       .catch(() => {
         this.setData({ saving: false });
-        wx.showToast({ title: "网络错误", icon: "none" });
+        wx.showToast({ title: '网络错误', icon: 'none' });
         this.loadTimezone();
       });
-  }
+  },
 });

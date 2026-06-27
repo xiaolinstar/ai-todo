@@ -1,21 +1,31 @@
-import { execSync } from "node:child_process";
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
-import { dirname, extname, relative, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
-import ts from "typescript";
+import { execSync } from 'node:child_process';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
+import { dirname, extname, relative, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import ts from 'typescript';
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
-const miniappRoot = resolve(scriptDir, "..");
-const repoRoot = resolve(miniappRoot, "../..");
-const miniprogramRoot = resolve(miniappRoot, "miniprogram");
-const appJsonPath = resolve(miniprogramRoot, "app.json");
+const miniappRoot = resolve(scriptDir, '..');
+const repoRoot = resolve(miniappRoot, '../..');
+const miniprogramRoot = resolve(miniappRoot, 'miniprogram');
+const appJsonPath = resolve(miniprogramRoot, 'app.json');
 
-const PAGE_SOURCE_EXTS = [".ts", ".wxml", ".scss", ".json"];
+const PAGE_SOURCE_EXTS = ['.ts', '.wxml', '.scss', '.json'];
 const MAX_MEDIA_BYTES = 200 * 1024;
-const MEDIA_EXTS = new Set([".png", ".jpg", ".jpeg", ".gif", ".webp", ".mp3", ".wav", ".aac", ".m4a"]);
+const MEDIA_EXTS = new Set([
+  '.png',
+  '.jpg',
+  '.jpeg',
+  '.gif',
+  '.webp',
+  '.mp3',
+  '.wav',
+  '.aac',
+  '.m4a',
+]);
 
 function readJson(path) {
-  return JSON.parse(readFileSync(path, "utf8"));
+  return JSON.parse(readFileSync(path, 'utf8'));
 }
 
 function walk(dir) {
@@ -47,12 +57,12 @@ function assertNoTrackedGeneratedFiles() {
   try {
     const tracked = execSync(
       'git ls-files "apps/miniapp/miniprogram/**/*.js" "apps/miniapp/miniprogram/**/*.wxss"',
-      { cwd: repoRoot, encoding: "utf8" }
+      { cwd: repoRoot, encoding: 'utf8' },
     ).trim();
     if (tracked) {
       fail(
-        "Generated miniapp .js/.wxss must not be tracked in git (use DevTools plugins or git rm):\n" +
-          tracked
+        'Generated miniapp .js/.wxss must not be tracked in git (use DevTools plugins or git rm):\n' +
+          tracked,
       );
     }
   } catch {
@@ -63,7 +73,7 @@ function assertNoTrackedGeneratedFiles() {
 function assertTabBarIcons(appJson) {
   const list = appJson.tabBar?.list ?? [];
   for (const item of list) {
-    const label = item.pagePath || item.text || "tabBar item";
+    const label = item.pagePath || item.text || 'tabBar item';
     if (!item.iconPath || !item.selectedIconPath) {
       fail(`tabBar list item "${label}" is missing iconPath/selectedIconPath`);
       continue;
@@ -77,7 +87,7 @@ function assertTabBarIcons(appJson) {
   }
 }
 
-assertSourceBundle(resolve(miniprogramRoot, "app"), "app", [".ts", ".scss"]);
+assertSourceBundle(resolve(miniprogramRoot, 'app'), 'app', ['.ts', '.scss']);
 if (!existsSync(appJsonPath)) {
   fail(`missing ${relative(repoRoot, appJsonPath)}`);
 }
@@ -91,13 +101,13 @@ if (!process.exitCode) {
 }
 
 assertSourceBundle(
-  resolve(miniprogramRoot, "custom-tab-bar/index"),
-  "custom tab bar",
-  PAGE_SOURCE_EXTS
+  resolve(miniprogramRoot, 'custom-tab-bar/index'),
+  'custom tab bar',
+  PAGE_SOURCE_EXTS,
 );
 
 for (const file of walk(miniprogramRoot)) {
-  if (extname(file) !== ".json") continue;
+  if (extname(file) !== '.json') continue;
   try {
     readJson(file);
   } catch (error) {
@@ -106,65 +116,65 @@ for (const file of walk(miniprogramRoot)) {
 }
 
 for (const file of walk(miniprogramRoot)) {
-  if (extname(file) !== ".ts") continue;
-  const source = readFileSync(file, "utf8");
+  if (extname(file) !== '.ts') continue;
+  const source = readFileSync(file, 'utf8');
   const result = ts.transpileModule(source, {
     fileName: file,
     reportDiagnostics: true,
     compilerOptions: {
       target: ts.ScriptTarget.ES2015,
       module: ts.ModuleKind.CommonJS,
-      strict: true
-    }
+      strict: true,
+    },
   });
 
   const errors = (result.diagnostics ?? []).filter(
-    (item) => item.category === ts.DiagnosticCategory.Error
+    (item) => item.category === ts.DiagnosticCategory.Error,
   );
   if (errors.length <= 0) continue;
 
   fail(`TypeScript syntax errors in ${relative(repoRoot, file)}:`);
   for (const error of errors) {
-    fail(`  - ${ts.flattenDiagnosticMessageText(error.messageText, " ")}`);
+    fail(`  - ${ts.flattenDiagnosticMessageText(error.messageText, ' ')}`);
   }
 }
 
 function assertNoHardcodedVisualTokens() {
   const allowedScss = new Set([
-    resolve(miniprogramRoot, "styles/todo-design-tokens.scss"),
-    resolve(miniprogramRoot, "styles/tokens.scss")
+    resolve(miniprogramRoot, 'styles/todo-design-tokens.scss'),
+    resolve(miniprogramRoot, 'styles/tokens.scss'),
   ]);
   const hexRe = /#[0-9a-fA-F]{3,8}\b/g;
   const fontFamilyRe = /font-family\s*:/i;
   for (const file of walk(miniprogramRoot)) {
-    if (extname(file) !== ".scss") continue;
+    if (extname(file) !== '.scss') continue;
     if (allowedScss.has(file)) continue;
-    const source = readFileSync(file, "utf8");
+    const source = readFileSync(file, 'utf8');
     const rel = relative(repoRoot, file);
     if (hexRe.test(source)) {
       fail(
-        `hardcoded hex color in ${rel} — use var(--todo-*) from styles/todo-design-tokens.scss (see docs/miniapp-design-tokens.md)`
+        `hardcoded hex color in ${rel} — use var(--todo-*) from styles/todo-design-tokens.scss (see docs/miniapp-design-tokens.md)`,
       );
     }
     if (fontFamilyRe.test(source)) {
       const hasLiteralStack = /font-family\s*:\s*(?!var\(--todo-font-family)/i.test(source);
       if (hasLiteralStack) {
         fail(
-          `hardcoded font-family in ${rel} — use var(--todo-font-family-base) (see docs/miniapp-design-tokens.md)`
+          `hardcoded font-family in ${rel} — use var(--todo-font-family-base) (see docs/miniapp-design-tokens.md)`,
         );
       }
     }
   }
 
-  const allowedTs = new Set([resolve(miniprogramRoot, "lib/design-tokens.ts")]);
+  const allowedTs = new Set([resolve(miniprogramRoot, 'lib/design-tokens.ts')]);
   const tsHexRe = /"#[0-9A-Fa-f]{3,8}"/;
   for (const file of walk(miniprogramRoot)) {
-    if (extname(file) !== ".ts") continue;
+    if (extname(file) !== '.ts') continue;
     if (allowedTs.has(file)) continue;
-    const source = readFileSync(file, "utf8");
+    const source = readFileSync(file, 'utf8');
     if (tsHexRe.test(source)) {
       fail(
-        `hardcoded color string in ${relative(repoRoot, file)} — import from lib/design-tokens.ts`
+        `hardcoded color string in ${relative(repoRoot, file)} — import from lib/design-tokens.ts`,
       );
     }
   }
@@ -181,7 +191,7 @@ function assertMediaSizeLimit() {
     if (size <= MAX_MEDIA_BYTES) continue;
     fail(
       `media asset exceeds WeChat 200KB limit (${Math.round(size / 1024)}KB): ${relative(repoRoot, file)} — ` +
-        "compress, resize, or move unused masters outside miniprogram/"
+        'compress, resize, or move unused masters outside miniprogram/',
     );
   }
 }
@@ -189,5 +199,5 @@ function assertMediaSizeLimit() {
 assertMediaSizeLimit();
 
 if (!process.exitCode) {
-  console.log("ai-todo wechat miniprogram static checks passed");
+  console.log('ai-todo wechat miniprogram static checks passed');
 }

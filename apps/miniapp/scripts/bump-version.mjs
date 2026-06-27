@@ -30,9 +30,7 @@ const args = process.argv.slice(2);
 const write = args.includes('--write');
 const bumpArg = args.find((a) => !a.startsWith('--'));
 if (!bumpArg) {
-  console.error(
-    'Usage: node scripts/bump-version.mjs <patch|minor|major|x.y.z> [--write]',
-  );
+  console.error('Usage: node scripts/bump-version.mjs <patch|minor|major|x.y.z> [--write]');
   process.exit(2);
 }
 
@@ -101,11 +99,7 @@ function main() {
 
   writeFileSync(packageJsonPath, newPkg, 'utf8');
   writeFileSync(versionTsPath, newVersionTs, 'utf8');
-  writeFileSync(
-    projectConfigPath,
-    JSON.stringify(newProjectConfig, null, 2) + '\n',
-    'utf8',
-  );
+  writeFileSync(projectConfigPath, JSON.stringify(newProjectConfig, null, 2) + '\n', 'utf8');
   console.log('\n[OK] Files updated.');
 }
 

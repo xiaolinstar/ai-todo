@@ -1,6 +1,6 @@
-import { searchContacts } from "../../lib/api";
-import type { ContactSummary } from "../../lib/api";
-import { avatarColor, getInitial } from "../../lib/format";
+import { searchContacts } from '../../lib/api';
+import type { ContactSummary } from '../../lib/api';
+import { avatarColor, getInitial } from '../../lib/format';
 
 interface ContactView extends ContactSummary {
   subtitle: string;
@@ -10,11 +10,11 @@ interface ContactView extends ContactSummary {
 
 Page({
   data: {
-    query: "",
+    query: '',
     loading: false,
     loaded: false,
-    error: "",
-    items: [] as ContactView[]
+    error: '',
+    items: [] as ContactView[],
   },
 
   onLoad() {
@@ -30,19 +30,19 @@ Page({
   },
 
   onClearSearch() {
-    this.setData({ query: "" });
+    this.setData({ query: '' });
     this.loadContacts();
   },
 
   loadContacts(query?: string) {
-    this.setData({ loading: true, error: "" });
+    this.setData({ loading: true, error: '' });
     return searchContacts(query)
       .then((response) => {
         if (!response.ok || !response.data) {
           this.setData({
             loading: false,
             loaded: true,
-            error: response.error?.message || "加载失败"
+            error: response.error?.message || '加载失败',
           });
           return;
         }
@@ -53,22 +53,23 @@ Page({
             ...item,
             subtitle: [item.primaryEmail, item.primaryPhone, item.company]
               .filter(Boolean)
-              .join(" · "),
+              .join(' · '),
             initial: getInitial(item.displayName),
-            avatarColor: avatarColor(item.displayName)
-          }))
+            avatarColor: avatarColor(item.displayName),
+          })),
         });
       })
       .catch(() => {
-        this.setData({ loading: false, loaded: true, error: "无法连接 API" });
+        this.setData({ loading: false, loaded: true, error: '无法连接 API' });
       });
   },
 
   onSelect(e: { currentTarget: { dataset: { item: ContactSummary } } }) {
     const item = e.currentTarget.dataset.item;
-    const channel = (this as { getOpenerEventChannel(): { emit: (name: string, data: unknown) => void } })
-      .getOpenerEventChannel();
-    channel.emit("selectContact", item);
+    const channel = (
+      this as { getOpenerEventChannel(): { emit: (name: string, data: unknown) => void } }
+    ).getOpenerEventChannel();
+    channel.emit('selectContact', item);
     wx.navigateBack();
-  }
+  },
 });
