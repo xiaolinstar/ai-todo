@@ -138,6 +138,8 @@ export interface RevokeAllApiTokensResult {
   revokedCount: number;
 }
 
+export type WechatNotifyStatus = "none" | "pending" | "sent" | "failed" | "no_quota" | "skipped";
+
 export interface ReminderSummary {
   id: EntityId;
   title: string;
@@ -149,6 +151,8 @@ export interface ReminderSummary {
   externalId?: string;
   sourceMeta?: Record<string, unknown>;
   completedAt?: string;
+  wechatNotifyRequested?: boolean;
+  wechatNotifyStatus?: WechatNotifyStatus;
   contacts?: ContactSummary[];
 }
 
@@ -189,6 +193,7 @@ export interface UpdateReminderInput {
   status?: ReminderStatus;
   dueAt?: string;
   remindAt?: string;
+  wechatNotifyRequested?: boolean;
   contactIds?: EntityId[];
 }
 
@@ -257,6 +262,8 @@ export interface CalendarEventSummary {
   timezone: string;
   location?: string;
   description?: string;
+  wechatNotifyRequested?: boolean;
+  wechatNotifyStatus?: WechatNotifyStatus;
   contacts?: ContactSummary[];
 }
 
@@ -292,6 +299,7 @@ export interface UpdateCalendarEventInput {
   timezone?: string;
   location?: string;
   description?: string;
+  wechatNotifyRequested?: boolean;
   contactIds?: EntityId[];
 }
 

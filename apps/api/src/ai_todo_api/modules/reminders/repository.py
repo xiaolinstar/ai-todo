@@ -6,13 +6,17 @@ from sqlalchemy.orm import Session
 from ai_todo_api.common.cursor import decode_cursor, encode_cursor
 from ai_todo_api.common.list_page import ListPage
 from ai_todo_api.db.models import ReminderModel
-from ai_todo_api.modules.reminders.schemas import ReminderSummary
+from ai_todo_api.modules.reminders.schemas import ReminderSummary, WechatNotifyStatus
 
 
 class ReminderRepository:
     def __init__(self, session: Session, user_id: str) -> None:
         self._session = session
         self._user_id = user_id
+
+    @property
+    def session(self) -> Session:
+        return self._session
 
     def add(self, reminder: ReminderModel) -> ReminderModel:
         self._session.add(reminder)
@@ -166,6 +170,7 @@ def reminder_to_summary(
     reminder: ReminderModel,
     *,
     contacts: list | None = None,
+    wechat_notify_status: WechatNotifyStatus = "none",
 ) -> ReminderSummary:
     return ReminderSummary(
         id=reminder.id,
@@ -178,6 +183,8 @@ def reminder_to_summary(
         external_id=reminder.external_id,
         source_meta=reminder.source_meta,
         completed_at=_format_datetime(reminder.completed_at),
+        wechat_notify_requested=reminder.wechat_notify_requested,
+        wechat_notify_status=wechat_notify_status,
         contacts=contacts or [],
     )
 

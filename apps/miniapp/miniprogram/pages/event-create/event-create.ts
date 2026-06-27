@@ -72,6 +72,10 @@ Page({
     this.setData({ descriptionExpanded: !this.data.descriptionExpanded });
   },
 
+  onNotifyToggle(e: { detail: { value: boolean } }) {
+    this.setData({ notifyEnabled: e.detail.value });
+  },
+
   onEndToggle(e: { detail: { value: boolean } }) {
     const hasEnd = e.detail.value;
     if (hasEnd && !this._endTouched) {
@@ -155,6 +159,7 @@ Page({
       endAt?: string;
       location?: string;
       description?: string;
+      wechatNotifyRequested?: boolean;
       contactIds?: string[];
     } = {
       title,
@@ -162,7 +167,8 @@ Page({
         this.data.startDate,
         this.data.startTime,
         this.data.accountTimezone || undefined
-      )
+      ),
+      wechatNotifyRequested: this.data.notifyAvailable && this.data.notifyEnabled
     };
 
     if (this.data.hasEnd) {

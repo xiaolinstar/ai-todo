@@ -45,6 +45,10 @@
       <view wx:if="{{descriptionExpanded}}" class="form-row stack">
         <textarea class="form-textarea" placeholder="可选" value="{{description}}" maxlength="1000" auto-height bindinput="onDescriptionInput" />
       </view>
+      <view wx:if="{{notifyAvailable}}" class="form-row">
+        <text class="form-label">微信提醒</text>
+        <switch checked="{{notifyEnabled}}" bindchange="onNotifyToggle" color="{{switchColor}}" />
+      </view>
       <view class="form-row">
         <text class="form-label">联系人</text>
         <button class="todo-button todo-button-ghost todo-button-sm pick-inline contact-picker-button" size="mini" hover-class="todo-button-hover" bindtap="pickContact">

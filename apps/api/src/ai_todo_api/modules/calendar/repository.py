@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from ai_todo_api.common.cursor import decode_cursor, encode_cursor
 from ai_todo_api.common.list_page import ListPage
 from ai_todo_api.db.models import CalendarEventModel
-from ai_todo_api.modules.calendar.schemas import CalendarEventSummary
+from ai_todo_api.modules.calendar.schemas import CalendarEventSummary, WechatNotifyStatus
 from ai_todo_api.modules.contacts.schemas import ContactSummary
 
 
@@ -14,6 +14,10 @@ class CalendarEventRepository:
     def __init__(self, session: Session, user_id: str) -> None:
         self._session = session
         self._user_id = user_id
+
+    @property
+    def session(self) -> Session:
+        return self._session
 
     def add(self, event: CalendarEventModel) -> CalendarEventModel:
         self._session.add(event)
@@ -95,6 +99,7 @@ def event_to_summary(
     event: CalendarEventModel,
     *,
     contacts: list[ContactSummary] | None = None,
+    wechat_notify_status: WechatNotifyStatus = "none",
 ) -> CalendarEventSummary:
     return CalendarEventSummary(
         id=event.id,
@@ -104,5 +109,7 @@ def event_to_summary(
         timezone=event.timezone,
         location=event.location,
         description=event.description,
+        wechat_notify_requested=event.wechat_notify_requested,
+        wechat_notify_status=wechat_notify_status,
         contacts=contacts or [],
     )

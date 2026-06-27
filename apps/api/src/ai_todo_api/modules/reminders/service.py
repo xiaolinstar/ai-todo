@@ -11,6 +11,14 @@ from ai_todo_api.common.time import now_utc, today_in_timezone
 from ai_todo_api.db.models import ReminderModel
 from ai_todo_api.modules.contacts.links import ContactLinkService
 from ai_todo_api.modules.reminders.repository import ReminderRepository, reminder_to_summary
+from ai_todo_api.modules.notifications.notify_fields import (
+    load_wechat_notify_status_map,
+    reminders_to_summaries,
+)
+from ai_todo_api.modules.notifications.service import (
+    TARGET_TYPE_REMINDER,
+    TEMPLATE_KEY_REMINDER_DUE,
+)
 from ai_todo_api.modules.reminders.schemas import (
     CompleteReminderInput,
     CreateReminderInput,
@@ -61,7 +69,12 @@ class ReminderService:
         self._timezone = timezone
         self._links = links
 
-    def create(self, input_data: CreateReminderInput) -> tuple[ReminderSummary, bool]:
+    def create(
+        self,
+        input_data: CreateReminderInput,
+        *,
+        wechat_notify_requested: bool = False,
+    ) -> tuple[ReminderSummary, bool]:
         title = input_data.title.strip()
 
         if not title:
@@ -91,6 +104,7 @@ class ReminderService:
             source=source,
             external_id=external_id,
             source_meta=input_data.source_meta,
+            wechat_notify_requested=wechat_notify_requested,
             created_at=now,
             updated_at=now,
         )
@@ -101,7 +115,7 @@ class ReminderService:
             if input_data.contact_ids
             else []
         )
-        return reminder_to_summary(saved, contacts=contacts), True
+        return self._summary(saved, contacts=contacts), True
 
     def find_by_source(self, *, source: str, external_id: str) -> ReminderSummary:
         cleaned_source = _clean_source(source)
@@ -118,8 +132,7 @@ class ReminderService:
 
     def get(self, reminder_id: str) -> ReminderSummary:
         reminder = self._require(reminder_id)
-        contacts = self._links.summaries_for_reminder(reminder.id)
-        return reminder_to_summary(reminder, contacts=contacts)
+        return self._summary(reminder)
 
     def list_reminders(
         self,
@@ -159,10 +172,12 @@ class ReminderService:
             cursor=cursor,
         )
         contact_map = self._links.summaries_for_reminders([reminder.id for reminder in page.items])
-        items = [
-            reminder_to_summary(reminder, contacts=contact_map.get(reminder.id, []))
-            for reminder in page.items
-        ]
+        items = reminders_to_summaries(
+            self._repository.session,
+            self._user_id,
+            page.items,
+            contact_map,
+        )
         return ReminderListResult(
             items=items,
             total_count=page.total_count,
@@ -186,10 +201,12 @@ class ReminderService:
         )
         total_count = self._repository.count_active(status=status, source=source)
         contact_map = self._links.summaries_for_reminders([reminder.id for reminder in reminders])
-        items = [
-            reminder_to_summary(reminder, contacts=contact_map.get(reminder.id, []))
-            for reminder in reminders
-        ]
+        items = reminders_to_summaries(
+            self._repository.session,
+            self._user_id,
+            reminders,
+            contact_map,
+        )
         return ReminderListResult(
             items=items,
             total_count=total_count,
@@ -223,10 +240,12 @@ class ReminderService:
 
         limited = filtered[:limit]
         contact_map = self._links.summaries_for_reminders([reminder.id for reminder in limited])
-        items = [
-            reminder_to_summary(reminder, contacts=contact_map.get(reminder.id, []))
-            for reminder in limited
-        ]
+        items = reminders_to_summaries(
+            self._repository.session,
+            self._user_id,
+            limited,
+            contact_map,
+        )
         return ReminderListResult(
             items=items,
             total_count=len(filtered),
@@ -248,10 +267,12 @@ class ReminderService:
             )
         ]
         contact_map = self._links.summaries_for_reminders([reminder.id for reminder in visible])
-        items = [
-            reminder_to_summary(reminder, contacts=contact_map.get(reminder.id, []))
-            for reminder in visible
-        ]
+        items = reminders_to_summaries(
+            self._repository.session,
+            self._user_id,
+            visible,
+            contact_map,
+        )
         return ReminderListResult(
             items=items,
             total_count=len(items),
@@ -294,12 +315,15 @@ class ReminderService:
         if "remind_at" in updates:
             reminder.remind_at = _clean_optional(updates["remind_at"])
 
+        if "wechat_notify_requested" in updates:
+            reminder.wechat_notify_requested = bool(updates["wechat_notify_requested"])
+
         reminder.updated_at = now_utc()
         saved = self._repository.save(reminder)
 
         if contact_ids is not None:
             contacts = self._links.replace_reminder_contacts(saved.id, contact_ids)
-            return reminder_to_summary(saved, contacts=contacts)
+            return self._summary(saved, contacts=contacts)
 
         return self._summary(saved)
 
@@ -332,9 +356,21 @@ class ReminderService:
         self._repository.save(reminder)
         return reminder.id
 
-    def _summary(self, reminder: ReminderModel) -> ReminderSummary:
-        contacts = self._links.summaries_for_reminder(reminder.id)
-        return reminder_to_summary(reminder, contacts=contacts)
+    def _summary(self, reminder: ReminderModel, *, contacts: list | None = None) -> ReminderSummary:
+        if contacts is None:
+            contacts = self._links.summaries_for_reminder(reminder.id)
+        status_map = load_wechat_notify_status_map(
+            self._repository.session,
+            self._user_id,
+            target_type=TARGET_TYPE_REMINDER,
+            template_key=TEMPLATE_KEY_REMINDER_DUE,
+            target_ids=[reminder.id],
+        )
+        return reminder_to_summary(
+            reminder,
+            contacts=contacts,
+            wechat_notify_status=status_map.get(reminder.id, "none"),
+        )
 
     def _require(self, reminder_id: str) -> ReminderModel:
         reminder = self._repository.get(reminder_id)

@@ -4,8 +4,8 @@ import type { ContactSummary } from "../../lib/api";
 import { combineDateTime, splitIsoDateTime } from "../../lib/format";
 import { todoPageThemeData } from "../../lib/theme";
 import {
-  loadReminderNotificationPrefs,
-  requestReminderNotification
+  loadWechatNotificationPrefs,
+  enableWechatNotifyForTarget
 } from "../../lib/wechat-notify";
 
 Page({
@@ -24,6 +24,7 @@ Page({
     dueDate: "",
     dueTime: "",
     notifyAvailable: false,
+    notifyEnabled: false,
     reminderTemplateId: "",
     selectedContacts: [] as ContactSummary[],
     contactLabel: "选择",
@@ -41,7 +42,7 @@ Page({
       return;
     }
     this.setData({ reminderId });
-    Promise.all([loadAccountDay(), fetchReminder(reminderId), loadReminderNotificationPrefs()])
+    Promise.all([loadAccountDay(), fetchReminder(reminderId), loadWechatNotificationPrefs()])
       .then(([account, response, prefs]) => {
         if (!response.ok || !response.data) {
           this.setData({ loading: false });
@@ -71,6 +72,7 @@ Page({
           selectedContacts: reminder.contacts || [],
           contactLabel: formatContactLabel(reminder.contacts || []),
           notifyAvailable: prefs.notifyAvailable,
+          notifyEnabled: Boolean(reminder.wechatNotifyRequested),
           reminderTemplateId: prefs.reminderTemplateId
         });
       })
@@ -97,6 +99,10 @@ Page({
 
   onDueToggle(e: { detail: { value: boolean } }) {
     this.setData({ hasDue: e.detail.value });
+  },
+
+  onNotifyToggle(e: { detail: { value: boolean } }) {
+    this.setData({ notifyEnabled: e.detail.value });
   },
 
   onDateChange(e: { detail: { value: string } }) {
@@ -151,11 +157,13 @@ Page({
       notes: string;
       status: string;
       dueAt?: string | null;
+      wechatNotifyRequested?: boolean;
       contactIds: string[];
     } = {
       title,
       notes: this.data.notes.trim(),
       status: this.data.status,
+      wechatNotifyRequested: this.data.notifyEnabled,
       contactIds: this.data.selectedContacts.map((contact: ContactSummary) => contact.id)
     };
 
@@ -171,7 +179,12 @@ Page({
       payload.dueAt = nextDueAt;
     }
 
-    const dueChanged = !this.data.isCompleted && nextDueAt !== this._originalDueAt;
+    const shouldSubscribe =
+      this.data.notifyEnabled &&
+      this.data.notifyAvailable &&
+      Boolean(this.data.reminderTemplateId) &&
+      Boolean(nextDueAt) &&
+      !this.data.isCompleted;
 
     this.setData({ submitting: true });
     updateReminder(this.data.reminderId, payload)
@@ -184,12 +197,12 @@ Page({
           });
           return;
         }
-        if (dueChanged && nextDueAt && this.data.notifyAvailable && this.data.reminderTemplateId) {
+        if (shouldSubscribe) {
           try {
-            const { accepted } = await requestReminderNotification({
-              reminderId: this.data.reminderId,
-              templateId: this.data.reminderTemplateId,
-              enabled: true
+            const { accepted } = await enableWechatNotifyForTarget({
+              targetType: "reminder",
+              targetId: this.data.reminderId,
+              templateId: this.data.reminderTemplateId
             });
             wx.showToast({
               title: accepted ? "已保存并更新微信提醒" : "已保存，未重新授权微信提醒",

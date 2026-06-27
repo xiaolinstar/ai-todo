@@ -12,6 +12,14 @@ from ai_todo_api.modules.calendar.schemas import (
     UpdateCalendarEventInput,
 )
 from ai_todo_api.modules.contacts.links import ContactLinkService
+from ai_todo_api.modules.notifications.notify_fields import (
+    events_to_summaries,
+    load_wechat_notify_status_map,
+)
+from ai_todo_api.modules.notifications.service import (
+    TARGET_TYPE_CALENDAR_EVENT,
+    TEMPLATE_KEY_CALENDAR_START,
+)
 
 
 class CalendarEventNotFoundError(Exception):
@@ -31,7 +39,12 @@ class CalendarEventService:
         self._timezone = timezone
         self._links = links
 
-    def create(self, input_data: CreateCalendarEventInput) -> CalendarEventSummary:
+    def create(
+        self,
+        input_data: CreateCalendarEventInput,
+        *,
+        wechat_notify_requested: bool = False,
+    ) -> CalendarEventSummary:
         title = input_data.title.strip()
         start_at = _clean_required(input_data.start_at, "start_at")
         end_at = _clean_optional(input_data.end_at)
@@ -53,6 +66,7 @@ class CalendarEventService:
             timezone=event_timezone,
             location=_clean_optional(input_data.location),
             source="api",
+            wechat_notify_requested=wechat_notify_requested,
             created_at=now,
             updated_at=now,
         )
@@ -63,12 +77,12 @@ class CalendarEventService:
             if input_data.contact_ids
             else []
         )
-        return event_to_summary(saved, contacts=contacts)
+        return self._summary(saved, contacts=contacts)
 
     def get(self, event_id: str) -> CalendarEventSummary:
         event = self._require(event_id)
         contacts = self._links.summaries_for_calendar_event(event.id)
-        return event_to_summary(event, contacts=contacts)
+        return self._summary(event, contacts=contacts)
 
     def list_events(
         self,
@@ -87,10 +101,12 @@ class CalendarEventService:
 
         page = self._repository.list_page(limit=limit, cursor=cursor)
         contact_map = self._links.summaries_for_calendar_events([event.id for event in page.items])
-        items = [
-            event_to_summary(event, contacts=contact_map.get(event.id, []))
-            for event in page.items
-        ]
+        items = events_to_summaries(
+            self._repository.session,
+            self._user_id,
+            page.items,
+            contact_map,
+        )
         return CalendarEventListResult(
             items=items,
             total_count=page.total_count,
@@ -118,10 +134,12 @@ class CalendarEventService:
         ]
         limited = filtered[:limit]
         contact_map = self._links.summaries_for_calendar_events([event.id for event in limited])
-        items = [
-            event_to_summary(event, contacts=contact_map.get(event.id, []))
-            for event in limited
-        ]
+        items = events_to_summaries(
+            self._repository.session,
+            self._user_id,
+            limited,
+            contact_map,
+        )
         return CalendarEventListResult(
             items=items,
             total_count=len(filtered),
@@ -143,10 +161,12 @@ class CalendarEventService:
             )
         ]
         contact_map = self._links.summaries_for_calendar_events([event.id for event in visible])
-        items = [
-            event_to_summary(event, contacts=contact_map.get(event.id, []))
-            for event in visible
-        ]
+        items = events_to_summaries(
+            self._repository.session,
+            self._user_id,
+            visible,
+            contact_map,
+        )
         return CalendarEventListResult(
             items=items,
             total_count=len(items),
@@ -172,6 +192,9 @@ class CalendarEventService:
         if "description" in updates:
             event.description = _clean_optional(updates["description"])
 
+        if "wechat_notify_requested" in updates:
+            event.wechat_notify_requested = bool(updates["wechat_notify_requested"])
+
         if "location" in updates:
             event.location = _clean_optional(updates["location"])
 
@@ -190,10 +213,10 @@ class CalendarEventService:
 
         if contact_ids is not None:
             contacts = self._links.replace_calendar_contacts(saved.id, contact_ids)
-            return event_to_summary(saved, contacts=contacts)
+            return self._summary(saved, contacts=contacts)
 
         contacts = self._links.summaries_for_calendar_event(saved.id)
-        return event_to_summary(saved, contacts=contacts)
+        return self._summary(saved, contacts=contacts)
 
     def delete(self, event_id: str) -> str:
         event = self._require(event_id)
@@ -208,6 +231,27 @@ class CalendarEventService:
         if event is None:
             raise CalendarEventNotFoundError(event_id)
         return event
+
+    def _summary(
+        self,
+        event: CalendarEventModel,
+        *,
+        contacts: list | None = None,
+    ) -> CalendarEventSummary:
+        if contacts is None:
+            contacts = self._links.summaries_for_calendar_event(event.id)
+        status_map = load_wechat_notify_status_map(
+            self._repository.session,
+            self._user_id,
+            target_type=TARGET_TYPE_CALENDAR_EVENT,
+            template_key=TEMPLATE_KEY_CALENDAR_START,
+            target_ids=[event.id],
+        )
+        return event_to_summary(
+            event,
+            contacts=contacts,
+            wechat_notify_status=status_map.get(event.id, "none"),
+        )
 
 
 def _clean_optional(value: str | None) -> str | None:

@@ -19,11 +19,19 @@ import { loadContentPrefs } from "../../lib/content-prefs";
 import { SwipeListGesture, withSwipeRow, type SwipeListRowState } from "../../lib/swipe-list";
 import { updateTabBarSelected } from "../../lib/tab-bar";
 import { buildAppShareOptions, buildAppShareTimelineOptions } from "../../lib/share";
+import {
+  deriveNotifyUi,
+  enableWechatNotifyForTarget,
+  loadWechatNotificationPrefs
+} from "../../lib/wechat-notify";
 
 interface EventView extends CalendarEventSummary, SwipeListRowState {
   timeLabel: string;
   contactNames: string;
   accentColor: string;
+  showEnableButton: boolean;
+  showEnabledLabel: boolean;
+  showAwaitingBadge: boolean;
 }
 
 Page({
@@ -38,7 +46,9 @@ Page({
     isToday: true,
     timezone: "",
     weekDays: [] as WeekDayItem[],
-    events: [] as EventView[]
+    events: [] as EventView[],
+    notifyAvailable: false,
+    reminderTemplateId: ""
   },
 
   _swipeList: null as SwipeListGesture<EventView> | null,
@@ -113,8 +123,8 @@ Page({
   loadEvents() {
     this.setData({ loading: true, error: "" });
 
-    return loadAccountDay()
-      .then(({ timezone, today: accountToday }) => {
+    return Promise.all([loadAccountDay(), loadWechatNotificationPrefs()])
+      .then(([{ timezone, today: accountToday }, notifyPrefs]) => {
         const selectedDate = this.data.selectedDate || accountToday;
 
         const eventsRequest = isTodayIsoDate(selectedDate, accountToday)
@@ -140,15 +150,24 @@ Page({
             weekdayLabel: formatWeekdayLong(selectedDate),
             isToday: isTodayIsoDate(selectedDate, accountToday),
             timezone,
+            notifyAvailable: notifyPrefs.notifyAvailable,
+            reminderTemplateId: notifyPrefs.reminderTemplateId,
             weekDays: buildWeekStrip(selectedDate, accountToday),
-            events: eventsRes.data.items.map((item, index) =>
-              withSwipeRow({
+            events: eventsRes.data.items.map((item, index) => {
+              const notifyUi = deriveNotifyUi({
+                notifyAvailable: notifyPrefs.notifyAvailable,
+                wechatNotifyRequested: item.wechatNotifyRequested,
+                wechatNotifyStatus: item.wechatNotifyStatus,
+                scheduleAt: item.startAt
+              });
+              return withSwipeRow({
                 ...item,
                 timeLabel: formatEventTimeRange(item.startAt, item.endAt, timezone),
                 contactNames: (item.contacts || []).map((c) => c.displayName).join("、"),
-                accentColor: eventAccentColor(index)
-              })
-            )
+                accentColor: eventAccentColor(index),
+                ...notifyUi
+              });
+            })
           });
         });
       })
@@ -198,5 +217,30 @@ Page({
 
   onDeleteTap(e: { currentTarget: { dataset: { id: string } } }) {
     this._swipeList?.onDeleteTap(e);
+  },
+
+  onEnableNotify(e: { currentTarget: { dataset: { id: string } } }) {
+    const eventId = e.currentTarget.dataset.id;
+    const templateId = this.data.reminderTemplateId;
+    if (!eventId || !templateId) {
+      return;
+    }
+    enableWechatNotifyForTarget({
+      targetType: "calendar_event",
+      targetId: eventId,
+      templateId
+    })
+      .then(({ accepted }) => {
+        wx.showToast({
+          title: accepted ? "已开启微信提醒" : "未授权微信提醒",
+          icon: accepted ? "success" : "none"
+        });
+        if (accepted) {
+          this.loadEvents();
+        }
+      })
+      .catch(() => {
+        wx.showToast({ title: "提醒授权失败", icon: "none" });
+      });
   }
 });

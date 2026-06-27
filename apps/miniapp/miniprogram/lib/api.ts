@@ -30,6 +30,8 @@ export interface ContactSummary {
   primaryPhone?: string;
 }
 
+export type WechatNotifyStatus = "none" | "pending" | "sent" | "failed" | "no_quota" | "skipped";
+
 export interface ReminderSummary {
   id: string;
   title: string;
@@ -40,6 +42,8 @@ export interface ReminderSummary {
   source?: string;
   externalId?: string;
   sourceMeta?: Record<string, unknown>;
+  wechatNotifyRequested?: boolean;
+  wechatNotifyStatus?: WechatNotifyStatus;
   contacts?: ContactSummary[];
 }
 
@@ -56,6 +60,8 @@ export interface CalendarEventSummary {
   endAt?: string;
   location?: string;
   description?: string;
+  wechatNotifyRequested?: boolean;
+  wechatNotifyStatus?: WechatNotifyStatus;
   contacts?: ContactSummary[];
 }
 
@@ -386,6 +392,7 @@ export function updateReminder(
     status?: string;
     dueAt?: string | null;
     remindAt?: string | null;
+    wechatNotifyRequested?: boolean;
     contactIds?: string[];
   }
 ) {
@@ -400,6 +407,7 @@ export function createReminder(input: {
   notes?: string;
   dueAt?: string;
   remindAt?: string;
+  wechatNotifyRequested?: boolean;
   contactIds?: string[];
 }) {
   return request<{ reminder: ReminderSummary }>("/v1/reminders", {
@@ -422,6 +430,7 @@ export function updateCalendarEvent(
     endAt?: string | null;
     location?: string;
     description?: string;
+    wechatNotifyRequested?: boolean;
     contactIds?: string[];
   }
 ) {
@@ -444,6 +453,7 @@ export function createCalendarEvent(input: {
   endAt?: string;
   location?: string;
   description?: string;
+  wechatNotifyRequested?: boolean;
   contactIds?: string[];
 }) {
   return request<{ calendarEvent: CalendarEventSummary }>("/v1/calendar/events", {

@@ -4,7 +4,7 @@ import type { ContactSummary } from "../../lib/api";
 import { combineDateTime } from "../../lib/format";
 import { todoPageThemeData } from "../../lib/theme";
 import {
-  loadReminderNotificationPrefs,
+  loadWechatNotificationPrefs,
   requestReminderNotification
 } from "../../lib/wechat-notify";
 
@@ -33,7 +33,7 @@ Page({
         dueTime: nowTime
       });
     });
-    loadReminderNotificationPrefs().then((prefs) => {
+    loadWechatNotificationPrefs().then((prefs) => {
       this.setData({
         notifyAvailable: prefs.notifyAvailable,
         notifyEnabled: prefs.notifyEnabled,
@@ -56,6 +56,10 @@ Page({
 
   onDueToggle(e: { detail: { value: boolean } }) {
     this.setData({ hasDue: e.detail.value });
+  },
+
+  onNotifyToggle(e: { detail: { value: boolean } }) {
+    this.setData({ notifyEnabled: e.detail.value });
   },
 
   onDateChange(e: { detail: { value: string } }) {
@@ -88,8 +92,15 @@ Page({
       return;
     }
 
-    const payload: { title: string; notes?: string; dueAt?: string; contactIds?: string[] } = {
-      title
+    const payload: {
+      title: string;
+      notes?: string;
+      dueAt?: string;
+      wechatNotifyRequested?: boolean;
+      contactIds?: string[];
+    } = {
+      title,
+      wechatNotifyRequested: this.data.hasDue && this.data.notifyAvailable && this.data.notifyEnabled
     };
     const notes = this.data.notes.trim();
     if (notes) {

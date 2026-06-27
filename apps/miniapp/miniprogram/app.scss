@@ -627,6 +627,28 @@ button::after {
   font-weight: 600;
 }
 
+.notify-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12rpx;
+  margin-top: 4rpx;
+}
+
+.notify-badge {
+  color: var(--todo-text-muted);
+  font-size: 24rpx;
+}
+
+.notify-enabled {
+  color: var(--todo-text-muted);
+  font-size: 24rpx;
+}
+
+.notify-action {
+  font-size: 24rpx;
+}
+
 .loading-state,
 .empty-state {
   display: flex;

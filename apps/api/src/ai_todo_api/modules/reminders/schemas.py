@@ -5,6 +5,7 @@ from ai_todo_api.schemas import CamelModel
 
 
 ReminderStatus = Literal["pending", "in_progress", "completed", "cancelled"]
+WechatNotifyStatus = Literal["none", "pending", "sent", "failed", "no_quota", "skipped"]
 
 
 class ReminderSummary(CamelModel):
@@ -18,6 +19,8 @@ class ReminderSummary(CamelModel):
     external_id: str | None = None
     source_meta: dict[str, Any] | None = None
     completed_at: str | None = None
+    wechat_notify_requested: bool = False
+    wechat_notify_status: WechatNotifyStatus = "none"
     contacts: list[ContactSummary] = []
 
 
@@ -29,6 +32,7 @@ class CreateReminderInput(CamelModel):
     source: str | None = None
     external_id: str | None = None
     source_meta: dict[str, Any] | None = None
+    wechat_notify_requested: bool | None = None
     contact_ids: list[str] = []
 
 
@@ -62,6 +66,7 @@ class UpdateReminderInput(CamelModel):
     status: ReminderStatus | None = None
     due_at: str | None = None
     remind_at: str | None = None
+    wechat_notify_requested: bool | None = None
     contact_ids: list[str] | None = None
 
 

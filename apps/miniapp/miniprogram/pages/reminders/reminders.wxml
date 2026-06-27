@@ -107,6 +107,16 @@
                   >
                     {{item.subline}}
                   </view>
+                  <view wx:if="{{item.showAwaitingBadge || item.showEnableButton || item.showEnabledLabel}}" class="cell-subline notify-row">
+                    <text wx:if="{{item.showAwaitingBadge}}" class="notify-badge">待开启提醒</text>
+                    <text wx:if="{{item.showEnabledLabel}}" class="notify-enabled">微信提醒已开启</text>
+                    <text
+                      wx:if="{{item.showEnableButton}}"
+                      class="link-text notify-action"
+                      data-id="{{item.id}}"
+                      catchtap="onEnableNotify"
+                    >开启微信提醒</text>
+                  </view>
                 </view>
               </view>
             </view>
@@ -176,6 +186,16 @@
                     class="cell-subline {{item.isOverdue && !item.completing ? 'overdue' : ''}}"
                   >
                     {{item.subline}}
+                  </view>
+                  <view wx:if="{{item.showAwaitingBadge || item.showEnableButton || item.showEnabledLabel}}" class="cell-subline notify-row">
+                    <text wx:if="{{item.showAwaitingBadge}}" class="notify-badge">待开启提醒</text>
+                    <text wx:if="{{item.showEnabledLabel}}" class="notify-enabled">微信提醒已开启</text>
+                    <text
+                      wx:if="{{item.showEnableButton}}"
+                      class="link-text notify-action"
+                      data-id="{{item.id}}"
+                      catchtap="onEnableNotify"
+                    >开启微信提醒</text>
                   </view>
                 </view>
               </view>

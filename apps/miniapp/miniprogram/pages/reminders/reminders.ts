@@ -13,6 +13,11 @@ import {
 import { updateTabBarSelected } from "../../lib/tab-bar";
 import { getWindowWidthPx } from "../../lib/window-metrics";
 import { buildAppShareOptions, buildAppShareTimelineOptions } from "../../lib/share";
+import {
+  deriveNotifyUi,
+  enableWechatNotifyForTarget,
+  loadWechatNotificationPrefs
+} from "../../lib/wechat-notify";
 
 interface ReminderView extends ReminderSummary {
   dueLabel: string;
@@ -27,6 +32,9 @@ interface ReminderView extends ReminderSummary {
   swiping: boolean;
   pressing: boolean;
   deleteVisible: boolean;
+  showEnableButton: boolean;
+  showEnabledLabel: boolean;
+  showAwaitingBadge: boolean;
 }
 
 interface ReminderGroup {
@@ -54,7 +62,7 @@ function sourceLabel(source?: string): string {
   return labels[source] || source;
 }
 
-function enrichReminder(item: ReminderSummary, timeZone: string): ReminderView {
+function enrichReminder(item: ReminderSummary, timeZone: string, notifyAvailable: boolean): ReminderView {
   const completed = item.status === "completed";
   const dueLabel = formatDateTime(item.dueAt, timeZone);
   const contactNames = (item.contacts || [])
@@ -62,7 +70,7 @@ function enrichReminder(item: ReminderSummary, timeZone: string): ReminderView {
     .join("、");
   const isOverdue = isOverdueDueAt(item.dueAt, completed);
 
-  return {
+  const base: ReminderView = {
     ...item,
     dueLabel,
     contactNames,
@@ -81,8 +89,19 @@ function enrichReminder(item: ReminderSummary, timeZone: string): ReminderView {
     swipeX: 0,
     swiping: false,
     pressing: false,
-    deleteVisible: false
+    deleteVisible: false,
+    showEnableButton: false,
+    showEnabledLabel: false,
+    showAwaitingBadge: false
   };
+
+  const notifyUi = deriveNotifyUi({
+    notifyAvailable,
+    wechatNotifyRequested: item.wechatNotifyRequested,
+    wechatNotifyStatus: item.wechatNotifyStatus,
+    scheduleAt: item.remindAt || item.dueAt
+  });
+  return { ...base, ...notifyUi };
 }
 
 function groupPendingReminders(
@@ -151,7 +170,9 @@ Page({
     inProgressGroups: [] as ReminderGroup[],
     pending: [] as ReminderView[],
     inProgress: [] as ReminderView[],
-    completed: [] as ReminderView[]
+    completed: [] as ReminderView[],
+    notifyAvailable: false,
+    reminderTemplateId: ""
   },
 
   _completeTimers: {} as Record<string, ReturnType<typeof setTimeout>>,
@@ -209,11 +230,12 @@ Page({
     this.setData({ loading: true, error: "" });
     return Promise.all([
       loadAccountDay(),
+      loadWechatNotificationPrefs(),
       fetchReminders({ status: "pending", sort: "due_at" }),
       fetchReminders({ status: "in_progress", sort: "due_at" }),
       fetchReminders({ status: "completed", sort: "completed_at" })
     ])
-      .then(([account, pendingRes, inProgressRes, completedRes]) => {
+      .then(([account, notifyPrefs, pendingRes, inProgressRes, completedRes]) => {
         if (
           !pendingRes.ok ||
           !pendingRes.data ||
@@ -235,12 +257,15 @@ Page({
         }
 
         const { timezone, today } = account;
-        const pendingItems = pendingRes.data.items.map((item) => enrichReminder(item, timezone));
+        const notifyAvailable = notifyPrefs.notifyAvailable;
+        const pendingItems = pendingRes.data.items.map((item) =>
+          enrichReminder(item, timezone, notifyAvailable)
+        );
         const inProgressItems = inProgressRes.data.items.map((item) =>
-          enrichReminder(item, timezone)
+          enrichReminder(item, timezone, notifyAvailable)
         );
         const completedItems = completedRes.data.items.map((item) =>
-          enrichReminder(item, timezone)
+          enrichReminder(item, timezone, false)
         );
         const animating = this.data.pending.filter(
           (item: ReminderView) => item.completing || item.exiting
@@ -269,7 +294,9 @@ Page({
           inProgressGroups: groupPendingReminders(inProgress, today, timezone),
           pending,
           inProgress,
-          completed
+          completed,
+          notifyAvailable,
+          reminderTemplateId: notifyPrefs.reminderTemplateId
         });
       })
       .catch(() => {
@@ -399,7 +426,8 @@ Page({
         ...item,
         status: "completed"
       },
-      this.data.timezone
+      this.data.timezone,
+      false
     );
 
     const pending = this.data.pending.filter((entry: ReminderView) => entry.id !== id);
@@ -629,6 +657,31 @@ Page({
       .catch(() => {
         this.patchReminderItem(id, { deleting: false, exiting: false, swipeX: 0 });
         wx.showToast({ title: "网络错误", icon: "none" });
+      });
+  },
+
+  onEnableNotify(e: { currentTarget: { dataset: { id: string } } }) {
+    const reminderId = e.currentTarget.dataset.id;
+    const templateId = this.data.reminderTemplateId;
+    if (!reminderId || !templateId) {
+      return;
+    }
+    enableWechatNotifyForTarget({
+      targetType: "reminder",
+      targetId: reminderId,
+      templateId
+    })
+      .then(({ accepted }) => {
+        wx.showToast({
+          title: accepted ? "已开启微信提醒" : "未授权微信提醒",
+          icon: accepted ? "success" : "none"
+        });
+        if (accepted) {
+          this.loadReminders();
+        }
+      })
+      .catch(() => {
+        wx.showToast({ title: "提醒授权失败", icon: "none" });
       });
   }
 });

@@ -1,3 +1,4 @@
+import type { WechatNotifyStatus } from "./api";
 import {
   fetchNotificationSettings,
   recordWechatSubscriptionResult
@@ -7,6 +8,12 @@ export const REMINDER_TEMPLATE_KEY = "reminder_due";
 export const CALENDAR_TEMPLATE_KEY = "calendar_event_start";
 
 export type SubscribeMessageResult = "accept" | "reject" | "ban" | "filter";
+
+export interface NotifyUiState {
+  showEnableButton: boolean;
+  showEnabledLabel: boolean;
+  showAwaitingBadge: boolean;
+}
 
 export function requestSubscribeMessage(
   templateId: string
@@ -27,6 +34,65 @@ export function requestSubscribeMessage(
       }
     });
   });
+}
+
+export async function enableWechatNotifyForTarget(options: {
+  targetType: "reminder" | "calendar_event";
+  targetId: string;
+  templateId: string;
+}): Promise<{ accepted: boolean }> {
+  if (!options.templateId) {
+    return { accepted: false };
+  }
+
+  if (options.targetType === "reminder") {
+    const { accepted } = await requestReminderNotification({
+      reminderId: options.targetId,
+      templateId: options.templateId,
+      enabled: true
+    });
+    return { accepted };
+  }
+
+  const { accepted } = await requestCalendarEventNotification({
+    eventId: options.targetId,
+    templateId: options.templateId,
+    enabled: true
+  });
+  return { accepted };
+}
+
+export function isFutureSchedule(scheduleAt?: string): boolean {
+  if (!scheduleAt) {
+    return false;
+  }
+  const parsed = Date.parse(scheduleAt);
+  if (Number.isNaN(parsed)) {
+    return false;
+  }
+  return parsed > Date.now();
+}
+
+export function deriveNotifyUi(options: {
+  notifyAvailable: boolean;
+  wechatNotifyRequested?: boolean;
+  wechatNotifyStatus?: WechatNotifyStatus;
+  scheduleAt?: string;
+}): NotifyUiState {
+  if (!options.notifyAvailable || !options.wechatNotifyRequested) {
+    return { showEnableButton: false, showEnabledLabel: false, showAwaitingBadge: false };
+  }
+
+  const status = options.wechatNotifyStatus || "none";
+  if (status === "pending" || status === "sent") {
+    return { showEnableButton: false, showEnabledLabel: true, showAwaitingBadge: false };
+  }
+
+  if (!isFutureSchedule(options.scheduleAt)) {
+    return { showEnableButton: false, showEnabledLabel: false, showAwaitingBadge: false };
+  }
+
+  return { showEnableButton: true, showEnabledLabel: false, showAwaitingBadge: true };
 }
 
 export async function requestReminderNotification(options: {

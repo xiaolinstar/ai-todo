@@ -26,6 +26,7 @@ from ai_todo_api.modules.reminders.schemas import (
     UpdateReminderResult,
 )
 from ai_todo_api.modules.reminders.service import ReminderNotFoundError, ReminderService
+from ai_todo_api.modules.notifications.notify_fields import resolve_wechat_notify_requested
 from ai_todo_api.schemas import ApiError, ApiResponse, ErrorResponse
 
 
@@ -177,7 +178,15 @@ def create_reminder(
 
     def handler() -> JSONResponse:
         try:
-            reminder, created = service.create(input_data)
+            reminder, created = service.create(
+                input_data,
+                wechat_notify_requested=resolve_wechat_notify_requested(
+                    client_source=auth.client_source,
+                    session=db,
+                    user_id=user.id,
+                    requested=input_data.wechat_notify_requested,
+                ),
+            )
         except ContactNotFoundError as error:
             return _contact_not_found(str(error))
         except ValueError as error:

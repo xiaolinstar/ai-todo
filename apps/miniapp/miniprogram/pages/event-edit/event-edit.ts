@@ -6,7 +6,7 @@ import { applyDefaultEventEnd } from "../../lib/content-prefs";
 import { todoPageThemeData } from "../../lib/theme";
 import {
   loadWechatNotificationPrefs,
-  requestCalendarEventNotification
+  enableWechatNotifyForTarget
 } from "../../lib/wechat-notify";
 
 Page({
@@ -25,6 +25,7 @@ Page({
     endTime: "",
     hasEnd: false,
     notifyAvailable: false,
+    notifyEnabled: false,
     reminderTemplateId: "",
     selectedContacts: [] as ContactSummary[],
     contactLabel: "选择",
@@ -35,15 +36,18 @@ Page({
   _originalStartAt: "",
   _endTouched: false,
   _originalDurationMinutes: 60,
+  _autoSubscribe: false,
 
-  onLoad(options: { id?: string }) {
+  onLoad(options: { id?: string; subscribe?: string }) {
     const eventId = (options.id || "").trim();
+    const autoSubscribe = (options.subscribe || "").trim() === "1";
     if (!eventId) {
       wx.showToast({ title: "缺少日程 ID", icon: "none" });
       setTimeout(() => wx.navigateBack(), 800);
       return;
     }
     this.setData({ eventId });
+    this._autoSubscribe = autoSubscribe;
     Promise.all([loadAccountDay(), fetchCalendarEvent(eventId), loadWechatNotificationPrefs()])
       .then(([account, response, prefs]) => {
         if (!response.ok || !response.data) {
@@ -69,6 +73,7 @@ Page({
           loading: false,
           accountTimezone: tz,
           notifyAvailable: prefs.notifyAvailable,
+          notifyEnabled: Boolean(event.wechatNotifyRequested),
           reminderTemplateId: prefs.reminderTemplateId,
           title: event.title || "",
           titleTextareaHeight: titleTextareaHeight(event.title || ""),
@@ -83,6 +88,26 @@ Page({
           selectedContacts: event.contacts || [],
           contactLabel: formatContactLabel(event.contacts || [])
         });
+        if (this._autoSubscribe && prefs.notifyAvailable && prefs.reminderTemplateId) {
+          this.setData({ notifyEnabled: true });
+          updateCalendarEvent(eventId, { wechatNotifyRequested: true })
+            .then(() =>
+              enableWechatNotifyForTarget({
+                targetType: "calendar_event",
+                targetId: eventId,
+                templateId: prefs.reminderTemplateId
+              })
+            )
+            .then(({ accepted }) => {
+              wx.showToast({
+                title: accepted ? "已开启微信提醒" : "未授权微信提醒",
+                icon: accepted ? "success" : "none"
+              });
+            })
+            .catch(() => {
+              wx.showToast({ title: "提醒授权失败", icon: "none" });
+            });
+        }
       })
       .catch(() => {
         this.setData({ loading: false });
@@ -107,6 +132,10 @@ Page({
 
   toggleDescription() {
     this.setData({ descriptionExpanded: !this.data.descriptionExpanded });
+  },
+
+  onNotifyToggle(e: { detail: { value: boolean } }) {
+    this.setData({ notifyEnabled: e.detail.value });
   },
 
   onEndToggle(e: { detail: { value: boolean } }) {
@@ -205,6 +234,7 @@ Page({
       endAt: string | null;
       location: string;
       description: string;
+      wechatNotifyRequested: boolean;
       contactIds: string[];
     } = {
       title,
@@ -222,11 +252,14 @@ Page({
         : null,
       location: this.data.location.trim(),
       description: this.data.description.trim(),
+      wechatNotifyRequested: this.data.notifyEnabled,
       contactIds: this.data.selectedContacts.map((contact: ContactSummary) => contact.id)
     };
 
-    const nextStartAt = payload.startAt;
-    const startChanged = nextStartAt !== this._originalStartAt;
+    const shouldSubscribe =
+      this.data.notifyEnabled &&
+      this.data.notifyAvailable &&
+      Boolean(this.data.reminderTemplateId);
 
     this.setData({ submitting: true });
     updateCalendarEvent(this.data.eventId, payload)
@@ -236,12 +269,12 @@ Page({
           wx.showToast({ title: response.error?.message || "保存失败", icon: "none" });
           return;
         }
-        if (startChanged && this.data.notifyAvailable && this.data.reminderTemplateId) {
+        if (shouldSubscribe) {
           try {
-            const { accepted } = await requestCalendarEventNotification({
-              eventId: this.data.eventId,
-              templateId: this.data.reminderTemplateId,
-              enabled: true
+            const { accepted } = await enableWechatNotifyForTarget({
+              targetType: "calendar_event",
+              targetId: this.data.eventId,
+              templateId: this.data.reminderTemplateId
             });
             wx.showToast({
               title: accepted ? "已保存并更新微信提醒" : "已保存，未重新授权微信提醒",
