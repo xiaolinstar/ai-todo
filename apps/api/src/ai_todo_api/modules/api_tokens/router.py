@@ -18,6 +18,7 @@ from ai_todo_api.modules.api_tokens.schemas import (
     RevokeApiTokenResult,
 )
 from ai_todo_api.modules.api_tokens.service import ApiTokenNotFoundError, ApiTokenService
+from ai_todo_api.errors import ErrorCode, wire_code
 from ai_todo_api.schemas import ApiError, ApiResponse, ErrorResponse
 
 

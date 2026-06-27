@@ -1,8 +1,7 @@
 """Central API error code registry (ADR-0005 / dev-standards api-error-codes).
 
-HTTP wire responses still emit **legacy** codes during migration batches 2–5.
-New code must use :class:`ErrorCode` and ``legacy_wire_code()`` until clients
-accept prefixed codes.
+Batch 2+: AUTH wire responses use prefixed :class:`ErrorCode` values.
+Other families still emit legacy codes until batches 3–5.
 """
 
 from enum import StrEnum
@@ -80,8 +79,28 @@ def canonical_code(legacy: str) -> ErrorCode:
 
 
 def legacy_wire_code(code: ErrorCode) -> str:
-    """Return the legacy wire string for *code* during the migration period."""
+    """Return the legacy wire string for *code* (migration reference / client matching)."""
     return _CANONICAL_TO_LEGACY.get(code, code.value)
+
+
+def wire_code(code: ErrorCode) -> str:
+    """Return canonical prefixed code for HTTP wire responses."""
+    return code.value
+
+
+def matches_error_code(wire: str, code: ErrorCode) -> bool:
+    """True if *wire* equals *code* or a known legacy alias for it."""
+    if wire == code.value:
+        return True
+    return LEGACY_ERROR_ALIASES.get(wire) is code
+
+
+def error_detail(code: ErrorCode, message: str) -> dict[str, object]:
+    """Build envelope ``detail`` dict for :class:`HTTPException`."""
+    return {
+        "ok": False,
+        "error": {"code": wire_code(code), "message": message},
+    }
 
 
 def all_legacy_codes() -> frozenset[str]:

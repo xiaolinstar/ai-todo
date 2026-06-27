@@ -41,7 +41,7 @@ def test_wechat_login_rate_limit_by_ip(client: TestClient, monkeypatch) -> None:
     assert first.status_code == 200
     assert second.status_code == 200
     assert third.status_code == 429
-    assert third.json()["error"]["code"] == "RATE_LIMITED"
+    assert third.json()["error"]["code"] == "AUTH_RATE_LIMITED"
 
 
 def test_wechat_login_rate_limit_can_be_disabled(client: TestClient, monkeypatch) -> None:

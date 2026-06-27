@@ -2,6 +2,7 @@ from fastapi import HTTPException, Request
 
 from ai_todo_api.common.rate_limit import SlidingWindowRateLimiter
 from ai_todo_api.config import settings
+from ai_todo_api.errors import ErrorCode, error_detail
 
 
 _wechat_login_limiter = SlidingWindowRateLimiter(
@@ -26,11 +27,8 @@ def enforce_wechat_login_rate_limit(request: Request) -> None:
     if not _wechat_login_limiter.allow(client_ip(request)):
         raise HTTPException(
             status_code=429,
-            detail={
-                "ok": False,
-                "error": {
-                    "code": "RATE_LIMITED",
-                    "message": "Too many WeChat login attempts. Please try again later.",
-                },
-            },
+            detail=error_detail(
+                ErrorCode.AUTH_RATE_LIMITED,
+                "Too many WeChat login attempts. Please try again later.",
+            ),
         )

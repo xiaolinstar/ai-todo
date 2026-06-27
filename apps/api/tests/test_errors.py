@@ -7,6 +7,8 @@ from ai_todo_api.errors import (
     all_legacy_codes,
     canonical_code,
     legacy_wire_code,
+    matches_error_code,
+    wire_code,
 )
 
 _CODE_KW_PATTERN = re.compile(r"""code\s*=\s*["']([A-Z][A-Z0-9_]*)["']""")
@@ -31,6 +33,16 @@ def test_legacy_wire_code_round_trip() -> None:
 
 def test_legacy_wire_code_returns_prefixed_value_for_new_only_codes() -> None:
     assert legacy_wire_code(ErrorCode.BIZ_CONTACT_AMBIGUOUS) == "BIZ_CONTACT_AMBIGUOUS"
+
+
+def test_wire_code_returns_prefixed_canonical() -> None:
+    assert wire_code(ErrorCode.AUTH_INVALID_TOKEN) == "AUTH_INVALID_TOKEN"
+
+
+def test_matches_error_code_accepts_legacy_and_canonical() -> None:
+    assert matches_error_code("UNAUTHORIZED", ErrorCode.AUTH_INVALID_TOKEN)
+    assert matches_error_code("AUTH_INVALID_TOKEN", ErrorCode.AUTH_INVALID_TOKEN)
+    assert not matches_error_code("FORBIDDEN", ErrorCode.AUTH_INVALID_TOKEN)
 
 
 def test_all_legacy_codes_from_p0_audit_are_registered() -> None:

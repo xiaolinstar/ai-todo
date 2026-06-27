@@ -226,7 +226,7 @@ def test_cli_rejects_session_token(client: TestClient, monkeypatch) -> None:
         },
     )
     assert response.status_code == 401
-    assert response.json()["error"]["code"] == "SESSION_TOKEN_NOT_ALLOWED"
+    assert response.json()["error"]["code"] == "AUTH_SCOPE_DENIED"
 
 
 def test_new_wechat_login_revokes_previous_session(client: TestClient, monkeypatch) -> None:

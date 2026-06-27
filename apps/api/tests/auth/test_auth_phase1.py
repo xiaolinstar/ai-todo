@@ -93,7 +93,7 @@ def test_read_only_token_cannot_write(client: TestClient, monkeypatch) -> None:
         headers=headers,
     )
     assert response.status_code == 403
-    assert response.json()["error"]["code"] == "FORBIDDEN"
+    assert response.json()["error"]["code"] == "AUTH_FORBIDDEN"
 
 
 def test_dev_issue_pat_endpoint(client: TestClient, monkeypatch) -> None:

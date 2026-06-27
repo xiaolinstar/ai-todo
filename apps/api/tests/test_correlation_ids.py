@@ -54,7 +54,7 @@ def test_unauthorized_error_body_includes_correlation_ids(client: TestClient) ->
     assert response.status_code == 401
     body = response.json()
     assert body["ok"] is False
-    assert body["error"]["code"] == "UNAUTHORIZED"
+    assert body["error"]["code"] == "AUTH_INVALID_TOKEN"
     assert response.headers["X-Request-ID"] == "req_unauth_body_1"
     assert body["requestId"] == "req_unauth_body_1"
     assert body["traceId"] == "req_unauth_body_1"

@@ -8,6 +8,7 @@ from ai_todo_api.cli_guidance import SESSION_TOKEN_CLI_HINT
 from ai_todo_api.common.json_store import loads_json
 from ai_todo_api.config import settings
 from ai_todo_api.db.session import get_db
+from ai_todo_api.errors import ErrorCode, error_detail
 from ai_todo_api.modules.api_tokens.constants import TOKEN_TYPE_SESSION
 from ai_todo_api.modules.api_tokens.service import resolve_token
 
@@ -53,13 +54,10 @@ def get_auth_context(
         if token is None:
             raise HTTPException(
                 status_code=401,
-                detail={
-                    "ok": False,
-                    "error": {
-                        "code": "UNAUTHORIZED",
-                        "message": "Invalid or expired API token.",
-                    },
-                },
+                detail=error_detail(
+                    ErrorCode.AUTH_INVALID_TOKEN,
+                    "Invalid or expired API token.",
+                ),
             )
 
         from ai_todo_api.auth.service import get_user
@@ -68,25 +66,19 @@ def get_auth_context(
         if user is None:
             raise HTTPException(
                 status_code=401,
-                detail={
-                    "ok": False,
-                    "error": {
-                        "code": "UNAUTHORIZED",
-                        "message": "Token user no longer exists.",
-                    },
-                },
+                detail=error_detail(
+                    ErrorCode.AUTH_INVALID_TOKEN,
+                    "Token user no longer exists.",
+                ),
             )
 
         if token.token_type == TOKEN_TYPE_SESSION and client_source == "cli":
             raise HTTPException(
                 status_code=401,
-                detail={
-                    "ok": False,
-                    "error": {
-                        "code": "SESSION_TOKEN_NOT_ALLOWED",
-                        "message": SESSION_TOKEN_CLI_HINT,
-                    },
-                },
+                detail=error_detail(
+                    ErrorCode.AUTH_SCOPE_DENIED,
+                    SESSION_TOKEN_CLI_HINT,
+                ),
             )
 
         scopes = tuple(loads_json(token.scopes))
@@ -122,13 +114,10 @@ def get_auth_context(
     else:
         raise HTTPException(
             status_code=401,
-            detail={
-                "ok": False,
-                "error": {
-                    "code": "UNAUTHORIZED",
-                    "message": "Authorization required.",
-                },
-            },
+            detail=error_detail(
+                ErrorCode.AUTH_INVALID_TOKEN,
+                "Authorization required.",
+            ),
         )
 
     if is_write_method(request.method):
@@ -137,10 +126,7 @@ def get_auth_context(
         except ForbiddenError as error:
             raise HTTPException(
                 status_code=403,
-                detail={
-                    "ok": False,
-                    "error": {"code": "FORBIDDEN", "message": str(error)},
-                },
+                detail=error_detail(ErrorCode.AUTH_FORBIDDEN, str(error)),
             ) from error
 
     return auth
@@ -157,13 +143,10 @@ def get_auth_context_bearer_required(
     if not bearer:
         raise HTTPException(
             status_code=401,
-            detail={
-                "ok": False,
-                "error": {
-                    "code": "UNAUTHORIZED",
-                    "message": "Bearer token required.",
-                },
-            },
+            detail=error_detail(
+                ErrorCode.AUTH_INVALID_TOKEN,
+                "Bearer token required.",
+            ),
         )
     return get_auth_context(request, db, authorization, client_source)
 
