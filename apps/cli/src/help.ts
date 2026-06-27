@@ -31,6 +31,7 @@ Reminders:
   Human list defaults: pending reminders sorted by due time. Use -a to include all statuses.
   Reminder table IDs omit the rem_ prefix. Use 4+ characters, e.g. ai-todo reminder inspect c1f6.
   Use --json for full machine-readable output.
+  WeChat push reminders: not available when creating via CLI/Agent — enable in the WeChat miniapp.
 
 Calendar:
   ai-todo calendar today|list|add|show|update|delete ...

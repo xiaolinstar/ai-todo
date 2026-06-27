@@ -77,6 +77,36 @@ def test_cli_token_command_removed(cli_runner: CliRunner) -> None:
     assert "WeChat miniapp" in result.stderr
 
 
+def test_cli_create_reminder_prints_wechat_notify_notice(cli_runner: CliRunner) -> None:
+    result = cli_runner.run(
+        "reminder",
+        "create",
+        "--title",
+        "CLI notice test reminder",
+        "--due",
+        "2030-01-01T10:00:00+08:00",
+    )
+    assert result.returncode == 0, result.stderr
+    assert "Created reminder:" in result.stdout
+    assert "WeChat push reminders cannot be enabled" in result.stdout
+
+
+def test_cli_create_calendar_prints_wechat_notify_notice(cli_runner: CliRunner) -> None:
+    result = cli_runner.run(
+        "calendar",
+        "add",
+        "--title",
+        "CLI notice test event",
+        "--start",
+        "2030-01-01T10:00:00+08:00",
+        "--end",
+        "2030-01-01T11:00:00+08:00",
+    )
+    assert result.returncode == 0, result.stderr
+    assert "Created calendar event:" in result.stdout
+    assert "WeChat push reminders cannot be enabled" in result.stdout
+
+
 def test_cli_seeds_demo_dataset(cli_runner: CliRunner, demo_suffix: str) -> None:
     _seed_via_cli(cli_runner, demo_suffix)
 

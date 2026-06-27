@@ -39,7 +39,7 @@
       "prettier --write"
     ],
     "apps/cli/**/*.ts": [
-      "pnpm --filter @xiaolinstar/ai-todo-cli exec tsc -b tsconfig.json --pretty false"
+      "bash -c 'pnpm --filter @xiaolinstar/ai-todo-cli typecheck' --"
     ],
     "packages/**/*.ts": [
       "prettier --write"

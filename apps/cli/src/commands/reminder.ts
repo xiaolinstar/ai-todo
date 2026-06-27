@@ -1,5 +1,6 @@
 import type { ReminderStatus } from "@ai-todo/shared";
 
+import { printWechatNotifyCliNotice } from "../messages";
 import type { CliContext } from "../context";
 import {
   handleApi,
@@ -102,6 +103,9 @@ export async function runReminderCreate(ctx: CliContext, argv: string[]): Promis
         }
         if (data.reminder.source && data.reminder.externalId) {
           console.log(`Source: ${data.reminder.source} / ${data.reminder.externalId}`);
+        }
+        if (data.created !== false) {
+          printWechatNotifyCliNotice();
         }
       }
     }

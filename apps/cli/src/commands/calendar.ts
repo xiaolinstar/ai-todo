@@ -1,3 +1,4 @@
+import { printWechatNotifyCliNotice } from "../messages";
 import type { CliContext } from "../context";
 import { handleApi, positionalAfter, readFlagValue, readRepeatedFlag } from "../context";
 import { readListCursor, readListLimit } from "../pagination";
@@ -84,6 +85,7 @@ export async function runCalendarAdd(ctx: CliContext, argv: string[]): Promise<v
         if (event.endAt) {
           console.log(`End: ${event.endAt}`);
         }
+        printWechatNotifyCliNotice();
       }
     }
   );
