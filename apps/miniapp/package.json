@@ -23,7 +23,7 @@
     "eslint": "^8.57.1",
     "eslint-config-prettier": "^9.1.0",
     "miniprogram-ci": "^2.1.31",
-    "prettier": "^3.3.3",
+    "prettier": "3.3.3",
     "sass": "^1.89.2",
     "typescript": "^5.6.3"
   }

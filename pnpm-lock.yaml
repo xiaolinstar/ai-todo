@@ -20,8 +20,8 @@ importers:
         specifier: ^15.2.10
         version: 15.5.2
       prettier:
-        specifier: ^3.3.3
-        version: 3.8.5
+        specifier: 3.3.3
+        version: 3.3.3
 
   apps/cli:
     devDependencies:
@@ -59,8 +59,8 @@ importers:
         specifier: ^2.1.31
         version: 2.1.31(eslint@8.57.1)
       prettier:
-        specifier: ^3.3.3
-        version: 3.8.5
+        specifier: 3.3.3
+        version: 3.3.3
       sass:
         specifier: ^1.89.2
         version: 1.99.0
@@ -7238,10 +7238,10 @@ packages:
       }
     engines: { node: ">=4" }
 
-  prettier@3.8.5:
+  prettier@3.3.3:
     resolution:
       {
-        integrity: sha512-zxcTTCedNGJM4R8sj/Cq/F0W/c4iE0afWBcBwMTRtw4WHYP9TWkYjdiH3npPRUYsXQCPR0hTU9yjovOu+E6EQA==,
+        integrity: sha512-i2tDNA0O5IrMO757lfrdQZCc2jPNDVntV0m/+4whiDfWaTKfMNgR7Qz0NAeGz/nRqF4m5/6CLzbP4/liHt12Ew==,
       }
     engines: { node: ">=14" }
     hasBin: true
@@ -13597,7 +13597,7 @@ snapshots:
 
   prepend-http@2.0.0: {}
 
-  prettier@3.8.5: {}
+  prettier@3.3.3: {}
 
   private@0.1.8: {}
 
