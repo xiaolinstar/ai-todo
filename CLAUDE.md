@@ -32,13 +32,14 @@ docs/
 
 ## 标准库引用
 
-| 主题           | 引用                                                        |
-| -------------- | ----------------------------------------------------------- |
-| 通用原则       | `~/AgentProjects/dev-standards/playbook/principles.md`      |
-| CI 最低门槛    | `~/AgentProjects/dev-standards/playbook/ci-minimum-gate.md` |
-| 微信小程序标准 | `~/AgentProjects/dev-standards/playbook/wechat-mp.md`       |
-| API 错误码     | `~/AgentProjects/dev-standards/playbook/api-error-codes.md` |
-| ADR            | `~/AgentProjects/dev-standards/playbook/adr/`               |
+| 主题           | 引用                                                                 |
+| -------------- | -------------------------------------------------------------------- |
+| 通用原则       | `~/AgentProjects/dev-standards/playbook/principles.md`               |
+| CI 最低门槛    | `~/AgentProjects/dev-standards/playbook/ci-minimum-gate.md`          |
+| 微信小程序标准 | `~/AgentProjects/dev-standards/playbook/wechat-mp.md`                |
+| API 错误码     | `~/AgentProjects/dev-standards/playbook/api-error-codes.md`          |
+| ADR            | `~/AgentProjects/dev-standards/playbook/adr/`                        |
+| Cursor Rules   | `.cursor/rules/`（5 个 `.mdc`，由 `sync.sh adapters cursor .` 部署） |
 
 ## 常用命令
 

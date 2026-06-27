@@ -30,3 +30,5 @@ alwaysApply: false
 ## 命令
 
 在仓库根目录：`pnpm install`、`pnpm -r build`、`pnpm --filter <pkg> <script>`
+
+> 标准库真源：`playbook/monorepo.md`；完整索引见 `playbook/INDEX.md`。

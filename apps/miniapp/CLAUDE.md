@@ -6,7 +6,7 @@
 ## 关键事实
 
 - **包名**：`@ai-todo/miniapp`（private）
-- **当前版本**：`0.8.3`（与 `miniprogram/lib/version.ts` 同步；改版本用 `pnpm bump-version`）
+- **当前版本**：`0.8.6`（与 `miniprogram/lib/version.ts` 同步；改版本用 `pnpm bump-version`）
 - **技术栈**：原生微信小程序 + TypeScript + Sass + WXML（**四件套**：`.ts` / `.wxml` / `.scss` / `.json`）
 - **不在范围**：Taro / uni-app / 跨端方案
 - **依赖**：[`miniprogram-ci`](https://www.npmjs.com/package/miniprogram-ci)（仅 devDependencies）、`sass`、`typescript`

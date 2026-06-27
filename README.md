@@ -25,9 +25,19 @@ docs/
 ## 快速开始
 
 ```bash
-pnpm install    # 安装依赖
-pnpm typecheck  # 类型检查
-pnpm build      # 构建项目
+pnpm install --frozen-lockfile  # 安装依赖并初始化 Husky hooks
+pnpm typecheck                  # 类型检查
+pnpm lint                       # 静态检查
+pnpm build                      # 构建项目
+```
+
+本地 Git hooks（pre-commit：gitleaks + lint-staged；commit-msg：commitlint）详见
+[docs/developer-guide.md §本地 Git hooks](docs/developer-guide.md#本地-git-hooks首次拉代码)。
+
+Cursor 规则来自 [`dev-standards`](~/AgentProjects/dev-standards) adapter，部署命令：
+
+```bash
+~/AgentProjects/dev-standards/scripts/sync.sh adapters cursor .
 ```
 
 ## 智能代理集成
@@ -96,4 +106,4 @@ pnpm test:api
 
 ---
 
-*[English Version](README.en.md)*
+_[English Version](README.en.md)_

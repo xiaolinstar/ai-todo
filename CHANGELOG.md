@@ -3,7 +3,7 @@
 ai-todo 的版本变更记录。**双版本**策略：
 
 - 仓库根 `package.json` 的 `version` → monorepo 整体（`v0.4.0` 当前）
-- `apps/miniapp/package.json` 的 `version` → 小程序独立（`v0.8.3` 当前）
+- `apps/miniapp/package.json` 的 `version` → 小程序独立（`v0.8.6` 当前）
 
 子包独立版本（小程序、CLI、MCP）随各自发布节奏，详见 `git tag --list` 与子包 `CHANGELOG.md`（如有）。
 

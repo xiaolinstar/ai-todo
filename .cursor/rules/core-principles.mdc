@@ -33,4 +33,5 @@ alwaysApply: true
 
 Conventional Commits 风格。不主动 commit/push，除非用户明确要求。
 
-> 行业基线对齐见 `playbook/baselines/`；本文件为 Agent 流程层派生。
+> 行业基线对齐见 `playbook/baselines/`；主题 playbook 见 `playbook/INDEX.md`。
+> 本文件为 Agent 流程层派生；改标准前先跑 `scripts/sync.sh validate`。
