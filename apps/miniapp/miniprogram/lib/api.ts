@@ -226,10 +226,10 @@ function parseApiErrorBody(body: unknown, statusCode: number): ApiResponse<never
     if (nested.ok === false && nested.error) {
       const error = nested.error as Record<string, unknown>;
       if (
-      statusCode === 401 ||
-      statusCode === 403 ||
-      isUnauthorizedError(typeof error.code === 'string' ? error.code : undefined)
-    ) {
+        statusCode === 401 ||
+        statusCode === 403 ||
+        isUnauthorizedError(typeof error.code === 'string' ? error.code : undefined)
+      ) {
         return authError;
       }
       return nested as unknown as ApiResponse<never>;

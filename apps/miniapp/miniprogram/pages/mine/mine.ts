@@ -114,8 +114,11 @@ Page({
         if (!response.ok || !response.data) {
           const code = response.error?.code || '';
           const hint = response.error?.message || '微信登录失败';
-          const title =
-            isDatabaseUnavailableError(code) ? '数据库需迁移' : hint.length > 20 ? '微信登录失败' : hint;
+          const title = isDatabaseUnavailableError(code)
+            ? '数据库需迁移'
+            : hint.length > 20
+              ? '微信登录失败'
+              : hint;
           wx.showToast({ title, icon: 'none', duration: 2500 });
           return;
         }
