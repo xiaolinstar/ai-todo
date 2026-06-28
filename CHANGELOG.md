@@ -22,6 +22,22 @@ ai-todo 的版本变更记录。**双版本**策略：
   - `.husky/commit-msg`: commitlint 强制 conventional commits
   - `commitlint.config.cjs`: type 限定为 `feat/fix/docs/style/refactor/perf/test/build/ci/chore/revert`
 
+## [api-error-codes-migration] - 2026-06-27
+
+Tag：`api-error-codes-migration-complete`。详见 [docs/releases/api-error-codes-migration.md](docs/releases/api-error-codes-migration.md)。
+
+### Changed
+
+- **API 错误码（ADR-0005）**：19 个 legacy wire 码迁移为 `AUTH_*` / `VAL_*` / `BIZ_*` / `SYS_*` 前缀
+- **关联 ID**：所有 JSON 响应体含 `requestId` 与 `traceId`（与 `X-Request-ID` 同值）
+- **客户端**：CLI / 小程序 / `@ai-todo/shared` 通过 matcher 兼容旧码 alias
+
+### Added
+
+- `apps/api/src/ai_todo_api/errors.py` — 集中枚举与 `LEGACY_ERROR_ALIASES`
+- `packages/shared/src/errors.ts` — TS 侧 `matches*ErrorCode` / `is*Error`
+- `docs/plans/2026-06-27-api-error-codes-batch*.md` — Batch 0–6 实施记录
+
 ## 完整历史
 
 完整 release 历史见 `git tag --list` 与 `git log --oneline`。
