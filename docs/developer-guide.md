@@ -25,7 +25,7 @@
 
 ## 本地 Git hooks（首次拉代码）
 
-仓库根目录用 **Husky 9 + lint-staged + commitlint**（见 [CLAUDE.md](../CLAUDE.md) §本地 Git hooks）：
+仓库根目录用 **Husky 9 + lint-staged + commitlint**（见 [AGENTS.md](../AGENTS.md) §本地 Git hooks）：
 
 ```bash
 pnpm install --frozen-lockfile   # 自动触发 husky prepare

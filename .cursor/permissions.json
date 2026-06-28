@@ -1,16 +1,46 @@
 {
-  // 本仓库 CI 对齐的 check 命令（与用户 ~/.cursor/permissions.json 合并生效）
   "terminalAllowlist": [
     "pnpm typecheck",
+    "pnpm -r typecheck",
+    "pnpm --filter",
     "pnpm lint",
-    "pnpm check:wechat",
+    "pnpm -r lint",
+    "pnpm check",
     "pnpm format:check",
-    "pnpm test:api",
+    "pnpm test",
+    "pnpm -r test",
+    "python -m pytest",
     "cd apps/api && .venv/bin/python -m pytest",
-    "cd apps/api && python -m ruff check"
+    "python -m ruff check",
+    "ruff check",
+    "cd apps/api && python -m ruff check",
+    "eslint",
+    "prettier --check",
+    "tsc -p",
+    "tsc --noEmit",
+    "vitest run",
+    "node --test",
+    "git status",
+    "git diff",
+    "git log",
+    "git branch",
+    "git show",
+    "gh run list",
+    "gh run view",
+    "gh pr list",
+    "gh pr view",
+    "pnpm check:wechat",
+    "pnpm test:api"
   ],
   "autoRun": {
+    "allow_instructions": [
+      "Read-only verification and CI check commands (typecheck, lint, format:check, test, pytest, check:wechat, gitleaks protect --staged on staged files only) may run without approval.",
+      "Compound shells that only chain read-only checks, e.g. cd into a repo then pnpm typecheck && pnpm lint, are fine.",
+      "git status, git diff, git log, and gh run view for inspecting CI are fine."
+    ],
     "block_instructions": [
+      "Do not auto-run git push, git commit, pnpm publish, docker push, deploy scripts, or rm -rf without approval.",
+      "Do not auto-run commands that modify production databases or remote infrastructure.",
       "Do not auto-run CD deploy, docker push, or miniapp upload against production."
     ]
   }

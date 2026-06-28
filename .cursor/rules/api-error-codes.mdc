@@ -29,7 +29,8 @@ alwaysApply: false
 | `SYS_*` | 系统 / 依赖 | 500 / 502 / 503 / 504 |
 
 - HTTP 状态表达「哪一类失败」；`code` 表达具体原因（正交）
-- 枚举集中在 `packages/shared/errors/` 或 `app/errors.py`；**禁止** handler 里硬编码字符串
+- 枚举集中在后端 `errors.py`（或等价）+ monorepo 可选 `packages/shared/src/errors.ts`；**禁止** handler 硬编码字符串
+- ai-todo 参考：tag `api-error-codes-migration-complete` · `playbook/api-error-codes.md` §参考实现
 
 ## traceId
 
@@ -39,7 +40,7 @@ alwaysApply: false
 
 ## Envelope 变体（存量）
 
-允许 `{ ok, error: { code, message, details }, request_id }`；`request_id` ≡ `traceId`。
-新错误码仍须前缀 + 集中枚举。
+允许 `{ ok, error: { code, message, details }, requestId, traceId }`；`requestId` ≡ `traceId`。
+新错误码须前缀 + 集中枚举；legacy alias 见 ai-todo `errors.py` / `shared/errors.ts`。
 
 > 来源：`playbook/api-error-codes.md`
