@@ -1,0 +1,17 @@
+{
+  // 本仓库 CI 对齐的 check 命令（与用户 ~/.cursor/permissions.json 合并生效）
+  "terminalAllowlist": [
+    "pnpm typecheck",
+    "pnpm lint",
+    "pnpm check:wechat",
+    "pnpm format:check",
+    "pnpm test:api",
+    "cd apps/api && .venv/bin/python -m pytest",
+    "cd apps/api && python -m ruff check"
+  ],
+  "autoRun": {
+    "block_instructions": [
+      "Do not auto-run CD deploy, docker push, or miniapp upload against production."
+    ]
+  }
+}

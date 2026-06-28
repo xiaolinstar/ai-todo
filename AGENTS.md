@@ -29,6 +29,7 @@ docs/
 | 通用原则          | `~/AgentProjects/dev-standards/playbook/principles.md`           |
 | CI 最低门槛       | `~/AgentProjects/dev-standards/playbook/ci-minimum-gate.md`      |
 | Agent 配置策略    | `~/AgentProjects/dev-standards/playbook/agent-config.md`         |
+| Check 免审批规则  | Skill `agent-permissions` · `sync.sh permissions --user`         |
 | 微信小程序        | `~/AgentProjects/dev-standards/playbook/wechat-mp.md`            |
 | API 错误码        | `~/AgentProjects/dev-standards/playbook/api-error-codes.md`      |
 | Cursor 作用域规则 | `.cursor/rules/`（`sync.sh adapters cursor .` 从 playbook 派生） |
