@@ -225,9 +225,9 @@ CD 在部署前运行 `classify-release`：读取目标环境公网 `/v1/health`
 
 API 运行时环境文件按 `.env` → `.env.local/.env.staging/.env.production` 顺序加载，环境专属文件覆盖公共默认值。模板与 `gh secret set --env ...` 示例见 [env/README.md](./env/README.md)。
 
-## Monitor 告警
+## 外部存活探活
 
-`.github/workflows/monitor.yml` 每 15 分钟对 production 执行黑盒告警检查，也可手动选择 staging。检查脚本为 `scripts/ops/check-alerts.py`，会验证 `/v1/health`、`/v1/health/db` 与 `/metrics`。详细说明见 [ops-observability.md](./ops-observability.md)。
+定期公网存活检查由 xiaolin-gateway 的 `uptime.yml` 负责（`GET /healthz`）。本仓库的 CD `post-deploy-verify` 仍在每次部署后验收 `/v1/health` 与 `/v1/health/db`。详见 [ops-observability.md](./ops-observability.md)。
 
 **手动触发 CD**（workflow_dispatch）时若缺少 secrets，仍会 **失败并提示**，避免误以为已部署。
 

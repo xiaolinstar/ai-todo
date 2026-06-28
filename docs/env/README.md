@@ -45,16 +45,16 @@ For an existing production deployment, changing this value creates a new Compose
 | `apps/api/.env.production.example`         | production VPS overrides and secrets checklist                |
 | `docs/env/github-environments.example.env` | GitHub Environment secrets checklist                          |
 | `docs/env/github-environments.md`          | GitHub Variables / Secrets reference                          |
-| `docs/env/ops.example.env`                 | local shell variables for ops scripts                         |
+| `docs/env/ops.example.env`                 | local shell variables for CD verification scripts             |
 
 ## Health checks (/healthz)
 
 External probes (gateway [uptime.yml](https://github.com/xiaolinstar/xiaolin-gateway/blob/main/.github/workflows/uptime.yml)) use **`GET /healthz`** on the public domain. Canonical spec: [healthz-probe-standard.md](https://github.com/xiaolinstar/xiaolin-gateway/blob/main/docs/healthz-probe-standard.md).
 
-| Purpose                 | Path                          |
-| ----------------------- | ----------------------------- |
-| External / uptime       | `/healthz` (plain `ok`)       |
-| CD / monitor / DB depth | `/v1/health`, `/v1/health/db` |
+| Purpose           | Path                          |
+| ----------------- | ----------------------------- |
+| External / uptime | `/healthz` (plain `ok`)       |
+| CD / DB depth     | `/v1/health`, `/v1/health/db` |
 
 ```bash
 curl -fsS https://www.xingxiaolin.cn/healthz
