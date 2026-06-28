@@ -24,15 +24,30 @@ docs/
 
 ## 标准库引用
 
-| 主题              | 引用                                                             |
-| ----------------- | ---------------------------------------------------------------- |
-| 通用原则          | `~/AgentProjects/dev-standards/playbook/principles.md`           |
-| CI 最低门槛       | `~/AgentProjects/dev-standards/playbook/ci-minimum-gate.md`      |
-| Agent 配置策略    | `~/AgentProjects/dev-standards/playbook/agent-config.md`         |
-| Check 免审批规则  | Skill `agent-permissions` · `sync.sh permissions --user`         |
-| 微信小程序        | `~/AgentProjects/dev-standards/playbook/wechat-mp.md`            |
-| API 错误码        | `~/AgentProjects/dev-standards/playbook/api-error-codes.md`      |
-| Cursor 作用域规则 | `.cursor/rules/`（`sync.sh adapters cursor .` 从 playbook 派生） |
+| 主题              | 引用                                                                  |
+| ----------------- | --------------------------------------------------------------------- |
+| 通用原则          | `~/AgentProjects/dev-standards/playbook/principles.md`                |
+| CI 最低门槛       | `~/AgentProjects/dev-standards/playbook/ci-minimum-gate.md`           |
+| Agent 配置策略    | `~/AgentProjects/dev-standards/playbook/agent-config.md`              |
+| Check 免审批规则  | Skill `agent-permissions` · 见 [.cursor/README.md](.cursor/README.md) |
+| 微信小程序        | `~/AgentProjects/dev-standards/playbook/wechat-mp.md`                 |
+| API 错误码        | `~/AgentProjects/dev-standards/playbook/api-error-codes.md`           |
+| Cursor 作用域规则 | `.cursor/rules/`（`sync.sh adapters cursor .` 从 playbook 派生）      |
+
+## Cursor / 权限清单（勿手改）
+
+`.cursor/permissions.json` 与 `.cursor/rules/` 由 [dev-standards](~/AgentProjects/dev-standards) 同步，**不要在本仓库直接改**。
+
+- 全局 check/deny → `dev-standards/permissions/manifest.json`
+- ai-todo 特例 → `dev-standards/permissions/overlays/ai-todo.json`
+- 同步：
+
+```bash
+~/AgentProjects/dev-standards/scripts/sync.sh adapters cursor .
+~/AgentProjects/dev-standards/scripts/sync.sh permissions --user --project .
+```
+
+详见 [.cursor/README.md](.cursor/README.md)。
 
 ## 常用命令
 
@@ -86,4 +101,5 @@ CD：含自动回滚（[docs/release-runbook.md](docs/release-runbook.md)）
 - ❌ 跳过 lint / typecheck / test
 - ❌ alembic 迁移无 schema 校验脚本
 - ❌ 复制整份 dev-standards 进本仓库
+- ❌ 手改 `.cursor/permissions.json` 或 `.cursor/rules/`（改 dev-standards 后 sync，见 [.cursor/README.md](.cursor/README.md)）
 - ❌ 非紧急使用 `git commit --no-verify`
