@@ -1,6 +1,13 @@
 from fastapi.testclient import TestClient
 
 
+def test_healthz_liveness(client: TestClient) -> None:
+    response = client.get("/healthz")
+
+    assert response.status_code == 200
+    assert response.text == "ok"
+
+
 def test_health_includes_deploy_metadata(client: TestClient) -> None:
     response = client.get("/v1/health")
 

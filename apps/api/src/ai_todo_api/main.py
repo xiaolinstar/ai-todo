@@ -138,6 +138,11 @@ def favicon() -> FileResponse:
     return FileResponse(favicon_path, media_type="image/svg+xml")
 
 
+@app.get("/healthz", include_in_schema=False)
+def healthz_liveness() -> PlainTextResponse:
+    return PlainTextResponse("ok")
+
+
 @app.get("/v1/health")
 def healthcheck() -> ApiResponse[dict[str, str | None]]:
     return ApiResponse(
