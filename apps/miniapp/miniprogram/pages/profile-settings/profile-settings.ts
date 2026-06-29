@@ -1,4 +1,5 @@
 import { fetchMe, updateProfile } from '../../lib/api';
+import { persistAvatarFromTemp, resolveAvatarDisplayUrl } from '../../lib/avatar-cache';
 import { markPrivacyConsented } from '../../lib/privacy';
 import { markProfileSetupSeen } from '../../lib/config';
 import { TODO_COLORS } from '../../lib/design-tokens';
@@ -43,7 +44,7 @@ Page({
         const user = response.data.user;
         const userUsername = (user.username || '').trim() || user.id;
         const displayName = user.displayName || user.id;
-        const avatarUrl = user.avatarUrl || '';
+        const avatarUrl = resolveAvatarDisplayUrl(user.id, user.avatarUrl);
         this._savedDisplayName = displayName;
         this._savedAvatarUrl = avatarUrl;
         this.setData({
@@ -64,8 +65,11 @@ Page({
   onChooseAvatar(e: { detail: { avatarUrl?: string } }) {
     const avatarUrl = e.detail.avatarUrl || '';
     if (!avatarUrl || avatarUrl === this.data.avatarUrl) return;
-    this.setData({ avatarUrl }, () => {
-      this.persistProfile();
+    persistAvatarFromTemp(this.data.userId, avatarUrl).then((stableUrl) => {
+      if (!stableUrl || stableUrl === this.data.avatarUrl) return;
+      this.setData({ avatarUrl: stableUrl }, () => {
+        this.persistProfile();
+      });
     });
   },
 
@@ -126,19 +130,21 @@ Page({
     }
 
     this.setData({ saving: true, displayName });
-    updateProfile({
-      displayName,
-      avatarUrl: avatarUrl || undefined,
-    })
+    const payload: { displayName: string; avatarUrl?: string } = { displayName };
+    if (avatarUrl) {
+      payload.avatarUrl = avatarUrl;
+    }
+    updateProfile(payload)
       .then((response) => {
         this.setData({ saving: false });
         if (!response.ok || !response.data) {
           wx.showToast({ title: response.error?.message || '保存失败', icon: 'none' });
           return;
         }
+        const user = response.data.user;
         this._savedDisplayName = displayName;
-        this._savedAvatarUrl = avatarUrl;
-        markProfileSetupSeen(response.data.user.id);
+        this._savedAvatarUrl = resolveAvatarDisplayUrl(user.id, user.avatarUrl);
+        markProfileSetupSeen(user.id);
         wx.showToast({ title: '已更新', icon: 'success' });
       })
       .catch(() => {

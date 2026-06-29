@@ -1,4 +1,9 @@
 import { updateProfile } from '../../lib/api';
+import {
+  persistAvatarFromTemp,
+  resolveAvatarDisplayUrl,
+  getCachedAvatarPath,
+} from '../../lib/avatar-cache';
 import { loginWithWechat } from '../../lib/auth';
 import { isDatabaseUnavailableError } from '../../lib/error-codes';
 import {
@@ -114,8 +119,11 @@ Page({
         if (!response.ok || !response.data) {
           const code = response.error?.code || '';
           const hint = response.error?.message || '微信登录失败';
-          const title =
-            isDatabaseUnavailableError(code) ? '数据库需迁移' : hint.length > 20 ? '微信登录失败' : hint;
+          const title = isDatabaseUnavailableError(code)
+            ? '数据库需迁移'
+            : hint.length > 20
+              ? '微信登录失败'
+              : hint;
           wx.showToast({ title, icon: 'none', duration: 2500 });
           return;
         }
@@ -170,14 +178,15 @@ Page({
     showToast: boolean,
   ) {
     const userUsername = (user.username || '').trim() || user.id;
+    const avatarUrl = resolveAvatarDisplayUrl(user.id, user.avatarUrl);
     this.setData({
       userName: user.displayName,
       userId: user.id,
       userUsername,
-      avatarUrl: user.avatarUrl || '',
+      avatarUrl,
       avatarBroken: false,
       timezone: user.timezone,
-      initial: user.avatarUrl ? getInitial(user.displayName) : '微',
+      initial: avatarUrl ? getInitial(user.displayName) : '微',
       avatarColor: avatarColor(user.displayName),
       loggedIn: true,
     });
@@ -187,6 +196,11 @@ Page({
   },
 
   onAvatarError() {
+    const cached = getCachedAvatarPath(this.data.userId);
+    if (cached && cached !== this.data.avatarUrl) {
+      this.setData({ avatarUrl: cached, avatarBroken: false });
+      return;
+    }
     this.setData({
       avatarBroken: true,
       initial: getInitial(this.data.userName || '微'),
@@ -277,8 +291,11 @@ Page({
   onChooseSetupAvatar(e: { detail: { avatarUrl?: string } }) {
     const avatarUrl = e.detail.avatarUrl || '';
     if (!avatarUrl) return;
-    this.setData({ setupAvatarUrl: avatarUrl }, () => {
-      this.trySaveProfileSetup();
+    const userId = this.data.userId;
+    persistAvatarFromTemp(userId, avatarUrl).then((stableUrl) => {
+      this.setData({ setupAvatarUrl: stableUrl }, () => {
+        this.trySaveProfileSetup();
+      });
     });
   },
 
@@ -307,7 +324,12 @@ Page({
 
   saveProfile(displayName: string, avatarUrl?: string) {
     this.setData({ profileSaving: true });
-    updateProfile({ displayName, avatarUrl })
+    const trimmedAvatar = (avatarUrl || '').trim();
+    const payload: { displayName: string; avatarUrl?: string } = { displayName };
+    if (trimmedAvatar) {
+      payload.avatarUrl = trimmedAvatar;
+    }
+    updateProfile(payload)
       .then((response) => {
         this.setData({ profileSaving: false });
         if (!response.ok || !response.data) {

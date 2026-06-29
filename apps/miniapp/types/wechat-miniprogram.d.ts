@@ -1,4 +1,7 @@
 declare const wx: {
+  env: {
+    USER_DATA_PATH: string;
+  };
   getStorageSync(key: string): unknown;
   getStorageInfoSync(): { keys: string[] };
   setStorageSync(key: string, value: unknown): void;
@@ -89,6 +92,15 @@ declare const wx: {
     };
   };
   canIUse?(schema: string): boolean;
+  getFileSystemManager(): {
+    accessSync(path: string): void;
+    unlink(options: { filePath: string; success?: () => void; fail?: () => void }): void;
+  };
+  saveFile(options: {
+    tempFilePath: string;
+    success?: (res: { savedFilePath: string }) => void;
+    fail?: (err: unknown) => void;
+  }): void;
 };
 
 declare function App(options: any): void;

@@ -34,11 +34,16 @@ Page({
   onLoad() {
     Promise.all([loadAccountDay(), loadContentPrefs()]).then(
       ([{ today, timezone, nowTime }, prefs]) => {
-        const endDefaults = applyDefaultEventEnd(today, nowTime, {
-          ...prefs.calendar,
-          defaultHasEnd: true,
-          defaultDurationMinutes: 60,
-        });
+        const endDefaults = applyDefaultEventEnd(
+          today,
+          nowTime,
+          {
+            ...prefs.calendar,
+            defaultHasEnd: true,
+            defaultDurationMinutes: 60,
+          },
+          timezone,
+        );
         this.setData({
           accountTimezone: timezone,
           startDate: today,
@@ -81,11 +86,16 @@ Page({
   onEndToggle(e: { detail: { value: boolean } }) {
     const hasEnd = e.detail.value;
     if (hasEnd && !this._endTouched) {
-      const endDefaults = applyDefaultEventEnd(this.data.startDate, this.data.startTime, {
-        defaultHasEnd: true,
-        defaultDurationMinutes: 60,
-        selectTodayOnOpen: true,
-      });
+      const endDefaults = applyDefaultEventEnd(
+        this.data.startDate,
+        this.data.startTime,
+        {
+          defaultHasEnd: true,
+          defaultDurationMinutes: 60,
+          selectTodayOnOpen: true,
+        },
+        this.data.accountTimezone,
+      );
       this.setData({
         hasEnd,
         endDate: endDefaults.endDate,
@@ -119,11 +129,16 @@ Page({
       this.setData({ startDate, startTime });
       return;
     }
-    const endDefaults = applyDefaultEventEnd(startDate, startTime, {
-      defaultHasEnd: true,
-      defaultDurationMinutes: 60,
-      selectTodayOnOpen: true,
-    });
+    const endDefaults = applyDefaultEventEnd(
+      startDate,
+      startTime,
+      {
+        defaultHasEnd: true,
+        defaultDurationMinutes: 60,
+        selectTodayOnOpen: true,
+      },
+      this.data.accountTimezone,
+    );
     this.setData({
       startDate,
       startTime,

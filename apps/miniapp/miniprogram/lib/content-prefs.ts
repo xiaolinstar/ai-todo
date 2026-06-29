@@ -1,4 +1,5 @@
 import { fetchMe } from './api';
+import { combineDateTimeToMillis, splitIsoDateTime } from './format';
 
 const STORAGE_PREFIX = 'contentPrefs:v1:';
 
@@ -129,19 +130,17 @@ export function applyDefaultEventEnd(
   startDate: string,
   startTime: string,
   prefs: CalendarContentPrefs,
+  timeZone?: string,
 ): { hasEnd: boolean; endDate: string; endTime: string } {
   if (!prefs.defaultHasEnd) {
     return { hasEnd: false, endDate: startDate, endTime: startTime };
   }
-  const [h, m] = startTime.split(':').map((v) => parseInt(v, 10) || 0);
-  const start = new Date(
-    `${startDate}T${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:00`,
-  );
-  const end = new Date(start.getTime() + prefs.defaultDurationMinutes * 60 * 1000);
-  const pad = (n: number) => String(n).padStart(2, '0');
+  const startMs = combineDateTimeToMillis(startDate, startTime, timeZone);
+  const endMs = startMs + prefs.defaultDurationMinutes * 60 * 1000;
+  const end = splitIsoDateTime(new Date(endMs).toISOString(), timeZone);
   return {
     hasEnd: true,
-    endDate: `${end.getFullYear()}-${pad(end.getMonth() + 1)}-${pad(end.getDate())}`,
-    endTime: `${pad(end.getHours())}:${pad(end.getMinutes())}`,
+    endDate: end.date,
+    endTime: end.time,
   };
 }

@@ -34,48 +34,71 @@ function zonedParts(instant: Date, timeZone: string): ZonedParts | null {
     const day = Number(pick('day'));
     const hour = Number(pick('hour'));
     const minute = Number(pick('minute'));
+    const normalizedHour = hour === 24 ? 0 : hour;
     if ([year, month, day, hour, minute].some((n) => Number.isNaN(n))) {
       return null;
     }
-    return { year, month, day, hour, minute };
+    return { year, month, day, hour: normalizedHour, minute };
   } catch {
     return null;
   }
 }
 
-/** Wall clock in `timeZone` → UTC epoch ms. */
+/** Resolve account IANA timezone; falls back to device locale, then Shanghai. */
+export function resolveAccountTimeZone(timeZone?: string): string {
+  const explicit = (timeZone || '').trim();
+  if (explicit) {
+    return explicit;
+  }
+  try {
+    const deviceTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (deviceTz && deviceTz.trim()) {
+      return deviceTz.trim();
+    }
+  } catch {
+    // ignore
+  }
+  return 'Asia/Shanghai';
+}
+
+function timeZoneOffsetMillis(utcMs: number, timeZone: string): number {
+  const parts = zonedParts(new Date(utcMs), timeZone);
+  if (!parts) {
+    return 0;
+  }
+  const asUtc = Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute);
+  return asUtc - utcMs;
+}
+
+/** Wall clock in `timeZone` → UTC epoch ms (offset iteration; handles DST). */
 function wallClockToUtcMillis(date: string, time: string, timeZone: string): number {
   const [y, m, d] = date.split('-').map((v) => parseInt(v, 10));
   const [hh, mm] = time.split(':').map((v) => parseInt(v, 10));
   let utc = Date.UTC(y, m - 1, d, hh, mm);
-  for (let attempt = 0; attempt < 6; attempt += 1) {
-    const got = zonedParts(new Date(utc), timeZone);
-    if (!got) break;
-    if (
-      got.year === y &&
-      got.month === m &&
-      got.day === d &&
-      got.hour === hh &&
-      got.minute === mm
-    ) {
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    const offset = timeZoneOffsetMillis(utc, timeZone);
+    const next = Date.UTC(y, m - 1, d, hh, mm) - offset;
+    if (next === utc) {
       return utc;
     }
-    const deltaMinutes = (got.day - d) * 24 * 60 + (got.hour - hh) * 60 + (got.minute - mm);
-    utc -= deltaMinutes * 60 * 1000;
+    utc = next;
   }
   return utc;
+}
+
+export function combineDateTimeToMillis(date: string, time: string, timeZone?: string): number {
+  return wallClockToUtcMillis(date, time, resolveAccountTimeZone(timeZone));
 }
 
 export function formatDateTime(iso: string | undefined, timeZone?: string): string {
   if (!iso) return '';
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return iso;
-  if (timeZone) {
-    const parts = zonedParts(date, timeZone);
-    if (parts) {
-      const pad = (n: number) => String(n).padStart(2, '0');
-      return `${parts.month}月${parts.day}日 ${pad(parts.hour)}:${pad(parts.minute)}`;
-    }
+  const tz = resolveAccountTimeZone(timeZone);
+  const parts = zonedParts(date, tz);
+  if (parts) {
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${parts.month}月${parts.day}日 ${pad(parts.hour)}:${pad(parts.minute)}`;
   }
   const pad = (n: number) => String(n).padStart(2, '0');
   return `${date.getMonth() + 1}月${date.getDate()}日 ${pad(date.getHours())}:${pad(date.getMinutes())}`;
@@ -85,12 +108,11 @@ export function formatClock(iso: string | undefined, timeZone?: string): string 
   if (!iso) return '';
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return '';
-  if (timeZone) {
-    const parts = zonedParts(date, timeZone);
-    if (parts) {
-      const pad = (n: number) => String(n).padStart(2, '0');
-      return `${pad(parts.hour)}:${pad(parts.minute)}`;
-    }
+  const tz = resolveAccountTimeZone(timeZone);
+  const parts = zonedParts(date, tz);
+  if (parts) {
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${pad(parts.hour)}:${pad(parts.minute)}`;
   }
   const pad = (n: number) => String(n).padStart(2, '0');
   return `${pad(date.getHours())}:${pad(date.getMinutes())}`;
@@ -112,10 +134,7 @@ export function formatEventTimeRange(startAt: string, endAt?: string, timeZone?:
 }
 
 export function combineDateTime(date: string, time: string, timeZone?: string): string {
-  if (!timeZone) {
-    return `${date}T${time}:00+08:00`;
-  }
-  const ms = wallClockToUtcMillis(date, time, timeZone);
+  const ms = combineDateTimeToMillis(date, time, timeZone);
   return new Date(ms).toISOString();
 }
 
@@ -123,28 +142,27 @@ export function splitIsoDateTime(
   iso: string | undefined,
   timeZone?: string,
 ): { date: string; time: string } {
+  const tz = resolveAccountTimeZone(timeZone);
   if (!iso) {
     return {
-      date: timeZone ? todayIsoDateInTimezone(timeZone) : todayIsoDate(),
-      time: timeZone ? nowIsoTimeInTimezone(timeZone) : nowIsoTime(),
+      date: todayIsoDateInTimezone(tz),
+      time: nowIsoTimeInTimezone(tz),
     };
   }
   const parsed = new Date(iso);
   if (Number.isNaN(parsed.getTime())) {
     return {
-      date: timeZone ? todayIsoDateInTimezone(timeZone) : todayIsoDate(),
-      time: timeZone ? nowIsoTimeInTimezone(timeZone) : nowIsoTime(),
+      date: todayIsoDateInTimezone(tz),
+      time: nowIsoTimeInTimezone(tz),
     };
   }
-  if (timeZone) {
-    const parts = zonedParts(parsed, timeZone);
-    if (parts) {
-      const pad = (n: number) => String(n).padStart(2, '0');
-      return {
-        date: `${parts.year}-${pad(parts.month)}-${pad(parts.day)}`,
-        time: `${pad(parts.hour)}:${pad(parts.minute)}`,
-      };
-    }
+  const parts = zonedParts(parsed, tz);
+  if (parts) {
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return {
+      date: `${parts.year}-${pad(parts.month)}-${pad(parts.day)}`,
+      time: `${pad(parts.hour)}:${pad(parts.minute)}`,
+    };
   }
   const pad = (n: number) => String(n).padStart(2, '0');
   return {

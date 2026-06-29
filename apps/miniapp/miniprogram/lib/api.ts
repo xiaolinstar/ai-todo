@@ -379,9 +379,20 @@ export function updateProfile(input: {
   avatarUrl?: string;
   timezone?: string;
 }) {
+  const data: Record<string, string> = {};
+  if (input.displayName !== undefined) {
+    data.displayName = input.displayName;
+  }
+  if (input.timezone !== undefined) {
+    data.timezone = input.timezone;
+  }
+  const avatarUrl = (input.avatarUrl || '').trim();
+  if (avatarUrl) {
+    data.avatarUrl = avatarUrl;
+  }
   return request<MeResult>('/v1/me/profile', {
     method: 'PATCH',
-    data: input,
+    data,
   });
 }
 

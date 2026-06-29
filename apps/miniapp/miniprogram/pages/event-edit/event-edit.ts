@@ -138,11 +138,16 @@ Page({
   onEndToggle(e: { detail: { value: boolean } }) {
     const hasEnd = e.detail.value;
     if (hasEnd && !this._endTouched) {
-      const endDefaults = applyDefaultEventEnd(this.data.startDate, this.data.startTime, {
-        defaultHasEnd: true,
-        defaultDurationMinutes: this.normalizeDuration(this._originalDurationMinutes),
-        selectTodayOnOpen: true,
-      });
+      const endDefaults = applyDefaultEventEnd(
+        this.data.startDate,
+        this.data.startTime,
+        {
+          defaultHasEnd: true,
+          defaultDurationMinutes: this.normalizeDuration(this._originalDurationMinutes),
+          selectTodayOnOpen: true,
+        },
+        this.data.accountTimezone,
+      );
       this.setData({
         hasEnd,
         endDate: endDefaults.endDate,
@@ -183,11 +188,16 @@ Page({
       this.setData({ startDate, startTime });
       return;
     }
-    const endDefaults = applyDefaultEventEnd(startDate, startTime, {
-      defaultHasEnd: true,
-      defaultDurationMinutes: this.normalizeDuration(this._originalDurationMinutes),
-      selectTodayOnOpen: true,
-    });
+    const endDefaults = applyDefaultEventEnd(
+      startDate,
+      startTime,
+      {
+        defaultHasEnd: true,
+        defaultDurationMinutes: this.normalizeDuration(this._originalDurationMinutes),
+        selectTodayOnOpen: true,
+      },
+      this.data.accountTimezone,
+    );
     this.setData({
       startDate,
       startTime,
