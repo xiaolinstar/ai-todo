@@ -89,4 +89,4 @@ You do **not** need registered patents or software copyright (软著) before ado
 
 ---
 
-*[中文版本](README.md)*
+_[中文版本](README.md)_

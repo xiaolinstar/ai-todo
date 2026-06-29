@@ -8,13 +8,13 @@ ai-todo 采用 **组件独立 SemVer** + **Git release tag 驱动 CD** 的双轨
 
 每个可发布产物维护自己的语义化版本，**不要求**与 Git tag 或其他组件同号。
 
-| 组件 | 版本源文件 | 运行时查询 |
-|------|------------|------------|
-| FastAPI 服务端 | `apps/api/pyproject.toml` | `GET /v1/health` → `data.apiVersion` |
-| ai-todo CLI | `apps/cli/package.json` | `ai-todo version` / `ai-todo version --json` |
-| 微信小程序 | `apps/miniapp/package.json` | 上传版本号 +（可选）关于页 |
-| 共享库 | `packages/*/package.json` | npm 包版本；随 API 契约变更单独递增 |
-| 未来（MCP、独立服务等） | 各自 `package.json` 或 `pyproject.toml` | 各自 health / `version` 子命令 |
+| 组件                    | 版本源文件                              | 运行时查询                                   |
+| ----------------------- | --------------------------------------- | -------------------------------------------- |
+| FastAPI 服务端          | `apps/api/pyproject.toml`               | `GET /v1/health` → `data.apiVersion`         |
+| ai-todo CLI             | `apps/cli/package.json`                 | `ai-todo version` / `ai-todo version --json` |
+| 微信小程序              | `apps/miniapp/package.json`             | 上传版本号 +（可选）关于页                   |
+| 共享库                  | `packages/*/package.json`               | npm 包版本；随 API 契约变更单独递增          |
+| 未来（MCP、独立服务等） | 各自 `package.json` 或 `pyproject.toml` | 各自 health / `version` 子命令               |
 
 递增规则（按**该组件**变更判断）：
 
@@ -45,12 +45,12 @@ git push origin v0.1.4
 
 示例（v0.1.4）：
 
-| 字段 | 值 |
-|------|-----|
-| Git `releaseTag` | `v0.1.4` |
-| api | `0.1.3`（无 API 行为变更） |
-| cli | `0.1.4` |
-| miniapp | `0.1.4` |
+| 字段             | 值                         |
+| ---------------- | -------------------------- |
+| Git `releaseTag` | `v0.1.4`                   |
+| api              | `0.1.3`（无 API 行为变更） |
+| cli              | `0.1.4`                    |
+| miniapp          | `0.1.4`                    |
 
 ## 微信小程序版本号
 
@@ -91,6 +91,7 @@ git push origin v0.1.4
 - `0.8.3`：登录保活、静默续登、CLI 移除 `token` 子命令、通知文案（见 [v0.8.3.md](./v0.8.3.md)）。
 - `0.8.5`：低频使用体验补丁；小程序保留 CLI/API 多联系人，详情页长标题完整可读（见 [v0.8.5-plan.md](./v0.8.5-plan.md)）。
 - `0.8.6`：微信提醒闭环；提醒/日程创建与编辑开关、列表状态与补授权入口（见 [v0.8.6.md](./v0.8.6.md)）。
+- `0.8.7`：小程序修复版；头像持久化稳定性与提醒事项时间错位修复（见 [v0.8.7.md](./v0.8.7.md)）。
 - `0.4.0`：CLI npm 全局安装、配置优先 UX、小程序复制 settings JSON（见 [v0.4.0-plan.md](./v0.4.0-plan.md)）。
 - `0.4.1`：Git 发布火车；npm 包名 `@xiaolinstar/ai-todo-cli` 与文档/CI 对齐（组件 L1 不变，见 [v0.4.1.md](./v0.4.1.md)）。
 - `0.4.3`：生产 API 域名 `xingxiaolin.cn`；API `0.2.2`（见 [v0.4.3.md](./v0.4.3.md)、[api-0.2.2.md](./api-0.2.2.md)）。

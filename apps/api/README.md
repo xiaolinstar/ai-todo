@@ -157,6 +157,7 @@ tests/
 ### Test Coverage Configuration
 
 Coverage is configured in `pyproject.toml` with the following exclusions:
+
 - Entry points (`main.py`, `__main__.py`, `preview.py`)
 - Configuration files (`config.py`)
 

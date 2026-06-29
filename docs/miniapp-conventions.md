@@ -6,11 +6,11 @@
 
 ## 参考来源
 
-| 项目 | 路径 | 说明 |
-|------|------|------|
-| party-helper | `AgentProjects/party-helper/apps/wechat-miniprogram` | 聚会桌游发牌器，canonical 小程序实现 |
-| party-helper 规范 | `party-helper/AGENTS.md` § UI 与体验约束 | 布局、颜色角色、检查命令 |
-| party-helper 色板 | `party-helper/docs/ui-color-roles.md` | 角色化 CSS 变量说明 |
+| 项目              | 路径                                                 | 说明                                 |
+| ----------------- | ---------------------------------------------------- | ------------------------------------ |
+| party-helper      | `AgentProjects/party-helper/apps/wechat-miniprogram` | 聚会桌游发牌器，canonical 小程序实现 |
+| party-helper 规范 | `party-helper/AGENTS.md` § UI 与体验约束             | 布局、颜色角色、检查命令             |
+| party-helper 色板 | `party-helper/docs/ui-color-roles.md`                | 角色化 CSS 变量说明                  |
 
 ai-todo 与 party-helper 的业务差异：
 
@@ -111,11 +111,11 @@ apps/miniapp/
 
 ### 单一来源（禁止硬编码）
 
-| 场景 | 文件 |
-|------|------|
-| 样式（颜色、字号、字重、字体族） | `miniprogram/styles/tokens.scss`（`--todo-*`） |
-| WXML 属性 / `wx.showModal` / TS 色板 | `miniprogram/lib/design-tokens.ts` |
-| 排版工具类 | `miniprogram/styles/typography.scss`（`.todo-text-*`、`.todo-type-*`） |
+| 场景                                 | 文件                                                                   |
+| ------------------------------------ | ---------------------------------------------------------------------- |
+| 样式（颜色、字号、字重、字体族）     | `miniprogram/styles/tokens.scss`（`--todo-*`）                         |
+| WXML 属性 / `wx.showModal` / TS 色板 | `miniprogram/lib/design-tokens.ts`                                     |
+| 排版工具类                           | `miniprogram/styles/typography.scss`（`.todo-text-*`、`.todo-type-*`） |
 
 修改色值时**必须**同时更新 `tokens.scss` 与 `design-tokens.ts`。页面与组件 SCSS 只使用 `var(--todo-*)` 或排版类，**不得**写 `#RRGGBB`、`rgb()`、`font-family` 字面量。
 
@@ -123,16 +123,16 @@ apps/miniapp/
 
 ### 颜色角色（与 party-helper 同模型）
 
-| 角色 | 用途 |
-|------|------|
-| `--todo-primary` | 主操作、链接 |
-| `--todo-good` | 成功、完成态 |
-| `--todo-danger` | 逾期、删除、警示 |
-| `--todo-fill-primary-*` / `--todo-fill-danger-*` | 半透明背景、按压 |
-| `--todo-bg-page` | 分组背景 |
-| `--todo-surface` | 卡片、面板 |
-| `--todo-text-primary` / `secondary` / `muted` / `subtle` | 文字层级 |
-| `--todo-border-subtle` / `--todo-border-card` | 分割线与卡片描边 |
+| 角色                                                     | 用途             |
+| -------------------------------------------------------- | ---------------- |
+| `--todo-primary`                                         | 主操作、链接     |
+| `--todo-good`                                            | 成功、完成态     |
+| `--todo-danger`                                          | 逾期、删除、警示 |
+| `--todo-fill-primary-*` / `--todo-fill-danger-*`         | 半透明背景、按压 |
+| `--todo-bg-page`                                         | 分组背景         |
+| `--todo-surface`                                         | 卡片、面板       |
+| `--todo-text-primary` / `secondary` / `muted` / `subtle` | 文字层级         |
+| `--todo-border-subtle` / `--todo-border-card`            | 分割线与卡片描边 |
 
 新增 UI 状态时，**先判断能否映射到已有角色**；不要为局部装饰随意加色值。详见 party-helper 的 `docs/ui-color-roles.md` 思路。
 
@@ -181,12 +181,12 @@ apps/miniapp/
 
 ### 鉴权与环境
 
-| 环境 | API 地址 | Token | 「我的」页 UI |
-|------|----------|-------|----------------|
-| **develop + 开发者工具模拟器** | 默认 `http://127.0.0.1:3100`（可改局域网 IP） | 可选；`allow_dev_auth` 时可无 Token | 显示开发者选项 |
-| **develop + 手机预览 / 真机调试** | 固定 `https://staging.xingxiaolin.cn` | 微信登录 | 同体验版 |
-| **trial**（体验版） | 固定 `https://staging.xingxiaolin.cn` | **仅**微信登录后自动写入 | 只显示「微信登录」与连接状态 |
-| **release**（正式版） | 固定 `https://xingxiaolin.cn` | **仅**微信登录后自动写入 | 只显示「微信登录」与连接状态 |
+| 环境                              | API 地址                                      | Token                               | 「我的」页 UI                |
+| --------------------------------- | --------------------------------------------- | ----------------------------------- | ---------------------------- |
+| **develop + 开发者工具模拟器**    | 默认 `http://127.0.0.1:3100`（可改局域网 IP） | 可选；`allow_dev_auth` 时可无 Token | 显示开发者选项               |
+| **develop + 手机预览 / 真机调试** | 固定 `https://staging.xingxiaolin.cn`         | 微信登录                            | 同体验版                     |
+| **trial**（体验版）               | 固定 `https://staging.xingxiaolin.cn`         | **仅**微信登录后自动写入            | 只显示「微信登录」与连接状态 |
+| **release**（正式版）             | 固定 `https://xingxiaolin.cn`                 | **仅**微信登录后自动写入            | 只显示「微信登录」与连接状态 |
 
 模拟器与手机虽同为微信 `develop` 构建，通过 `wx.getSystemInfoSync().platform === "devtools"` 区分：模拟器连本地 API，手机扫码预览/真机调试连 staging。
 
@@ -197,13 +197,13 @@ apps/miniapp/
 
 与 **party-helper** 一致：
 
-| 项 | 做法 |
-|----|------|
-| 源码 | 只维护 `.ts` / `.scss` / `.wxml` / `.json` |
-| CI / 本地检查 | `apps/miniapp` 内 `pnpm build:check` 仅在内存里验证编译，**不写** `.js`/`.wxss` |
-| 运行 | 微信开发者工具启用 TS/Sass 插件后自行编译 |
-| Git | 不强制忽略 `.js`/`.wxss`；`check:wechat` 仍禁止将生成物 **add 进仓库** |
-| Cursor / VS Code | `.vscode/settings.json` 隐藏上述生成物 |
+| 项               | 做法                                                                            |
+| ---------------- | ------------------------------------------------------------------------------- |
+| 源码             | 只维护 `.ts` / `.scss` / `.wxml` / `.json`                                      |
+| CI / 本地检查    | `apps/miniapp` 内 `pnpm build:check` 仅在内存里验证编译，**不写** `.js`/`.wxss` |
+| 运行             | 微信开发者工具启用 TS/Sass 插件后自行编译                                       |
+| Git              | 不强制忽略 `.js`/`.wxss`；`check:wechat` 仍禁止将生成物 **add 进仓库**          |
+| Cursor / VS Code | `.vscode/settings.json` 隐藏上述生成物                                          |
 
 DevTools 编译时可能在磁盘上短暂出现 `.js`/`.wxss`，这是微信运行时的必要产物，**不应手改**。在 IDE 里看不到即可；若文件树仍显示，确认已启用 `explorer.excludeGitIgnore` 或重载窗口。
 
@@ -231,10 +231,10 @@ pnpm typecheck:wechat   # 转发至 miniapp typecheck
 
 ### `pnpm check:wechat` 覆盖范围
 
-| 步骤 | 内容 |
-|------|------|
-| `typecheck` / 根 `typecheck:wechat` | TypeScript 严格类型检查（`tsc --noEmit`） |
-| `build:check` / 根 `build:wechat:check` | 与 DevTools 相近的 ts→js、scss→wxss 编译验证（**仅内存，不落盘**） |
+| 步骤                                                | 内容                                                                |
+| --------------------------------------------------- | ------------------------------------------------------------------- |
+| `typecheck` / 根 `typecheck:wechat`                 | TypeScript 严格类型检查（`tsc --noEmit`）                           |
+| `build:check` / 根 `build:wechat:check`             | 与 DevTools 相近的 ts→js、scss→wxss 编译验证（**仅内存，不落盘**）  |
 | `apps/miniapp/scripts/check-wechat-miniprogram.mjs` | 四件套完整性、JSON 合法性、tabBar 图标、禁止 Git 跟踪 `.js`/`.wxss` |
 
 **不包含**：Prettier / ESLint、WXML 格式统一、微信开发者工具专有 UI 校验。若 DevTools 仍有警告，请在工具内查看具体项；本地开发可在 `project.private.config.json` 中设置 `urlCheck: false`（见 `project.private.config.example.json`）。
@@ -245,13 +245,13 @@ pnpm typecheck:wechat   # 转发至 miniapp typecheck
 
 ## 与 party-helper 的差异清单
 
-| 项 | party-helper | ai-todo |
-|----|--------------|---------|
-| CSS 前缀 | `--party-*` | `--todo-*` |
-| 核心逻辑位置 | `packages/games/*` + vendor 同步 | 后端 API + `lib/api.ts` |
-| TabBar | 无（单首页入口） | 自定义 TabBar：4 图标 + 居中「+」新建 |
-| 分享 | 首页/设置/反馈均 `lib/share.ts` | MVP 可选，待产品需要时补齐 |
-| CI 脚本 | `check:wechat-vendor` | 无 vendor；仅 `check:wechat` |
+| 项           | party-helper                     | ai-todo                               |
+| ------------ | -------------------------------- | ------------------------------------- |
+| CSS 前缀     | `--party-*`                      | `--todo-*`                            |
+| 核心逻辑位置 | `packages/games/*` + vendor 同步 | 后端 API + `lib/api.ts`               |
+| TabBar       | 无（单首页入口）                 | 自定义 TabBar：4 图标 + 居中「+」新建 |
+| 分享         | 首页/设置/反馈均 `lib/share.ts`  | MVP 可选，待产品需要时补齐            |
+| CI 脚本      | `check:wechat-vendor`            | 无 vendor；仅 `check:wechat`          |
 
 ## 新页面 Checklist
 

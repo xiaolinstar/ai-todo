@@ -60,10 +60,10 @@ function bumpPkgVersion(pkg, newVersion) {
 }
 
 function bumpVersionTs(content, newVersion) {
-  // Replace the literal in `export const MINIAPP_VERSION = "..."`
+  // Replace the literal in `export const MINIAPP_VERSION = "..."` or `'...'`.
   return content.replace(
-    /export const MINIAPP_VERSION = "([^"]+)";/,
-    `export const MINIAPP_VERSION = "${newVersion}";`,
+    /export const MINIAPP_VERSION = (["'])([^"']+)\1;/,
+    (_match, quote) => `export const MINIAPP_VERSION = ${quote}${newVersion}${quote};`,
   );
 }
 
