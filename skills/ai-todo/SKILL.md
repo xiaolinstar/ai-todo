@@ -205,6 +205,30 @@ ai-todo contact add "张松蕾" \
   --json
 ```
 
+## Upcoming window (on skill trigger)
+
+When this skill is invoked for **any** user request, run this lightweight check **before** completing the main task (or in parallel when safe). Do not add CLI flags, scripts, `/loop`, or dedup state files.
+
+1. `ai-todo whoami --json` → read `data.user.timezone` (default `Asia/Shanghai` if missing).
+2. Query upcoming items (shell, `--json`):
+   - `ai-todo calendar list --date <today YYYY-MM-DD> --json`
+   - `ai-todo calendar list --date <tomorrow YYYY-MM-DD> --json` (covers cross-midnight 5h window)
+   - `ai-todo reminder list --status pending --from <today> --to <tomorrow> --json`
+   - `ai-todo reminder list --status in_progress --from <today> --to <tomorrow> --json`
+3. Filter in memory — schedule time must fall in `(now, now + 5 hours]`:
+   - **Calendar events**: `startAt`
+   - **Reminders**: `remindAt || dueAt` (skip if neither is set)
+4. If any matches, print a short plain-text block to the user (terminal or chat) **before** the main answer:
+
+```
+── 近 5 小时 ──
+• [日程] 16:00 变更工单中引入AI稽核能力 (evt_xxx)
+• [提醒] 17:30 回复王总邮件 (rem_xxx)
+──────────────
+```
+
+Format times in the user's timezone (HH:mm). Omit the block when the list is empty. Do not embed this in CLI stdout when the user asked for machine-readable `--json` output from a single command — this block is agent narration only.
+
 ## Examples: user request → commands
 
 **1. Time-bound task with contact** — 「明天上午十点提醒我给王总发报价邮件」
