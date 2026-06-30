@@ -37,6 +37,7 @@ Husky 9 + lint-staged + commitlint + gitleaks
 ## 改 CI / hook 时
 
 - monorepo 的 lint-staged 须**路径分流**，禁止根目录无 eslint 时扫 `**/*.ts`
-- 审计清单 10 项见 playbook §审计 checklist
+- 子 app 若 CI 跑 `format:check`，同 glob 在 lint-staged 须含 `prettier --write`（可与 eslint 同 pattern、多 step）；禁止 hook 只 eslint、CI 才 prettier
+- 审计清单见 playbook §审计 checklist（含 hook ↔ CI format glob 对齐项）
 
 > 来源：`playbook/ci-minimum-gate.md`

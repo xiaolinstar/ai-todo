@@ -33,7 +33,11 @@
   },
   "lint-staged": {
     "apps/miniapp/miniprogram/**/*.ts": [
-      "bash -c 'cd apps/miniapp && files=(); for f in \"$@\"; do files+=(\"${f#apps/miniapp/}\"); done; pnpm exec eslint -c .eslintrc.cjs --fix --max-warnings 0 \"${files[@]}\"' --"
+      "bash -c 'cd apps/miniapp && files=(); for f in \"$@\"; do files+=(\"${f#apps/miniapp/}\"); done; pnpm exec eslint -c .eslintrc.cjs --fix --max-warnings 0 \"${files[@]}\"' --",
+      "prettier --write"
+    ],
+    "apps/miniapp/scripts/**/*.mjs": [
+      "prettier --write"
     ],
     "apps/miniapp/**/*.{scss,json}": [
       "prettier --write"
