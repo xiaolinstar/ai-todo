@@ -281,6 +281,7 @@ export function buildReminderSubline(input: {
   dueAt?: string;
   dueLabel: string;
   contactNames: string;
+  tagName?: string;
   isOverdue: boolean;
 }): string {
   const completed = input.status === 'completed';
@@ -288,6 +289,10 @@ export function buildReminderSubline(input: {
 
   if (input.status === 'in_progress') {
     parts.push('处理中');
+  }
+
+  if (input.tagName) {
+    parts.push(`#${input.tagName}`);
   }
 
   if (!completed) {
@@ -307,6 +312,14 @@ export function buildReminderSubline(input: {
   }
 
   return parts.join(' · ');
+}
+
+export function formatTrackDateLabel(timeZone?: string): string {
+  const parts = zonedParts(new Date(), resolveAccountTimeZone(timeZone));
+  if (!parts) {
+    return '';
+  }
+  return `${String(parts.month).padStart(2, '0')}-${String(parts.day).padStart(2, '0')}`;
 }
 
 export function getInitial(name: string): string {

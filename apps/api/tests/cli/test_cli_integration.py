@@ -233,6 +233,58 @@ def test_cli_reminder_show_update_delete(cli_runner: CliRunner, demo_suffix: str
     assert missing.returncode != 0 or missing.json()["ok"] is False
 
 
+def test_cli_reminder_tags_search_and_track(cli_runner: CliRunner, demo_suffix: str) -> None:
+    create = cli_runner.run(
+        "reminder",
+        "create",
+        "--title",
+        f"CLI Tag Track {demo_suffix}",
+        "--tag",
+        "客户",
+        "--tag",
+        "报价",
+        json_output=True,
+    )
+    assert create.returncode == 0, create.stderr
+    reminder_id = create.json()["data"]["reminder"]["id"]
+    tags = create.json()["data"]["reminder"]["tags"]
+    assert [tag["name"] for tag in tags] == ["客户", "报价"]
+
+    track = cli_runner.run(
+        "reminder",
+        "track",
+        "add",
+        reminder_id,
+        "已发方案",
+        json_output=True,
+    )
+    assert track.returncode == 0, track.stderr
+    entries = track.json()["data"]["reminder"]["trackEntries"]
+    assert len(entries) == 1
+    assert entries[0]["text"] == "已发方案"
+
+    search = cli_runner.run(
+        "reminder",
+        "list",
+        "--q",
+        "方案",
+        json_output=True,
+    )
+    assert search.returncode == 0, search.stderr
+    ids = [item["id"] for item in search.json()["data"]["items"]]
+    assert reminder_id in ids
+
+    by_tag = cli_runner.run(
+        "reminder",
+        "list",
+        "--tag",
+        "客户",
+        json_output=True,
+    )
+    assert by_tag.returncode == 0, by_tag.stderr
+    assert any(item["id"] == reminder_id for item in by_tag.json()["data"]["items"])
+
+
 def test_cli_reminder_source_lookup_flow(cli_runner: CliRunner, demo_suffix: str) -> None:
     external_id = f"mail-{demo_suffix}"
     create = cli_runner.run(

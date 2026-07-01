@@ -12,7 +12,7 @@ from ai_todo_api.db.models import (
 from ai_todo_api.modules.calendar.repository import event_to_summary
 from ai_todo_api.modules.calendar.schemas import CalendarEventSummary
 from ai_todo_api.modules.contacts.schemas import ContactSummary
-from ai_todo_api.modules.reminders.repository import reminder_to_summary
+from ai_todo_api.modules.reminders.enrichment import reminders_to_enriched_summaries
 from ai_todo_api.modules.reminders.schemas import ReminderSummary
 from ai_todo_api.modules.notifications.service import (
     TARGET_TYPE_CALENDAR_EVENT,
@@ -106,18 +106,9 @@ def reminders_to_summaries(
     reminders: list[ReminderModel],
     contact_map: dict[str, list[ContactSummary]],
 ) -> list[ReminderSummary]:
-    status_map = load_wechat_notify_status_map(
+    return reminders_to_enriched_summaries(
         session,
         user_id,
-        target_type=TARGET_TYPE_REMINDER,
-        template_key=TEMPLATE_KEY_REMINDER_DUE,
-        target_ids=[reminder.id for reminder in reminders],
+        reminders,
+        contact_map,
     )
-    return [
-        reminder_to_summary(
-            reminder,
-            contacts=contact_map.get(reminder.id, []),
-            wechat_notify_status=status_map.get(reminder.id, "none"),
-        )
-        for reminder in reminders
-    ]

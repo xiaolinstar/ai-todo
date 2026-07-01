@@ -238,15 +238,45 @@ MVP 中 `Contact` 是个人通讯录对象，不做企业组织架构。
 
 ### Tag
 
-轻量标签。第一版可选，如果实现成本高，可以先延后。
+轻量标签，用户级词表；v0.9.0 起用于 Reminder 搜索与筛选。
 
-| 字段         | 类型     | 说明     |
-| ------------ | -------- | -------- |
-| `id`         | string   | 标签 ID  |
-| `user_id`    | string   | 归属用户 |
-| `name`       | string   | 标签名   |
-| `color`      | string?  | 展示颜色 |
-| `created_at` | datetime | 创建时间 |
+| 字段              | 类型     | 说明                     |
+| ----------------- | -------- | ------------------------ |
+| `id`              | string   | 标签 ID                  |
+| `user_id`         | string   | 归属用户                 |
+| `name`            | string   | 展示名（≤32 字）         |
+| `normalized_name` | string   | 归一化名（trim + lower） |
+| `created_at`      | datetime | 创建时间                 |
+
+唯一约束：`user_id + normalized_name`。
+
+### ReminderTag
+
+提醒与标签多对多关联。
+
+| 字段          | 类型     | 说明     |
+| ------------- | -------- | -------- |
+| `id`          | string   | 关联 ID  |
+| `reminder_id` | string   | 提醒 ID  |
+| `tag_id`      | string   | 标签 ID  |
+| `created_at`  | datetime | 创建时间 |
+
+唯一约束：`reminder_id + tag_id`。
+
+### ReminderTrackEntry
+
+提醒事项跟踪条目（append-only 时间线）。
+
+| 字段          | 类型     | 说明                    |
+| ------------- | -------- | ----------------------- |
+| `id`          | string   | 条目 ID                 |
+| `reminder_id` | string   | 提醒 ID                 |
+| `user_id`     | string   | 归属用户（冗余）        |
+| `date_label`  | string   | `MM-DD`，按用户时区生成 |
+| `text`        | string   | 正文（≤30 字）          |
+| `created_at`  | datetime | 创建时间                |
+
+与 `Reminder.notes` 并存：`notes` 为自由长文本，跟踪条目为结构化进展快照。
 
 ### CommandLog
 

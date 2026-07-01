@@ -7,13 +7,62 @@
         <text class="form-label">标题</text>
         <textarea class="form-title-textarea" style="height: {{titleTextareaHeight}}rpx;" placeholder="必填，最多 80 字" maxlength="80" value="{{title}}" bindinput="onTitleInput" />
       </view>
+      <view class="form-row stack">
+        <text class="form-label">标签</text>
+        <view class="tag-editor">
+          <view wx:for="{{tagNames}}" wx:key="*this" class="tag-chip active">
+            <text>{{item}}</text>
+            <text class="tag-remove" data-name="{{item}}" bindtap="onRemoveTag">×</text>
+          </view>
+          <input
+            class="tag-input"
+            placeholder="添加标签"
+            value="{{tagInput}}"
+            maxlength="32"
+            bindinput="onTagInput"
+            bindconfirm="onAddTag"
+          />
+        </view>
+        <view wx:if="{{tagSuggestions.length > 0}}" class="tag-suggestions">
+          <text
+            wx:for="{{tagSuggestions}}"
+            wx:key="id"
+            class="tag-suggestion pressable"
+            data-name="{{item.name}}"
+            bindtap="onPickTagSuggestion"
+            hover-class="pressable-active"
+          >
+            {{item.name}}
+          </text>
+        </view>
+      </view>
       <view class="form-row" bindtap="toggleNotes">
         <text class="form-label">备注</text>
-        <text class="form-value muted">{{notes ? '已填写' : '添加'}}</text>
+        <text class="form-value muted">{{notes || trackEntries.length ? '已填写' : '添加'}}</text>
         <view class="form-disclosure {{notesExpanded ? 'expanded' : ''}}"></view>
       </view>
-      <view wx:if="{{notesExpanded}}" class="form-row stack">
-        <textarea class="form-textarea" placeholder="可选" value="{{notes}}" maxlength="1000" auto-height bindinput="onNotesInput" />
+      <view wx:if="{{notesExpanded}}" class="form-row stack notes-stack">
+        <textarea class="form-textarea" placeholder="背景说明（可选）" value="{{notes}}" maxlength="1000" auto-height bindinput="onNotesInput" />
+        <view class="track-section">
+          <text class="track-label">事项跟踪</text>
+          <view wx:if="{{trackEntries.length > 0}}" class="track-list">
+            <view wx:for="{{trackEntries}}" wx:key="id" class="track-item">
+              {{item.dateLabel}} {{item.text}}
+            </view>
+          </view>
+          <view class="track-add-row">
+            <text class="track-date-prefix">{{trackDatePrefix}}</text>
+            <input
+              class="track-input"
+              placeholder="最多 30 字"
+              maxlength="30"
+              value="{{trackInput}}"
+              bindinput="onTrackInput"
+              bindconfirm="onAddTrackEntry"
+            />
+            <button class="todo-button todo-button-ghost todo-button-sm" size="mini" loading="{{trackSubmitting}}" bindtap="onAddTrackEntry">添加</button>
+          </view>
+        </view>
       </view>
       <view wx:if="{{sourceLabel}}" class="form-row">
         <text class="form-label">来源</text>

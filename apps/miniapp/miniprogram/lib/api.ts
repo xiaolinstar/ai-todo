@@ -47,11 +47,25 @@ export type WechatNotifyStatus =
   | 'no_quota'
   | 'skipped';
 
+export interface TagSummary {
+  id: string;
+  name: string;
+}
+
+export interface ReminderTrackEntry {
+  id: string;
+  dateLabel: string;
+  text: string;
+  createdAt: string;
+}
+
 export interface ReminderSummary {
   id: string;
   title: string;
   status: string;
   notes?: string;
+  tags?: TagSummary[];
+  trackEntries?: ReminderTrackEntry[];
   dueAt?: string;
   remindAt?: string;
   source?: string;
@@ -348,15 +362,38 @@ export function fetchRemindersToday() {
 
 export function fetchReminders(params: {
   status?: string;
-  sort?: 'created_at' | 'due_at' | 'completed_at';
+  q?: string;
+  tag?: string;
+  sort?: 'created_at' | 'due_at' | 'completed_at' | 'updated_at';
   limit?: number;
 }) {
   return request<ReminderListResult>(
     `/v1/reminders${buildQueryString({
       status: params.status,
+      q: params.q,
+      tag: params.tag,
       sort: params.sort,
       limit: params.limit !== undefined ? String(params.limit) : undefined,
     })}`,
+  );
+}
+
+export function fetchTags(params: { q?: string; limit?: number } = {}) {
+  return request<{ items: TagSummary[]; totalCount: number }>(
+    `/v1/tags${buildQueryString({
+      q: params.q,
+      limit: params.limit !== undefined ? String(params.limit) : undefined,
+    })}`,
+  );
+}
+
+export function addReminderTrackEntry(reminderId: string, text: string) {
+  return request<{ reminder: ReminderSummary }>(
+    `/v1/reminders/${encodeURIComponent(reminderId)}/track-entries`,
+    {
+      method: 'POST',
+      data: { text },
+    },
   );
 }
 
@@ -423,6 +460,7 @@ export function updateReminder(
     remindAt?: string | null;
     wechatNotifyRequested?: boolean;
     contactIds?: string[];
+    tagNames?: string[];
   },
 ) {
   return request<{ reminder: ReminderSummary }>(`/v1/reminders/${encodeURIComponent(reminderId)}`, {
@@ -438,6 +476,7 @@ export function createReminder(input: {
   remindAt?: string;
   wechatNotifyRequested?: boolean;
   contactIds?: string[];
+  tagNames?: string[];
 }) {
   return request<{ reminder: ReminderSummary }>('/v1/reminders', {
     method: 'POST',

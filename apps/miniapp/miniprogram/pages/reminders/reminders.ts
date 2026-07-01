@@ -1,4 +1,4 @@
-import { completeReminder, deleteReminder, fetchReminders } from '../../lib/api';
+import { completeReminder, deleteReminder, fetchReminders, fetchTags } from '../../lib/api';
 import { loadAccountDay } from '../../lib/account-day';
 import { TODO_MODAL_CONFIRM_DANGER } from '../../lib/design-tokens';
 import type { ReminderSummary } from '../../lib/api';
@@ -85,6 +85,7 @@ function enrichReminder(
       dueAt: item.dueAt,
       dueLabel,
       contactNames,
+      tagName: item.tags?.[0]?.name,
       isOverdue,
     }),
     completing: false,
@@ -175,6 +176,11 @@ Page({
     pending: [] as ReminderView[],
     inProgress: [] as ReminderView[],
     completed: [] as ReminderView[],
+    searchQuery: '',
+    searchTag: '',
+    searchMode: false,
+    searchResults: [] as ReminderView[],
+    tagOptions: [] as { id: string; name: string }[],
     notifyAvailable: false,
     reminderTemplateId: '',
   },
@@ -187,6 +193,7 @@ Page({
   _gestureSwipeActive: false,
   _deleteActionWidthPx: 86,
   _pendingReminderId: '',
+  _searchTimer: null as ReturnType<typeof setTimeout> | null,
 
   onLoad(options: { reminderId?: string }) {
     const reminderId = (options?.reminderId || '').trim();
@@ -230,16 +237,94 @@ Page({
     this.loadReminders().finally(() => wx.stopPullDownRefresh());
   },
 
+  onSearchInput(e: { detail: { value: string } }) {
+    const searchQuery = e.detail.value;
+    this.setData({ searchQuery });
+    if (this._searchTimer) {
+      clearTimeout(this._searchTimer);
+    }
+    this._searchTimer = setTimeout(() => {
+      this.loadReminders();
+    }, 300);
+  },
+
+  onClearSearch() {
+    if (this._searchTimer) {
+      clearTimeout(this._searchTimer);
+      this._searchTimer = null;
+    }
+    this.setData({ searchQuery: '', searchTag: '', searchMode: false, searchResults: [] });
+    this.loadReminders();
+  },
+
+  onTagChipTap(e: { currentTarget: { dataset: { name?: string } } }) {
+    const name = (e.currentTarget.dataset.name || '').trim();
+    const nextTag = this.data.searchTag === name ? '' : name;
+    this.setData({ searchTag: nextTag });
+    this.loadReminders();
+  },
+
   loadReminders() {
-    this.setData({ loading: true, error: '' });
+    const searchQuery = this.data.searchQuery.trim();
+    const searchTag = this.data.searchTag.trim();
+    const searchMode = Boolean(searchQuery || searchTag);
+    this.setData({ loading: true, error: '', searchMode });
+
+    if (searchMode) {
+      return Promise.all([
+        loadAccountDay(),
+        loadWechatNotificationPrefs(),
+        fetchTags({ limit: 50 }),
+      ])
+        .then(([account, notifyPrefs, tagsRes]) => {
+          const tagOptions = tagsRes.ok && tagsRes.data ? tagsRes.data.items : [];
+          return fetchReminders({
+            q: searchQuery || undefined,
+            tag: searchTag || undefined,
+            sort: 'updated_at',
+            limit: 100,
+          }).then((searchRes) => ({ account, notifyPrefs, tagOptions, searchRes }));
+        })
+        .then(({ account, notifyPrefs, tagOptions, searchRes }) => {
+          if (!searchRes.ok || !searchRes.data) {
+            this.setData({
+              loading: false,
+              loaded: true,
+              error: searchRes.error?.message || '搜索失败',
+            });
+            return;
+          }
+          const tz = account.timezone;
+          const searchResults = searchRes.data.items.map((item) =>
+            enrichReminder(item, tz, notifyPrefs.notifyAvailable),
+          );
+          this.setData({
+            loading: false,
+            loaded: true,
+            timezone: tz,
+            accountToday: account.today,
+            dateLabel: formatIsoDateLabel(account.today),
+            weekdayLabel: formatWeekdayLong(account.today),
+            tagOptions,
+            searchResults,
+            notifyAvailable: notifyPrefs.notifyAvailable,
+            reminderTemplateId: notifyPrefs.reminderTemplateId,
+          });
+        })
+        .catch(() => {
+          this.setData({ loading: false, loaded: true, error: '网络错误' });
+        });
+    }
+
     return Promise.all([
       loadAccountDay(),
       loadWechatNotificationPrefs(),
+      fetchTags({ limit: 50 }),
       fetchReminders({ status: 'pending', sort: 'due_at' }),
       fetchReminders({ status: 'in_progress', sort: 'due_at' }),
       fetchReminders({ status: 'completed', sort: 'completed_at' }),
     ])
-      .then(([account, notifyPrefs, pendingRes, inProgressRes, completedRes]) => {
+      .then(([account, notifyPrefs, tagsRes, pendingRes, inProgressRes, completedRes]) => {
         if (
           !pendingRes.ok ||
           !pendingRes.data ||
@@ -262,6 +347,7 @@ Page({
 
         const { timezone, today } = account;
         const notifyAvailable = notifyPrefs.notifyAvailable;
+        const tagOptions = tagsRes.ok && tagsRes.data ? tagsRes.data.items : [];
         const pendingItems = pendingRes.data.items.map((item) =>
           enrichReminder(item, timezone, notifyAvailable),
         );
@@ -299,6 +385,9 @@ Page({
           pending,
           inProgress,
           completed,
+          tagOptions,
+          searchMode: false,
+          searchResults: [],
           notifyAvailable,
           reminderTemplateId: notifyPrefs.reminderTemplateId,
         });
@@ -616,6 +705,12 @@ Page({
   openReminderEdit(id: string) {
     const item = this.findReminderItem(id);
     if (!item || item.completing || item.exiting || item.deleting) return;
+    wx.navigateTo({ url: `/pages/reminder-edit/reminder-edit?id=${encodeURIComponent(id)}` });
+  },
+
+  onSearchResultTap(e: { currentTarget: { dataset: { id: string } } }) {
+    const id = e.currentTarget.dataset.id;
+    if (!id) return;
     wx.navigateTo({ url: `/pages/reminder-edit/reminder-edit?id=${encodeURIComponent(id)}` });
   },
 

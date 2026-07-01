@@ -1,7 +1,13 @@
 import { loadAccountDay } from '../../lib/account-day';
-import { fetchReminder, formatApiErrorMessage, updateReminder } from '../../lib/api';
-import type { ContactSummary } from '../../lib/api';
-import { combineDateTime, splitIsoDateTime } from '../../lib/format';
+import {
+  addReminderTrackEntry,
+  fetchReminder,
+  fetchTags,
+  formatApiErrorMessage,
+  updateReminder,
+} from '../../lib/api';
+import type { ContactSummary, ReminderTrackEntry } from '../../lib/api';
+import { combineDateTime, formatTrackDateLabel, splitIsoDateTime } from '../../lib/format';
 import { todoPageThemeData } from '../../lib/theme';
 import { loadWechatNotificationPrefs, enableWechatNotifyForTarget } from '../../lib/wechat-notify';
 
@@ -16,6 +22,13 @@ Page({
     titleTextareaHeight: titleTextareaHeight(''),
     notes: '',
     notesExpanded: false,
+    tagNames: [] as string[],
+    tagInput: '',
+    tagSuggestions: [] as { id: string; name: string }[],
+    trackEntries: [] as ReminderTrackEntry[],
+    trackInput: '',
+    trackDatePrefix: '',
+    trackSubmitting: false,
     sourceLabel: '',
     hasDue: true,
     dueDate: '',
@@ -61,7 +74,12 @@ Page({
           title: reminder.title || '',
           titleTextareaHeight: titleTextareaHeight(reminder.title || ''),
           notes: reminder.notes || '',
-          notesExpanded: Boolean(reminder.notes),
+          notesExpanded: Boolean(
+            reminder.notes || (reminder.trackEntries && reminder.trackEntries.length > 0),
+          ),
+          tagNames: (reminder.tags || []).map((tag) => tag.name),
+          trackEntries: reminder.trackEntries || [],
+          trackDatePrefix: `${formatTrackDateLabel(tz)} `,
           sourceLabel: formatSourceLabel(reminder.source, reminder.externalId),
           hasDue: isCompleted ? false : hasDue,
           dueDate: date,
@@ -92,6 +110,101 @@ Page({
 
   toggleNotes() {
     this.setData({ notesExpanded: !this.data.notesExpanded });
+  },
+
+  onTagInput(e: { detail: { value: string } }) {
+    const tagInput = e.detail.value;
+    this.setData({ tagInput });
+    const query = tagInput.trim();
+    if (!query) {
+      this.setData({ tagSuggestions: [] });
+      return;
+    }
+    fetchTags({ q: query, limit: 8 }).then((response) => {
+      if (!response.ok || !response.data) {
+        return;
+      }
+      const existing = new Set(this.data.tagNames.map((name: string) => name.toLowerCase()));
+      const tagSuggestions = response.data.items.filter(
+        (tag) => !existing.has(tag.name.toLowerCase()),
+      );
+      this.setData({ tagSuggestions });
+    });
+  },
+
+  onAddTag() {
+    const name = this.data.tagInput.trim();
+    if (!name) {
+      return;
+    }
+    if (name.length > 32) {
+      wx.showToast({ title: '标签最多 32 字', icon: 'none' });
+      return;
+    }
+    const normalized = name.toLowerCase();
+    if (this.data.tagNames.some((item: string) => item.toLowerCase() === normalized)) {
+      this.setData({ tagInput: '', tagSuggestions: [] });
+      return;
+    }
+    this.setData({
+      tagNames: [...this.data.tagNames, name],
+      tagInput: '',
+      tagSuggestions: [],
+    });
+  },
+
+  onPickTagSuggestion(e: { currentTarget: { dataset: { name?: string } } }) {
+    const name = (e.currentTarget.dataset.name || '').trim();
+    if (!name) {
+      return;
+    }
+    this.setData({ tagInput: name });
+    this.onAddTag();
+  },
+
+  onRemoveTag(e: { currentTarget: { dataset: { name?: string } } }) {
+    const name = e.currentTarget.dataset.name || '';
+    this.setData({
+      tagNames: this.data.tagNames.filter((item: string) => item !== name),
+    });
+  },
+
+  onTrackInput(e: { detail: { value: string } }) {
+    this.setData({ trackInput: e.detail.value });
+  },
+
+  onAddTrackEntry() {
+    const text = this.data.trackInput.trim();
+    if (!text) {
+      wx.showToast({ title: '请输入跟踪内容', icon: 'none' });
+      return;
+    }
+    if (text.length > 30) {
+      wx.showToast({ title: '最多 30 字', icon: 'none' });
+      return;
+    }
+    this.setData({ trackSubmitting: true });
+    addReminderTrackEntry(this.data.reminderId, text)
+      .then((response) => {
+        this.setData({ trackSubmitting: false });
+        if (!response.ok || !response.data) {
+          wx.showToast({
+            title: formatApiErrorMessage(response.error, '添加失败'),
+            icon: 'none',
+          });
+          return;
+        }
+        this.setData({
+          trackEntries: response.data.reminder.trackEntries || [],
+          trackInput: '',
+          trackDatePrefix: `${formatTrackDateLabel(this.data.accountTimezone)} `,
+        });
+        wx.showToast({ title: '已添加', icon: 'success' });
+      })
+      .catch(() => {
+        this.setData({ trackSubmitting: false });
+        wx.showToast({ title: '网络错误', icon: 'none' });
+      });
   },
 
   onDueToggle(e: { detail: { value: boolean } }) {
@@ -156,12 +269,14 @@ Page({
       dueAt?: string | null;
       wechatNotifyRequested?: boolean;
       contactIds: string[];
+      tagNames: string[];
     } = {
       title,
       notes: this.data.notes.trim(),
       status: this.data.status,
       wechatNotifyRequested: this.data.notifyEnabled,
       contactIds: this.data.selectedContacts.map((contact: ContactSummary) => contact.id),
+      tagNames: this.data.tagNames,
     };
 
     let nextDueAt: string | null = null;

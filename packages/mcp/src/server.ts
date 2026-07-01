@@ -4,7 +4,7 @@ import { z } from "zod";
 import { resolveAuthError } from "./auth";
 import { formatToolResult, runAiTodoCli } from "./cli-bridge";
 
-const MCP_VERSION = "0.2.0";
+const MCP_VERSION = "0.3.0";
 
 const statusSchema = z
   .enum(["pending", "in_progress", "completed", "cancelled"])
@@ -16,6 +16,16 @@ function appendContacts(args: string[], contactIds?: string[]): string[] {
   }
   for (const id of contactIds) {
     args.push("--contact", id);
+  }
+  return args;
+}
+
+function appendTags(args: string[], tagNames?: string[]): string[] {
+  if (!tagNames?.length) {
+    return args;
+  }
+  for (const name of tagNames) {
+    args.push("--tag", name);
   }
   return args;
 }
@@ -32,7 +42,7 @@ async function invoke(args: string[]) {
   if (authError) {
     return {
       content: [{ type: "text" as const, text: authError }],
-      isError: true
+      isError: true,
     };
   }
   const result = await runAiTodoCli(args);
@@ -44,11 +54,14 @@ type ToolHandlerResult = Awaited<ReturnType<typeof invoke>>;
 type RegisterAiTodoTool = (
   name: string,
   config: { description: string; inputSchema?: Record<string, z.ZodTypeAny> },
-  handler: (args: any) => ToolHandlerResult | Promise<ToolHandlerResult>
+  handler: (args: any) => ToolHandlerResult | Promise<ToolHandlerResult>,
 ) => void;
 
 /** Avoid TS2589 from deep Zod inference across many registerTool calls. */
-function registerAiTodoTool(server: McpServer, ...args: Parameters<RegisterAiTodoTool>): void {
+function registerAiTodoTool(
+  server: McpServer,
+  ...args: Parameters<RegisterAiTodoTool>
+): void {
   const register = server.registerTool as unknown as RegisterAiTodoTool;
   register(...args);
 }
@@ -60,14 +73,14 @@ export function createMcpServer(): McpServer {
     server,
     "whoami",
     { description: "Get current user id, display name, and timezone." },
-    async () => invoke(["whoami"])
+    async () => invoke(["whoami"]),
   );
 
   registerAiTodoTool(
     server,
     "today",
     { description: "List today's pending reminders and calendar events." },
-    async () => invoke(["today"])
+    async () => invoke(["today"]),
   );
 
   registerAiTodoTool(
@@ -77,12 +90,25 @@ export function createMcpServer(): McpServer {
       description:
         "Look up a reminder by business source and external id (idempotent read before create/update).",
       inputSchema: {
-        source: z.string().min(1).describe("Business source slug, e.g. email, jira"),
-        external_id: z.string().min(1).describe("Stable external key, e.g. email Message-ID")
-      }
+        source: z
+          .string()
+          .min(1)
+          .describe("Business source slug, e.g. email, jira"),
+        external_id: z
+          .string()
+          .min(1)
+          .describe("Stable external key, e.g. email Message-ID"),
+      },
     },
     async ({ source, external_id }) =>
-      invoke(["reminder", "find", "--source", source, "--external-id", external_id])
+      invoke([
+        "reminder",
+        "find",
+        "--source",
+        source,
+        "--external-id",
+        external_id,
+      ]),
   );
 
   registerAiTodoTool(
@@ -94,19 +120,23 @@ export function createMcpServer(): McpServer {
         title: z.string().min(1),
         due: z.string().optional().describe("ISO-8601 datetime with timezone"),
         notes: z.string().optional(),
+        tag_names: z.array(z.string()).optional(),
         contact_ids: z.array(z.string()).optional(),
-        idempotency_key: z.string().optional()
-      }
+        idempotency_key: z.string().optional(),
+      },
     },
-    async ({ title, due, notes, contact_ids, idempotency_key }) => {
+    async ({ title, due, notes, tag_names, contact_ids, idempotency_key }) => {
       const args = appendIdempotency(
-        appendContacts(["reminder", "create", "--title", title], contact_ids),
-        idempotency_key
+        appendTags(
+          appendContacts(["reminder", "create", "--title", title], contact_ids),
+          tag_names,
+        ),
+        idempotency_key,
       );
       if (due) args.push("--due", due);
       if (notes !== undefined) args.push("--notes", notes);
       return invoke(args);
-    }
+    },
   );
 
   registerAiTodoTool(
@@ -121,40 +151,85 @@ export function createMcpServer(): McpServer {
         external_id: z.string().min(1),
         due: z.string().optional(),
         notes: z.string().optional(),
-        source_meta: z.string().optional().describe("JSON object string for audit metadata"),
+        source_meta: z
+          .string()
+          .optional()
+          .describe("JSON object string for audit metadata"),
+        tag_names: z.array(z.string()).optional(),
         contact_ids: z.array(z.string()).optional(),
-        idempotency_key: z.string().optional()
-      }
+        idempotency_key: z.string().optional(),
+      },
     },
-    async ({ title, source, external_id, due, notes, source_meta, contact_ids, idempotency_key }) => {
+    async ({
+      title,
+      source,
+      external_id,
+      due,
+      notes,
+      source_meta,
+      tag_names,
+      contact_ids,
+      idempotency_key,
+    }) => {
       const args = appendIdempotency(
-        appendContacts(
-          ["reminder", "create", "--title", title, "--source", source, "--external-id", external_id],
-          contact_ids
+        appendTags(
+          appendContacts(
+            [
+              "reminder",
+              "create",
+              "--title",
+              title,
+              "--source",
+              source,
+              "--external-id",
+              external_id,
+            ],
+            contact_ids,
+          ),
+          tag_names,
         ),
-        idempotency_key
+        idempotency_key,
       );
       if (due) args.push("--due", due);
       if (notes !== undefined) args.push("--notes", notes);
       if (source_meta) args.push("--source-meta", source_meta);
       return invoke(args);
-    }
+    },
   );
 
   registerAiTodoTool(
     server,
     "reminder_list",
     {
-      description: "List reminders; optional status filter.",
+      description:
+        "List reminders; optional status, tag, or full-text q filter.",
       inputSchema: {
-        status: statusSchema
-      }
+        status: statusSchema,
+        tag: z.string().optional(),
+        q: z.string().optional(),
+      },
     },
-    async ({ status }) => {
+    async ({ status, tag, q }) => {
       const args = ["reminder", "list"];
       if (status) args.push("--status", status);
+      if (tag) args.push("--tag", tag);
+      if (q) args.push("--q", q);
       return invoke(args);
-    }
+    },
+  );
+
+  registerAiTodoTool(
+    server,
+    "reminder_track_add",
+    {
+      description: "Append a dated track entry (max 30 chars) to a reminder.",
+      inputSchema: {
+        reminder_id: z.string().min(1),
+        text: z.string().min(1).max(30),
+      },
+    },
+    async ({ reminder_id, text }) =>
+      invoke(["reminder", "track", "add", reminder_id, text]),
   );
 
   registerAiTodoTool(
@@ -164,14 +239,14 @@ export function createMcpServer(): McpServer {
       description: "List reminders filtered by business source.",
       inputSchema: {
         source: z.string().min(1),
-        status: statusSchema
-      }
+        status: statusSchema,
+      },
     },
     async ({ source, status }) => {
       const args = ["reminder", "list", "--source", source];
       if (status) args.push("--status", status);
       return invoke(args);
-    }
+    },
   );
 
   registerAiTodoTool(
@@ -187,14 +262,39 @@ export function createMcpServer(): McpServer {
         status: statusSchema,
         due: z.string().optional(),
         remind: z.string().optional(),
+        tag_names: z.array(z.string()).optional(),
         contact_ids: z.array(z.string()).optional(),
-        idempotency_key: z.string().optional()
-      }
+        idempotency_key: z.string().optional(),
+      },
     },
-    async ({ source, external_id, title, notes, status, due, remind, contact_ids, idempotency_key }) => {
+    async ({
+      source,
+      external_id,
+      title,
+      notes,
+      status,
+      due,
+      remind,
+      tag_names,
+      contact_ids,
+      idempotency_key,
+    }) => {
       const args = appendIdempotency(
-        appendContacts(["reminder", "update", "--source", source, "--external-id", external_id], contact_ids),
-        idempotency_key
+        appendTags(
+          appendContacts(
+            [
+              "reminder",
+              "update",
+              "--source",
+              source,
+              "--external-id",
+              external_id,
+            ],
+            contact_ids,
+          ),
+          tag_names,
+        ),
+        idempotency_key,
       );
       if (title) args.push("--title", title);
       if (notes !== undefined) args.push("--notes", notes);
@@ -202,7 +302,7 @@ export function createMcpServer(): McpServer {
       if (due) args.push("--due", due);
       if (remind) args.push("--remind", remind);
       return invoke(args);
-    }
+    },
   );
 
   registerAiTodoTool(
@@ -213,16 +313,23 @@ export function createMcpServer(): McpServer {
       inputSchema: {
         source: z.string().min(1),
         external_id: z.string().min(1),
-        idempotency_key: z.string().optional()
-      }
+        idempotency_key: z.string().optional(),
+      },
     },
     async ({ source, external_id, idempotency_key }) =>
       invoke(
         appendIdempotency(
-          ["reminder", "done", "--source", source, "--external-id", external_id],
-          idempotency_key
-        )
-      )
+          [
+            "reminder",
+            "done",
+            "--source",
+            source,
+            "--external-id",
+            external_id,
+          ],
+          idempotency_key,
+        ),
+      ),
   );
 
   registerAiTodoTool(
@@ -231,17 +338,17 @@ export function createMcpServer(): McpServer {
     {
       description: "Search contacts by name or alias.",
       inputSchema: {
-        query: z.string().min(1)
-      }
+        query: z.string().min(1),
+      },
     },
-    async ({ query }) => invoke(["contact", "search", query])
+    async ({ query }) => invoke(["contact", "search", query]),
   );
 
   registerAiTodoTool(
     server,
     "calendar_today",
     { description: "List calendar events for today." },
-    async () => invoke(["calendar", "today"])
+    async () => invoke(["calendar", "today"]),
   );
 
   registerAiTodoTool(
@@ -255,18 +362,21 @@ export function createMcpServer(): McpServer {
         end: z.string().optional(),
         location: z.string().optional(),
         contact_ids: z.array(z.string()).optional(),
-        idempotency_key: z.string().optional()
-      }
+        idempotency_key: z.string().optional(),
+      },
     },
     async ({ title, start, end, location, contact_ids, idempotency_key }) => {
       const args = appendIdempotency(
-        appendContacts(["calendar", "add", "--title", title, "--start", start], contact_ids),
-        idempotency_key
+        appendContacts(
+          ["calendar", "add", "--title", title, "--start", start],
+          contact_ids,
+        ),
+        idempotency_key,
       );
       if (end) args.push("--end", end);
       if (location) args.push("--location", location);
       return invoke(args);
-    }
+    },
   );
 
   return server;

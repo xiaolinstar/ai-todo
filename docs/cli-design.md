@@ -139,6 +139,8 @@ ai-todo logout
 ai-todo reminder create \
   --title "给客户王总发报价确认邮件" \
   --due "2026-05-20 10:00" \
+  --tag "客户" \
+  --tag "报价" \
   --contact wangzong
 ```
 
@@ -233,10 +235,20 @@ ai-todo list --status pending
 | 参数                       | 说明                                  |
 | -------------------------- | ------------------------------------- |
 | `--status <status>`        | `pending` / `completed` / `cancelled` |
+| `--q <query>`              | 全文搜索（title、notes、tag、跟踪）   |
+| `--tag <name>`             | 按 tag 精确筛选                       |
 | `--from <date>`            | 起始日期                              |
 | `--to <date>`              | 结束日期                              |
 | `--contact <id_or_handle>` | 按联系人筛选                          |
 | `--limit <n>`              | 返回数量                              |
+
+### track add
+
+追加事项跟踪条目（服务端自动填充 `MM-DD` 日期前缀）：
+
+```bash
+ai-todo reminder track add rem_123 已联系客户
+```
 
 ### done
 

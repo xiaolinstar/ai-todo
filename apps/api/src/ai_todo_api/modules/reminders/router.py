@@ -13,6 +13,8 @@ from ai_todo_api.db.models import ReminderModel
 from ai_todo_api.modules.notifications.service import NotificationDeliveryService
 from ai_todo_api.modules.reminders.repository import ReminderRepository
 from ai_todo_api.modules.reminders.schemas import (
+    AddTrackEntryInput,
+    AddTrackEntryResult,
     CompleteReminderInput,
     CompleteReminderResult,
     CreateReminderInput,
@@ -89,6 +91,8 @@ def _reminder_id_from_data(data: dict) -> list[str]:
 def list_reminders(
     status: str | None = None,
     source: str | None = None,
+    q: str | None = None,
+    tag: str | None = None,
     from_date: str | None = Query(default=None, alias="from"),
     to_date: str | None = Query(default=None, alias="to"),
     sort: str = Query(default="created_at"),
@@ -97,18 +101,12 @@ def list_reminders(
     db: Session = Depends(get_db),
     user: CurrentUser = Depends(get_current_user),
 ) -> ApiResponse[ReminderListResult] | JSONResponse:
-    if sort not in {"created_at", "due_at", "completed_at"}:
-        body = ErrorResponse(
-            error=ApiError(
-                code=wire_code(ErrorCode.VAL_INVALID_INPUT),
-                message="sort must be one of: created_at, due_at, completed_at",
-            )
-        )
-        return JSONResponse(status_code=400, content=body.model_dump(by_alias=True))
     try:
         result = _reminder_service(db, user).list_reminders(
             status=status,
             source=source,
+            query=q,
+            tag=tag,
             from_date=from_date,
             to_date=to_date,
             limit=limit,
@@ -205,6 +203,39 @@ def create_reminder(
         idempotency_key=idempotency_key,
         target_type="reminder",
         input_summary=input_data.model_dump(by_alias=True),
+        handler=handler,
+        extract_target_ids=_reminder_id_from_data,
+    )
+
+
+@router.post("/{reminder_id}/track-entries")
+def add_track_entry(
+    reminder_id: str,
+    input_data: AddTrackEntryInput,
+    auth: AuthContext = Depends(get_auth_context),
+    db: Session = Depends(get_db),
+    idempotency_key: str | None = Depends(get_idempotency_key),
+) -> JSONResponse:
+    user = CurrentUser.from_auth(auth)
+    service = _reminder_service(db, user)
+
+    def handler() -> JSONResponse:
+        try:
+            reminder = service.add_track_entry(reminder_id, input_data)
+        except ReminderNotFoundError:
+            return _not_found(reminder_id)
+        except ValueError as error:
+            return _validation_error(str(error))
+        body = ApiResponse(data=AddTrackEntryResult(reminder=reminder))
+        return JSONResponse(status_code=200, content=body.model_dump(by_alias=True))
+
+    return run_write(
+        db,
+        auth,
+        operation="add_reminder_track_entry",
+        idempotency_key=idempotency_key,
+        target_type="reminder",
+        input_summary={"reminderId": reminder_id, **input_data.model_dump(by_alias=True)},
         handler=handler,
         extract_target_ids=_reminder_id_from_data,
     )

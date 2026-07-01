@@ -15,7 +15,33 @@
     </view>
   </view>
 
-  <view wx:if="{{loaded && !error}}" class="segmented segmented-3">
+  <view wx:if="{{loaded && !error}}" class="search-group">
+    <view class="search-wrap">
+      <text class="search-icon">⌕</text>
+      <input
+        class="search-input"
+        placeholder="搜索标题、备注、标签或跟踪"
+        value="{{searchQuery}}"
+        bindinput="onSearchInput"
+        confirm-type="search"
+      />
+      <text wx:if="{{searchQuery || searchTag}}" class="link-text pressable" bindtap="onClearSearch" hover-class="pressable-active">清除</text>
+    </view>
+    <scroll-view wx:if="{{tagOptions.length > 0}}" class="tag-chip-scroll" scroll-x enable-flex>
+      <view
+        wx:for="{{tagOptions}}"
+        wx:key="id"
+        class="tag-chip pressable {{searchTag === item.name ? 'active' : ''}}"
+        data-name="{{item.name}}"
+        bindtap="onTagChipTap"
+        hover-class="pressable-active"
+      >
+        {{item.name}}
+      </view>
+    </scroll-view>
+  </view>
+
+  <view wx:if="{{loaded && !error && !searchMode}}" class="segmented segmented-3">
     <view
       class="segment pressable {{activeTab === 'pending' ? 'active' : ''}}"
       data-tab="pending"
@@ -45,6 +71,34 @@
   <view wx:if="{{loading && !loaded}}" class="loading-state">
     <view class="meta">加载中…</view>
   </view>
+
+  <block wx:elif="{{searchMode}}">
+    <block wx:if="{{searchResults.length === 0}}">
+      <view class="empty-state inset-group">
+        <view class="empty-icon">⌕</view>
+        <view class="empty-title">无匹配提醒</view>
+        <view class="empty-desc">试试其他关键词或标签</view>
+      </view>
+    </block>
+    <block wx:else>
+      <view class="group-header">搜索结果</view>
+      <view class="inset-group reminder-list">
+        <view
+          class="list-cell reminder-swipe-content pressable"
+          wx:for="{{searchResults}}"
+          wx:key="id"
+          data-id="{{item.id}}"
+          bindtap="onSearchResultTap"
+          hover-class="reminder-row-pressed"
+        >
+          <view class="cell-body compact">
+            <view class="cell-title">{{item.title}}</view>
+            <view wx:if="{{item.subline}}" class="cell-subline">{{item.subline}}</view>
+          </view>
+        </view>
+      </view>
+    </block>
+  </block>
 
   <block wx:elif="{{activeTab === 'pending'}}">
     <block wx:if="{{pending.length === 0}}">

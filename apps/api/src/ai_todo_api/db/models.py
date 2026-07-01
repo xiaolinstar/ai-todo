@@ -154,6 +154,67 @@ class ReminderModel(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
 
+class TagModel(Base):
+    __tablename__ = "tags"
+    __table_args__ = (
+        UniqueConstraint("user_id", "normalized_name", name="uq_tags_user_normalized_name"),
+    )
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    user_id: Mapped[str] = mapped_column(
+        String(64),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    name: Mapped[str] = mapped_column(String(32), nullable=False)
+    normalized_name: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class ReminderTagModel(Base):
+    __tablename__ = "reminder_tags"
+    __table_args__ = (
+        UniqueConstraint("reminder_id", "tag_id", name="uq_reminder_tags_reminder_tag"),
+    )
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    reminder_id: Mapped[str] = mapped_column(
+        String(64),
+        ForeignKey("reminders.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    tag_id: Mapped[str] = mapped_column(
+        String(64),
+        ForeignKey("tags.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class ReminderTrackEntryModel(Base):
+    __tablename__ = "reminder_track_entries"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    reminder_id: Mapped[str] = mapped_column(
+        String(64),
+        ForeignKey("reminders.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    user_id: Mapped[str] = mapped_column(
+        String(64),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    date_label: Mapped[str] = mapped_column(String(5), nullable=False)
+    text: Mapped[str] = mapped_column(String(30), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
 class ReminderContactModel(Base):
     __tablename__ = "reminder_contacts"
 

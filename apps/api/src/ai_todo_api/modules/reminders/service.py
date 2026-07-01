@@ -10,16 +10,10 @@ from ai_todo_api.common.reminder_dates import (
 from ai_todo_api.common.time import now_utc, today_in_timezone
 from ai_todo_api.db.models import ReminderModel
 from ai_todo_api.modules.contacts.links import ContactLinkService
-from ai_todo_api.modules.reminders.repository import ReminderRepository, reminder_to_summary
-from ai_todo_api.modules.notifications.notify_fields import (
-    load_wechat_notify_status_map,
-    reminders_to_summaries,
-)
-from ai_todo_api.modules.notifications.service import (
-    TARGET_TYPE_REMINDER,
-    TEMPLATE_KEY_REMINDER_DUE,
-)
+from ai_todo_api.modules.reminders.enrichment import reminder_to_enriched_summary, reminders_to_enriched_summaries
+from ai_todo_api.modules.reminders.repository import ReminderRepository
 from ai_todo_api.modules.reminders.schemas import (
+    AddTrackEntryInput,
     CompleteReminderInput,
     CreateReminderInput,
     ReminderListResult,
@@ -27,6 +21,13 @@ from ai_todo_api.modules.reminders.schemas import (
     RescheduleReminderInput,
     UpdateReminderInput,
 )
+from ai_todo_api.modules.reminders.track_repository import TrackEntryRepository
+from ai_todo_api.modules.notifications.notify_fields import load_wechat_notify_status_map
+from ai_todo_api.modules.notifications.service import (
+    TARGET_TYPE_REMINDER,
+    TEMPLATE_KEY_REMINDER_DUE,
+)
+from ai_todo_api.modules.tags.repository import TagRepository
 
 
 class ReminderNotFoundError(Exception):
@@ -34,6 +35,7 @@ class ReminderNotFoundError(Exception):
 
 
 VALID_REMINDER_STATUSES = frozenset({"pending", "in_progress", "completed", "cancelled"})
+VALID_SORT_VALUES = frozenset({"created_at", "due_at", "completed_at", "updated_at"})
 
 
 def _validate_status_filter(status: str | None) -> None:
@@ -41,6 +43,11 @@ def _validate_status_filter(status: str | None) -> None:
         raise ValueError(
             "status must be one of: pending, in_progress, completed, cancelled"
         )
+
+
+def _validate_sort(sort: str) -> None:
+    if sort not in VALID_SORT_VALUES:
+        raise ValueError("sort must be one of: created_at, due_at, completed_at, updated_at")
 
 
 def _apply_status(reminder: ReminderModel, status: str) -> None:
@@ -68,6 +75,16 @@ class ReminderService:
         self._user_id = user_id
         self._timezone = timezone
         self._links = links
+
+    @property
+    def _session(self):
+        return self._repository.session
+
+    def _tags(self) -> TagRepository:
+        return TagRepository(self._session, self._user_id)
+
+    def _tracks(self) -> TrackEntryRepository:
+        return TrackEntryRepository(self._session, self._user_id)
 
     def create(
         self,
@@ -115,6 +132,11 @@ class ReminderService:
             if input_data.contact_ids
             else []
         )
+        if input_data.tag_names:
+            self._tags().replace_reminder_tags(saved.id, input_data.tag_names)
+            self._session.commit()
+            self._session.refresh(saved)
+
         return self._summary(saved, contacts=contacts), True
 
     def find_by_source(self, *, source: str, external_id: str) -> ReminderSummary:
@@ -139,6 +161,8 @@ class ReminderService:
         *,
         status: str | None = None,
         source: str | None = None,
+        query: str | None = None,
+        tag: str | None = None,
         from_date: str | None = None,
         to_date: str | None = None,
         limit: int | None = 50,
@@ -146,21 +170,30 @@ class ReminderService:
         sort: str = "created_at",
     ) -> ReminderListResult:
         _validate_status_filter(status)
+        _validate_sort(sort)
         cleaned_source = _clean_source(source)
+        cleaned_query = _clean_optional(query)
+        cleaned_tag = _clean_optional(tag)
+
         if from_date or to_date:
             return self._list_reminders_in_due_range(
                 status=status,
                 source=cleaned_source,
+                query=cleaned_query,
+                tag=cleaned_tag,
                 from_date=from_date,
                 to_date=to_date,
                 limit=limit or 50,
             )
 
-        if sort in {"due_at", "completed_at"}:
+        if sort in {"due_at", "completed_at", "updated_at"} or cleaned_query or cleaned_tag:
+            effective_sort = "updated_at" if cleaned_query and sort == "created_at" else sort
             return self._list_reminders_sorted(
                 status=status,
                 source=cleaned_source,
-                sort=sort,
+                query=cleaned_query,
+                tag=cleaned_tag,
+                sort=effective_sort,
                 limit=limit,
             )
 
@@ -168,12 +201,15 @@ class ReminderService:
         page = self._repository.list_page(
             status=status,
             source=cleaned_source,
+            query=cleaned_query,
+            tag=cleaned_tag,
             limit=page_limit,
             cursor=cursor,
+            sort=sort,
         )
         contact_map = self._links.summaries_for_reminders([reminder.id for reminder in page.items])
-        items = reminders_to_summaries(
-            self._repository.session,
+        items = reminders_to_enriched_summaries(
+            self._session,
             self._user_id,
             page.items,
             contact_map,
@@ -190,19 +226,28 @@ class ReminderService:
         *,
         status: str | None,
         source: str | None,
+        query: str | None,
+        tag: str | None,
         sort: str,
         limit: int | None,
     ) -> ReminderListResult:
         reminders = self._repository.list_all_sorted(
             status=status,
             source=source,
+            query=query,
+            tag=tag,
             sort=sort,
             limit=limit,
         )
-        total_count = self._repository.count_active(status=status, source=source)
+        total_count = self._repository.count_active(
+            status=status,
+            source=source,
+            query=query,
+            tag=tag,
+        )
         contact_map = self._links.summaries_for_reminders([reminder.id for reminder in reminders])
-        items = reminders_to_summaries(
-            self._repository.session,
+        items = reminders_to_enriched_summaries(
+            self._session,
             self._user_id,
             reminders,
             contact_map,
@@ -219,6 +264,8 @@ class ReminderService:
         *,
         status: str | None,
         source: str | None,
+        query: str | None,
+        tag: str | None,
         from_date: str | None,
         to_date: str | None,
         limit: int,
@@ -238,10 +285,23 @@ class ReminderService:
                 continue
             filtered.append(reminder)
 
+        if query or tag:
+            matched_ids = {
+                item.id
+                for item in self._repository.list_all_sorted(
+                    status=status,
+                    source=source,
+                    query=query,
+                    tag=tag,
+                    sort="updated_at",
+                )
+            }
+            filtered = [reminder for reminder in filtered if reminder.id in matched_ids]
+
         limited = filtered[:limit]
         contact_map = self._links.summaries_for_reminders([reminder.id for reminder in limited])
-        items = reminders_to_summaries(
-            self._repository.session,
+        items = reminders_to_enriched_summaries(
+            self._session,
             self._user_id,
             limited,
             contact_map,
@@ -267,8 +327,8 @@ class ReminderService:
             )
         ]
         contact_map = self._links.summaries_for_reminders([reminder.id for reminder in visible])
-        items = reminders_to_summaries(
-            self._repository.session,
+        items = reminders_to_enriched_summaries(
+            self._session,
             self._user_id,
             visible,
             contact_map,
@@ -296,6 +356,7 @@ class ReminderService:
             raise ValueError("At least one field is required to update a reminder.")
 
         contact_ids = updates.pop("contact_ids", None)
+        tag_names = updates.pop("tag_names", None)
 
         if "title" in updates:
             title = (updates["title"] or "").strip()
@@ -321,10 +382,26 @@ class ReminderService:
         reminder.updated_at = now_utc()
         saved = self._repository.save(reminder)
 
+        if tag_names is not None:
+            self._tags().replace_reminder_tags(saved.id, tag_names)
+            self._session.commit()
+            self._session.refresh(saved)
+
         if contact_ids is not None:
             contacts = self._links.replace_reminder_contacts(saved.id, contact_ids)
             return self._summary(saved, contacts=contacts)
 
+        return self._summary(saved)
+
+    def add_track_entry(self, reminder_id: str, input_data: AddTrackEntryInput) -> ReminderSummary:
+        reminder = self._require(reminder_id)
+        self._tracks().add(
+            reminder_id=reminder.id,
+            text=input_data.text,
+            timezone=self._timezone,
+        )
+        reminder.updated_at = now_utc()
+        saved = self._repository.save(reminder)
         return self._summary(saved)
 
     def reschedule(self, reminder_id: str, input_data: RescheduleReminderInput) -> ReminderSummary:
@@ -360,13 +437,15 @@ class ReminderService:
         if contacts is None:
             contacts = self._links.summaries_for_reminder(reminder.id)
         status_map = load_wechat_notify_status_map(
-            self._repository.session,
+            self._session,
             self._user_id,
             target_type=TARGET_TYPE_REMINDER,
             template_key=TEMPLATE_KEY_REMINDER_DUE,
             target_ids=[reminder.id],
         )
-        return reminder_to_summary(
+        return reminder_to_enriched_summary(
+            self._session,
+            self._user_id,
             reminder,
             contacts=contacts,
             wechat_notify_status=status_map.get(reminder.id, "none"),

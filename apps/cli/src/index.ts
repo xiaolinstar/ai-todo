@@ -81,8 +81,10 @@ async function main(): Promise<void> {
         await reminder.runReminderReschedule(ctx, argv);
       } else if (action === "delete") {
         await reminder.runReminderDelete(ctx, argv);
+      } else if (action === "track" && argv[2] === "add") {
+        await reminder.runReminderTrackAdd(ctx, argv);
       } else {
-        console.error("Usage: ai-todo reminder <create|list|show|find|done|update|reschedule|delete>");
+        console.error("Usage: ai-todo reminder <create|list|show|find|done|update|reschedule|delete|track add>");
         process.exitCode = 1;
       }
       break;

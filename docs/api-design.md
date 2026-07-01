@@ -299,11 +299,38 @@ GET /v1/reminders?status=pending&from=2026-05-19&to=2026-05-20
 - `status`
 - `from`
 - `to`
-- `contact_id` / `contact_handle`
+- `q` — 全文搜索（title、notes、tag 名、跟踪 text）
+- `tag` — 精确 tag 名筛选
 - `source` — 按业务来源分桶（如 `email`、`jira`）
-- `sort` — `created_at`（默认）、`due_at`、`completed_at`
+- `sort` — `created_at`（默认）、`due_at`、`completed_at`、`updated_at`
 - `limit`
 - `cursor`
+
+创建/更新请求可选字段 `tagNames: string[]`（整组替换）。响应 `ReminderSummary` 含 `tags[]`、`trackEntries[]`。
+
+### 追加事项跟踪
+
+```http
+POST /v1/reminders/{reminder_id}/track-entries
+```
+
+请求：
+
+```json
+{ "text": "已联系客户" }
+```
+
+- `text` 必填，trim 后 ≤30 字
+- 服务端按用户时区生成 `dateLabel`（`MM-DD`）
+- 响应含完整 `reminder`
+
+### 标签词表
+
+```http
+GET /v1/tags?q=客&limit=50
+```
+
+返回当前用户 tag 列表，供联想输入。
 
 ### 按来源反查提醒
 

@@ -173,11 +173,25 @@ export type WechatNotifyStatus =
   | "no_quota"
   | "skipped";
 
+export interface TagSummary {
+  id: EntityId;
+  name: string;
+}
+
+export interface ReminderTrackEntry {
+  id: EntityId;
+  dateLabel: string;
+  text: string;
+  createdAt: string;
+}
+
 export interface ReminderSummary {
   id: EntityId;
   title: string;
   status: ReminderStatus;
   notes?: string;
+  tags?: TagSummary[];
+  trackEntries?: ReminderTrackEntry[];
   dueAt?: string;
   remindAt?: string;
   source?: string;
@@ -198,6 +212,7 @@ export interface CreateReminderInput {
   externalId?: string;
   sourceMeta?: Record<string, unknown>;
   contactIds?: EntityId[];
+  tagNames?: string[];
 }
 
 export interface CreateReminderResult {
@@ -228,6 +243,7 @@ export interface UpdateReminderInput {
   remindAt?: string;
   wechatNotifyRequested?: boolean;
   contactIds?: EntityId[];
+  tagNames?: string[];
 }
 
 export interface RescheduleReminderInput {
@@ -251,11 +267,31 @@ export interface DeleteReminderResult {
 export interface ListRemindersParams {
   status?: ReminderStatus;
   source?: string;
+  q?: string;
+  tag?: string;
   from?: string;
   to?: string;
   limit?: number;
   cursor?: string;
-  sort?: "created_at" | "due_at" | "completed_at";
+  sort?: "created_at" | "due_at" | "completed_at" | "updated_at";
+}
+
+export interface TagListResult {
+  items: TagSummary[];
+  totalCount: number;
+}
+
+export interface ListTagsParams {
+  q?: string;
+  limit?: number;
+}
+
+export interface AddTrackEntryInput {
+  text: string;
+}
+
+export interface AddTrackEntryResult {
+  reminder: ReminderSummary;
 }
 
 export interface UserSummary {

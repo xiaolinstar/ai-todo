@@ -5,8 +5,14 @@ from sqlalchemy.orm import Session
 
 from ai_todo_api.common.cursor import decode_cursor, encode_cursor
 from ai_todo_api.common.list_page import ListPage
-from ai_todo_api.db.models import ReminderModel
-from ai_todo_api.modules.reminders.schemas import ReminderSummary, WechatNotifyStatus
+from ai_todo_api.db.models import (
+    ReminderModel,
+    ReminderTagModel,
+    ReminderTrackEntryModel,
+    TagModel,
+)
+from ai_todo_api.modules.reminders.schemas import ReminderSummary, ReminderTrackEntry, TagSummary, WechatNotifyStatus
+from ai_todo_api.modules.tags.normalize import normalize_tag_name
 
 
 class ReminderRepository:
@@ -57,8 +63,11 @@ class ReminderRepository:
         *,
         status: str | None = None,
         source: str | None = None,
+        query: str | None = None,
+        tag: str | None = None,
         limit: int = 50,
         cursor: str | None = None,
+        sort: str = "created_at",
     ) -> ListPage[ReminderModel]:
         statement = select(ReminderModel).where(
             ReminderModel.user_id == self._user_id,
@@ -69,17 +78,23 @@ class ReminderRepository:
         if source:
             statement = statement.where(ReminderModel.source == source)
 
+        statement = _apply_search_filters(statement, query=query, tag=tag, user_id=self._user_id)
+
         total_count = int(
-            self._session.scalar(select(func.count()).select_from(statement.subquery())) or 0
+            self._session.scalar(
+                select(func.count()).select_from(statement.distinct().subquery())
+            )
+            or 0
         )
 
-        ordered = statement.order_by(ReminderModel.created_at.desc(), ReminderModel.id.desc())
+        sort_column = _sort_column(sort)
+        ordered = statement.distinct().order_by(sort_column.desc(), ReminderModel.id.desc())
         if cursor:
             sort_at, row_id = decode_cursor(cursor)
             ordered = ordered.where(
                 or_(
-                    ReminderModel.created_at < sort_at,
-                    and_(ReminderModel.created_at == sort_at, ReminderModel.id < row_id),
+                    sort_column < sort_at,
+                    and_(sort_column == sort_at, ReminderModel.id < row_id),
                 )
             )
 
@@ -89,7 +104,7 @@ class ReminderRepository:
         next_cursor = None
         if has_more and items:
             last = items[-1]
-            next_cursor = encode_cursor(sort_at=last.created_at, row_id=last.id)
+            next_cursor = encode_cursor(sort_at=_sort_value(last, sort), row_id=last.id)
 
         return ListPage(
             items=items,
@@ -103,6 +118,8 @@ class ReminderRepository:
         *,
         status: str | None = None,
         source: str | None = None,
+        query: str | None = None,
+        tag: str | None = None,
         sort: str = "due_at",
         limit: int | None = None,
     ) -> list[ReminderModel]:
@@ -115,6 +132,9 @@ class ReminderRepository:
         if source:
             statement = statement.where(ReminderModel.source == source)
 
+        statement = _apply_search_filters(statement, query=query, tag=tag, user_id=self._user_id)
+        statement = statement.distinct()
+
         if sort == "completed_at":
             statement = statement.order_by(
                 ReminderModel.completed_at.desc().nulls_last(),
@@ -124,6 +144,11 @@ class ReminderRepository:
             statement = statement.order_by(
                 ReminderModel.due_at.asc().nulls_last(),
                 ReminderModel.id.asc(),
+            )
+        elif sort == "updated_at":
+            statement = statement.order_by(
+                ReminderModel.updated_at.desc(),
+                ReminderModel.id.desc(),
             )
         else:
             statement = statement.order_by(
@@ -135,7 +160,14 @@ class ReminderRepository:
             statement = statement.limit(limit)
         return list(self._session.scalars(statement))
 
-    def count_active(self, *, status: str | None = None, source: str | None = None) -> int:
+    def count_active(
+        self,
+        *,
+        status: str | None = None,
+        source: str | None = None,
+        query: str | None = None,
+        tag: str | None = None,
+    ) -> int:
         statement = select(ReminderModel).where(
             ReminderModel.user_id == self._user_id,
             ReminderModel.deleted_at.is_(None),
@@ -144,8 +176,12 @@ class ReminderRepository:
             statement = statement.where(ReminderModel.status == status)
         if source:
             statement = statement.where(ReminderModel.source == source)
+        statement = _apply_search_filters(statement, query=query, tag=tag, user_id=self._user_id)
         return int(
-            self._session.scalar(select(func.count()).select_from(statement.subquery())) or 0
+            self._session.scalar(
+                select(func.count()).select_from(statement.distinct().subquery())
+            )
+            or 0
         )
 
     def list_all_active(self) -> list[ReminderModel]:
@@ -166,10 +202,71 @@ class ReminderRepository:
         return reminder
 
 
+def _apply_search_filters(statement, *, query: str | None, tag: str | None, user_id: str):
+    cleaned_query = query.strip() if query else None
+    tag_joined = False
+
+    if tag:
+        normalized = normalize_tag_name(tag)
+        statement = (
+            statement.join(ReminderTagModel, ReminderTagModel.reminder_id == ReminderModel.id)
+            .join(TagModel, TagModel.id == ReminderTagModel.tag_id)
+            .where(
+                TagModel.user_id == user_id,
+                TagModel.normalized_name == normalized,
+            )
+        )
+        tag_joined = True
+
+    if cleaned_query:
+        pattern = f"%{cleaned_query}%"
+        if not tag_joined:
+            statement = (
+                statement.outerjoin(ReminderTagModel, ReminderTagModel.reminder_id == ReminderModel.id)
+                .outerjoin(TagModel, TagModel.id == ReminderTagModel.tag_id)
+            )
+        statement = statement.outerjoin(
+            ReminderTrackEntryModel,
+            ReminderTrackEntryModel.reminder_id == ReminderModel.id,
+        ).where(
+            or_(
+                ReminderModel.title.ilike(pattern),
+                ReminderModel.notes.ilike(pattern),
+                TagModel.name.ilike(pattern),
+                ReminderTrackEntryModel.text.ilike(pattern),
+            )
+        )
+    return statement
+
+
+def _sort_column(sort: str):
+    if sort == "updated_at":
+        return ReminderModel.updated_at
+    if sort == "completed_at":
+        return ReminderModel.completed_at
+    if sort == "due_at":
+        return ReminderModel.due_at
+    return ReminderModel.created_at
+
+
+def _sort_value(reminder: ReminderModel, sort: str) -> datetime:
+    if sort == "updated_at":
+        return reminder.updated_at
+    if sort == "completed_at":
+        return reminder.completed_at or reminder.updated_at
+    if sort == "due_at":
+        if reminder.due_at:
+            return datetime.fromisoformat(reminder.due_at)
+        return reminder.created_at
+    return reminder.created_at
+
+
 def reminder_to_summary(
     reminder: ReminderModel,
     *,
     contacts: list | None = None,
+    tags: list[TagSummary] | None = None,
+    track_entries: list[ReminderTrackEntry] | None = None,
     wechat_notify_status: WechatNotifyStatus = "none",
 ) -> ReminderSummary:
     return ReminderSummary(
@@ -177,6 +274,8 @@ def reminder_to_summary(
         title=reminder.title,
         status=reminder.status,  # type: ignore[arg-type]
         notes=reminder.notes,
+        tags=tags or [],
+        track_entries=track_entries or [],
         due_at=reminder.due_at,
         remind_at=reminder.remind_at,
         source=reminder.source,

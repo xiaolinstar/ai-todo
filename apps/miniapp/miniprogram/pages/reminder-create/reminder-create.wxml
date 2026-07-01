@@ -5,6 +5,23 @@
       <text class="form-label">标题</text>
       <input class="form-input" placeholder="必填，最多 80 字" maxlength="80" value="{{title}}" bindinput="onTitleInput" />
     </view>
+    <view class="form-row stack">
+      <text class="form-label">标签</text>
+      <view class="tag-editor">
+        <view wx:for="{{tagNames}}" wx:key="*this" class="tag-chip active">
+          <text>{{item}}</text>
+          <text class="tag-remove" data-name="{{item}}" bindtap="onRemoveTag">×</text>
+        </view>
+        <input
+          class="tag-input"
+          placeholder="添加标签"
+          value="{{tagInput}}"
+          maxlength="32"
+          bindinput="onTagInput"
+          bindconfirm="onAddTag"
+        />
+      </view>
+    </view>
     <view class="form-row" bindtap="toggleNotes">
       <text class="form-label">备注</text>
       <text class="form-value muted">{{notes ? '已填写' : '添加'}}</text>

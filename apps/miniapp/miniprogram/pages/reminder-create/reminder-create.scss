@@ -11,3 +11,38 @@
 .submit {
   margin-top: 16rpx;
 }
+
+.tag-editor {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-top: 12rpx;
+}
+
+.tag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8rpx;
+  padding: 8rpx 16rpx;
+  border-radius: 999rpx;
+  background: var(--todo-fill-neutral-12);
+  color: var(--todo-text-muted);
+  font-size: var(--todo-font-size-md);
+}
+
+.tag-chip.active {
+  background: var(--todo-accent-soft);
+  color: var(--todo-accent);
+}
+
+.tag-remove {
+  font-size: var(--todo-font-size-lg);
+  line-height: 1;
+}
+
+.tag-input {
+  flex: 1;
+  min-width: 160rpx;
+  padding: 8rpx 0;
+  font-size: var(--todo-font-size-md);
+}

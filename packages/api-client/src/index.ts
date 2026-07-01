@@ -1,4 +1,6 @@
 import type {
+  AddTrackEntryInput,
+  AddTrackEntryResult,
   ApiResponse,
   CalendarEventDetailResult,
   CalendarEventListResult,
@@ -18,6 +20,7 @@ import type {
   DeleteReminderResult,
   ListCalendarEventsParams,
   ListRemindersParams,
+  ListTagsParams,
   MeResult,
   ApiTokenListResult,
   ReminderDetailResult,
@@ -28,6 +31,7 @@ import type {
   RescheduleReminderInput,
   RescheduleReminderResult,
   TodayResult,
+  TagListResult,
   UpdateCalendarEventInput,
   UpdateCalendarEventResult,
   UpdateContactInput,
@@ -35,7 +39,7 @@ import type {
   UpdateProfileInput,
   UpdateProfileResult,
   UpdateReminderInput,
-  UpdateReminderResult
+  UpdateReminderResult,
 } from "@ai-todo/shared";
 
 export interface AiTodoClientOptions {
@@ -65,7 +69,7 @@ export class AiTodoClient {
   async request<T>(
     path: string,
     init: RequestInit = {},
-    options: RequestOptions = {}
+    options: RequestOptions = {},
   ): Promise<ApiResponse<T>> {
     const headers = new Headers(init.headers);
     headers.set("content-type", "application/json");
@@ -85,33 +89,48 @@ export class AiTodoClient {
 
     const response = await fetch(`${this.apiUrl}${path}`, {
       ...init,
-      headers
+      headers,
     });
 
     return (await response.json()) as ApiResponse<T>;
   }
 
-  createReminder(input: CreateReminderInput): Promise<ApiResponse<CreateReminderResult>> {
+  createReminder(
+    input: CreateReminderInput,
+  ): Promise<ApiResponse<CreateReminderResult>> {
     return this.request<CreateReminderResult>("/v1/reminders", {
       method: "POST",
-      body: JSON.stringify(input)
+      body: JSON.stringify(input),
     });
   }
 
-  completeReminder(reminderId: string): Promise<ApiResponse<CompleteReminderResult>> {
-    return this.request<CompleteReminderResult>(`/v1/reminders/${reminderId}/complete`, {
-      method: "POST",
-      body: JSON.stringify({})
-    });
+  completeReminder(
+    reminderId: string,
+  ): Promise<ApiResponse<CompleteReminderResult>> {
+    return this.request<CompleteReminderResult>(
+      `/v1/reminders/${reminderId}/complete`,
+      {
+        method: "POST",
+        body: JSON.stringify({}),
+      },
+    );
   }
 
-  listReminders(params: ListRemindersParams = {}): Promise<ApiResponse<ReminderListResult>> {
+  listReminders(
+    params: ListRemindersParams = {},
+  ): Promise<ApiResponse<ReminderListResult>> {
     const search = new URLSearchParams();
     if (params.status) {
       search.set("status", params.status);
     }
     if (params.source) {
       search.set("source", params.source);
+    }
+    if (params.q) {
+      search.set("q", params.q);
+    }
+    if (params.tag) {
+      search.set("tag", params.tag);
     }
     if (params.from) {
       search.set("from", params.from);
@@ -129,17 +148,21 @@ export class AiTodoClient {
       search.set("sort", params.sort);
     }
     const query = search.toString();
-    return this.request<ReminderListResult>(`/v1/reminders${query ? `?${query}` : ""}`);
+    return this.request<ReminderListResult>(
+      `/v1/reminders${query ? `?${query}` : ""}`,
+    );
   }
 
   findReminderBySource(
     source: string,
-    externalId: string
+    externalId: string,
   ): Promise<ApiResponse<ReminderDetailResult>> {
     const search = new URLSearchParams();
     search.set("source", source);
     search.set("externalId", externalId);
-    return this.request<ReminderDetailResult>(`/v1/reminders/lookup?${search.toString()}`);
+    return this.request<ReminderDetailResult>(
+      `/v1/reminders/lookup?${search.toString()}`,
+    );
   }
 
   listRemindersToday(): Promise<ApiResponse<ReminderListResult>> {
@@ -147,49 +170,84 @@ export class AiTodoClient {
   }
 
   getReminder(reminderId: string): Promise<ApiResponse<ReminderDetailResult>> {
-    return this.request<ReminderDetailResult>(`/v1/reminders/${encodeURIComponent(reminderId)}`);
+    return this.request<ReminderDetailResult>(
+      `/v1/reminders/${encodeURIComponent(reminderId)}`,
+    );
   }
 
   updateReminder(
     reminderId: string,
-    input: UpdateReminderInput
+    input: UpdateReminderInput,
   ): Promise<ApiResponse<UpdateReminderResult>> {
-    return this.request<UpdateReminderResult>(`/v1/reminders/${encodeURIComponent(reminderId)}`, {
-      method: "PATCH",
-      body: JSON.stringify(input)
-    });
+    return this.request<UpdateReminderResult>(
+      `/v1/reminders/${encodeURIComponent(reminderId)}`,
+      {
+        method: "PATCH",
+        body: JSON.stringify(input),
+      },
+    );
   }
 
   rescheduleReminder(
     reminderId: string,
-    input: RescheduleReminderInput
+    input: RescheduleReminderInput,
   ): Promise<ApiResponse<RescheduleReminderResult>> {
     return this.request<RescheduleReminderResult>(
       `/v1/reminders/${encodeURIComponent(reminderId)}/reschedule`,
       {
         method: "POST",
-        body: JSON.stringify(input)
-      }
+        body: JSON.stringify(input),
+      },
     );
   }
 
-  deleteReminder(reminderId: string): Promise<ApiResponse<DeleteReminderResult>> {
-    return this.request<DeleteReminderResult>(`/v1/reminders/${encodeURIComponent(reminderId)}`, {
-      method: "DELETE"
-    });
+  deleteReminder(
+    reminderId: string,
+  ): Promise<ApiResponse<DeleteReminderResult>> {
+    return this.request<DeleteReminderResult>(
+      `/v1/reminders/${encodeURIComponent(reminderId)}`,
+      {
+        method: "DELETE",
+      },
+    );
+  }
+
+  addReminderTrackEntry(
+    reminderId: string,
+    input: AddTrackEntryInput,
+  ): Promise<ApiResponse<AddTrackEntryResult>> {
+    return this.request<AddTrackEntryResult>(
+      `/v1/reminders/${encodeURIComponent(reminderId)}/track-entries`,
+      {
+        method: "POST",
+        body: JSON.stringify(input),
+      },
+    );
+  }
+
+  listTags(params: ListTagsParams = {}): Promise<ApiResponse<TagListResult>> {
+    const search = new URLSearchParams();
+    if (params.q) {
+      search.set("q", params.q);
+    }
+    if (params.limit !== undefined) {
+      search.set("limit", String(params.limit));
+    }
+    const query = search.toString();
+    return this.request<TagListResult>(`/v1/tags${query ? `?${query}` : ""}`);
   }
 
   createCalendarEvent(
-    input: CreateCalendarEventInput
+    input: CreateCalendarEventInput,
   ): Promise<ApiResponse<CreateCalendarEventResult>> {
     return this.request<CreateCalendarEventResult>("/v1/calendar/events", {
       method: "POST",
-      body: JSON.stringify(input)
+      body: JSON.stringify(input),
     });
   }
 
   listCalendarEvents(
-    params: ListCalendarEventsParams = {}
+    params: ListCalendarEventsParams = {},
   ): Promise<ApiResponse<CalendarEventListResult>> {
     const search = new URLSearchParams();
     if (params.from) {
@@ -206,7 +264,7 @@ export class AiTodoClient {
     }
     const query = search.toString();
     return this.request<CalendarEventListResult>(
-      `/v1/calendar/events${query ? `?${query}` : ""}`
+      `/v1/calendar/events${query ? `?${query}` : ""}`,
     );
   }
 
@@ -214,29 +272,33 @@ export class AiTodoClient {
     return this.request<CalendarEventListResult>("/v1/calendar/today");
   }
 
-  getCalendarEvent(eventId: string): Promise<ApiResponse<CalendarEventDetailResult>> {
+  getCalendarEvent(
+    eventId: string,
+  ): Promise<ApiResponse<CalendarEventDetailResult>> {
     return this.request<CalendarEventDetailResult>(
-      `/v1/calendar/events/${encodeURIComponent(eventId)}`
+      `/v1/calendar/events/${encodeURIComponent(eventId)}`,
     );
   }
 
   updateCalendarEvent(
     eventId: string,
-    input: UpdateCalendarEventInput
+    input: UpdateCalendarEventInput,
   ): Promise<ApiResponse<UpdateCalendarEventResult>> {
     return this.request<UpdateCalendarEventResult>(
       `/v1/calendar/events/${encodeURIComponent(eventId)}`,
       {
         method: "PATCH",
-        body: JSON.stringify(input)
-      }
+        body: JSON.stringify(input),
+      },
     );
   }
 
-  deleteCalendarEvent(eventId: string): Promise<ApiResponse<DeleteCalendarEventResult>> {
+  deleteCalendarEvent(
+    eventId: string,
+  ): Promise<ApiResponse<DeleteCalendarEventResult>> {
     return this.request<DeleteCalendarEventResult>(
       `/v1/calendar/events/${encodeURIComponent(eventId)}`,
-      { method: "DELETE" }
+      { method: "DELETE" },
     );
   }
 
@@ -244,10 +306,12 @@ export class AiTodoClient {
     return this.request<MeResult>("/v1/me");
   }
 
-  updateProfile(input: UpdateProfileInput): Promise<ApiResponse<UpdateProfileResult>> {
+  updateProfile(
+    input: UpdateProfileInput,
+  ): Promise<ApiResponse<UpdateProfileResult>> {
     return this.request<UpdateProfileResult>("/v1/me/profile", {
       method: "PATCH",
-      body: JSON.stringify(input)
+      body: JSON.stringify(input),
     });
   }
 
@@ -255,14 +319,18 @@ export class AiTodoClient {
     return this.request<TodayResult>("/v1/today");
   }
 
-  createContact(input: CreateContactInput): Promise<ApiResponse<CreateContactResult>> {
+  createContact(
+    input: CreateContactInput,
+  ): Promise<ApiResponse<CreateContactResult>> {
     return this.request<CreateContactResult>("/v1/contacts", {
       method: "POST",
-      body: JSON.stringify(input)
+      body: JSON.stringify(input),
     });
   }
 
-  searchContacts(params: SearchContactsParams = {}): Promise<ApiResponse<ContactListResult>> {
+  searchContacts(
+    params: SearchContactsParams = {},
+  ): Promise<ApiResponse<ContactListResult>> {
     const search = new URLSearchParams();
     if (params.query) {
       search.set("q", params.query);
@@ -274,33 +342,45 @@ export class AiTodoClient {
       search.set("cursor", params.cursor);
     }
     const query = search.toString();
-    return this.request<ContactListResult>(`/v1/contacts${query ? `?${query}` : ""}`);
+    return this.request<ContactListResult>(
+      `/v1/contacts${query ? `?${query}` : ""}`,
+    );
   }
 
   getContact(contactId: string): Promise<ApiResponse<ContactDetailResult>> {
-    return this.request<ContactDetailResult>(`/v1/contacts/${encodeURIComponent(contactId)}`);
+    return this.request<ContactDetailResult>(
+      `/v1/contacts/${encodeURIComponent(contactId)}`,
+    );
   }
 
   updateContact(
     contactId: string,
-    input: UpdateContactInput
+    input: UpdateContactInput,
   ): Promise<ApiResponse<UpdateContactResult>> {
-    return this.request<UpdateContactResult>(`/v1/contacts/${encodeURIComponent(contactId)}`, {
-      method: "PATCH",
-      body: JSON.stringify(input)
-    });
+    return this.request<UpdateContactResult>(
+      `/v1/contacts/${encodeURIComponent(contactId)}`,
+      {
+        method: "PATCH",
+        body: JSON.stringify(input),
+      },
+    );
   }
 
   deleteContact(contactId: string): Promise<ApiResponse<DeleteContactResult>> {
-    return this.request<DeleteContactResult>(`/v1/contacts/${encodeURIComponent(contactId)}`, {
-      method: "DELETE"
-    });
+    return this.request<DeleteContactResult>(
+      `/v1/contacts/${encodeURIComponent(contactId)}`,
+      {
+        method: "DELETE",
+      },
+    );
   }
 
-  createApiToken(input: CreateApiTokenInput): Promise<ApiResponse<CreateApiTokenResult>> {
+  createApiToken(
+    input: CreateApiTokenInput,
+  ): Promise<ApiResponse<CreateApiTokenResult>> {
     return this.request<CreateApiTokenResult>("/v1/api-tokens", {
       method: "POST",
-      body: JSON.stringify(input)
+      body: JSON.stringify(input),
     });
   }
 
@@ -309,22 +389,27 @@ export class AiTodoClient {
   }
 
   revokeApiToken(tokenId: string): Promise<ApiResponse<RevokeApiTokenResult>> {
-    return this.request<RevokeApiTokenResult>(`/v1/api-tokens/${encodeURIComponent(tokenId)}`, {
-      method: "DELETE"
-    });
+    return this.request<RevokeApiTokenResult>(
+      `/v1/api-tokens/${encodeURIComponent(tokenId)}`,
+      {
+        method: "DELETE",
+      },
+    );
   }
 
   revokeAllApiTokens(): Promise<ApiResponse<RevokeAllApiTokensResult>> {
     return this.request<RevokeAllApiTokensResult>("/v1/api-tokens/revoke-all", {
       method: "POST",
-      body: JSON.stringify({})
+      body: JSON.stringify({}),
     });
   }
 
-  issueDevPat(input: { name: string }): Promise<ApiResponse<CreateApiTokenResult>> {
+  issueDevPat(input: {
+    name: string;
+  }): Promise<ApiResponse<CreateApiTokenResult>> {
     return this.request<CreateApiTokenResult>("/v1/auth/dev/issue-pat", {
       method: "POST",
-      body: JSON.stringify(input)
+      body: JSON.stringify(input),
     });
   }
 }

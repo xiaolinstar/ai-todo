@@ -35,3 +35,92 @@
 .status-segment {
   margin-top: 12rpx;
 }
+
+.tag-editor {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-top: 12rpx;
+}
+
+.tag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8rpx;
+  padding: 8rpx 16rpx;
+  border-radius: 999rpx;
+  background: var(--todo-fill-neutral-12);
+  color: var(--todo-text-muted);
+  font-size: var(--todo-font-size-md);
+}
+
+.tag-chip.active {
+  background: var(--todo-accent-soft);
+  color: var(--todo-accent);
+}
+
+.tag-remove {
+  font-size: var(--todo-font-size-lg);
+  line-height: 1;
+}
+
+.tag-input,
+.track-input {
+  flex: 1;
+  min-width: 160rpx;
+  padding: 8rpx 0;
+  font-size: var(--todo-font-size-md);
+}
+
+.tag-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-top: 12rpx;
+}
+
+.tag-suggestion {
+  padding: 6rpx 16rpx;
+  border-radius: 999rpx;
+  background: var(--todo-fill-neutral-8);
+  color: var(--todo-text-muted);
+  font-size: var(--todo-font-size-sm);
+}
+
+.notes-stack {
+  gap: 20rpx;
+}
+
+.track-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+}
+
+.track-label {
+  color: var(--todo-text-muted);
+  font-size: var(--todo-font-size-md);
+}
+
+.track-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.track-item {
+  color: var(--todo-text-primary);
+  font-size: var(--todo-font-size-md);
+}
+
+.track-add-row {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.track-date-prefix {
+  color: var(--todo-text-muted);
+  font-size: var(--todo-font-size-md);
+  white-space: nowrap;
+}

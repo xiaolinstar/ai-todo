@@ -12,7 +12,7 @@ import {
 import { readListCursor, readListLimit } from "../pagination";
 import { formatReminderStatus, renderReminderListPage } from "../render-list";
 
-type ReminderSortFlag = "created_at" | "due_at" | "completed_at";
+type ReminderSortFlag = "created_at" | "due_at" | "completed_at" | "updated_at";
 
 function readReminderSort(argv: string[], all: boolean, status?: ReminderStatus): ReminderSortFlag {
   const raw = readFlagValue(argv, "--sort");
@@ -30,6 +30,9 @@ function readReminderSort(argv: string[], all: boolean, status?: ReminderStatus)
   }
   if (raw === "completed" || raw === "completed_at") {
     return "completed_at";
+  }
+  if (raw === "updated" || raw === "updated_at") {
+    return "updated_at";
   }
   console.error("Invalid --sort. Use one of: due, created, completed.");
   process.exitCode = 1;
@@ -92,7 +95,8 @@ export async function runReminderCreate(ctx: CliContext, argv: string[]): Promis
       source: readFlagValue(argv, "--source"),
       externalId: readFlagValue(argv, "--external-id"),
       sourceMeta,
-      contactIds: readRepeatedFlag(argv, "--contact")
+      contactIds: readRepeatedFlag(argv, "--contact"),
+      tagNames: readRepeatedFlag(argv, "--tag")
     }),
     (data) => {
       if (!ctx.json) {
@@ -127,6 +131,8 @@ export async function runReminderList(ctx: CliContext, argv: string[]): Promise<
     await ctx.client.listReminders({
       status,
       source: readFlagValue(argv, "--source"),
+      q: readFlagValue(argv, "--q"),
+      tag: readFlagValue(argv, "--tag"),
       from: readFlagValue(argv, "--from"),
       to: readFlagValue(argv, "--to"),
       limit,
@@ -192,6 +198,15 @@ export async function runReminderShow(ctx: CliContext, argv: string[], anchor = 
     if (r.notes) {
       console.log(`Notes: ${r.notes}`);
     }
+    if (r.tags && r.tags.length > 0) {
+      console.log(`Tags: ${r.tags.map((tag) => tag.name).join(", ")}`);
+    }
+    if (r.trackEntries && r.trackEntries.length > 0) {
+      console.log("Track:");
+      for (const entry of r.trackEntries) {
+        console.log(`  ${entry.dateLabel} ${entry.text}`);
+      }
+    }
     if (r.contacts && r.contacts.length > 0) {
       console.log(
         `Contacts: ${r.contacts.map((c) => `${c.displayName} (@${c.handle})`).join(", ")}`
@@ -229,7 +244,9 @@ export async function runReminderUpdate(ctx: CliContext, argv: string[]): Promis
   const due = readFlagValue(argv, "--due");
   const remind = readFlagValue(argv, "--remind");
   const contactIds = readRepeatedFlag(argv, "--contact");
+  const tagNames = readRepeatedFlag(argv, "--tag");
   const hasContacts = hasFlag(argv, "--contact");
+  const hasTags = hasFlag(argv, "--tag");
   const hasNotes = hasFlag(argv, "--notes");
   const status = readFlagValue(argv, "--status") as ReminderStatus | undefined;
 
@@ -239,6 +256,7 @@ export async function runReminderUpdate(ctx: CliContext, argv: string[]): Promis
     due === undefined &&
     remind === undefined &&
     !hasContacts &&
+    !hasTags &&
     !status
   ) {
     console.error("Provide at least one field to update");
@@ -253,7 +271,8 @@ export async function runReminderUpdate(ctx: CliContext, argv: string[]): Promis
       status,
       dueAt: due,
       remindAt: remind,
-      contactIds: hasContacts ? contactIds : undefined
+      contactIds: hasContacts ? contactIds : undefined,
+      tagNames: hasTags ? tagNames : undefined
     }),
     (data) => {
       if (!ctx.json) {
@@ -309,6 +328,35 @@ export async function runReminderDelete(ctx: CliContext, argv: string[]): Promis
   });
 }
 
+export async function runReminderTrackAdd(ctx: CliContext, argv: string[]): Promise<void> {
+  const rawId = trackAddReminderId(argv);
+  if (!rawId) {
+    console.error("Usage: ai-todo reminder track add <reminder_id> <text>");
+    process.exitCode = 1;
+    return;
+  }
+  const id = rawId.startsWith("rem_") ? rawId : await resolveReminderIdPrefix(ctx, rawId);
+  if (!id) {
+    return;
+  }
+  const text = readTextAfterId(argv, rawId);
+  if (!text) {
+    console.error("Usage: ai-todo reminder track add <reminder_id> <text>");
+    process.exitCode = 1;
+    return;
+  }
+  await handleApi(ctx, await ctx.client.addReminderTrackEntry(id, { text }), (data) => {
+    if (ctx.json) {
+      return;
+    }
+    const latest = data.reminder.trackEntries?.[0];
+    if (latest) {
+      console.log(`Added track entry: ${latest.dateLabel} ${latest.text}`);
+    }
+    console.log(`Reminder: ${data.reminder.title} (${data.reminder.id})`);
+  });
+}
+
 function renderReminderDetail(r: {
   id: string;
   title: string;
@@ -318,6 +366,8 @@ function renderReminderDetail(r: {
   source?: string;
   externalId?: string;
   notes?: string;
+  tags?: { name: string }[];
+  trackEntries?: { dateLabel: string; text: string }[];
   contacts?: { displayName: string; handle: string }[];
 }): void {
   console.log(`${r.title} (${r.id})`);
@@ -333,6 +383,15 @@ function renderReminderDetail(r: {
   }
   if (r.notes) {
     console.log(`Notes: ${r.notes}`);
+  }
+  if (r.tags && r.tags.length > 0) {
+    console.log(`Tags: ${r.tags.map((tag) => tag.name).join(", ")}`);
+  }
+  if (r.trackEntries && r.trackEntries.length > 0) {
+    console.log("Track:");
+    for (const entry of r.trackEntries) {
+      console.log(`  ${entry.dateLabel} ${entry.text}`);
+    }
   }
   if (r.contacts && r.contacts.length > 0) {
     console.log(`Contacts: ${r.contacts.map((c) => `${c.displayName} (@${c.handle})`).join(", ")}`);
@@ -427,6 +486,26 @@ async function resolveReminderIdPrefix(ctx: CliContext, raw: string): Promise<st
   }
 
   return matches[0].id;
+}
+
+function trackAddReminderId(argv: string[]): string | undefined {
+  const args = argv.filter((arg) => !arg.startsWith("-"));
+  const addIndex = args.indexOf("add");
+  if (addIndex < 0 || addIndex + 1 >= args.length) {
+    return undefined;
+  }
+  const candidate = args[addIndex + 1];
+  return candidate || undefined;
+}
+
+function readTextAfterId(argv: string[], reminderId: string): string | undefined {
+  const args = argv.filter((arg) => !arg.startsWith("-"));
+  const idIndex = args.indexOf(reminderId);
+  if (idIndex < 0) {
+    return undefined;
+  }
+  const text = args.slice(idIndex + 1).join(" ").trim();
+  return text || undefined;
 }
 
 declare const process: { exitCode?: number };

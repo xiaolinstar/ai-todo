@@ -1,5 +1,5 @@
 import { loadAccountDay } from '../../lib/account-day';
-import { createReminder } from '../../lib/api';
+import { createReminder, fetchTags } from '../../lib/api';
 import type { ContactSummary } from '../../lib/api';
 import { combineDateTime } from '../../lib/format';
 import { todoPageThemeData } from '../../lib/theme';
@@ -11,6 +11,9 @@ Page({
     title: '',
     notes: '',
     notesExpanded: false,
+    tagNames: [] as string[],
+    tagInput: '',
+    tagSuggestions: [] as { id: string; name: string }[],
     hasDue: false,
     dueDate: '',
     dueTime: '',
@@ -49,6 +52,50 @@ Page({
 
   toggleNotes() {
     this.setData({ notesExpanded: !this.data.notesExpanded });
+  },
+
+  onTagInput(e: { detail: { value: string } }) {
+    const tagInput = e.detail.value;
+    this.setData({ tagInput });
+    const query = tagInput.trim();
+    if (!query) {
+      this.setData({ tagSuggestions: [] });
+      return;
+    }
+    fetchTags({ q: query, limit: 8 }).then((response) => {
+      if (!response.ok || !response.data) {
+        return;
+      }
+      const existing = new Set(this.data.tagNames.map((name: string) => name.toLowerCase()));
+      const tagSuggestions = response.data.items.filter(
+        (tag) => !existing.has(tag.name.toLowerCase()),
+      );
+      this.setData({ tagSuggestions });
+    });
+  },
+
+  onAddTag() {
+    const name = this.data.tagInput.trim();
+    if (!name || name.length > 32) {
+      return;
+    }
+    const normalized = name.toLowerCase();
+    if (this.data.tagNames.some((item: string) => item.toLowerCase() === normalized)) {
+      this.setData({ tagInput: '', tagSuggestions: [] });
+      return;
+    }
+    this.setData({
+      tagNames: [...this.data.tagNames, name],
+      tagInput: '',
+      tagSuggestions: [],
+    });
+  },
+
+  onRemoveTag(e: { currentTarget: { dataset: { name?: string } } }) {
+    const name = e.currentTarget.dataset.name || '';
+    this.setData({
+      tagNames: this.data.tagNames.filter((item: string) => item !== name),
+    });
   },
 
   onDueToggle(e: { detail: { value: boolean } }) {
@@ -95,6 +142,7 @@ Page({
       dueAt?: string;
       wechatNotifyRequested?: boolean;
       contactIds?: string[];
+      tagNames?: string[];
     } = {
       title,
       wechatNotifyRequested:
@@ -103,6 +151,9 @@ Page({
     const notes = this.data.notes.trim();
     if (notes) {
       payload.notes = notes;
+    }
+    if (this.data.tagNames.length > 0) {
+      payload.tagNames = this.data.tagNames;
     }
     if (this.data.hasDue) {
       payload.dueAt = combineDateTime(

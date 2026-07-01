@@ -20,6 +20,7 @@ from ai_todo_api.modules.contacts.router import router as contacts_router
 from ai_todo_api.modules.notifications.router import router as notifications_router
 from ai_todo_api.observability import install_observability, metrics_registry
 from ai_todo_api.modules.reminders.router import router as reminders_router
+from ai_todo_api.modules.tags.router import router as tags_router
 from ai_todo_api.modules.today.router import router as today_router
 from ai_todo_api.preview import preview_page
 from ai_todo_api.errors import ErrorCode, wire_code
@@ -189,6 +190,7 @@ def health_db(db: Session = Depends(get_db)) -> ApiResponse[dict[str, object]]:
 app.include_router(auth_router)
 app.include_router(api_tokens_router)
 app.include_router(reminders_router)
+app.include_router(tags_router)
 app.include_router(calendar_router)
 app.include_router(contacts_router)
 app.include_router(notifications_router)
