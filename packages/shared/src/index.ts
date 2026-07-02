@@ -176,6 +176,8 @@ export type WechatNotifyStatus =
 export interface TagSummary {
   id: EntityId;
   name: string;
+  color: string;
+  usageCount?: number;
 }
 
 export interface ReminderTrackEntry {
@@ -279,6 +281,25 @@ export interface ListRemindersParams {
 export interface TagListResult {
   items: TagSummary[];
   totalCount: number;
+}
+
+export interface TagDetailResult {
+  tag: TagSummary;
+}
+
+export interface CreateTagInput {
+  name: string;
+  color?: string;
+}
+
+export interface UpdateTagInput {
+  name?: string;
+  color?: string;
+}
+
+export interface DeleteTagResult {
+  id: EntityId;
+  deleted: boolean;
 }
 
 export interface ListTagsParams {

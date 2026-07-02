@@ -48,6 +48,18 @@ export const TODO_EVENT_ACCENT_PALETTE = [
   TODO_COLORS.accentViolet,
 ] as const;
 
+/** 标签固定色板，后端仅接受这些颜色。 */
+export const TODO_TAG_PALETTE = [
+  TODO_COLORS.primary,
+  TODO_COLORS.good,
+  TODO_COLORS.warning,
+  TODO_COLORS.danger,
+  TODO_COLORS.accentPurple,
+  TODO_COLORS.accentViolet,
+  TODO_COLORS.accentPink,
+  TODO_COLORS.textSubtle,
+] as const;
+
 /** 微信 switch 等组件的 color 属性 */
 export const TODO_SWITCH_COLOR = TODO_COLORS.primary;
 

@@ -6,7 +6,7 @@ import {
   formatApiErrorMessage,
   updateReminder,
 } from '../../lib/api';
-import type { ContactSummary, ReminderTrackEntry } from '../../lib/api';
+import type { ContactSummary, ReminderTrackEntry, TagSummary } from '../../lib/api';
 import { combineDateTime, formatTrackDateLabel, splitIsoDateTime } from '../../lib/format';
 import { todoPageThemeData } from '../../lib/theme';
 import { loadWechatNotificationPrefs, enableWechatNotifyForTarget } from '../../lib/wechat-notify';
@@ -24,7 +24,7 @@ Page({
     notesExpanded: false,
     tagNames: [] as string[],
     tagInput: '',
-    tagSuggestions: [] as { id: string; name: string }[],
+    tagSuggestions: [] as TagSummary[],
     trackEntries: [] as ReminderTrackEntry[],
     trackInput: '',
     trackDatePrefix: '',
@@ -139,6 +139,10 @@ Page({
     }
     if (name.length > 32) {
       wx.showToast({ title: '标签最多 32 字', icon: 'none' });
+      return;
+    }
+    if (this.data.tagNames.length >= 3) {
+      wx.showToast({ title: '每条提醒最多 3 个标签', icon: 'none' });
       return;
     }
     const normalized = name.toLowerCase();

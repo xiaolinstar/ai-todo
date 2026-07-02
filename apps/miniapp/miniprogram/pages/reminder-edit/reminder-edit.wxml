@@ -28,6 +28,7 @@
             wx:for="{{tagSuggestions}}"
             wx:key="id"
             class="tag-suggestion pressable"
+            style="border-color: {{item.color}}; color: {{item.color}};"
             data-name="{{item.name}}"
             bindtap="onPickTagSuggestion"
             hover-class="pressable-active"

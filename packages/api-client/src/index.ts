@@ -13,11 +13,13 @@ import type {
   CreateContactResult,
   CreateApiTokenInput,
   CreateApiTokenResult,
+  CreateTagInput,
   CreateReminderInput,
   CreateReminderResult,
   DeleteCalendarEventResult,
   DeleteContactResult,
   DeleteReminderResult,
+  DeleteTagResult,
   ListCalendarEventsParams,
   ListRemindersParams,
   ListTagsParams,
@@ -31,6 +33,7 @@ import type {
   RescheduleReminderInput,
   RescheduleReminderResult,
   TodayResult,
+  TagDetailResult,
   TagListResult,
   UpdateCalendarEventInput,
   UpdateCalendarEventResult,
@@ -40,6 +43,7 @@ import type {
   UpdateProfileResult,
   UpdateReminderInput,
   UpdateReminderResult,
+  UpdateTagInput,
 } from "@ai-todo/shared";
 
 export interface AiTodoClientOptions {
@@ -235,6 +239,26 @@ export class AiTodoClient {
     }
     const query = search.toString();
     return this.request<TagListResult>(`/v1/tags${query ? `?${query}` : ""}`);
+  }
+
+  createTag(input: CreateTagInput): Promise<ApiResponse<TagDetailResult>> {
+    return this.request<TagDetailResult>("/v1/tags", {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
+  }
+
+  updateTag(tagId: string, input: UpdateTagInput): Promise<ApiResponse<TagDetailResult>> {
+    return this.request<TagDetailResult>(`/v1/tags/${encodeURIComponent(tagId)}`, {
+      method: "PATCH",
+      body: JSON.stringify(input),
+    });
+  }
+
+  deleteTag(tagId: string): Promise<ApiResponse<DeleteTagResult>> {
+    return this.request<DeleteTagResult>(`/v1/tags/${encodeURIComponent(tagId)}`, {
+      method: "DELETE",
+    });
   }
 
   createCalendarEvent(

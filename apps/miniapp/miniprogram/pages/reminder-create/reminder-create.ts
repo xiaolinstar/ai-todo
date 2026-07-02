@@ -1,6 +1,6 @@
 import { loadAccountDay } from '../../lib/account-day';
 import { createReminder, fetchTags } from '../../lib/api';
-import type { ContactSummary } from '../../lib/api';
+import type { ContactSummary, TagSummary } from '../../lib/api';
 import { combineDateTime } from '../../lib/format';
 import { todoPageThemeData } from '../../lib/theme';
 import { loadWechatNotificationPrefs, requestReminderNotification } from '../../lib/wechat-notify';
@@ -13,7 +13,7 @@ Page({
     notesExpanded: false,
     tagNames: [] as string[],
     tagInput: '',
-    tagSuggestions: [] as { id: string; name: string }[],
+    tagSuggestions: [] as TagSummary[],
     hasDue: false,
     dueDate: '',
     dueTime: '',
@@ -79,6 +79,10 @@ Page({
     if (!name || name.length > 32) {
       return;
     }
+    if (this.data.tagNames.length >= 3) {
+      wx.showToast({ title: '每条提醒最多 3 个标签', icon: 'none' });
+      return;
+    }
     const normalized = name.toLowerCase();
     if (this.data.tagNames.some((item: string) => item.toLowerCase() === normalized)) {
       this.setData({ tagInput: '', tagSuggestions: [] });
@@ -89,6 +93,15 @@ Page({
       tagInput: '',
       tagSuggestions: [],
     });
+  },
+
+  onPickTagSuggestion(e: { currentTarget: { dataset: { name?: string } } }) {
+    const name = (e.currentTarget.dataset.name || '').trim();
+    if (!name) {
+      return;
+    }
+    this.setData({ tagInput: name });
+    this.onAddTag();
   },
 
   onRemoveTag(e: { currentTarget: { dataset: { name?: string } } }) {

@@ -81,9 +81,9 @@
 
 .tag-suggestion {
   padding: 6rpx 16rpx;
+  border: 2rpx solid currentColor;
   border-radius: 999rpx;
-  background: var(--todo-fill-neutral-8);
-  color: var(--todo-text-muted);
+  background: var(--todo-surface);
   font-size: var(--todo-font-size-sm);
 }
 

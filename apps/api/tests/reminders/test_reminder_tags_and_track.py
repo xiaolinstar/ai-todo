@@ -9,6 +9,7 @@ def test_create_reminder_with_tags_reuses_tag(client: TestClient) -> None:
     assert first.status_code == 201
     first_body = first.json()["data"]["reminder"]
     assert [tag["name"] for tag in first_body["tags"]] == ["客户", "报价"]
+    assert first_body["tags"][0]["color"].startswith("#")
 
     second = client.post(
         "/v1/reminders",
@@ -101,10 +102,66 @@ def test_add_track_entry_rejects_empty_and_long_text(client: TestClient) -> None
     assert long_response.status_code == 400
 
 
-def test_list_tags(client: TestClient) -> None:
-    client.post("/v1/reminders", json={"title": "标签词表", "tagNames": ["客户"]})
+def test_list_tags(client: TestClient, demo_suffix: str) -> None:
+    tag_name = f"客户-{demo_suffix}"
+    client.post("/v1/reminders", json={"title": "标签词表", "tagNames": [tag_name]})
 
-    response = client.get("/v1/tags", params={"q": "客"})
+    response = client.get("/v1/tags", params={"q": tag_name})
     assert response.status_code == 200
     items = response.json()["data"]["items"]
-    assert any(item["name"] == "客户" for item in items)
+    customer = next(item for item in items if item["name"] == tag_name)
+    assert customer["usageCount"] == 1
+    assert customer["color"].startswith("#")
+
+
+def test_manage_tag_name_color_and_delete(client: TestClient) -> None:
+    create_response = client.post("/v1/tags", json={"name": "重要", "color": "#FF9500"})
+    assert create_response.status_code == 201
+    tag = create_response.json()["data"]["tag"]
+    assert tag["name"] == "重要"
+    assert tag["color"] == "#FF9500"
+    assert tag["usageCount"] == 0
+
+    update_response = client.patch(
+        f"/v1/tags/{tag['id']}",
+        json={"name": "高优先级", "color": "#FF3B30"},
+    )
+    assert update_response.status_code == 200
+    updated = update_response.json()["data"]["tag"]
+    assert updated["name"] == "高优先级"
+    assert updated["color"] == "#FF3B30"
+
+    delete_response = client.delete(f"/v1/tags/{tag['id']}")
+    assert delete_response.status_code == 200
+    assert delete_response.json()["data"]["deleted"] is True
+
+
+def test_tag_limits(client: TestClient) -> None:
+    response = client.post(
+        "/v1/reminders",
+        json={"title": "标签过多", "tagNames": ["a", "b", "c", "d"]},
+    )
+    assert response.status_code == 400
+    assert response.json()["error"]["code"] == "VAL_INVALID_INPUT"
+
+
+def test_user_tag_limit(client: TestClient) -> None:
+    existing = client.get("/v1/tags", params={"limit": 200})
+    assert existing.status_code == 200
+    for tag in existing.json()["data"]["items"]:
+        delete_response = client.delete(f"/v1/tags/{tag['id']}")
+        assert delete_response.status_code == 200
+
+    for index in range(10):
+        response = client.post("/v1/tags", json={"name": f"标签-{index}"})
+        assert response.status_code == 201
+
+    overflow = client.post("/v1/tags", json={"name": "第十一个"})
+    assert overflow.status_code == 400
+    assert overflow.json()["error"]["code"] == "VAL_INVALID_INPUT"
+
+
+def test_rejects_unsupported_tag_color(client: TestClient) -> None:
+    response = client.post("/v1/tags", json={"name": "奇怪颜色", "color": "#123456"})
+    assert response.status_code == 400
+    assert response.json()["error"]["code"] == "VAL_INVALID_INPUT"

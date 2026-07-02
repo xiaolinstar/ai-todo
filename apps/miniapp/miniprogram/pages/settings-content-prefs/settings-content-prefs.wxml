@@ -46,6 +46,24 @@
         </view>
 
         <view class="subpage-section">
+          <view class="group-header">提醒</view>
+          <view class="inset-group subpage-group">
+            <view class="subpage-cell">
+              <view class="subpage-cell-main">
+                <text class="subpage-label">列表显示标签</text>
+                <text class="subpage-meta">关闭后仅保留标签搜索与编辑能力</text>
+              </view>
+              <switch
+                checked="{{showTagsInList}}"
+                disabled="{{savingReminders}}"
+                bindchange="onShowTagsInListChange"
+                color="{{switchColor}}"
+              />
+            </view>
+          </view>
+        </view>
+
+        <view class="subpage-section">
           <view class="group-header">通讯录</view>
           <view class="inset-group subpage-group">
             <view class="subpage-cell">

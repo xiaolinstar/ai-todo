@@ -27,11 +27,12 @@
       />
       <text wx:if="{{searchQuery || searchTag}}" class="link-text pressable" bindtap="onClearSearch" hover-class="pressable-active">清除</text>
     </view>
-    <scroll-view wx:if="{{tagOptions.length > 0}}" class="tag-chip-scroll" scroll-x enable-flex>
+    <scroll-view wx:if="{{showTagsInList && tagOptions.length > 0}}" class="tag-chip-scroll" scroll-x enable-flex>
       <view
         wx:for="{{tagOptions}}"
         wx:key="id"
-        class="tag-chip pressable {{searchTag === item.name ? 'active' : ''}}"
+        class="tag-filter-chip pressable {{searchTag === item.name ? 'active' : ''}}"
+        style="--tag-color: {{item.color}};"
         data-name="{{item.name}}"
         bindtap="onTagChipTap"
         hover-class="pressable-active"
@@ -94,6 +95,18 @@
           <view class="cell-body compact">
             <view class="cell-title">{{item.title}}</view>
             <view wx:if="{{item.subline}}" class="cell-subline">{{item.subline}}</view>
+            <view wx:if="{{showTagsInList && item.tags.length > 0}}" class="tag-strip">
+              <view
+                wx:for="{{item.tags}}"
+                wx:for-item="tag"
+                wx:key="id"
+                class="tag-token"
+                style="--tag-color: {{tag.color}};"
+              >
+                <text class="tag-token-dot"></text>
+                <text class="tag-token-name">{{tag.name}}</text>
+              </view>
+            </view>
           </view>
         </view>
       </view>
@@ -160,6 +173,18 @@
                     class="cell-subline {{item.isOverdue && !item.completing ? 'overdue' : ''}}"
                   >
                     {{item.subline}}
+                  </view>
+                  <view wx:if="{{showTagsInList && item.tags.length > 0}}" class="tag-strip">
+                    <view
+                      wx:for="{{item.tags}}"
+                      wx:for-item="tag"
+                      wx:key="id"
+                      class="tag-token"
+                      style="--tag-color: {{tag.color}};"
+                    >
+                      <text class="tag-token-dot"></text>
+                      <text class="tag-token-name">{{tag.name}}</text>
+                    </view>
                   </view>
                   <view wx:if="{{item.showAwaitingBadge || item.showEnableButton || item.showEnabledLabel}}" class="cell-subline notify-row">
                     <text wx:if="{{item.showAwaitingBadge}}" class="notify-badge">待开启提醒</text>
@@ -241,6 +266,18 @@
                   >
                     {{item.subline}}
                   </view>
+                  <view wx:if="{{showTagsInList && item.tags.length > 0}}" class="tag-strip">
+                    <view
+                      wx:for="{{item.tags}}"
+                      wx:for-item="tag"
+                      wx:key="id"
+                      class="tag-token"
+                      style="--tag-color: {{tag.color}};"
+                    >
+                      <text class="tag-token-dot"></text>
+                      <text class="tag-token-name">{{tag.name}}</text>
+                    </view>
+                  </view>
                   <view wx:if="{{item.showAwaitingBadge || item.showEnableButton || item.showEnabledLabel}}" class="cell-subline notify-row">
                     <text wx:if="{{item.showAwaitingBadge}}" class="notify-badge">待开启提醒</text>
                     <text wx:if="{{item.showEnabledLabel}}" class="notify-enabled">微信提醒已开启</text>
@@ -309,6 +346,18 @@
                   <view wx:if="{{item.sourceLabel}}" class="source-badge muted">{{item.sourceLabel}}</view>
                 </view>
                 <view wx:if="{{item.subline}}" class="cell-subline">{{item.subline}}</view>
+                <view wx:if="{{showTagsInList && item.tags.length > 0}}" class="tag-strip">
+                  <view
+                    wx:for="{{item.tags}}"
+                    wx:for-item="tag"
+                    wx:key="id"
+                    class="tag-token"
+                    style="--tag-color: {{tag.color}};"
+                  >
+                    <text class="tag-token-dot"></text>
+                    <text class="tag-token-name">{{tag.name}}</text>
+                  </view>
+                </view>
               </view>
             </view>
           </view>

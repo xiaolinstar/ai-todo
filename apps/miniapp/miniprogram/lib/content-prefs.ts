@@ -16,9 +16,14 @@ export interface ContactsContentPrefs {
   showHandleInList: boolean;
 }
 
+export interface RemindersContentPrefs {
+  showTagsInList: boolean;
+}
+
 export interface ContentPrefs {
   calendar: CalendarContentPrefs;
   contacts: ContactsContentPrefs;
+  reminders: RemindersContentPrefs;
 }
 
 const DEFAULT_PREFS: ContentPrefs = {
@@ -30,6 +35,9 @@ const DEFAULT_PREFS: ContentPrefs = {
   contacts: {
     sortMode: 'name',
     showHandleInList: true,
+  },
+  reminders: {
+    showTagsInList: true,
   },
 };
 
@@ -49,7 +57,8 @@ function normalizePrefs(raw: Partial<ContentPrefs> | null): ContentPrefs {
   if (contacts.sortMode !== 'name' && contacts.sortMode !== 'updated') {
     contacts.sortMode = 'name';
   }
-  return { calendar, contacts };
+  const reminders = { ...DEFAULT_PREFS.reminders, ...raw?.reminders };
+  return { calendar, contacts, reminders };
 }
 
 export function readContentPrefsSync(userId?: string): ContentPrefs {
@@ -84,11 +93,13 @@ export function loadContentPrefs(): Promise<ContentPrefs> {
 export function saveContentPrefs(patch: {
   calendar?: Partial<CalendarContentPrefs>;
   contacts?: Partial<ContactsContentPrefs>;
+  reminders?: Partial<RemindersContentPrefs>;
 }): Promise<ContentPrefs> {
   return loadContentPrefs().then((current) => {
     const next = normalizePrefs({
       calendar: { ...current.calendar, ...patch.calendar },
       contacts: { ...current.contacts, ...patch.contacts },
+      reminders: { ...current.reminders, ...patch.reminders },
     });
     writeContentPrefs(next, cachedUserId);
     return next;

@@ -50,6 +50,8 @@ export type WechatNotifyStatus =
 export interface TagSummary {
   id: string;
   name: string;
+  color: string;
+  usageCount?: number;
 }
 
 export interface ReminderTrackEntry {
@@ -385,6 +387,26 @@ export function fetchTags(params: { q?: string; limit?: number } = {}) {
       limit: params.limit !== undefined ? String(params.limit) : undefined,
     })}`,
   );
+}
+
+export function createTag(input: { name: string; color?: string }) {
+  return request<{ tag: TagSummary }>('/v1/tags', {
+    method: 'POST',
+    data: input,
+  });
+}
+
+export function updateTag(tagId: string, input: { name?: string; color?: string }) {
+  return request<{ tag: TagSummary }>(`/v1/tags/${encodeURIComponent(tagId)}`, {
+    method: 'PATCH',
+    data: input,
+  });
+}
+
+export function deleteTag(tagId: string) {
+  return request<{ id: string; deleted: boolean }>(`/v1/tags/${encodeURIComponent(tagId)}`, {
+    method: 'DELETE',
+  });
 }
 
 export function addReminderTrackEntry(reminderId: string, text: string) {

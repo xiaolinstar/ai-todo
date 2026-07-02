@@ -66,6 +66,13 @@ const ALL_SECTIONS: SettingsMenuSection[] = [
         route: { kind: 'page', path: '/pages/settings-content-prefs/settings-content-prefs' },
         requireLogin: true,
       },
+      {
+        id: 'tags',
+        label: '标签管理',
+        subtitle: '常用标签、颜色与清理',
+        route: { kind: 'page', path: '/pages/settings-tags/settings-tags' },
+        requireLogin: true,
+      },
     ],
   },
   {

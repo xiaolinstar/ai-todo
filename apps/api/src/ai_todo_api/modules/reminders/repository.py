@@ -80,15 +80,15 @@ class ReminderRepository:
 
         statement = _apply_search_filters(statement, query=query, tag=tag, user_id=self._user_id)
 
-        total_count = int(
-            self._session.scalar(
-                select(func.count()).select_from(statement.distinct().subquery())
-            )
-            or 0
-        )
+        reminder_ids = _distinct_reminder_ids(statement).subquery()
+        total_count = int(self._session.scalar(select(func.count()).select_from(reminder_ids)) or 0)
 
         sort_column = _sort_column(sort)
-        ordered = statement.distinct().order_by(sort_column.desc(), ReminderModel.id.desc())
+        ordered = (
+            select(ReminderModel)
+            .where(ReminderModel.id.in_(select(reminder_ids.c.id)))
+            .order_by(sort_column.desc(), ReminderModel.id.desc())
+        )
         if cursor:
             sort_at, row_id = decode_cursor(cursor)
             ordered = ordered.where(
@@ -133,7 +133,8 @@ class ReminderRepository:
             statement = statement.where(ReminderModel.source == source)
 
         statement = _apply_search_filters(statement, query=query, tag=tag, user_id=self._user_id)
-        statement = statement.distinct()
+        reminder_ids = _distinct_reminder_ids(statement).subquery()
+        statement = select(ReminderModel).where(ReminderModel.id.in_(select(reminder_ids.c.id)))
 
         if sort == "completed_at":
             statement = statement.order_by(
@@ -177,12 +178,8 @@ class ReminderRepository:
         if source:
             statement = statement.where(ReminderModel.source == source)
         statement = _apply_search_filters(statement, query=query, tag=tag, user_id=self._user_id)
-        return int(
-            self._session.scalar(
-                select(func.count()).select_from(statement.distinct().subquery())
-            )
-            or 0
-        )
+        reminder_ids = _distinct_reminder_ids(statement).subquery()
+        return int(self._session.scalar(select(func.count()).select_from(reminder_ids)) or 0)
 
     def list_all_active(self) -> list[ReminderModel]:
         statement = (
@@ -237,6 +234,10 @@ def _apply_search_filters(statement, *, query: str | None, tag: str | None, user
             )
         )
     return statement
+
+
+def _distinct_reminder_ids(statement):
+    return statement.with_only_columns(ReminderModel.id).order_by(None).distinct()
 
 
 def _sort_column(sort: str):

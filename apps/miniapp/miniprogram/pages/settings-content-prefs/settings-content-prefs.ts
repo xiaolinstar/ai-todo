@@ -3,6 +3,7 @@ import {
   saveContentPrefs,
   type CalendarContentPrefs,
   type ContactsContentPrefs,
+  type RemindersContentPrefs,
 } from '../../lib/content-prefs';
 import { todoPageThemeData } from '../../lib/theme';
 
@@ -17,9 +18,11 @@ Page({
     loading: true,
     savingCalendar: false,
     savingContacts: false,
+    savingReminders: false,
     defaultHasEnd: false,
     durationIndex: 1,
     durationLabels: DURATION_LABELS,
+    showTagsInList: true,
     selectTodayOnOpen: true,
     sortIndex: 0,
     sortLabels: SORT_LABELS,
@@ -43,6 +46,7 @@ Page({
           loading: false,
           defaultHasEnd: prefs.calendar.defaultHasEnd,
           durationIndex: durationIndex >= 0 ? durationIndex : 1,
+          showTagsInList: prefs.reminders.showTagsInList,
           selectTodayOnOpen: prefs.calendar.selectTodayOnOpen,
           sortIndex: sortIndex >= 0 ? sortIndex : 0,
           showHandleInList: prefs.contacts.showHandleInList,
@@ -89,6 +93,26 @@ Page({
 
   onSelectTodayChange(e: { detail: { value: boolean } }) {
     this.saveCalendarPatch({ selectTodayOnOpen: e.detail.value });
+  },
+
+  saveRemindersPatch(patch: Partial<RemindersContentPrefs>) {
+    this.setData({ savingReminders: true });
+    saveContentPrefs({ reminders: patch })
+      .then((prefs) => {
+        this.setData({
+          savingReminders: false,
+          showTagsInList: prefs.reminders.showTagsInList,
+        });
+        wx.showToast({ title: '已保存', icon: 'success' });
+      })
+      .catch(() => {
+        this.setData({ savingReminders: false });
+        wx.showToast({ title: '保存失败', icon: 'none' });
+      });
+  },
+
+  onShowTagsInListChange(e: { detail: { value: boolean } }) {
+    this.saveRemindersPatch({ showTagsInList: e.detail.value });
   },
 
   saveContactsPatch(patch: Partial<ContactsContentPrefs>) {

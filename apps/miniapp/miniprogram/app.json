@@ -10,6 +10,7 @@
     "pages/mine/mine",
     "pages/settings-placeholder/settings-placeholder",
     "pages/settings-content-prefs/settings-content-prefs",
+    "pages/settings-tags/settings-tags",
     "pages/settings-security/settings-security",
     "pages/settings-agent/settings-agent",
     "pages/settings-token-create/settings-token-create",

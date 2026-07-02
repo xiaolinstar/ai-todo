@@ -13,6 +13,7 @@ import {
 import { updateTabBarSelected } from '../../lib/tab-bar';
 import { getWindowWidthPx } from '../../lib/window-metrics';
 import { buildAppShareOptions, buildAppShareTimelineOptions } from '../../lib/share';
+import { loadContentPrefs } from '../../lib/content-prefs';
 import {
   deriveNotifyUi,
   enableWechatNotifyForTarget,
@@ -85,7 +86,6 @@ function enrichReminder(
       dueAt: item.dueAt,
       dueLabel,
       contactNames,
-      tagName: item.tags?.[0]?.name,
       isOverdue,
     }),
     completing: false,
@@ -180,7 +180,8 @@ Page({
     searchTag: '',
     searchMode: false,
     searchResults: [] as ReminderView[],
-    tagOptions: [] as { id: string; name: string }[],
+    tagOptions: [] as { id: string; name: string; color: string }[],
+    showTagsInList: true,
     notifyAvailable: false,
     reminderTemplateId: '',
   },
@@ -273,19 +274,21 @@ Page({
     if (searchMode) {
       return Promise.all([
         loadAccountDay(),
+        loadContentPrefs(),
         loadWechatNotificationPrefs(),
         fetchTags({ limit: 50 }),
       ])
-        .then(([account, notifyPrefs, tagsRes]) => {
-          const tagOptions = tagsRes.ok && tagsRes.data ? tagsRes.data.items : [];
+        .then(([account, contentPrefs, notifyPrefs, tagsRes]) => {
+          const showTagsInList = contentPrefs.reminders.showTagsInList;
+          const tagOptions = showTagsInList && tagsRes.ok && tagsRes.data ? tagsRes.data.items : [];
           return fetchReminders({
             q: searchQuery || undefined,
             tag: searchTag || undefined,
             sort: 'updated_at',
             limit: 100,
-          }).then((searchRes) => ({ account, notifyPrefs, tagOptions, searchRes }));
+          }).then((searchRes) => ({ account, notifyPrefs, showTagsInList, tagOptions, searchRes }));
         })
-        .then(({ account, notifyPrefs, tagOptions, searchRes }) => {
+        .then(({ account, notifyPrefs, showTagsInList, tagOptions, searchRes }) => {
           if (!searchRes.ok || !searchRes.data) {
             this.setData({
               loading: false,
@@ -306,6 +309,7 @@ Page({
             dateLabel: formatIsoDateLabel(account.today),
             weekdayLabel: formatWeekdayLong(account.today),
             tagOptions,
+            showTagsInList,
             searchResults,
             notifyAvailable: notifyPrefs.notifyAvailable,
             reminderTemplateId: notifyPrefs.reminderTemplateId,
@@ -318,80 +322,93 @@ Page({
 
     return Promise.all([
       loadAccountDay(),
+      loadContentPrefs(),
       loadWechatNotificationPrefs(),
       fetchTags({ limit: 50 }),
       fetchReminders({ status: 'pending', sort: 'due_at' }),
       fetchReminders({ status: 'in_progress', sort: 'due_at' }),
       fetchReminders({ status: 'completed', sort: 'completed_at' }),
     ])
-      .then(([account, notifyPrefs, tagsRes, pendingRes, inProgressRes, completedRes]) => {
-        if (
-          !pendingRes.ok ||
-          !pendingRes.data ||
-          !inProgressRes.ok ||
-          !inProgressRes.data ||
-          !completedRes.ok ||
-          !completedRes.data
-        ) {
+      .then(
+        ([
+          account,
+          contentPrefs,
+          notifyPrefs,
+          tagsRes,
+          pendingRes,
+          inProgressRes,
+          completedRes,
+        ]) => {
+          if (
+            !pendingRes.ok ||
+            !pendingRes.data ||
+            !inProgressRes.ok ||
+            !inProgressRes.data ||
+            !completedRes.ok ||
+            !completedRes.data
+          ) {
+            this.setData({
+              loading: false,
+              loaded: true,
+              error:
+                pendingRes.error?.message ||
+                inProgressRes.error?.message ||
+                completedRes.error?.message ||
+                '加载失败，请在「我的」页检查 API 地址',
+            });
+            return;
+          }
+
+          const { timezone, today } = account;
+          const notifyAvailable = notifyPrefs.notifyAvailable;
+          const showTagsInList = contentPrefs.reminders.showTagsInList;
+          const tagOptions = showTagsInList && tagsRes.ok && tagsRes.data ? tagsRes.data.items : [];
+          const pendingItems = pendingRes.data.items.map((item) =>
+            enrichReminder(item, timezone, notifyAvailable),
+          );
+          const inProgressItems = inProgressRes.data.items.map((item) =>
+            enrichReminder(item, timezone, notifyAvailable),
+          );
+          const completedItems = completedRes.data.items.map((item) =>
+            enrichReminder(item, timezone, false),
+          );
+          const animating = this.data.pending.filter(
+            (item: ReminderView) => item.completing || item.exiting,
+          );
+          const animatingIds = new Set(animating.map((item: ReminderView) => item.id));
+          const pending = [
+            ...animating,
+            ...pendingItems.filter((item) => !animatingIds.has(item.id)),
+          ];
+          const inProgress = inProgressItems;
+          const completed = completedItems;
+          const openItems = [...pending, ...inProgress];
+
           this.setData({
             loading: false,
             loaded: true,
-            error:
-              pendingRes.error?.message ||
-              inProgressRes.error?.message ||
-              completedRes.error?.message ||
-              '加载失败，请在「我的」页检查 API 地址',
+            dateLabel: formatIsoDateLabel(today),
+            weekdayLabel: formatWeekdayLong(today),
+            timezone,
+            accountToday: today,
+            pendingCount: pending.length,
+            inProgressCount: inProgress.length,
+            completedCount: completed.length,
+            overdueCount: openItems.filter((item) => item.isOverdue).length,
+            pendingGroups: groupPendingReminders(pending, today, timezone),
+            inProgressGroups: groupPendingReminders(inProgress, today, timezone),
+            pending,
+            inProgress,
+            completed,
+            tagOptions,
+            showTagsInList,
+            searchMode: false,
+            searchResults: [],
+            notifyAvailable,
+            reminderTemplateId: notifyPrefs.reminderTemplateId,
           });
-          return;
-        }
-
-        const { timezone, today } = account;
-        const notifyAvailable = notifyPrefs.notifyAvailable;
-        const tagOptions = tagsRes.ok && tagsRes.data ? tagsRes.data.items : [];
-        const pendingItems = pendingRes.data.items.map((item) =>
-          enrichReminder(item, timezone, notifyAvailable),
-        );
-        const inProgressItems = inProgressRes.data.items.map((item) =>
-          enrichReminder(item, timezone, notifyAvailable),
-        );
-        const completedItems = completedRes.data.items.map((item) =>
-          enrichReminder(item, timezone, false),
-        );
-        const animating = this.data.pending.filter(
-          (item: ReminderView) => item.completing || item.exiting,
-        );
-        const animatingIds = new Set(animating.map((item: ReminderView) => item.id));
-        const pending = [
-          ...animating,
-          ...pendingItems.filter((item) => !animatingIds.has(item.id)),
-        ];
-        const inProgress = inProgressItems;
-        const completed = completedItems;
-        const openItems = [...pending, ...inProgress];
-
-        this.setData({
-          loading: false,
-          loaded: true,
-          dateLabel: formatIsoDateLabel(today),
-          weekdayLabel: formatWeekdayLong(today),
-          timezone,
-          accountToday: today,
-          pendingCount: pending.length,
-          inProgressCount: inProgress.length,
-          completedCount: completed.length,
-          overdueCount: openItems.filter((item) => item.isOverdue).length,
-          pendingGroups: groupPendingReminders(pending, today, timezone),
-          inProgressGroups: groupPendingReminders(inProgress, today, timezone),
-          pending,
-          inProgress,
-          completed,
-          tagOptions,
-          searchMode: false,
-          searchResults: [],
-          notifyAvailable,
-          reminderTemplateId: notifyPrefs.reminderTemplateId,
-        });
-      })
+        },
+      )
       .catch(() => {
         this.setData({
           loading: false,

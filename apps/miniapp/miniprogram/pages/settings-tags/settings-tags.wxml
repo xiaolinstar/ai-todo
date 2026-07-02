@@ -1,0 +1,61 @@
+<view class="mine-subpage tags-page">
+  <scroll-view scroll-y class="mine-subpage-scroll" enhanced show-scrollbar="{{false}}">
+    <view class="mine-subpage-inner">
+      <view class="group-header">新建标签</view>
+      <view class="inset-group tag-create-card">
+        <text class="tag-limit-hint">最多 10 个常用标签，列表控制在两行以内。</text>
+        <view class="tag-create-row">
+          <input class="tag-name-input" placeholder="标签名称，最多 32 字" maxlength="32" value="{{newName}}" bindinput="onNewNameInput" />
+          <button class="todo-button todo-button-primary todo-button-sm create-button" size="mini" loading="{{creating}}" bindtap="onCreateTag">新增</button>
+        </view>
+        <view class="palette-row">
+          <view
+            wx:for="{{palette}}"
+            wx:key="*this"
+            class="color-dot {{newColor === item ? 'selected' : ''}}"
+            style="background: {{item}};"
+            data-color="{{item}}"
+            bindtap="onNewColorTap"
+          ></view>
+        </view>
+      </view>
+
+      <view class="group-header">标签库 · {{tags.length}}/10</view>
+      <view wx:if="{{loading}}" class="subpage-hint">加载中…</view>
+      <view wx:elif="{{tags.length === 0}}" class="inset-group empty-card">
+        <text class="subpage-meta">还没有标签。创建提醒时添加标签，或在这里新建常用标签。</text>
+      </view>
+      <view wx:else class="inset-group tag-list">
+        <view wx:for="{{tags}}" wx:key="id" class="tag-row">
+          <view class="tag-row-main">
+            <view class="tag-title-row">
+              <text class="tag-leading-dot" style="background: {{item.color}};"></text>
+              <input
+                class="tag-edit-input"
+                value="{{item.name}}"
+                maxlength="32"
+                data-id="{{item.id}}"
+                bindblur="onNameBlur"
+                bindconfirm="onNameConfirm"
+              />
+              <text class="tag-usage">{{item.usageCount || 0}}</text>
+            </view>
+            <view class="palette-row compact">
+              <view
+                wx:for="{{palette}}"
+                wx:for-item="color"
+                wx:key="*this"
+                class="color-dot small {{item.color === color ? 'selected' : ''}}"
+                style="background: {{color}};"
+                data-id="{{item.id}}"
+                data-color="{{color}}"
+                bindtap="onColorTap"
+              ></view>
+            </view>
+          </view>
+          <button class="delete-tag-button" data-id="{{item.id}}" data-name="{{item.name}}" bindtap="onDeleteTag">删除</button>
+        </view>
+      </view>
+    </view>
+  </scroll-view>
+</view>

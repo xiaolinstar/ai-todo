@@ -21,6 +21,19 @@
           bindconfirm="onAddTag"
         />
       </view>
+      <view wx:if="{{tagSuggestions.length > 0}}" class="tag-suggestions">
+        <text
+          wx:for="{{tagSuggestions}}"
+          wx:key="id"
+          class="tag-suggestion pressable"
+          style="border-color: {{item.color}}; color: {{item.color}};"
+          data-name="{{item.name}}"
+          bindtap="onPickTagSuggestion"
+          hover-class="pressable-active"
+        >
+          {{item.name}}
+        </text>
+      </view>
     </view>
     <view class="form-row" bindtap="toggleNotes">
       <text class="form-label">备注</text>

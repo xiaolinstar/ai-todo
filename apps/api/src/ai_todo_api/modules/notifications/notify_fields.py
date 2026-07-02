@@ -16,9 +16,7 @@ from ai_todo_api.modules.reminders.enrichment import reminders_to_enriched_summa
 from ai_todo_api.modules.reminders.schemas import ReminderSummary
 from ai_todo_api.modules.notifications.service import (
     TARGET_TYPE_CALENDAR_EVENT,
-    TARGET_TYPE_REMINDER,
     TEMPLATE_KEY_CALENDAR_START,
-    TEMPLATE_KEY_REMINDER_DUE,
 )
 
 
