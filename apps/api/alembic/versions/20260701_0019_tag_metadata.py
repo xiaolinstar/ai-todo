@@ -18,14 +18,23 @@ depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
-    op.add_column("tags", sa.Column("color", sa.String(length=16), nullable=True))
-    op.add_column("tags", sa.Column("updated_at", sa.DateTime(timezone=True), nullable=True))
-    op.execute("UPDATE tags SET color = '#007AFF' WHERE color IS NULL")
-    op.execute("UPDATE tags SET updated_at = created_at WHERE updated_at IS NULL")
-    op.alter_column("tags", "color", nullable=False)
-    op.alter_column("tags", "updated_at", nullable=False)
+    op.add_column(
+        "tags",
+        sa.Column("color", sa.String(length=16), nullable=False, server_default="#007AFF"),
+    )
+    op.add_column(
+        "tags",
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            nullable=False,
+            server_default=sa.text("CURRENT_TIMESTAMP"),
+        ),
+    )
+    op.alter_column("tags", "color", server_default=None)
+    op.alter_column("tags", "updated_at", server_default=None)
 
 
 def downgrade() -> None:
-    op.drop_column("tags", "updated_at")
-    op.drop_column("tags", "color")
+    # Expand-only migration: keep added columns on rollback to avoid destructive schema changes.
+    pass

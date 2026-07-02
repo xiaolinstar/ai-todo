@@ -23,4 +23,4 @@ fi
 
 # ── 2. Lint / format staged files ─────────────────────────────────
 echo "🎨 Running lint-staged..."
-npx --no -- lint-staged
+pnpm exec lint-staged

@@ -10,7 +10,8 @@ alwaysApply: false
 
 ## 立场
 
-**本地 + CI 双段是底线**。Secret scan 双段尤其重要（漏库 = 紧急事件）。
+- **本地 + CI 双段是底线**。Secret scan 双段尤其重要（漏库 = 紧急事件）。
+- **严禁绕过**：严禁使用 `git commit --no-verify` 人为绕过本地 hooks。本地所有拦截规则在 CI 均为硬性阻断标准，绕过必败且浪费公共 CI 资源。
 
 ## 必选 4 项
 

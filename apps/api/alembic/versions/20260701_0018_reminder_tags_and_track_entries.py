@@ -3,6 +3,11 @@
 Revision ID: 20260701_0018
 Revises: 20260623_0017
 Create Date: 2026-07-01
+
+ai-todo-migration: allow-destructive
+Downgrade drops the reminder tag/track tables introduced by this same migration.
+The upgrade path is expand-only; rollback is explicitly scoped to reverting this
+feature migration before production use.
 """
 
 from collections.abc import Sequence
