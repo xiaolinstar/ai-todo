@@ -11,6 +11,7 @@
     "pages/settings-placeholder/settings-placeholder",
     "pages/settings-content-prefs/settings-content-prefs",
     "pages/settings-tags/settings-tags",
+    "pages/settings-tag-detail/settings-tag-detail",
     "pages/settings-security/settings-security",
     "pages/settings-agent/settings-agent",
     "pages/settings-token-create/settings-token-create",

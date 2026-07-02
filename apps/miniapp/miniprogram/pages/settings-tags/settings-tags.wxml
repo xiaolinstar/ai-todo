@@ -26,34 +26,15 @@
         <text class="subpage-meta">还没有标签。创建提醒时添加标签，或在这里新建常用标签。</text>
       </view>
       <view wx:else class="inset-group tag-list">
-        <view wx:for="{{tags}}" wx:key="id" class="tag-row">
+        <view wx:for="{{tags}}" wx:key="id" class="tag-row pressable" data-id="{{item.id}}" bindtap="onTagTap" hover-class="pressable-active">
           <view class="tag-row-main">
-            <view class="tag-title-row">
-              <text class="tag-leading-dot" style="background: {{item.color}};"></text>
-              <input
-                class="tag-edit-input"
-                value="{{item.name}}"
-                maxlength="32"
-                data-id="{{item.id}}"
-                bindblur="onNameBlur"
-                bindconfirm="onNameConfirm"
-              />
-              <text class="tag-usage">{{item.usageCount || 0}}</text>
-            </view>
-            <view class="palette-row compact">
-              <view
-                wx:for="{{palette}}"
-                wx:for-item="color"
-                wx:key="*this"
-                class="color-dot small {{item.color === color ? 'selected' : ''}}"
-                style="background: {{color}};"
-                data-id="{{item.id}}"
-                data-color="{{color}}"
-                bindtap="onColorTap"
-              ></view>
+            <text class="tag-leading-dot" style="background: {{item.color}};"></text>
+            <view class="tag-title-wrap">
+              <text class="tag-name">{{item.name}}</text>
+              <text class="tag-usage">{{item.usageCount || 0}} 个提醒</text>
             </view>
           </view>
-          <button class="delete-tag-button" data-id="{{item.id}}" data-name="{{item.name}}" bindtap="onDeleteTag">删除</button>
+          <view class="form-disclosure"></view>
         </view>
       </view>
     </view>

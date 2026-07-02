@@ -61,6 +61,24 @@ pnpm check:wechat
 pnpm miniapp:preview  # 体验版二维码；上传用微信开发者工具
 ```
 
+### Agent 命令路径规则
+
+非交互式 Agent shell 不一定加载用户 shell rc；如果出现 `node` / `gh` / `pnpm` 找不到，**不要反复试探**，直接使用以下已知路径：
+
+```bash
+export PATH="$HOME/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$HOME/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin:/opt/homebrew/bin:/usr/local/bin:$PATH"
+
+node: $HOME/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node
+pnpm: $HOME/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/pnpm
+gh:   /opt/homebrew/bin/gh
+```
+
+执行本仓库检查时，Agent 可直接在命令前注入上述 PATH，例如：
+
+```bash
+PATH="$HOME/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$HOME/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin:/opt/homebrew/bin:/usr/local/bin:$PATH" pnpm check:wechat
+```
+
 ## 分层入口
 
 | 关注点      | 文档                                                                                                          |

@@ -1,7 +1,7 @@
 import { completeReminder, deleteReminder, fetchReminders, fetchTags } from '../../lib/api';
 import { loadAccountDay } from '../../lib/account-day';
 import { TODO_MODAL_CONFIRM_DANGER } from '../../lib/design-tokens';
-import type { ReminderSummary } from '../../lib/api';
+import type { ReminderSummary, TagSummary } from '../../lib/api';
 import {
   buildReminderSubline,
   formatDateTime,
@@ -36,6 +36,8 @@ interface ReminderView extends ReminderSummary {
   showEnableButton: boolean;
   showEnabledLabel: boolean;
   showAwaitingBadge: boolean;
+  visibleTags: TagSummary[];
+  hiddenTagCount: number;
 }
 
 interface ReminderGroup {
@@ -74,6 +76,7 @@ function enrichReminder(
     .map((c) => (c.handle ? c.handle : c.displayName))
     .join('、');
   const isOverdue = isOverdueDueAt(item.dueAt, completed);
+  const tags = item.tags || [];
 
   const base: ReminderView = {
     ...item,
@@ -98,6 +101,8 @@ function enrichReminder(
     showEnableButton: false,
     showEnabledLabel: false,
     showAwaitingBadge: false,
+    visibleTags: tags.slice(0, 2),
+    hiddenTagCount: Math.max(tags.length - 2, 0),
   };
 
   const notifyUi = deriveNotifyUi({

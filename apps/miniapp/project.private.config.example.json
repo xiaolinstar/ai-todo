@@ -4,6 +4,7 @@
   "libVersion": "3.15.0",
   "projectname": "ai-todo",
   "setting": {
+    "useCompilerPlugins": ["typescript", "sass"],
     "urlCheck": false,
     "compileHotReLoad": false,
     "minified": true,

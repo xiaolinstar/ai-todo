@@ -10,21 +10,21 @@
 .tag-chip-scroll {
   display: flex;
   flex-direction: row;
-  gap: 10rpx;
-  margin-top: 12rpx;
+  gap: 8rpx;
+  margin-top: 8rpx;
   white-space: nowrap;
 }
 
 .tag-filter-chip {
   display: inline-flex;
   align-items: center;
-  min-height: 44rpx;
-  padding: 0 18rpx;
+  min-height: 34rpx;
+  padding: 0 12rpx;
   border: 1rpx solid currentColor;
   border-radius: 999rpx;
   background: var(--todo-surface);
   color: var(--tag-color);
-  font-size: var(--todo-font-size-sm);
+  font-size: var(--todo-font-size-xs);
   font-weight: var(--todo-font-weight-semibold);
   line-height: 1;
 }
@@ -37,25 +37,28 @@
 
 .tag-strip {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8rpx 12rpx;
-  margin-top: 8rpx;
+  align-items: center;
+  gap: 10rpx;
+  height: 22rpx;
+  margin-top: 2rpx;
+  overflow: hidden;
+  white-space: nowrap;
 }
 
 .tag-token {
   display: inline-flex;
   align-items: center;
   max-width: 180rpx;
-  min-height: 26rpx;
+  height: 22rpx;
   color: var(--todo-text-subtle);
   font-size: var(--todo-font-size-xs);
-  line-height: 1.15;
+  line-height: 22rpx;
 }
 
 .tag-token-dot {
   flex-shrink: 0;
-  width: 9rpx;
-  height: 9rpx;
+  width: 7rpx;
+  height: 7rpx;
   margin-right: 6rpx;
   border-radius: 50%;
   background: var(--tag-color);
@@ -65,6 +68,13 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.tag-more {
+  flex-shrink: 0;
+  color: var(--todo-text-subtle);
+  font-size: var(--todo-font-size-xs);
+  line-height: 22rpx;
 }
 
 .segmented {

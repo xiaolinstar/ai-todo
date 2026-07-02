@@ -7,33 +7,31 @@
     </view>
     <view class="form-row stack">
       <text class="form-label">标签</text>
-      <view class="tag-editor">
-        <view wx:for="{{tagNames}}" wx:key="*this" class="tag-chip active">
-          <text>{{item}}</text>
-          <text class="tag-remove" data-name="{{item}}" bindtap="onRemoveTag">×</text>
+      <view wx:if="{{selectedTags.length > 0}}" class="selected-tag-row">
+        <view wx:for="{{selectedTags}}" wx:key="id" class="tag-choice selected" style="--tag-color: {{item.color}};" data-id="{{item.id}}" bindtap="onTagTap">
+          <text class="tag-choice-dot"></text>
+          <text class="tag-choice-name">{{item.name}}</text>
+          <text class="tag-choice-remove">×</text>
         </view>
-        <input
-          class="tag-input"
-          placeholder="添加标签"
-          value="{{tagInput}}"
-          maxlength="32"
-          bindinput="onTagInput"
-          bindconfirm="onAddTag"
-        />
       </view>
-      <view wx:if="{{tagSuggestions.length > 0}}" class="tag-suggestions">
-        <text
-          wx:for="{{tagSuggestions}}"
+      <view wx:if="{{tagOptions.length > 0}}" class="tag-choice-list">
+        <view
+          wx:for="{{tagOptions}}"
           wx:key="id"
-          class="tag-suggestion pressable"
-          style="border-color: {{item.color}}; color: {{item.color}};"
-          data-name="{{item.name}}"
-          bindtap="onPickTagSuggestion"
+          class="tag-choice pressable {{item.selected ? 'selected' : ''}}"
+          style="--tag-color: {{item.color}};"
+          data-id="{{item.id}}"
+          bindtap="onTagTap"
           hover-class="pressable-active"
         >
-          {{item.name}}
-        </text>
+          <text class="tag-choice-dot"></text>
+          <text class="tag-choice-name">{{item.name}}</text>
+        </view>
       </view>
+      <view wx:else class="tag-empty">
+        <text>暂无标签，请先在「我的」-「标签管理」添加。</text>
+      </view>
+      <text class="tag-limit-note">最多选择 3 个标签</text>
     </view>
     <view class="form-row" bindtap="toggleNotes">
       <text class="form-label">备注</text>

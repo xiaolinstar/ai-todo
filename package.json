@@ -16,7 +16,7 @@
     "test:api": "pnpm --filter @xiaolinstar/ai-todo-cli build && cd apps/api && .venv/bin/python -m pytest -q",
     "typecheck:wechat": "pnpm --filter @ai-todo/miniapp typecheck",
     "build:wechat:check": "pnpm --filter @ai-todo/miniapp build:check",
-    "clean:wechat": "pnpm --filter @ai-todo/miniapp clean",
+    "clean:wechat": "pnpm --filter @ai-todo/miniapp run clean",
     "check:wechat": "pnpm --filter @ai-todo/miniapp check",
     "miniapp:preview": "pnpm --filter @ai-todo/miniapp preview",
     "miniapp:upload": "echo 'miniapp CLI upload disabled; use WeChat DevTools' && exit 1",

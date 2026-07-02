@@ -11,6 +11,10 @@ import { combineDateTime, formatTrackDateLabel, splitIsoDateTime } from '../../l
 import { todoPageThemeData } from '../../lib/theme';
 import { loadWechatNotificationPrefs, enableWechatNotifyForTarget } from '../../lib/wechat-notify';
 
+interface TagOption extends TagSummary {
+  selected: boolean;
+}
+
 Page({
   data: {
     ...todoPageThemeData(),
@@ -22,9 +26,8 @@ Page({
     titleTextareaHeight: titleTextareaHeight(''),
     notes: '',
     notesExpanded: false,
-    tagNames: [] as string[],
-    tagInput: '',
-    tagSuggestions: [] as TagSummary[],
+    selectedTags: [] as TagSummary[],
+    tagOptions: [] as TagOption[],
     trackEntries: [] as ReminderTrackEntry[],
     trackInput: '',
     trackDatePrefix: '',
@@ -52,8 +55,13 @@ Page({
       return;
     }
     this.setData({ reminderId });
-    Promise.all([loadAccountDay(), fetchReminder(reminderId), loadWechatNotificationPrefs()])
-      .then(([account, response, prefs]) => {
+    Promise.all([
+      loadAccountDay(),
+      fetchReminder(reminderId),
+      loadWechatNotificationPrefs(),
+      fetchTags({ limit: 10 }),
+    ])
+      .then(([account, response, prefs, tagsResponse]) => {
         if (!response.ok || !response.data) {
           this.setData({ loading: false });
           wx.showToast({ title: response.error?.message || '加载失败', icon: 'none' });
@@ -65,6 +73,11 @@ Page({
         const hasDue = Boolean(reminder.dueAt);
         const tz = account.timezone;
         const { date, time } = splitIsoDateTime(reminder.dueAt, tz);
+        const selectedTags = reminder.tags || [];
+        const tagOptions = mergeTagOptions(
+          tagsResponse.ok && tagsResponse.data ? tagsResponse.data.items : [],
+          selectedTags,
+        );
         this._originalDueAt = reminder.dueAt || '';
         this.setData({
           loading: false,
@@ -77,7 +90,8 @@ Page({
           notesExpanded: Boolean(
             reminder.notes || (reminder.trackEntries && reminder.trackEntries.length > 0),
           ),
-          tagNames: (reminder.tags || []).map((tag) => tag.name),
+          selectedTags,
+          tagOptions: markTagOptions(tagOptions, selectedTags),
           trackEntries: reminder.trackEntries || [],
           trackDatePrefix: `${formatTrackDateLabel(tz)} `,
           sourceLabel: formatSourceLabel(reminder.source, reminder.externalId),
@@ -112,64 +126,29 @@ Page({
     this.setData({ notesExpanded: !this.data.notesExpanded });
   },
 
-  onTagInput(e: { detail: { value: string } }) {
-    const tagInput = e.detail.value;
-    this.setData({ tagInput });
-    const query = tagInput.trim();
-    if (!query) {
-      this.setData({ tagSuggestions: [] });
+  onTagTap(e: { currentTarget: { dataset: { id?: string } } }) {
+    const id = e.currentTarget.dataset.id || '';
+    if (!id) return;
+    const selectedTags = this.data.selectedTags as TagSummary[];
+    const existing = selectedTags.find((tag) => tag.id === id);
+    if (existing) {
+      const nextSelected = selectedTags.filter((tag) => tag.id !== id);
+      this.setData({
+        selectedTags: nextSelected,
+        tagOptions: markTagOptions(this.data.tagOptions, nextSelected),
+      });
       return;
     }
-    fetchTags({ q: query, limit: 8 }).then((response) => {
-      if (!response.ok || !response.data) {
-        return;
-      }
-      const existing = new Set(this.data.tagNames.map((name: string) => name.toLowerCase()));
-      const tagSuggestions = response.data.items.filter(
-        (tag) => !existing.has(tag.name.toLowerCase()),
-      );
-      this.setData({ tagSuggestions });
-    });
-  },
-
-  onAddTag() {
-    const name = this.data.tagInput.trim();
-    if (!name) {
-      return;
-    }
-    if (name.length > 32) {
-      wx.showToast({ title: '标签最多 32 字', icon: 'none' });
-      return;
-    }
-    if (this.data.tagNames.length >= 3) {
+    if (selectedTags.length >= 3) {
       wx.showToast({ title: '每条提醒最多 3 个标签', icon: 'none' });
       return;
     }
-    const normalized = name.toLowerCase();
-    if (this.data.tagNames.some((item: string) => item.toLowerCase() === normalized)) {
-      this.setData({ tagInput: '', tagSuggestions: [] });
-      return;
-    }
+    const picked = (this.data.tagOptions as TagOption[]).find((tag) => tag.id === id);
+    if (!picked) return;
+    const nextSelected = [...selectedTags, toTagSummary(picked)];
     this.setData({
-      tagNames: [...this.data.tagNames, name],
-      tagInput: '',
-      tagSuggestions: [],
-    });
-  },
-
-  onPickTagSuggestion(e: { currentTarget: { dataset: { name?: string } } }) {
-    const name = (e.currentTarget.dataset.name || '').trim();
-    if (!name) {
-      return;
-    }
-    this.setData({ tagInput: name });
-    this.onAddTag();
-  },
-
-  onRemoveTag(e: { currentTarget: { dataset: { name?: string } } }) {
-    const name = e.currentTarget.dataset.name || '';
-    this.setData({
-      tagNames: this.data.tagNames.filter((item: string) => item !== name),
+      selectedTags: nextSelected,
+      tagOptions: markTagOptions(this.data.tagOptions, nextSelected),
     });
   },
 
@@ -280,7 +259,7 @@ Page({
       status: this.data.status,
       wechatNotifyRequested: this.data.notifyEnabled,
       contactIds: this.data.selectedContacts.map((contact: ContactSummary) => contact.id),
-      tagNames: this.data.tagNames,
+      tagNames: this.data.selectedTags.map((tag: TagSummary) => tag.name),
     };
 
     let nextDueAt: string | null = null;
@@ -351,6 +330,25 @@ function formatContactLabel(contacts: ContactSummary[]): string {
     .map((contact) => contact.displayName)
     .join('、');
   return `${names}等 ${contacts.length} 人`;
+}
+
+function markTagOptions(options: TagSummary[], selected: TagSummary[]): TagOption[] {
+  const selectedIds = new Set(selected.map((tag) => tag.id));
+  return options.map((tag) => ({ ...tag, selected: selectedIds.has(tag.id) }));
+}
+
+function mergeTagOptions(options: TagSummary[], selected: TagSummary[]): TagSummary[] {
+  const optionIds = new Set(options.map((tag) => tag.id));
+  return [...options, ...selected.filter((tag) => !optionIds.has(tag.id))];
+}
+
+function toTagSummary(tag: TagSummary): TagSummary {
+  return {
+    id: tag.id,
+    name: tag.name,
+    color: tag.color,
+    usageCount: tag.usageCount,
+  };
 }
 
 function titleTextareaHeight(title: string): number {

@@ -36,35 +36,43 @@
   margin-top: 12rpx;
 }
 
-.tag-editor {
+.selected-tag-row,
+.tag-choice-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 12rpx;
-  margin-top: 12rpx;
+  gap: 10rpx 12rpx;
+  margin-top: 10rpx;
 }
 
-.tag-chip {
+.tag-choice {
   display: inline-flex;
   align-items: center;
-  gap: 8rpx;
-  padding: 8rpx 16rpx;
+  max-width: 220rpx;
+  min-height: 38rpx;
+  padding: 0 12rpx;
+  border: 1rpx solid var(--todo-border-subtle);
   border-radius: 999rpx;
-  background: var(--todo-fill-neutral-12);
-  color: var(--todo-text-muted);
-  font-size: var(--todo-font-size-md);
-}
-
-.tag-chip.active {
-  background: var(--todo-accent-soft);
-  color: var(--todo-accent);
-}
-
-.tag-remove {
-  font-size: var(--todo-font-size-lg);
+  background: var(--todo-surface);
+  color: var(--todo-text-subtle);
+  font-size: var(--todo-font-size-sm);
   line-height: 1;
 }
 
-.tag-input,
+.tag-choice.selected {
+  border-color: var(--tag-color);
+  background: var(--todo-fill-neutral-12);
+  color: var(--todo-text-primary);
+}
+
+.tag-choice-dot {
+  flex-shrink: 0;
+  width: 8rpx;
+  height: 8rpx;
+  margin-right: 8rpx;
+  border-radius: 50%;
+  background: var(--tag-color);
+}
+
 .track-input {
   flex: 1;
   min-width: 160rpx;
@@ -72,18 +80,23 @@
   font-size: var(--todo-font-size-md);
 }
 
-.tag-suggestions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12rpx;
-  margin-top: 12rpx;
+.tag-choice-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.tag-suggestion {
-  padding: 6rpx 16rpx;
-  border: 2rpx solid currentColor;
-  border-radius: 999rpx;
-  background: var(--todo-surface);
+.tag-choice-remove {
+  margin-left: 8rpx;
+  color: var(--todo-text-subtle);
+  font-size: var(--todo-font-size-sm);
+  line-height: 1;
+}
+
+.tag-empty,
+.tag-limit-note {
+  margin-top: 8rpx;
+  color: var(--todo-text-subtle);
   font-size: var(--todo-font-size-sm);
 }
 

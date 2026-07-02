@@ -5,15 +5,18 @@ import { combineDateTime } from '../../lib/format';
 import { todoPageThemeData } from '../../lib/theme';
 import { loadWechatNotificationPrefs, requestReminderNotification } from '../../lib/wechat-notify';
 
+interface TagOption extends TagSummary {
+  selected: boolean;
+}
+
 Page({
   data: {
     ...todoPageThemeData(),
     title: '',
     notes: '',
     notesExpanded: false,
-    tagNames: [] as string[],
-    tagInput: '',
-    tagSuggestions: [] as TagSummary[],
+    selectedTags: [] as TagSummary[],
+    tagOptions: [] as TagOption[],
     hasDue: false,
     dueDate: '',
     dueTime: '',
@@ -40,6 +43,7 @@ Page({
         reminderTemplateId: prefs.reminderTemplateId,
       });
     });
+    this.loadTagOptions();
   },
 
   onTitleInput(e: { detail: { value: string } }) {
@@ -54,60 +58,40 @@ Page({
     this.setData({ notesExpanded: !this.data.notesExpanded });
   },
 
-  onTagInput(e: { detail: { value: string } }) {
-    const tagInput = e.detail.value;
-    this.setData({ tagInput });
-    const query = tagInput.trim();
-    if (!query) {
-      this.setData({ tagSuggestions: [] });
-      return;
-    }
-    fetchTags({ q: query, limit: 8 }).then((response) => {
+  loadTagOptions() {
+    fetchTags({ limit: 10 }).then((response) => {
       if (!response.ok || !response.data) {
         return;
       }
-      const existing = new Set(this.data.tagNames.map((name: string) => name.toLowerCase()));
-      const tagSuggestions = response.data.items.filter(
-        (tag) => !existing.has(tag.name.toLowerCase()),
-      );
-      this.setData({ tagSuggestions });
+      this.setData({
+        tagOptions: markTagOptions(response.data.items, this.data.selectedTags),
+      });
     });
   },
 
-  onAddTag() {
-    const name = this.data.tagInput.trim();
-    if (!name || name.length > 32) {
+  onTagTap(e: { currentTarget: { dataset: { id?: string } } }) {
+    const id = e.currentTarget.dataset.id || '';
+    if (!id) return;
+    const selectedTags = this.data.selectedTags as TagSummary[];
+    const existing = selectedTags.find((tag) => tag.id === id);
+    if (existing) {
+      const nextSelected = selectedTags.filter((tag) => tag.id !== id);
+      this.setData({
+        selectedTags: nextSelected,
+        tagOptions: markTagOptions(this.data.tagOptions, nextSelected),
+      });
       return;
     }
-    if (this.data.tagNames.length >= 3) {
+    if (selectedTags.length >= 3) {
       wx.showToast({ title: '每条提醒最多 3 个标签', icon: 'none' });
       return;
     }
-    const normalized = name.toLowerCase();
-    if (this.data.tagNames.some((item: string) => item.toLowerCase() === normalized)) {
-      this.setData({ tagInput: '', tagSuggestions: [] });
-      return;
-    }
+    const picked = (this.data.tagOptions as TagOption[]).find((tag) => tag.id === id);
+    if (!picked) return;
+    const nextSelected = [...selectedTags, toTagSummary(picked)];
     this.setData({
-      tagNames: [...this.data.tagNames, name],
-      tagInput: '',
-      tagSuggestions: [],
-    });
-  },
-
-  onPickTagSuggestion(e: { currentTarget: { dataset: { name?: string } } }) {
-    const name = (e.currentTarget.dataset.name || '').trim();
-    if (!name) {
-      return;
-    }
-    this.setData({ tagInput: name });
-    this.onAddTag();
-  },
-
-  onRemoveTag(e: { currentTarget: { dataset: { name?: string } } }) {
-    const name = e.currentTarget.dataset.name || '';
-    this.setData({
-      tagNames: this.data.tagNames.filter((item: string) => item !== name),
+      selectedTags: nextSelected,
+      tagOptions: markTagOptions(this.data.tagOptions, nextSelected),
     });
   },
 
@@ -165,8 +149,8 @@ Page({
     if (notes) {
       payload.notes = notes;
     }
-    if (this.data.tagNames.length > 0) {
-      payload.tagNames = this.data.tagNames;
+    if (this.data.selectedTags.length > 0) {
+      payload.tagNames = this.data.selectedTags.map((tag: TagSummary) => tag.name);
     }
     if (this.data.hasDue) {
       payload.dueAt = combineDateTime(
@@ -224,3 +208,17 @@ Page({
     }
   },
 });
+
+function markTagOptions(options: TagSummary[], selected: TagSummary[]): TagOption[] {
+  const selectedIds = new Set(selected.map((tag) => tag.id));
+  return options.map((tag) => ({ ...tag, selected: selectedIds.has(tag.id) }));
+}
+
+function toTagSummary(tag: TagSummary): TagSummary {
+  return {
+    id: tag.id,
+    name: tag.name,
+    color: tag.color,
+    usageCount: tag.usageCount,
+  };
+}

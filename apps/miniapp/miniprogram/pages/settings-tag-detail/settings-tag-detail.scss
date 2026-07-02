@@ -1,0 +1,80 @@
+@use '../../styles/mine-subpage.scss';
+
+.tag-preview {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 18rpx 8rpx 8rpx;
+}
+
+.tag-preview-dot {
+  flex-shrink: 0;
+  width: 24rpx;
+  height: 24rpx;
+  border-radius: 50%;
+}
+
+.tag-preview-name {
+  overflow: hidden;
+  color: var(--todo-text-primary);
+  font-size: 34rpx;
+  font-weight: var(--todo-font-weight-semibold);
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tag-name-input {
+  width: 100%;
+  min-height: 48rpx;
+  color: var(--todo-text-primary);
+  font-size: var(--todo-font-size-lg);
+  text-align: right;
+}
+
+.palette-card {
+  padding: 24rpx;
+}
+
+.palette-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 22rpx;
+}
+
+.color-choice {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 74rpx;
+  height: 74rpx;
+  border: 6rpx solid var(--todo-surface);
+  border-radius: 50%;
+  box-shadow: 0 0 0 1rpx rgba(0, 0, 0, 0.12);
+}
+
+.color-choice.selected {
+  box-shadow:
+    0 0 0 1rpx rgba(0, 0, 0, 0.12),
+    0 0 0 6rpx var(--todo-fill-primary-12);
+}
+
+.color-check {
+  color: var(--todo-text-inverse);
+  font-size: 36rpx;
+  font-weight: var(--todo-font-weight-bold);
+}
+
+.save-button {
+  width: 100%;
+  margin-top: 32rpx;
+}
+
+.delete-button {
+  width: 100%;
+  margin-top: 20rpx;
+  border-radius: 18rpx;
+  background: var(--todo-fill-danger-12);
+  color: var(--todo-danger);
+  font-size: var(--todo-font-size-lg);
+}

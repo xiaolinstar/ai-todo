@@ -37,7 +37,7 @@
         bindtap="onTagChipTap"
         hover-class="pressable-active"
       >
-        {{item.name}}
+        #{{item.name}}
       </view>
     </scroll-view>
   </view>
@@ -95,9 +95,9 @@
           <view class="cell-body compact">
             <view class="cell-title">{{item.title}}</view>
             <view wx:if="{{item.subline}}" class="cell-subline">{{item.subline}}</view>
-            <view wx:if="{{showTagsInList && item.tags.length > 0}}" class="tag-strip">
+            <view wx:if="{{showTagsInList && item.visibleTags.length > 0}}" class="tag-strip">
               <view
-                wx:for="{{item.tags}}"
+                wx:for="{{item.visibleTags}}"
                 wx:for-item="tag"
                 wx:key="id"
                 class="tag-token"
@@ -106,6 +106,7 @@
                 <text class="tag-token-dot"></text>
                 <text class="tag-token-name">{{tag.name}}</text>
               </view>
+              <text wx:if="{{item.hiddenTagCount > 0}}" class="tag-more">+{{item.hiddenTagCount}}</text>
             </view>
           </view>
         </view>
@@ -174,9 +175,9 @@
                   >
                     {{item.subline}}
                   </view>
-                  <view wx:if="{{showTagsInList && item.tags.length > 0}}" class="tag-strip">
+                  <view wx:if="{{showTagsInList && item.visibleTags.length > 0}}" class="tag-strip">
                     <view
-                      wx:for="{{item.tags}}"
+                      wx:for="{{item.visibleTags}}"
                       wx:for-item="tag"
                       wx:key="id"
                       class="tag-token"
@@ -185,6 +186,7 @@
                       <text class="tag-token-dot"></text>
                       <text class="tag-token-name">{{tag.name}}</text>
                     </view>
+                    <text wx:if="{{item.hiddenTagCount > 0}}" class="tag-more">+{{item.hiddenTagCount}}</text>
                   </view>
                   <view wx:if="{{item.showAwaitingBadge || item.showEnableButton || item.showEnabledLabel}}" class="cell-subline notify-row">
                     <text wx:if="{{item.showAwaitingBadge}}" class="notify-badge">待开启提醒</text>
@@ -266,9 +268,9 @@
                   >
                     {{item.subline}}
                   </view>
-                  <view wx:if="{{showTagsInList && item.tags.length > 0}}" class="tag-strip">
+                  <view wx:if="{{showTagsInList && item.visibleTags.length > 0}}" class="tag-strip">
                     <view
-                      wx:for="{{item.tags}}"
+                      wx:for="{{item.visibleTags}}"
                       wx:for-item="tag"
                       wx:key="id"
                       class="tag-token"
@@ -277,6 +279,7 @@
                       <text class="tag-token-dot"></text>
                       <text class="tag-token-name">{{tag.name}}</text>
                     </view>
+                    <text wx:if="{{item.hiddenTagCount > 0}}" class="tag-more">+{{item.hiddenTagCount}}</text>
                   </view>
                   <view wx:if="{{item.showAwaitingBadge || item.showEnableButton || item.showEnabledLabel}}" class="cell-subline notify-row">
                     <text wx:if="{{item.showAwaitingBadge}}" class="notify-badge">待开启提醒</text>
@@ -346,9 +349,9 @@
                   <view wx:if="{{item.sourceLabel}}" class="source-badge muted">{{item.sourceLabel}}</view>
                 </view>
                 <view wx:if="{{item.subline}}" class="cell-subline">{{item.subline}}</view>
-                <view wx:if="{{showTagsInList && item.tags.length > 0}}" class="tag-strip">
+                <view wx:if="{{showTagsInList && item.visibleTags.length > 0}}" class="tag-strip">
                   <view
-                    wx:for="{{item.tags}}"
+                    wx:for="{{item.visibleTags}}"
                     wx:for-item="tag"
                     wx:key="id"
                     class="tag-token"
@@ -357,6 +360,7 @@
                     <text class="tag-token-dot"></text>
                     <text class="tag-token-name">{{tag.name}}</text>
                   </view>
+                  <text wx:if="{{item.hiddenTagCount > 0}}" class="tag-more">+{{item.hiddenTagCount}}</text>
                 </view>
               </view>
             </view>
