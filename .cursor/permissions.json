@@ -39,8 +39,9 @@
       "git status, git diff, git log, and gh run view for inspecting CI are fine."
     ],
     "block_instructions": [
-      "Do not auto-run git push, git commit, pnpm publish, docker push, deploy scripts, or rm -rf without approval.",
+      "Do not auto-run git push, git commit, pnpm publish, docker push, deploy scripts, or rm -rf without explicit user request and approval.",
       "Do not auto-run commands that modify production databases or remote infrastructure.",
+      "Do not edit gitignored env files (.env, .env.production, etc.) or ~/.config/xiaolinstar/; only *.example and docs/env/ in repos.",
       "Do not auto-run CD deploy, docker push, or miniapp upload against production."
     ]
   }

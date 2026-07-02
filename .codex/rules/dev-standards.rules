@@ -65,6 +65,12 @@ prefix_rule(pattern = ["pnpm","test:api"], decision = "allow", justification = "
 
 prefix_rule(pattern = ["rm","-rf"], decision = "forbidden", justification = "dev-standards deny tier")
 
-prefix_rule(pattern = ["git","push"], decision = "forbidden", justification = "dev-standards deny tier")
+prefix_rule(pattern = [">",".env"], decision = "forbidden", justification = "dev-standards deny tier")
+
+prefix_rule(pattern = ["tee",".env"], decision = "forbidden", justification = "dev-standards deny tier")
+
+prefix_rule(pattern = ["vim",".env"], decision = "forbidden", justification = "dev-standards deny tier")
+
+prefix_rule(pattern = ["nano",".env"], decision = "forbidden", justification = "dev-standards deny tier")
 
 prefix_rule(pattern = ["pnpm","publish"], decision = "forbidden", justification = "dev-standards deny tier")
