@@ -6,7 +6,7 @@ const PROFILE_SETUP_PREFIX = 'profileSetupSeen:';
 export const PRODUCTION_API_URL = 'https://xingxiaolin.cn';
 /** 预发布 / 体验版 API（经 xiaolin-gateway 反代，宿主机 :8083） */
 export const STAGING_API_URL = 'https://staging.xingxiaolin.cn';
-export const LOCAL_API_URL = 'http://127.0.0.1:3100';
+export const LOCAL_API_URL = 'http://localhost:8880';
 
 const LEGACY_PRODUCTION_API_URL = 'https://www.xingxiaolin.cn';
 
@@ -36,7 +36,7 @@ export function isTrialEnv(): boolean {
 /** True when running inside WeChat DevTools simulator (platform === devtools). */
 export function isDevtoolsSimulator(): boolean {
   try {
-    const platform = wx.getSystemInfoSync().platform;
+    const platform = wx.getDeviceInfo().platform;
     return typeof platform === 'string' && platform.toLowerCase() === 'devtools';
   } catch {
     return false;
@@ -76,11 +76,8 @@ function resolveDevelopApiUrl(): string {
   if (!isDevtoolsSimulator()) {
     return STAGING_API_URL;
   }
-  const stored = readStorageString(STORAGE_API_URL);
-  if (!stored || isCanonicalRemoteApiUrl(stored)) {
-    return LOCAL_API_URL;
-  }
-  return stored;
+  // 本地开发模拟器调试时，强制返回最新 LOCAL_API_URL 避免 storage 缓存失效问题
+  return LOCAL_API_URL;
 }
 
 /** Stable storage bucket per API base so trial/release/develop do not share tokens. */

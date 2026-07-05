@@ -238,15 +238,18 @@ MVP 中 `Contact` 是个人通讯录对象，不做企业组织架构。
 
 ### Tag
 
-轻量标签，用户级词表；v0.8.7 起用于 Reminder 搜索与筛选。
+轻量标签，用户级词表；v0.8.7 起用于 Reminder 搜索与筛选。当前每个用户最多 50 个标签，每条提醒最多 5 个标签。
 
-| 字段              | 类型     | 说明                     |
-| ----------------- | -------- | ------------------------ |
-| `id`              | string   | 标签 ID                  |
-| `user_id`         | string   | 归属用户                 |
-| `name`            | string   | 展示名（≤32 字）         |
-| `normalized_name` | string   | 归一化名（trim + lower） |
-| `created_at`      | datetime | 创建时间                 |
+| 字段              | 类型      | 说明                     |
+| ----------------- | --------- | ------------------------ |
+| `id`              | string    | 标签 ID                  |
+| `user_id`         | string    | 归属用户                 |
+| `name`            | string    | 展示名（≤32 字）         |
+| `normalized_name` | string    | 归一化名（trim + lower） |
+| `color`           | string    | 受控调色板颜色           |
+| `last_used_at`    | datetime? | 最近关联到提醒的时间     |
+| `created_at`      | datetime  | 创建时间                 |
+| `updated_at`      | datetime  | 最近编辑时间             |
 
 唯一约束：`user_id + normalized_name`。
 

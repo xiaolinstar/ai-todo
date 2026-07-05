@@ -25,11 +25,13 @@
 }
 
 .tag-name-input {
-  width: 100%;
+  flex: 1;
+  min-width: 0;
   min-height: 48rpx;
   color: var(--todo-text-primary);
   font-size: var(--todo-font-size-lg);
   text-align: right;
+  margin-left: 20rpx;
 }
 
 .palette-card {
@@ -39,7 +41,7 @@
 .palette-grid {
   display: flex;
   flex-wrap: wrap;
-  gap: 22rpx;
+  gap: 24rpx 22rpx;
 }
 
 .color-choice {
@@ -50,13 +52,13 @@
   height: 74rpx;
   border: 6rpx solid var(--todo-surface);
   border-radius: 50%;
-  box-shadow: 0 0 0 1rpx rgba(0, 0, 0, 0.12);
+  box-shadow: 0 0 0 2rpx var(--todo-border-subtle);
+  transition: all 0.15s ease-out;
 }
 
 .color-choice.selected {
-  box-shadow:
-    0 0 0 1rpx rgba(0, 0, 0, 0.12),
-    0 0 0 6rpx var(--todo-fill-primary-12);
+  transform: scale(1.08);
+  box-shadow: 0 0 0 5rpx currentColor;
 }
 
 .color-check {
@@ -71,10 +73,13 @@
 }
 
 .delete-button {
-  width: 100%;
   margin-top: 20rpx;
-  border-radius: 18rpx;
-  background: var(--todo-fill-danger-12);
-  color: var(--todo-danger);
-  font-size: var(--todo-font-size-lg);
+  background: var(--todo-fill-danger-08) !important;
+  color: var(--todo-danger) !important;
+  font-weight: var(--todo-font-weight-semibold);
+  transition: all 0.12s ease;
+
+  &:active {
+    background: var(--todo-fill-danger-12) !important;
+  }
 }

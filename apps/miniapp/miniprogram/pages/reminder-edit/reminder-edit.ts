@@ -1,6 +1,7 @@
 import { loadAccountDay } from '../../lib/account-day';
 import {
   addReminderTrackEntry,
+  createTag,
   fetchReminder,
   fetchTags,
   formatApiErrorMessage,
@@ -27,7 +28,10 @@ Page({
     notes: '',
     notesExpanded: false,
     selectedTags: [] as TagSummary[],
+    allTagOptions: [] as TagSummary[],
     tagOptions: [] as TagOption[],
+    tagInput: '',
+    tagCreating: false,
     trackEntries: [] as ReminderTrackEntry[],
     trackInput: '',
     trackDatePrefix: '',
@@ -59,7 +63,7 @@ Page({
       loadAccountDay(),
       fetchReminder(reminderId),
       loadWechatNotificationPrefs(),
-      fetchTags({ limit: 10 }),
+      fetchTags({ limit: 50 }),
     ])
       .then(([account, response, prefs, tagsResponse]) => {
         if (!response.ok || !response.data) {
@@ -91,7 +95,8 @@ Page({
             reminder.notes || (reminder.trackEntries && reminder.trackEntries.length > 0),
           ),
           selectedTags,
-          tagOptions: markTagOptions(tagOptions, selectedTags),
+          allTagOptions: tagOptions,
+          tagOptions: markTagOptions(filterTagOptions(tagOptions, selectedTags, ''), selectedTags),
           trackEntries: reminder.trackEntries || [],
           trackDatePrefix: `${formatTrackDateLabel(tz)} `,
           sourceLabel: formatSourceLabel(reminder.source, reminder.externalId),
@@ -135,12 +140,15 @@ Page({
       const nextSelected = selectedTags.filter((tag) => tag.id !== id);
       this.setData({
         selectedTags: nextSelected,
-        tagOptions: markTagOptions(this.data.tagOptions, nextSelected),
+        tagOptions: markTagOptions(
+          filterTagOptions(this.data.allTagOptions, nextSelected, this.data.tagInput),
+          nextSelected,
+        ),
       });
       return;
     }
-    if (selectedTags.length >= 3) {
-      wx.showToast({ title: '每条提醒最多 3 个标签', icon: 'none' });
+    if (selectedTags.length >= 5) {
+      wx.showToast({ title: '每条提醒最多 5 个标签', icon: 'none' });
       return;
     }
     const picked = (this.data.tagOptions as TagOption[]).find((tag) => tag.id === id);
@@ -148,8 +156,62 @@ Page({
     const nextSelected = [...selectedTags, toTagSummary(picked)];
     this.setData({
       selectedTags: nextSelected,
-      tagOptions: markTagOptions(this.data.tagOptions, nextSelected),
+      tagOptions: markTagOptions(
+        filterTagOptions(this.data.allTagOptions, nextSelected, this.data.tagInput),
+        nextSelected,
+      ),
     });
+  },
+
+  onTagInput(e: { detail: { value: string } }) {
+    const tagInput = e.detail.value;
+    this.setData({
+      tagInput,
+      tagOptions: markTagOptions(
+        filterTagOptions(this.data.allTagOptions, this.data.selectedTags, tagInput),
+        this.data.selectedTags,
+      ),
+    });
+  },
+
+  onCreateTagFromInput() {
+    const name = this.data.tagInput.trim();
+    if (!name) {
+      wx.showToast({ title: '请输入标签名称', icon: 'none' });
+      return;
+    }
+    if (this.data.selectedTags.length >= 5) {
+      wx.showToast({ title: '每条提醒最多 5 个标签', icon: 'none' });
+      return;
+    }
+    this.setData({ tagCreating: true });
+    createTag({ name })
+      .then((response) => {
+        this.setData({ tagCreating: false });
+        if (!response.ok || !response.data) {
+          wx.showToast({
+            title: formatApiErrorMessage(response.error, '创建标签失败'),
+            icon: 'none',
+          });
+          return;
+        }
+        const tag = response.data.tag;
+        const selectedTags = mergeSelectedTag(this.data.selectedTags, tag);
+        const allTagOptions = mergeTagOptions(this.data.allTagOptions, [tag]);
+        this.setData({
+          tagInput: '',
+          allTagOptions,
+          selectedTags,
+          tagOptions: markTagOptions(
+            filterTagOptions(allTagOptions, selectedTags, ''),
+            selectedTags,
+          ),
+        });
+      })
+      .catch(() => {
+        this.setData({ tagCreating: false });
+        wx.showToast({ title: '网络错误', icon: 'none' });
+      });
   },
 
   onTrackInput(e: { detail: { value: string } }) {
@@ -342,12 +404,35 @@ function mergeTagOptions(options: TagSummary[], selected: TagSummary[]): TagSumm
   return [...options, ...selected.filter((tag) => !optionIds.has(tag.id))];
 }
 
+function filterTagOptions(
+  options: TagSummary[],
+  selected: TagSummary[],
+  query: string,
+): TagSummary[] {
+  const merged = mergeTagOptions(options, selected);
+  const cleaned = query.trim().toLowerCase();
+  if (!cleaned) {
+    return merged;
+  }
+  return merged.filter((tag) => tag.name.toLowerCase().includes(cleaned));
+}
+
+function mergeSelectedTag(selected: TagSummary[], next: TagSummary): TagSummary[] {
+  if (selected.some((tag) => tag.id === next.id)) {
+    return selected;
+  }
+  return [...selected, next];
+}
+
 function toTagSummary(tag: TagSummary): TagSummary {
   return {
     id: tag.id,
     name: tag.name,
     color: tag.color,
     usageCount: tag.usageCount,
+    createdAt: tag.createdAt,
+    updatedAt: tag.updatedAt,
+    lastUsedAt: tag.lastUsedAt,
   };
 }
 

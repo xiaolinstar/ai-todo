@@ -132,7 +132,7 @@ export async function runReminderList(ctx: CliContext, argv: string[]): Promise<
       status,
       source: readFlagValue(argv, "--source"),
       q: readFlagValue(argv, "--q"),
-      tag: readFlagValue(argv, "--tag"),
+      tags: readRepeatedFlag(argv, "--tag"),
       from: readFlagValue(argv, "--from"),
       to: readFlagValue(argv, "--to"),
       limit,

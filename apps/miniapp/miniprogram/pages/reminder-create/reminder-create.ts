@@ -1,5 +1,5 @@
 import { loadAccountDay } from '../../lib/account-day';
-import { createReminder, fetchTags } from '../../lib/api';
+import { createReminder, createTag, fetchTags } from '../../lib/api';
 import type { ContactSummary, TagSummary } from '../../lib/api';
 import { combineDateTime } from '../../lib/format';
 import { todoPageThemeData } from '../../lib/theme';
@@ -16,7 +16,10 @@ Page({
     notes: '',
     notesExpanded: false,
     selectedTags: [] as TagSummary[],
+    allTagOptions: [] as TagSummary[],
     tagOptions: [] as TagOption[],
+    tagInput: '',
+    tagCreating: false,
     hasDue: false,
     dueDate: '',
     dueTime: '',
@@ -59,12 +62,16 @@ Page({
   },
 
   loadTagOptions() {
-    fetchTags({ limit: 10 }).then((response) => {
+    fetchTags({ limit: 50 }).then((response) => {
       if (!response.ok || !response.data) {
         return;
       }
       this.setData({
-        tagOptions: markTagOptions(response.data.items, this.data.selectedTags),
+        allTagOptions: response.data.items,
+        tagOptions: markTagOptions(
+          filterTagOptions(response.data.items, this.data.selectedTags, ''),
+          this.data.selectedTags,
+        ),
       });
     });
   },
@@ -78,12 +85,15 @@ Page({
       const nextSelected = selectedTags.filter((tag) => tag.id !== id);
       this.setData({
         selectedTags: nextSelected,
-        tagOptions: markTagOptions(this.data.tagOptions, nextSelected),
+        tagOptions: markTagOptions(
+          filterTagOptions(this.data.allTagOptions, nextSelected, this.data.tagInput),
+          nextSelected,
+        ),
       });
       return;
     }
-    if (selectedTags.length >= 3) {
-      wx.showToast({ title: '每条提醒最多 3 个标签', icon: 'none' });
+    if (selectedTags.length >= 5) {
+      wx.showToast({ title: '每条提醒最多 5 个标签', icon: 'none' });
       return;
     }
     const picked = (this.data.tagOptions as TagOption[]).find((tag) => tag.id === id);
@@ -91,8 +101,59 @@ Page({
     const nextSelected = [...selectedTags, toTagSummary(picked)];
     this.setData({
       selectedTags: nextSelected,
-      tagOptions: markTagOptions(this.data.tagOptions, nextSelected),
+      tagOptions: markTagOptions(
+        filterTagOptions(this.data.allTagOptions, nextSelected, this.data.tagInput),
+        nextSelected,
+      ),
     });
+  },
+
+  onTagInput(e: { detail: { value: string } }) {
+    const tagInput = e.detail.value;
+    this.setData({
+      tagInput,
+      tagOptions: markTagOptions(
+        filterTagOptions(this.data.allTagOptions, this.data.selectedTags, tagInput),
+        this.data.selectedTags,
+      ),
+    });
+  },
+
+  onCreateTagFromInput() {
+    const name = this.data.tagInput.trim();
+    if (!name) {
+      wx.showToast({ title: '请输入标签名称', icon: 'none' });
+      return;
+    }
+    if (this.data.selectedTags.length >= 5) {
+      wx.showToast({ title: '每条提醒最多 5 个标签', icon: 'none' });
+      return;
+    }
+    this.setData({ tagCreating: true });
+    createTag({ name })
+      .then((response) => {
+        this.setData({ tagCreating: false });
+        if (!response.ok || !response.data) {
+          wx.showToast({ title: response.error?.message || '创建标签失败', icon: 'none' });
+          return;
+        }
+        const tag = response.data.tag;
+        const selectedTags = mergeSelectedTag(this.data.selectedTags, tag);
+        const allTagOptions = mergeTagOptions(this.data.allTagOptions, [tag]);
+        this.setData({
+          tagInput: '',
+          allTagOptions,
+          selectedTags,
+          tagOptions: markTagOptions(
+            filterTagOptions(allTagOptions, selectedTags, ''),
+            selectedTags,
+          ),
+        });
+      })
+      .catch(() => {
+        this.setData({ tagCreating: false });
+        wx.showToast({ title: '网络错误', icon: 'none' });
+      });
   },
 
   onDueToggle(e: { detail: { value: boolean } }) {
@@ -214,11 +275,39 @@ function markTagOptions(options: TagSummary[], selected: TagSummary[]): TagOptio
   return options.map((tag) => ({ ...tag, selected: selectedIds.has(tag.id) }));
 }
 
+function mergeTagOptions(options: TagSummary[], selected: TagSummary[]): TagSummary[] {
+  const optionIds = new Set(options.map((tag) => tag.id));
+  return [...options, ...selected.filter((tag) => !optionIds.has(tag.id))];
+}
+
+function mergeSelectedTag(selected: TagSummary[], next: TagSummary): TagSummary[] {
+  if (selected.some((tag) => tag.id === next.id)) {
+    return selected;
+  }
+  return [...selected, next];
+}
+
+function filterTagOptions(
+  options: TagSummary[],
+  selected: TagSummary[],
+  query: string,
+): TagSummary[] {
+  const merged = mergeTagOptions(options, selected);
+  const cleaned = query.trim().toLowerCase();
+  if (!cleaned) {
+    return merged;
+  }
+  return merged.filter((tag) => tag.name.toLowerCase().includes(cleaned));
+}
+
 function toTagSummary(tag: TagSummary): TagSummary {
   return {
     id: tag.id,
     name: tag.name,
     color: tag.color,
     usageCount: tag.usageCount,
+    createdAt: tag.createdAt,
+    updatedAt: tag.updatedAt,
+    lastUsedAt: tag.lastUsedAt,
   };
 }

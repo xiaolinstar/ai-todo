@@ -40,17 +40,48 @@
 }
 
 .color-dot {
-  width: 44rpx;
-  height: 44rpx;
+  width: 48rpx;
+  height: 48rpx;
   border: 4rpx solid var(--todo-surface);
   border-radius: 50%;
-  box-shadow: 0 0 0 1rpx rgba(0, 0, 0, 0.12);
+  box-shadow: 0 0 0 2rpx var(--todo-border-subtle);
+  transition: all 0.15s ease-out;
 }
 
 .color-dot.selected {
-  box-shadow:
-    0 0 0 1rpx rgba(0, 0, 0, 0.12),
-    0 0 0 4rpx var(--todo-fill-primary-12);
+  transform: scale(1.1);
+  box-shadow: 0 0 0 4rpx currentColor;
+}
+
+.tag-tools {
+  padding: 20rpx 24rpx;
+}
+
+.tag-sort-row {
+  display: flex;
+  gap: 12rpx;
+  margin-top: 16rpx;
+}
+
+.tag-sort-chip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34rpx;
+  padding: 2rpx 14rpx;
+  border: 1rpx solid var(--todo-border-subtle);
+  border-radius: 6rpx;
+  background: var(--todo-surface);
+  color: var(--todo-text-secondary);
+  font-size: var(--todo-font-size-sm);
+  transition: all 0.15s ease;
+}
+
+.tag-sort-chip.active {
+  border-color: var(--todo-primary);
+  background: var(--todo-fill-primary-10);
+  color: var(--todo-primary);
+  font-weight: var(--todo-font-weight-semibold);
 }
 
 .empty-card {
@@ -60,8 +91,8 @@
 .tag-row {
   display: flex;
   align-items: center;
-  min-height: 88rpx;
-  padding: 0 20rpx;
+  padding: 24rpx 28rpx;
+  background: var(--todo-surface);
 }
 
 .tag-row + .tag-row {

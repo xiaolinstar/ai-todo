@@ -7,6 +7,10 @@
     </view>
     <view class="form-row stack">
       <text class="form-label">标签</text>
+      <view class="tag-create-inline">
+        <input class="tag-inline-input" placeholder="搜索或新建标签" maxlength="32" value="{{tagInput}}" bindinput="onTagInput" bindconfirm="onCreateTagFromInput" />
+        <button class="todo-button todo-button-ghost todo-button-sm" size="mini" loading="{{tagCreating}}" disabled="{{!tagInput}}" bindtap="onCreateTagFromInput">添加</button>
+      </view>
       <view wx:if="{{selectedTags.length > 0}}" class="selected-tag-row">
         <view wx:for="{{selectedTags}}" wx:key="id" class="tag-choice selected" style="--tag-color: {{item.color}};" data-id="{{item.id}}" bindtap="onTagTap">
           <text class="tag-choice-dot"></text>
@@ -29,9 +33,9 @@
         </view>
       </view>
       <view wx:else class="tag-empty">
-        <text>暂无标签，请先在「我的」-「标签管理」添加。</text>
+        <text>{{tagInput ? '按右侧 “添加” 以新建此标签。' : '暂无标签，可在上方输入后添加。'}}</text>
       </view>
-      <text class="tag-limit-note">最多选择 3 个标签</text>
+      <text class="tag-limit-note">最多选择 5 个标签</text>
     </view>
     <view class="form-row" bindtap="toggleNotes">
       <text class="form-label">备注</text>

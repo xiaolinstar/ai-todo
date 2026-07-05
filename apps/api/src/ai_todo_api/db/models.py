@@ -170,6 +170,7 @@ class TagModel(Base):
     name: Mapped[str] = mapped_column(String(32), nullable=False)
     normalized_name: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
     color: Mapped[str] = mapped_column(String(16), nullable=False, default="#007AFF")
+    last_used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 

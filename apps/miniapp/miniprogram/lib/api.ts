@@ -52,6 +52,9 @@ export interface TagSummary {
   name: string;
   color: string;
   usageCount?: number;
+  createdAt: string;
+  updatedAt: string;
+  lastUsedAt?: string;
 }
 
 export interface ReminderTrackEntry {
@@ -380,11 +383,14 @@ export function fetchReminders(params: {
   );
 }
 
-export function fetchTags(params: { q?: string; limit?: number } = {}) {
+export function fetchTags(
+  params: { q?: string; limit?: number; sort?: 'usage' | 'name' | 'updated' } = {},
+) {
   return request<{ items: TagSummary[]; totalCount: number }>(
     `/v1/tags${buildQueryString({
       q: params.q,
       limit: params.limit !== undefined ? String(params.limit) : undefined,
+      sort: params.sort,
     })}`,
   );
 }

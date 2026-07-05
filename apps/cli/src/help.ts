@@ -20,7 +20,7 @@ Core:
 
 Reminders:
   ai-todo reminder create --title <text> [--due <iso>] [--remind <iso>] [--notes <text>] [--tag <name> ...] [--source <name>] [--external-id <id>]
-  ai-todo reminder list|ls [-a|--all] [--status pending|in_progress|completed|cancelled] [--sort due|created|completed|updated] [--q <query>] [--tag <name>] [--source <name>] [--from YYYY-MM-DD] [--to YYYY-MM-DD] [--limit <n>] [--cursor <token>]
+  ai-todo reminder list|ls [-a|--all] [--status pending|in_progress|completed|cancelled] [--sort due|created|completed|updated] [--q <query>] [--tag <name> ...] [--source <name>] [--from YYYY-MM-DD] [--to YYYY-MM-DD] [--limit <n>] [--cursor <token>]
   ai-todo reminder find --source <name> --external-id <id>
   ai-todo reminder show|inspect|done|delete <id_or_prefix>
   ai-todo reminder done|delete --source <name> --external-id <id>
@@ -33,6 +33,12 @@ Reminders:
   Reminder table IDs omit the rem_ prefix. Use 4+ characters, e.g. ai-todo reminder inspect c1f6.
   Use --json for full machine-readable output.
   WeChat push reminders: not available when creating via CLI/Agent — enable in the WeChat miniapp.
+
+Tags:
+  ai-todo tag list [--q <query>] [--sort usage|name|updated] [--limit <n>]
+  ai-todo tag create --name <text> [--color <palette_color>]
+  ai-todo tag update <id> [--name <text>] [--color <palette_color>]
+  ai-todo tag delete <id>
 
 Calendar:
   ai-todo calendar today|list|add|show|update|delete ...

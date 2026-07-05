@@ -28,7 +28,7 @@ Page({
 
   loadTag() {
     this.setData({ loading: true });
-    fetchTags({ limit: 10 })
+    fetchTags({ limit: 50 })
       .then((response) => {
         if (!response.ok || !response.data) {
           this.setData({ loading: false });

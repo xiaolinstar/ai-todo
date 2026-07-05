@@ -82,6 +82,9 @@ declare const wx: {
   getWindowInfo(): {
     windowWidth: number;
   };
+  getDeviceInfo(): {
+    platform: string;
+  };
   getSystemInfoSync(): {
     platform: string;
   };

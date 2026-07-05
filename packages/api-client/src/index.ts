@@ -136,6 +136,13 @@ export class AiTodoClient {
     if (params.tag) {
       search.set("tag", params.tag);
     }
+    if (params.tags) {
+      for (const tag of params.tags) {
+        if (tag) {
+          search.append("tag", tag);
+        }
+      }
+    }
     if (params.from) {
       search.set("from", params.from);
     }
@@ -237,6 +244,9 @@ export class AiTodoClient {
     if (params.limit !== undefined) {
       search.set("limit", String(params.limit));
     }
+    if (params.sort) {
+      search.set("sort", params.sort);
+    }
     const query = search.toString();
     return this.request<TagListResult>(`/v1/tags${query ? `?${query}` : ""}`);
   }
@@ -248,17 +258,26 @@ export class AiTodoClient {
     });
   }
 
-  updateTag(tagId: string, input: UpdateTagInput): Promise<ApiResponse<TagDetailResult>> {
-    return this.request<TagDetailResult>(`/v1/tags/${encodeURIComponent(tagId)}`, {
-      method: "PATCH",
-      body: JSON.stringify(input),
-    });
+  updateTag(
+    tagId: string,
+    input: UpdateTagInput,
+  ): Promise<ApiResponse<TagDetailResult>> {
+    return this.request<TagDetailResult>(
+      `/v1/tags/${encodeURIComponent(tagId)}`,
+      {
+        method: "PATCH",
+        body: JSON.stringify(input),
+      },
+    );
   }
 
   deleteTag(tagId: string): Promise<ApiResponse<DeleteTagResult>> {
-    return this.request<DeleteTagResult>(`/v1/tags/${encodeURIComponent(tagId)}`, {
-      method: "DELETE",
-    });
+    return this.request<DeleteTagResult>(
+      `/v1/tags/${encodeURIComponent(tagId)}`,
+      {
+        method: "DELETE",
+      },
+    );
   }
 
   createCalendarEvent(

@@ -52,6 +52,13 @@ def test_list_reminders_search_by_q_and_tag(client: TestClient) -> None:
             "tagNames": [f"personal-{suffix}"],
         },
     )
+    client.post(
+        "/v1/reminders",
+        json={
+            "title": f"Both tags {suffix}",
+            "tagNames": [f"work-{suffix}", f"personal-{suffix}"],
+        },
+    )
 
     by_title = client.get("/v1/reminders", params={"q": f"Alpha task {suffix}"})
     assert by_title.status_code == 200
@@ -64,8 +71,17 @@ def test_list_reminders_search_by_q_and_tag(client: TestClient) -> None:
 
     by_tag = client.get("/v1/reminders", params={"tag": f"work-{suffix}"})
     assert by_tag.status_code == 200
-    assert len(by_tag.json()["data"]["items"]) == 1
-    assert by_tag.json()["data"]["items"][0]["title"] == f"Alpha task {suffix}"
+    assert {item["title"] for item in by_tag.json()["data"]["items"]} == {
+        f"Alpha task {suffix}",
+        f"Both tags {suffix}",
+    }
+
+    by_tags = client.get(
+        "/v1/reminders",
+        params=[("tag", f"work-{suffix}"), ("tag", f"personal-{suffix}")],
+    )
+    assert by_tags.status_code == 200
+    assert [item["title"] for item in by_tags.json()["data"]["items"]] == [f"Both tags {suffix}"]
 
 
 def test_add_track_entry(client: TestClient) -> None:
@@ -112,6 +128,26 @@ def test_list_tags(client: TestClient, demo_suffix: str) -> None:
     customer = next(item for item in items if item["name"] == tag_name)
     assert customer["usageCount"] == 1
     assert customer["color"].startswith("#")
+    assert customer["createdAt"]
+    assert customer["updatedAt"]
+    assert customer["lastUsedAt"]
+
+
+def test_list_tags_sorting(client: TestClient, demo_suffix: str) -> None:
+    popular = f"popular-{demo_suffix}"
+    rare = f"rare-{demo_suffix}"
+    client.post("/v1/reminders", json={"title": "常用 1", "tagNames": [popular]})
+    client.post("/v1/reminders", json={"title": "常用 2", "tagNames": [popular]})
+    client.post("/v1/reminders", json={"title": "低频", "tagNames": [rare]})
+
+    by_usage = client.get("/v1/tags", params={"q": demo_suffix, "sort": "usage"})
+    assert by_usage.status_code == 200
+    names = [item["name"] for item in by_usage.json()["data"]["items"]]
+    assert names.index(popular) < names.index(rare)
+
+    by_name = client.get("/v1/tags", params={"q": demo_suffix, "sort": "name"})
+    assert by_name.status_code == 200
+    assert [item["name"] for item in by_name.json()["data"]["items"]] == sorted(names)
 
 
 def test_manage_tag_name_color_and_delete(client: TestClient) -> None:
@@ -139,7 +175,7 @@ def test_manage_tag_name_color_and_delete(client: TestClient) -> None:
 def test_tag_limits(client: TestClient) -> None:
     response = client.post(
         "/v1/reminders",
-        json={"title": "标签过多", "tagNames": ["a", "b", "c", "d"]},
+        json={"title": "标签过多", "tagNames": ["a", "b", "c", "d", "e", "f"]},
     )
     assert response.status_code == 400
     assert response.json()["error"]["code"] == "VAL_INVALID_INPUT"
@@ -152,11 +188,11 @@ def test_user_tag_limit(client: TestClient) -> None:
         delete_response = client.delete(f"/v1/tags/{tag['id']}")
         assert delete_response.status_code == 200
 
-    for index in range(10):
+    for index in range(50):
         response = client.post("/v1/tags", json={"name": f"标签-{index}"})
         assert response.status_code == 201
 
-    overflow = client.post("/v1/tags", json={"name": "第十一个"})
+    overflow = client.post("/v1/tags", json={"name": "第五十一个"})
     assert overflow.status_code == 400
     assert overflow.json()["error"]["code"] == "VAL_INVALID_INPUT"
 

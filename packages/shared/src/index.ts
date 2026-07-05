@@ -178,6 +178,9 @@ export interface TagSummary {
   name: string;
   color: string;
   usageCount?: number;
+  createdAt: string;
+  updatedAt: string;
+  lastUsedAt?: string;
 }
 
 export interface ReminderTrackEntry {
@@ -271,6 +274,7 @@ export interface ListRemindersParams {
   source?: string;
   q?: string;
   tag?: string;
+  tags?: string[];
   from?: string;
   to?: string;
   limit?: number;
@@ -305,6 +309,7 @@ export interface DeleteTagResult {
 export interface ListTagsParams {
   q?: string;
   limit?: number;
+  sort?: "usage" | "name" | "updated";
 }
 
 export interface AddTrackEntryInput {

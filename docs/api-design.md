@@ -327,10 +327,22 @@ POST /v1/reminders/{reminder_id}/track-entries
 ### 标签词表
 
 ```http
-GET /v1/tags?q=客&limit=50
+GET /v1/tags?q=客&limit=50&sort=usage
 ```
 
-返回当前用户 tag 列表，供联想输入。
+返回当前用户 tag 列表，供联想输入与标签管理。`sort` 支持 `usage`（默认，使用数降序）、`updated`、`name`。
+
+提醒列表仍兼容单标签筛选：
+
+```http
+GET /v1/reminders?tag=客户
+```
+
+也支持重复 `tag` 参数做多标签 AND 筛选：
+
+```http
+GET /v1/reminders?tag=客户&tag=报价
+```
 
 ### 按来源反查提醒
 

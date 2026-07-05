@@ -64,7 +64,7 @@ class ReminderRepository:
         status: str | None = None,
         source: str | None = None,
         query: str | None = None,
-        tag: str | None = None,
+        tags: list[str] | None = None,
         limit: int = 50,
         cursor: str | None = None,
         sort: str = "created_at",
@@ -78,7 +78,7 @@ class ReminderRepository:
         if source:
             statement = statement.where(ReminderModel.source == source)
 
-        statement = _apply_search_filters(statement, query=query, tag=tag, user_id=self._user_id)
+        statement = _apply_search_filters(statement, query=query, tags=tags, user_id=self._user_id)
 
         reminder_ids = _distinct_reminder_ids(statement).subquery()
         total_count = int(self._session.scalar(select(func.count()).select_from(reminder_ids)) or 0)
@@ -119,7 +119,7 @@ class ReminderRepository:
         status: str | None = None,
         source: str | None = None,
         query: str | None = None,
-        tag: str | None = None,
+        tags: list[str] | None = None,
         sort: str = "due_at",
         limit: int | None = None,
     ) -> list[ReminderModel]:
@@ -132,7 +132,7 @@ class ReminderRepository:
         if source:
             statement = statement.where(ReminderModel.source == source)
 
-        statement = _apply_search_filters(statement, query=query, tag=tag, user_id=self._user_id)
+        statement = _apply_search_filters(statement, query=query, tags=tags, user_id=self._user_id)
         reminder_ids = _distinct_reminder_ids(statement).subquery()
         statement = select(ReminderModel).where(ReminderModel.id.in_(select(reminder_ids.c.id)))
 
@@ -167,7 +167,7 @@ class ReminderRepository:
         status: str | None = None,
         source: str | None = None,
         query: str | None = None,
-        tag: str | None = None,
+        tags: list[str] | None = None,
     ) -> int:
         statement = select(ReminderModel).where(
             ReminderModel.user_id == self._user_id,
@@ -177,7 +177,7 @@ class ReminderRepository:
             statement = statement.where(ReminderModel.status == status)
         if source:
             statement = statement.where(ReminderModel.source == source)
-        statement = _apply_search_filters(statement, query=query, tag=tag, user_id=self._user_id)
+        statement = _apply_search_filters(statement, query=query, tags=tags, user_id=self._user_id)
         reminder_ids = _distinct_reminder_ids(statement).subquery()
         return int(self._session.scalar(select(func.count()).select_from(reminder_ids)) or 0)
 
@@ -199,29 +199,30 @@ class ReminderRepository:
         return reminder
 
 
-def _apply_search_filters(statement, *, query: str | None, tag: str | None, user_id: str):
+def _apply_search_filters(statement, *, query: str | None, tags: list[str] | None, user_id: str):
     cleaned_query = query.strip() if query else None
-    tag_joined = False
 
-    if tag:
-        normalized = normalize_tag_name(tag)
-        statement = (
-            statement.join(ReminderTagModel, ReminderTagModel.reminder_id == ReminderModel.id)
+    normalized_tags = _normalized_tag_filters(tags)
+    if normalized_tags:
+        matching_reminder_ids = (
+            select(ReminderTagModel.reminder_id)
             .join(TagModel, TagModel.id == ReminderTagModel.tag_id)
             .where(
                 TagModel.user_id == user_id,
-                TagModel.normalized_name == normalized,
+                TagModel.normalized_name.in_(normalized_tags),
             )
+            .group_by(ReminderTagModel.reminder_id)
+            .having(func.count(func.distinct(TagModel.normalized_name)) == len(normalized_tags))
+            .subquery()
         )
-        tag_joined = True
+        statement = statement.where(ReminderModel.id.in_(select(matching_reminder_ids.c.reminder_id)))
 
     if cleaned_query:
         pattern = f"%{cleaned_query}%"
-        if not tag_joined:
-            statement = (
-                statement.outerjoin(ReminderTagModel, ReminderTagModel.reminder_id == ReminderModel.id)
-                .outerjoin(TagModel, TagModel.id == ReminderTagModel.tag_id)
-            )
+        statement = (
+            statement.outerjoin(ReminderTagModel, ReminderTagModel.reminder_id == ReminderModel.id)
+            .outerjoin(TagModel, TagModel.id == ReminderTagModel.tag_id)
+        )
         statement = statement.outerjoin(
             ReminderTrackEntryModel,
             ReminderTrackEntryModel.reminder_id == ReminderModel.id,
@@ -234,6 +235,21 @@ def _apply_search_filters(statement, *, query: str | None, tag: str | None, user
             )
         )
     return statement
+
+
+def _normalized_tag_filters(tags: list[str] | None) -> list[str]:
+    result: list[str] = []
+    seen: set[str] = set()
+    for tag in tags or []:
+        cleaned = tag.strip()
+        if not cleaned:
+            continue
+        normalized = normalize_tag_name(cleaned)
+        if normalized in seen:
+            continue
+        seen.add(normalized)
+        result.append(normalized)
+    return result
 
 
 def _distinct_reminder_ids(statement):

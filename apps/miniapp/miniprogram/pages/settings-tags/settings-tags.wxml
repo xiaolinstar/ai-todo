@@ -3,7 +3,7 @@
     <view class="mine-subpage-inner">
       <view class="group-header">新建标签</view>
       <view class="inset-group tag-create-card">
-        <text class="tag-limit-hint">最多 10 个常用标签，列表控制在两行以内。</text>
+        <text class="tag-limit-hint">最多 50 个标签，可用搜索和排序整理。</text>
         <view class="tag-create-row">
           <input class="tag-name-input" placeholder="标签名称，最多 32 字" maxlength="32" value="{{newName}}" bindinput="onNewNameInput" />
           <button class="todo-button todo-button-primary todo-button-sm create-button" size="mini" loading="{{creating}}" bindtap="onCreateTag">新增</button>
@@ -13,17 +13,29 @@
             wx:for="{{palette}}"
             wx:key="*this"
             class="color-dot {{newColor === item ? 'selected' : ''}}"
-            style="background: {{item}};"
+            style="background: {{item}}; color: {{item}};"
             data-color="{{item}}"
             bindtap="onNewColorTap"
           ></view>
         </view>
       </view>
 
-      <view class="group-header">标签库 · {{tags.length}}/10</view>
+      <view class="group-header">标签库 · {{tags.length}}/50</view>
+      <view class="inset-group tag-tools">
+        <view class="search-wrap">
+          <text class="search-icon">⌕</text>
+          <input class="search-input" placeholder="搜索标签" value="{{query}}" bindinput="onQueryInput" />
+          <text wx:if="{{query}}" class="link-text pressable" bindtap="onClearSearch" hover-class="pressable-active">清除</text>
+        </view>
+        <view class="tag-sort-row">
+          <view class="tag-sort-chip {{sort === 'usage' ? 'active' : ''}}" data-sort="usage" bindtap="onSortTap">常用</view>
+          <view class="tag-sort-chip {{sort === 'updated' ? 'active' : ''}}" data-sort="updated" bindtap="onSortTap">最近编辑</view>
+          <view class="tag-sort-chip {{sort === 'name' ? 'active' : ''}}" data-sort="name" bindtap="onSortTap">名称</view>
+        </view>
+      </view>
       <view wx:if="{{loading}}" class="subpage-hint">加载中…</view>
       <view wx:elif="{{tags.length === 0}}" class="inset-group empty-card">
-        <text class="subpage-meta">还没有标签。创建提醒时添加标签，或在这里新建常用标签。</text>
+        <text class="subpage-meta">{{query ? '未找到匹配的标签。' : '还没有标签。创建提醒时添加标签，或在这里新建常用标签。'}}</text>
       </view>
       <view wx:else class="inset-group tag-list">
         <view wx:for="{{tags}}" wx:key="id" class="tag-row pressable" data-id="{{item.id}}" bindtap="onTagTap" hover-class="pressable-active">
@@ -31,7 +43,7 @@
             <text class="tag-leading-dot" style="background: {{item.color}};"></text>
             <view class="tag-title-wrap">
               <text class="tag-name">{{item.name}}</text>
-              <text class="tag-usage">{{item.usageCount || 0}} 个提醒</text>
+              <text class="tag-usage">{{item.usageLabel}} · {{item.lastUsedLabel}}</text>
             </view>
           </view>
           <view class="form-disclosure"></view>

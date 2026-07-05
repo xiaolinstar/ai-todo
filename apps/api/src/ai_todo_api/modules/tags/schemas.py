@@ -6,6 +6,9 @@ class TagSummary(CamelModel):
     name: str
     color: str = "#007AFF"
     usage_count: int = 0
+    created_at: str
+    updated_at: str
+    last_used_at: str | None = None
 
 
 class TagListResult(CamelModel):

@@ -11,10 +11,8 @@
         <view class="group-header">基础信息</view>
         <view class="inset-group subpage-group">
           <view class="subpage-cell">
-            <view class="subpage-cell-main">
-              <text class="subpage-label">名称</text>
-              <input class="tag-name-input" maxlength="32" value="{{name}}" bindinput="onNameInput" confirm-type="done" />
-            </view>
+            <text class="subpage-label">名称</text>
+            <input class="tag-name-input" placeholder="输入标签名称" maxlength="32" value="{{name}}" bindinput="onNameInput" confirm-type="done" />
           </view>
           <view class="subpage-cell">
             <text class="subpage-label">使用中</text>
@@ -29,7 +27,7 @@
               wx:for="{{palette}}"
               wx:key="*this"
               class="color-choice {{color === item ? 'selected' : ''}}"
-              style="background: {{item}};"
+              style="background: {{item}}; color: {{item}};"
               data-color="{{item}}"
               bindtap="onColorTap"
               hover-class="pressable-active"
@@ -40,7 +38,7 @@
         </view>
 
         <button class="todo-button todo-button-primary save-button" loading="{{saving}}" bindtap="onSave">保存</button>
-        <button class="delete-button" loading="{{deleting}}" bindtap="onDelete">删除标签</button>
+        <button class="todo-button delete-button" loading="{{deleting}}" bindtap="onDelete">删除标签</button>
       </block>
     </view>
   </scroll-view>

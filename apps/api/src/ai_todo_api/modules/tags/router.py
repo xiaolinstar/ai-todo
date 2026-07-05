@@ -32,15 +32,19 @@ def _not_found(tag_id: str) -> JSONResponse:
     return JSONResponse(status_code=404, content=body.model_dump(by_alias=True))
 
 
-@router.get("")
+@router.get("", response_model=None)
 def list_tags(
     q: str | None = None,
     limit: int = Query(default=50, ge=1, le=200),
+    sort: str = Query(default="usage"),
     db: Session = Depends(get_db),
     user: CurrentUser = Depends(get_current_user),
-) -> ApiResponse[TagListResult]:
+) -> ApiResponse[TagListResult] | JSONResponse:
     repository = TagRepository(db, user.id)
-    tags = repository.list_tags(query=q, limit=limit)
+    try:
+        tags = repository.list_tags(query=q, limit=limit, sort=sort)
+    except ValueError as error:
+        return _validation_error(str(error))
     return ApiResponse(
         data=TagListResult(
             items=tags,

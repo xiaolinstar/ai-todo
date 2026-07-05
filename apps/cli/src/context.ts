@@ -100,7 +100,8 @@ export function positionalAfter(argv: string[], ...anchors: string[]): string | 
       arg === "--name" ||
       arg === "--source" ||
       arg === "--external-id" ||
-      arg === "--source-meta"
+      arg === "--source-meta" ||
+      arg === "--color"
     ) {
       index += 1;
       continue;
@@ -116,6 +117,8 @@ export function positionalAfter(argv: string[], ...anchors: string[]): string | 
         "--location",
         "--description",
         "--status",
+        "--sort",
+        "--q",
         "--date",
         "--from",
         "--to"

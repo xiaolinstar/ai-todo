@@ -18,10 +18,10 @@
 .tag-filter-chip {
   display: inline-flex;
   align-items: center;
-  min-height: 34rpx;
-  padding: 0 12rpx;
+  min-height: 28rpx;
+  padding: 1rpx 8rpx;
   border: 1rpx solid currentColor;
-  border-radius: 999rpx;
+  border-radius: 6rpx;
   background: var(--todo-surface);
   color: var(--tag-color);
   font-size: var(--todo-font-size-xs);
@@ -39,7 +39,7 @@
   display: flex;
   align-items: center;
   gap: 10rpx;
-  height: 22rpx;
+  height: 24rpx;
   margin-top: 2rpx;
   overflow: hidden;
   white-space: nowrap;
@@ -50,16 +50,19 @@
   align-items: center;
   max-width: 180rpx;
   height: 22rpx;
+  padding: 0 5rpx;
+  border: 1rpx solid var(--tag-color);
+  border-radius: 4rpx;
   color: var(--todo-text-subtle);
   font-size: var(--todo-font-size-xs);
-  line-height: 22rpx;
+  line-height: 20rpx;
 }
 
 .tag-token-dot {
   flex-shrink: 0;
-  width: 7rpx;
-  height: 7rpx;
-  margin-right: 6rpx;
+  width: 6rpx;
+  height: 6rpx;
+  margin-right: 4rpx;
   border-radius: 50%;
   background: var(--tag-color);
 }

@@ -162,7 +162,7 @@ class ReminderService:
         status: str | None = None,
         source: str | None = None,
         query: str | None = None,
-        tag: str | None = None,
+        tags: list[str] | None = None,
         from_date: str | None = None,
         to_date: str | None = None,
         limit: int | None = 50,
@@ -173,26 +173,26 @@ class ReminderService:
         _validate_sort(sort)
         cleaned_source = _clean_source(source)
         cleaned_query = _clean_optional(query)
-        cleaned_tag = _clean_optional(tag)
+        cleaned_tags = _clean_tags(tags)
 
         if from_date or to_date:
             return self._list_reminders_in_due_range(
                 status=status,
                 source=cleaned_source,
                 query=cleaned_query,
-                tag=cleaned_tag,
+                tags=cleaned_tags,
                 from_date=from_date,
                 to_date=to_date,
                 limit=limit or 50,
             )
 
-        if sort in {"due_at", "completed_at", "updated_at"} or cleaned_query or cleaned_tag:
+        if sort in {"due_at", "completed_at", "updated_at"} or cleaned_query or cleaned_tags:
             effective_sort = "updated_at" if cleaned_query and sort == "created_at" else sort
             return self._list_reminders_sorted(
                 status=status,
                 source=cleaned_source,
                 query=cleaned_query,
-                tag=cleaned_tag,
+                tags=cleaned_tags,
                 sort=effective_sort,
                 limit=limit,
             )
@@ -202,7 +202,7 @@ class ReminderService:
             status=status,
             source=cleaned_source,
             query=cleaned_query,
-            tag=cleaned_tag,
+            tags=cleaned_tags,
             limit=page_limit,
             cursor=cursor,
             sort=sort,
@@ -227,7 +227,7 @@ class ReminderService:
         status: str | None,
         source: str | None,
         query: str | None,
-        tag: str | None,
+        tags: list[str],
         sort: str,
         limit: int | None,
     ) -> ReminderListResult:
@@ -235,7 +235,7 @@ class ReminderService:
             status=status,
             source=source,
             query=query,
-            tag=tag,
+            tags=tags,
             sort=sort,
             limit=limit,
         )
@@ -243,7 +243,7 @@ class ReminderService:
             status=status,
             source=source,
             query=query,
-            tag=tag,
+            tags=tags,
         )
         contact_map = self._links.summaries_for_reminders([reminder.id for reminder in reminders])
         items = reminders_to_enriched_summaries(
@@ -265,7 +265,7 @@ class ReminderService:
         status: str | None,
         source: str | None,
         query: str | None,
-        tag: str | None,
+        tags: list[str],
         from_date: str | None,
         to_date: str | None,
         limit: int,
@@ -285,14 +285,14 @@ class ReminderService:
                 continue
             filtered.append(reminder)
 
-        if query or tag:
+        if query or tags:
             matched_ids = {
                 item.id
                 for item in self._repository.list_all_sorted(
                     status=status,
                     source=source,
                     query=query,
-                    tag=tag,
+                    tags=tags,
                     sort="updated_at",
                 )
             }
@@ -463,6 +463,21 @@ def _clean_optional(value: str | None) -> str | None:
         return None
     cleaned = value.strip()
     return cleaned or None
+
+
+def _clean_tags(values: list[str] | None) -> list[str]:
+    result: list[str] = []
+    seen: set[str] = set()
+    for value in values or []:
+        cleaned = _clean_optional(value)
+        if cleaned is None:
+            continue
+        normalized = cleaned.casefold()
+        if normalized in seen:
+            continue
+        seen.add(normalized)
+        result.append(cleaned)
+    return result
 
 
 _SOURCE_PATTERN = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9_.:-]{0,63}$")

@@ -6,6 +6,7 @@ import * as calendar from "./commands/calendar";
 import * as contact from "./commands/contact";
 import * as core from "./commands/core";
 import * as reminder from "./commands/reminder";
+import * as tag from "./commands/tag";
 
 const argv = process.argv.slice(2);
 const command = argv[0] ?? "help";
@@ -85,6 +86,22 @@ async function main(): Promise<void> {
         await reminder.runReminderTrackAdd(ctx, argv);
       } else {
         console.error("Usage: ai-todo reminder <create|list|show|find|done|update|reschedule|delete|track add>");
+        process.exitCode = 1;
+      }
+      break;
+    }
+    case "tag": {
+      const action = sub ?? "list";
+      if (action === "list" || action === "ls") {
+        await tag.runTagList(ctx, argv);
+      } else if (action === "create" || action === "add") {
+        await tag.runTagCreate(ctx, argv);
+      } else if (action === "update") {
+        await tag.runTagUpdate(ctx, argv);
+      } else if (action === "delete") {
+        await tag.runTagDelete(ctx, argv);
+      } else {
+        console.error("Usage: ai-todo tag <list|create|update|delete>");
         process.exitCode = 1;
       }
       break;
