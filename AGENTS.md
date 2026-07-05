@@ -63,7 +63,9 @@ pnpm miniapp:preview  # 体验版二维码；上传用微信开发者工具
 
 ### Agent 命令路径规则
 
-非交互式 Agent shell 不一定加载用户 shell rc；如果出现 `node` / `gh` / `pnpm` 找不到，**不要反复试探**，直接使用以下已知路径：
+非交互式 Agent shell 不一定加载用户 shell rc。**请优先直接运行命令**（使用当前系统环境的 `node` / `pnpm` 等，以保持与用户本地版本一致）。
+
+仅当直接运行报错、找不到命令时，**不要反复试探**，再通过以下注入已知路径作为 Fallback 运行：
 
 ```bash
 export PATH="$HOME/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$HOME/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin:/opt/homebrew/bin:/usr/local/bin:$PATH"
@@ -73,7 +75,7 @@ pnpm: $HOME/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/pnpm
 gh:   /opt/homebrew/bin/gh
 ```
 
-执行本仓库检查时，Agent 可直接在命令前注入上述 PATH，例如：
+例如，如果遇到缺命令的报错，可前置注入上述 PATH：
 
 ```bash
 PATH="$HOME/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$HOME/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin:/opt/homebrew/bin:/usr/local/bin:$PATH" pnpm check:wechat

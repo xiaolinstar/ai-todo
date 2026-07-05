@@ -6,9 +6,16 @@ const PROFILE_SETUP_PREFIX = 'profileSetupSeen:';
 export const PRODUCTION_API_URL = 'https://xingxiaolin.cn';
 /** 预发布 / 体验版 API（经 xiaolin-gateway 反代，宿主机 :8083） */
 export const STAGING_API_URL = 'https://staging.xingxiaolin.cn';
-export const LOCAL_API_URL = 'http://localhost:8880';
+/** 本地开发 API（经 xiaolin-gateway，HTTP :8880 → 宿主机 :8082） */
+export const LOCAL_API_URL = 'http://ai-todo-api.localhost:8880';
 
 const LEGACY_PRODUCTION_API_URL = 'https://www.xingxiaolin.cn';
+const LEGACY_LOCAL_API_URLS = [
+  'http://localhost:8880',
+  'http://ai-todo-api.local:8880',
+  'http://ai-todo.localhost:8880',
+  'http://127.0.0.1:3100',
+] as const;
 
 export interface AppConfig {
   apiUrl: string;
@@ -62,6 +69,9 @@ function normalizeApiUrl(apiUrl: string): string {
   const trimmed = apiUrl.trim().replace(/\/$/, '');
   if (trimmed === LEGACY_PRODUCTION_API_URL) {
     return PRODUCTION_API_URL;
+  }
+  if ((LEGACY_LOCAL_API_URLS as readonly string[]).includes(trimmed)) {
+    return LOCAL_API_URL;
   }
   return trimmed;
 }

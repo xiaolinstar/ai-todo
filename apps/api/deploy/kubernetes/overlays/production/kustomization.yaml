@@ -1,0 +1,36 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: ai-todo
+
+resources:
+  - ../../base
+
+patches:
+  - target:
+      kind: Service
+      name: api
+    patch: |-
+      - op: replace
+        path: /spec/type
+        value: NodePort
+      - op: replace
+        path: /spec/ports
+        value:
+          - port: 3100
+            targetPort: 3100
+            nodePort: 30082
+            protocol: TCP
+
+generatorOptions:
+  disableNameSuffixHash: true
+
+secretGenerator:
+  - name: ai-todo-secrets
+    envs:
+      - .env.production.secrets
+
+images:
+  - name: ghcr.io/xiaolinstar/ai-todo-api
+    newName: ghcr.io/xiaolinstar/ai-todo-api
+    newTag: latest

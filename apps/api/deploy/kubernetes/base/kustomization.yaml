@@ -1,0 +1,40 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: ai-todo
+
+generatorOptions:
+  disableNameSuffixHash: true
+
+resources:
+  - namespace.yaml
+  - postgres-pvc.yaml
+  - postgres-service.yaml
+  - postgres-deployment.yaml
+  - api-service.yaml
+  - api-deployment.yaml
+  - worker-deployment.yaml
+
+configMapGenerator:
+  - name: ai-todo-config
+    literals:
+      - AI_TODO_HOST=0.0.0.0
+      - AI_TODO_PORT=3100
+      - AI_TODO_ENVIRONMENT=production
+      - POSTGRES_DB=ai_todo
+      - POSTGRES_USER=ai_todo
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - AI_TODO_ALLOW_DEV_AUTH=false
+      - AI_TODO_TIMEZONE=Asia/Shanghai
+      - AI_TODO_RATE_LIMIT_ENABLED=true
+      - AI_TODO_RATE_LIMIT_WECHAT_LOGIN_PER_MINUTE=10
+      - AI_TODO_STRUCTURED_LOGS_ENABLED=true
+      - AI_TODO_METRICS_ENABLED=true
+      - AI_TODO_METRICS_PATH=/metrics
+      - AI_TODO_ICP_BEIAN_TEXT=苏ICP备2026011017号-7
+      - AI_TODO_PUBLIC_SECURITY_BEIAN_TEXT=苏公网安备32010602012480号
+      - AI_TODO_NOTIFICATION_WORKER_POLL_SECONDS=30
+      - AI_TODO_NOTIFICATION_WORKER_BATCH_SIZE=50
+      - AI_TODO_NOTIFICATION_MAX_ATTEMPTS=3
+      - AI_TODO_SKIP_MIGRATIONS=false

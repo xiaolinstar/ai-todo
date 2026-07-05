@@ -207,6 +207,9 @@ export function formatApiErrorMessage(error: ApiError | undefined, fallback: str
 function formatRequestError(err: unknown): string {
   if (err && typeof err === 'object' && 'errMsg' in err) {
     const errMsg = String((err as { errMsg: string }).errMsg);
+    if (/合法域名|url not in domain list/i.test(errMsg)) {
+      return '请求域名未通过校验：开发者工具请关闭「校验合法域名」或在 project.private.config.json 设置 urlCheck: false';
+    }
     if (errMsg) return errMsg;
   }
   return '网络错误';

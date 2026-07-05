@@ -254,7 +254,10 @@ declare const process: { exitCode?: number };
 function isLocalDevApiUrl(apiUrl: string): boolean {
   try {
     const hostname = new URL(apiUrl).hostname;
-    return hostname === "127.0.0.1" || hostname === "localhost";
+    if (hostname === "127.0.0.1" || hostname === "localhost") {
+      return true;
+    }
+    return hostname.endsWith(".localhost");
   } catch {
     return false;
   }

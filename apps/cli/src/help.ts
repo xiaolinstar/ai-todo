@@ -7,7 +7,7 @@ Config ${settingsPath()}:
   { "url": "https://xingxiaolin.cn", "token": "aitodo_xxx" }
 
   Token: WeChat miniapp → Mine → CLI / Agent tokens
-  Override: AI_TODO_TOKEN, AI_TODO_API_URL (else local http://127.0.0.1:3100)
+  Override: AI_TODO_TOKEN, AI_TODO_API_URL (else local http://ai-todo-api.localhost:8880)
 
 Flags: --json  --limit <n>  --cursor <token>  --idempotency-key <uuid>
 

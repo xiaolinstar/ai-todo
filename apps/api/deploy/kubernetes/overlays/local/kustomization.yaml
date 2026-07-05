@@ -1,0 +1,45 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: ai-todo
+
+resources:
+  - ../../base
+
+patches:
+  - target:
+      kind: Service
+      name: api
+    patch: |-
+      - op: replace
+        path: /spec/type
+        value: LoadBalancer
+      - op: replace
+        path: /spec/ports
+        value:
+          - port: 8082
+            targetPort: 3100
+            protocol: TCP
+
+generatorOptions:
+  disableNameSuffixHash: true
+
+configMapGenerator:
+  - name: ai-todo-config
+    behavior: merge
+    literals:
+      - AI_TODO_ENVIRONMENT=local
+      - AI_TODO_ALLOW_DEV_AUTH=true
+
+secretGenerator:
+  - name: ai-todo-secrets
+    literals:
+      - POSTGRES_PASSWORD=local_postgres_password_123
+      - AI_TODO_WECHAT_APP_ID=wx_local_app_id
+      - AI_TODO_WECHAT_APP_SECRET=local_app_secret
+      - AI_TODO_WECHAT_REMINDER_TEMPLATE_ID=local_template_id
+
+images:
+  - name: ghcr.io/xiaolinstar/ai-todo-api
+    newName: ghcr.io/xiaolinstar/ai-todo-api
+    newTag: latest

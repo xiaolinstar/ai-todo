@@ -187,7 +187,7 @@ export const AI_TODO_AGENT_GUIDELINES = [
   "Parse natural language in the agent; call ai-todo with structured fields only.",
   "On contact name ambiguity, run contact search and ask the user to pick an id.",
   "Set AI_TODO_TOKEN or ~/.ai-todo/settings.json (url + token) before agent calls.",
-  "Set AI_TODO_API_URL if the API is not on http://127.0.0.1:3100.",
+  "Set AI_TODO_API_URL if the API is not on http://ai-todo-api.localhost:8880.",
   "Exit code is non-zero when the API returns ok: false.",
   "source and external_id identify the business origin (email, jira, wechat message); they are not the HTTP x-client-source header (cli, miniapp, agent).",
   "Idempotent writes: run reminder find --source ... --external-id ... first; if found, update/done/delete by source; otherwise create with --source and --external-id.",

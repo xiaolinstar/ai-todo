@@ -12,6 +12,14 @@ const SETTINGS_DIR = path.join(os.homedir(), ".ai-todo");
 const SETTINGS_PATH = path.join(SETTINGS_DIR, "settings.json");
 const LEGACY_CONFIG_PATH = path.join(SETTINGS_DIR, "config.json");
 const PRODUCTION_API_URL = "https://xingxiaolin.cn";
+/** 本地 K8s + xiaolin-gateway（HTTP :8880 → 宿主机 :8082） */
+export const LOCAL_GATEWAY_API_URL = "http://ai-todo-api.localhost:8880";
+const LEGACY_LOCAL_API_URLS = [
+  "http://localhost:8880",
+  "http://ai-todo-api.local:8880",
+  "http://ai-todo.localhost:8880",
+  "http://127.0.0.1:3100",
+] as const;
 
 function normalizeApiUrl(url: string | undefined): string | undefined {
   if (!url) {
@@ -23,6 +31,9 @@ function normalizeApiUrl(url: string | undefined): string | undefined {
   }
   if (/wodi\.games/i.test(trimmed)) {
     return PRODUCTION_API_URL;
+  }
+  if ((LEGACY_LOCAL_API_URLS as readonly string[]).includes(trimmed)) {
+    return LOCAL_GATEWAY_API_URL;
   }
   return trimmed;
 }
@@ -110,7 +121,7 @@ export function resolveApiUrl(settings: CliSettings = loadSettings()): string {
     return fromFile;
   }
 
-  return "http://127.0.0.1:3100";
+  return LOCAL_GATEWAY_API_URL;
 }
 
 declare const process: {

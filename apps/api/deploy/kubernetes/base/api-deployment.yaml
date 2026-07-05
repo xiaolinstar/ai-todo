@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api
+  labels:
+    app: api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api
+  template:
+    metadata:
+      labels:
+        app: api
+    spec:
+      containers:
+        - name: api
+          image: ghcr.io/xiaolinstar/ai-todo-api:latest
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef:
+                name: ai-todo-config
+            - secretRef:
+                name: ai-todo-secrets
+          ports:
+            - containerPort: 3100
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /v1/health
+              port: 3100
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /v1/health
+              port: 3100
+            initialDelaySeconds: 40
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+      restartPolicy: Always
