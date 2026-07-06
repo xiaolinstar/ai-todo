@@ -13,22 +13,24 @@ patches:
     patch: |-
       - op: replace
         path: /spec/type
-        value: NodePort
+        value: LoadBalancer
       - op: replace
         path: /spec/ports
         value:
-          - port: 3100
+          - port: 8082
             targetPort: 3100
-            nodePort: 30082
             protocol: TCP
 
-generatorOptions:
-  disableNameSuffixHash: true
+configMapGenerator:
+  - name: ai-todo-config
+    behavior: merge
+    envs:
+      - .env.local.configs
 
 secretGenerator:
   - name: ai-todo-secrets
     envs:
-      - .env.production.secrets
+      - .env.local.secrets
 
 images:
   - name: ghcr.io/xiaolinstar/ai-todo-api

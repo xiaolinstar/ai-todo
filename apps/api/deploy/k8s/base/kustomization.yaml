@@ -3,9 +3,6 @@ kind: Kustomization
 
 namespace: ai-todo
 
-generatorOptions:
-  disableNameSuffixHash: true
-
 resources:
   - namespace.yaml
   - postgres-pvc.yaml

@@ -1,0 +1,12 @@
+# Local Kubernetes overlay non-sensitive configurations template.
+# Copy this file to .env.local.configs in the same directory.
+# Since it is named .env.*, it will be automatically ignored by Git.
+
+AI_TODO_ENVIRONMENT=local
+AI_TODO_ALLOW_DEV_AUTH=true
+
+# You can override other base environment variables here if needed:
+# AI_TODO_TIMEZONE=Asia/Shanghai
+# AI_TODO_RATE_LIMIT_ENABLED=false
+# POSTGRES_DB=ai_todo
+# POSTGRES_USER=ai_todo

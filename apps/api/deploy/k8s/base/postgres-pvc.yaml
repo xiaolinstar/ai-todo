@@ -3,7 +3,10 @@ kind: PersistentVolumeClaim
 metadata:
   name: postgres-pvc
   labels:
-    app: postgres
+    app.kubernetes.io/name: postgres-pvc
+    app.kubernetes.io/part-of: ai-todo
+    app.kubernetes.io/component: db
+    app.kubernetes.io/managed-by: kustomize
 spec:
   accessModes:
     - ReadWriteOnce

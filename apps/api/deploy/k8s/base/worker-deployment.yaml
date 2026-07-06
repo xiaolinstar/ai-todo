@@ -3,16 +3,22 @@ kind: Deployment
 metadata:
   name: worker
   labels:
-    app: worker
+    app.kubernetes.io/name: ai-todo-worker
+    app.kubernetes.io/part-of: ai-todo
+    app.kubernetes.io/component: worker
+    app.kubernetes.io/managed-by: kustomize
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: worker
+      app.kubernetes.io/name: ai-todo-worker
   template:
     metadata:
       labels:
-        app: worker
+        app.kubernetes.io/name: ai-todo-worker
+        app.kubernetes.io/part-of: ai-todo
+        app.kubernetes.io/component: worker
+        app.kubernetes.io/managed-by: kustomize
     spec:
       containers:
         - name: worker
@@ -30,13 +36,20 @@ spec:
           env:
             - name: AI_TODO_SKIP_MIGRATIONS
               value: "true"
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "50m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
           livenessProbe:
             exec:
               command:
                 - python
                 - /app/scripts/worker_healthcheck.py
-            failureThreshold: 3
-            initialDelaySeconds: 40
+            initialDelaySeconds: 15
             periodSeconds: 30
             timeoutSeconds: 5
+            failureThreshold: 3
       restartPolicy: Always
