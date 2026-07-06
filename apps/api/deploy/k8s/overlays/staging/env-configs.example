@@ -1,0 +1,16 @@
+# Staging Kubernetes overlay config (local only — gitignored as .env.*).
+#   cp env-configs.example .env.staging.configs
+
+AI_TODO_ENVIRONMENT=staging
+AI_TODO_ALLOW_DEV_AUTH=false
+
+# CD / manual deploy can inject release identity (shown in GET /v1/health):
+# AI_TODO_RELEASE_TAG=v0.8.7
+# AI_TODO_GIT_SHA=
+
+# You can override base defaults when needed:
+# AI_TODO_TIMEZONE=Asia/Shanghai
+# AI_TODO_RATE_LIMIT_ENABLED=true
+# AI_TODO_RATE_LIMIT_WECHAT_LOGIN_PER_MINUTE=10
+# POSTGRES_DB=ai_todo
+# POSTGRES_USER=ai_todo

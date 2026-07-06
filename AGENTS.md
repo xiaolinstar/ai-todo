@@ -83,13 +83,13 @@ PATH="$HOME/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$H
 
 ## 分层入口
 
-| 关注点      | 文档                                                                                                          |
-| ----------- | ------------------------------------------------------------------------------------------------------------- |
-| 小程序      | [apps/miniapp/README.md](apps/miniapp/README.md) + [docs/miniapp-conventions.md](docs/miniapp-conventions.md) |
-| 后端 API    | [docs/api-design.md](docs/api-design.md) + [docs/database-migrations.md](docs/database-migrations.md)         |
-| 部署        | [docs/deploy.md](docs/deploy.md) + [docs/release-runbook.md](docs/release-runbook.md)                         |
-| CLI / Agent | [docs/cli-design.md](docs/cli-design.md) + [docs/agent-usage.md](docs/agent-usage.md)                         |
-| 技术决策    | [docs/tech-decisions.md](docs/tech-decisions.md)                                                              |
+| 关注点      | 文档                                                                                                                                           |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| 小程序      | [apps/miniapp/README.md](apps/miniapp/README.md) + [docs/miniapp-conventions.md](docs/miniapp-conventions.md)                                  |
+| 后端 API    | [docs/api-design.md](docs/api-design.md) + [docs/database-migrations.md](docs/database-migrations.md)                                          |
+| 部署        | [docs/deploy.md](docs/deploy.md) + [docs/deploy-kubernetes.md](docs/deploy-kubernetes.md) + [docs/release-runbook.md](docs/release-runbook.md) |
+| CLI / Agent | [docs/cli-design.md](docs/cli-design.md) + [docs/agent-usage.md](docs/agent-usage.md)                                                          |
+| 技术决策    | [docs/tech-decisions.md](docs/tech-decisions.md)                                                                                               |
 
 ## 部署架构
 

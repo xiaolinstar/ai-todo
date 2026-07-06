@@ -72,13 +72,23 @@ cp .env.local.example .env.local
 scripts/dev-up.sh
 ```
 
-Staging VPS:
+Staging VPS（Docker Compose，CD 默认）：
 
 ```bash
 cd apps/api
 cp .env.example .env
 cp .env.staging.example .env.staging
 ENV_FILE=.env.staging deploy/remote-deploy.sh
+```
+
+Staging VPS（Kubernetes，手动 `kubectl`，见 [deploy-kubernetes.md](../deploy-kubernetes.md)）：
+
+```bash
+cd apps/api/deploy/k8s/overlays/staging
+cp env-configs.example .env.staging.configs
+cp env-secrets.example   .env.staging.secrets
+# 编辑 secrets 后：
+kubectl apply -k .
 ```
 
 Production VPS:

@@ -1,6 +1,5 @@
-# Local Kubernetes overlay non-sensitive configurations template.
-# Copy this file to .env.local.configs in the same directory.
-# Since it is named .env.*, it will be automatically ignored by Git.
+# Local overlay config（gitignore：.env.*）
+#   cp env-configs.example .env.local.configs
 
 AI_TODO_ENVIRONMENT=local
 AI_TODO_ALLOW_DEV_AUTH=true

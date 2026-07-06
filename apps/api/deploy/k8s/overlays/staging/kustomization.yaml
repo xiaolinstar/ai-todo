@@ -1,36 +1,56 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-namespace: ai-todo
+namespace: ai-todo-staging
 
 resources:
   - ../../base
 
 patches:
   - target:
+      kind: Namespace
+      name: ai-todo
+    patch: |-
+      - op: replace
+        path: /metadata/name
+        value: ai-todo-staging
+  - target:
       kind: Service
       name: api
     patch: |-
       - op: replace
         path: /spec/type
-        value: LoadBalancer
+        value: NodePort
       - op: replace
         path: /spec/ports
         value:
-          - port: 8082
+          - port: 3100
             targetPort: 3100
+            nodePort: 30083
             protocol: TCP
+  - target:
+      kind: PersistentVolumeClaim
+      name: postgres-pvc
+    patch: |
+      apiVersion: v1
+      kind: PersistentVolumeClaim
+      metadata:
+        name: postgres-pvc
+      spec:
+        resources:
+          requests:
+            storage: 2Gi
 
 configMapGenerator:
   - name: ai-todo-config
     behavior: merge
     envs:
-      - .env.local.configs
+      - .env.staging.configs
 
 secretGenerator:
   - name: ai-todo-secrets
     envs:
-      - .env.local.secrets
+      - .env.staging.secrets
 
 generatorOptions:
   disableNameSuffixHash: true

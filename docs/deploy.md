@@ -377,6 +377,7 @@ docker compose -f docker-compose.prod.yml -f docker-compose.tls.yml ...
 
 ## 相关文档
 
+- Kubernetes 部署（Staging 迁移）：`docs/deploy-kubernetes.md`
 - 上线操作手册：`docs/release-runbook.md`
 - 技术决策：`docs/tech-decisions.md`
 - 小程序开发：`apps/miniapp/README.md`
