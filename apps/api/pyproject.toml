@@ -1,6 +1,6 @@
 [project]
 name = "ai-todo-api"
-version = "0.5.0"
+version = "0.5.1"
 description = "FastAPI backend for ai-todo"
 license = "Apache-2.0"
 requires-python = ">=3.11"

@@ -5,7 +5,7 @@ AI_TODO_ENVIRONMENT=staging
 AI_TODO_ALLOW_DEV_AUTH=false
 
 # CD / manual deploy can inject release identity (shown in GET /v1/health):
-# AI_TODO_RELEASE_TAG=v0.8.7
+# AI_TODO_RELEASE_TAG=v0.8.8
 # AI_TODO_GIT_SHA=
 
 # You can override base defaults when needed:
