@@ -42,6 +42,26 @@ docs/env/github/<environment>/
     └── secrets.env
 ```
 
+## 统一键名
+
+三个 GitHub Environment 的 L0 模板**键名完全相同**，仅下列值因部署面不同：
+
+| 键                        | 差异说明                                    |
+| ------------------------- | ------------------------------------------- |
+| `GITHUB_ENVIRONMENT`      | `staging` / `production` / `production-k8s` |
+| `DEPLOY_HOST` 等 SSH 目标 | 各 VPS IP                                   |
+| `CD_PUBLIC_API_URL`       | staging 域名 vs 生产域名                    |
+| `CD_LOCAL_HEALTH_URL`     | K8s 切流前本机探活（可选；Compose 留空）    |
+| `DEPLOY_BACKEND`          | `compose` 或 `k8s`                          |
+
+`K8S_*` 在所有模板中均列出；仅当 `DEPLOY_BACKEND=k8s` 时 CD 读取。这样换部署面时不必改模板结构，只改变量值。
+
+## SSH 认证（Secrets）
+
+默认 **`DEPLOY_PASSWORD`**（SSH 登录密码）。备选 **`DEPLOY_SSH_KEY_FILE`**（本地私钥路径，sync 推送为 `DEPLOY_SSH_KEY`）。二选一必填；CD 同时存在时优先密钥。
+
+模板内按分区标注 `[必填]` / `[可选]` / `[k8s]`，见各 `*.env.example` 文件头注释。
+
 ## 工作流
 
 ```bash
