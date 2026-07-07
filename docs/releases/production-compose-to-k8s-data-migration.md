@@ -1,7 +1,7 @@
 # Production 数据迁移：Compose → K8s（124 → 111）
 
 日期：2026-07-07  
-状态：**草案** — 执行前需维护窗口与回滚确认  
+状态：**已执行**（2026-07-07）— 数据迁移、Gateway 切流、post-import schema upgrade 均已完成  
 关联：[ops-postgresql-data.md](../ops-postgresql-data.md)、[deploy-kubernetes.md](../deploy-kubernetes.md)、[database-migrations.md](../database-migrations.md)
 
 ## 范围
@@ -11,8 +11,8 @@
 | **源端（旧生产）**   | `124.222.98.227` | Docker Compose             | volume `ai-todo-production_ai_todo_postgres_data`（或旧名 `api_`\*） |
 | **目标端（新生产）** | `111.229.38.208` | k3s · overlay `production` | PVC `postgres-pvc` · namespace `ai-todo`                             |
 
-**本次只做数据迁移**，不包含 Gateway 切流（切流见文末「切流与双中心」）。  
-**不做** Alembic downgrade；schema 以源库当前 `alembic_version` 为准，目标 API 镜像应 **≥ 源端已部署版本**。
+**数据迁移 + Gateway 切流** 均在本 runbook；124 Compose 保留 volume 作回退，未 `down -v`。  
+**不做** Alembic downgrade；导入后若 K8s API 镜像 **新于** 源库 `alembic_version`，须再跑 `alembic upgrade head`（见 §5–§6）。
 
 ## 原则
 
@@ -116,8 +116,7 @@ COMPOSE_ENV_FILES=.env,.env.production \
   docker compose -f docker-compose.prod.yml --profile notifications stop worker
 
 # 确认 postgres 仍 Up
-COMPOSE_ENCOMPOSE_ENV_FILES=.env,.env.production \
-  docker compose -f docker-compose.prod.yml psV_FILES=.env,.env.production \
+COMPOSE_ENV_FILES=.env,.env.production \
   docker compose -f docker-compose.prod.yml ps
 ```
 
@@ -221,6 +220,10 @@ kubectl exec -n ai-todo deployment/postgres -- psql -U ai_todo -d ai_todo -c "SE
 # 及其他关键表…
 ```
 
+> **若 111 部署的 API 镜像比源库 `alembic_version` 更新**（常见：124 Compose 长期未发版，K8s 已跑较新 digest），导入后 **必须** 让 API 再跑 `alembic upgrade head`（重启 API Pod 即可，entrypoint 会自动执行）。  
+> 否则 `/v1/health/db` 仍显示旧 revision，列表类接口（如提醒事项）可能报 **Database error**（缺 `tags` / `reminder_tags` 等表）。  
+> 验收：`alembic_version` 应达到镜像内 head（当前 `20260704_0020`），且 `\dt tags` 存在。
+
 ---
 
 ## 6. 启动 K8s 应用
@@ -233,6 +236,15 @@ kubectl apply -k .
 
 kubectl scale deployment/api -n ai-todo --replicas=1
 kubectl rollout status deployment/api -n ai-todo --timeout=300s
+```
+
+若源库 `alembic_version` 低于当前 API 镜像 head，**重启 API 以应用 pending migrations**：
+
+```bash
+kubectl rollout restart deployment/api -n ai-todo
+kubectl rollout status deployment/api -n ai-todo --timeout=300s
+kubectl exec -n ai-todo deployment/postgres -- psql -U ai_todo -d ai_todo -c "SELECT version_num FROM alembic_version;"
+# 期望 ≥ 镜像 head（如 20260704_0020）；缺表时可：kubectl exec -n ai-todo deployment/api -- alembic upgrade head
 ```
 
 本机探活（**必须通过再启 worker**）：
@@ -255,13 +267,14 @@ kubectl rollout status deployment/worker -n ai-todo --timeout=180s
 
 ## 7. 验收清单
 
-| 检查项        | 命令 / 方式                      | 期望                                     |
-| ------------- | -------------------------------- | ---------------------------------------- |
-| Alembic 版本  | 124/111 `alembic_version`        | 一致                                     |
-| 用户/待办抽样 | SQL count 或小程序/CLI           | 与迁移前快照一致                         |
-| DB 深度       | `GET /v1/health/db`              | `status: ok`，`identitiesTable: true` 等 |
-| API           | `GET /v1/health`                 | `gitSha` 为预期 digest 对应 commit       |
-| Worker        | `kubectl logs deployment/worker` | 无持续 crash（若 replicas>0）            |
+| 检查项        | 命令 / 方式                      | 期望                                                    |
+| ------------- | -------------------------------- | ------------------------------------------------------- |
+| Alembic 版本  | 124/111 `alembic_version`        | 源库一致；**111 ≥ API 镜像 head**（pending 时重启 API） |
+| Schema 表     | `\dt tags` / `\dt reminder_tags` | 存在（镜像 head 含 0018+ 时）                           |
+| 用户/待办抽样 | SQL count 或小程序/CLI           | 与迁移前快照一致                                        |
+| DB 深度       | `GET /v1/health/db`              | `status: ok`，`identitiesTable: true` 等                |
+| API           | `GET /v1/health`                 | `gitSha` 为预期 digest 对应 commit                      |
+| Worker        | `kubectl logs deployment/worker` | 无持续 crash（若 replicas>0）                           |
 
 ---
 
@@ -269,7 +282,7 @@ kubectl rollout status deployment/worker -n ai-todo --timeout=180s
 
 **仅在 111 本机与内网验收通过后：**
 
-1. xiaolin-gateway：`xingxiaolin.cn` 上游 **124:8082 → 111:30082**（或经 gateway 本机反代）。
+1. xiaolin-gateway：`app/ai-todo/ai-todo.conf` 上游 **124:8082 → 111:30082**（已执行：`xiaolin-gateway` `a2059ff`）。
 2. 公网：
 
 ```bash
@@ -346,11 +359,23 @@ kubectl exec -n ai-todo deployment/postgres -- psql -U ai_todo -d ai_todo -c "SE
 
 ## 附录 B：alembic_version 不一致
 
-| 111 vs dump            | 处理                             |
-| ---------------------- | -------------------------------- |
-| 111 **更高**           | 曾空库启过 API → **清库重导**    |
-| 111 **更低**、数据不全 | **清库重导**                     |
-| 111 **更低**、数据齐全 | 启 API 后 `alembic upgrade head` |
+| 111 vs dump            | 处理                                                                                                           |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------- |
+| 111 **更高**           | 曾空库启过 API → **清库重导**                                                                                  |
+| 111 **更低**、数据不全 | **清库重导**                                                                                                   |
+| 111 **更低**、数据齐全 | 启 API 后 **`kubectl rollout restart deployment/api`** 或 `alembic upgrade head`（0018+ 为扩表，不丢业务数据） |
+
+### 导入后提醒列表报 Database error
+
+典型原因：源库停在 `20260623_0017`，K8s API 已含标签/跟踪功能（`20260701_0018`+），列表 enrichment 查询 `tags` 表失败。
+
+```bash
+kubectl exec -n ai-todo deployment/postgres -- psql -U ai_todo -d ai_todo -c "SELECT version_num FROM alembic_version;"
+kubectl exec -n ai-todo deployment/postgres -- psql -U ai_todo -d ai_todo -c "\dt tags"
+kubectl rollout restart deployment/api -n ai-todo
+kubectl rollout status deployment/api -n ai-todo --timeout=300s
+curl -fsS http://127.0.0.1:30082/v1/health/db
+```
 
 ```bash
 grep alembic_version ~/ai-todo-production-migration.sql | head -5
@@ -359,18 +384,19 @@ kubectl exec -n ai-todo deployment/postgres -- psql -U ai_todo -d ai_todo -c "SE
 
 ---
 
-## 10. 执行记录（现场填写）
+## 10. 执行记录
 
-| 项                     | 值  |
-| ---------------------- | --- |
-| 维护窗口开始           |     |
-| 124 停写时间           |     |
-| dump 文件路径 / 大小   |     |
-| 源 `alembic_version`   |     |
-| 目标 `alembic_version` |     |
-| 111 验收通过时间       |     |
-| Gateway 切换时间       |     |
-| 操作人                 |     |
+| 项                     | 值                                                               |
+| ---------------------- | ---------------------------------------------------------------- |
+| 维护窗口开始           | 2026-07-07                                                       |
+| 124 停写时间           | 2026-07-07（api/worker 停止，Postgres 保留）                     |
+| dump 文件路径 / 大小   | `~/ai-todo-production-migration.sql`（124 → 111 scp）            |
+| 源 `alembic_version`   | `20260623_0017`                                                  |
+| 目标 `alembic_version` | 导入后 `20260623_0017` → API restart 后 `20260704_0020`          |
+| 111 验收通过时间       | 2026-07-07（本机 `/v1/health/db`、小程序提醒列表）               |
+| Gateway 切换时间       | 2026-07-07（`xiaolin-gateway` `a2059ff`，公网 `xingxiaolin.cn`） |
+| 124 处置               | 未 `down -v`；Gateway 已切空流量，Compose 作回退保留             |
+| 操作人                 | xiaolin                                                          |
 
 ---
 

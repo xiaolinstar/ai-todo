@@ -1,7 +1,7 @@
 # ai-todo Kubernetes 部署
 
 日期：2026-07-07  
-状态：**Staging 迁移进行中**；Production K8s overlay 已就绪（草案），GitHub CD 仍走 Compose，K8s 发版当前手动。
+状态：**Production 已切 K8s**（111 · `2026-07-07`，见 [production-compose-to-k8s-data-migration.md](./releases/production-compose-to-k8s-data-migration.md)）；Staging 迁移进行中。Production 发版走 GitHub Environment **`production-k8s`** + CD (K8s)。
 
 本文只维护 **Kustomize 清单** 与 **显式 `kubectl` 命令**。不封装 shell 部署脚本——每一步在终端里可见、可审计。
 
@@ -277,18 +277,18 @@ kubectl rollout undo deployment/api --to-revision=<N> -n ai-todo-staging
 
 ---
 
-## 三、Production（k3s 草案）
+## 三、Production（111 · k3s）
 
-Production overlay 已配置 NodePort **30082**、PVC **5Gi**、NJU 镜像站前缀。可与 Staging 同机不同 namespace，但**不要与 Compose 生产栈并行**（端口/Gateway 冲突）。
+Production overlay：NodePort **30082**、PVC **5Gi**、NJU 镜像站前缀。**2026-07-07** 自 Compose（124）完成数据迁移与 Gateway 切流；124 保留 volume 作回退。完整步骤见 [production-compose-to-k8s-data-migration.md](./releases/production-compose-to-k8s-data-migration.md)。
 
 ### 0. 云服务商准备
 
-| 项                  | 说明                                            |
-| ------------------- | ----------------------------------------------- |
-| VPS                 | Ubuntu 22.04+，建议 ≥ 2C / 4GB                  |
-| 安全组              | 开放 22、443；**不**开放 30082、5432            |
-| 域名                | `xingxiaolin.cn` 已备案；证书在 xiaolin-gateway |
-| 若已有 Compose 生产 | 先停 Compose，Gateway 上游 `:8082` → `:30082`   |
+| 项                  | 说明                                                   |
+| ------------------- | ------------------------------------------------------ |
+| VPS                 | Ubuntu 22.04+，建议 ≥ 2C / 4GB                         |
+| 安全组              | 开放 22、443；**不**开放 30082、5432                   |
+| 域名                | `xingxiaolin.cn` 已备案；证书在 xiaolin-gateway        |
+| 若已有 Compose 生产 | 已完成迁移；Gateway 上游 `111:30082`；124 勿 `down -v` |
 
 ### 1. 安装 k3s + 准备密钥
 
