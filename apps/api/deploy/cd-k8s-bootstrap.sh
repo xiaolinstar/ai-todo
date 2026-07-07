@@ -162,7 +162,17 @@ if actual != expected and not actual.startswith(expected[:7]):
 print(f"health ok gitSha={actual}")
 PY
 
-curl -fsS "${health_base}/v1/health/db" >/dev/null
+db_deadline=$((SECONDS + 60))
+while (( SECONDS < db_deadline )); do
+  if curl -fsS "${health_base}/v1/health/db" >/dev/null 2>&1; then
+    break
+  fi
+  sleep 2
+done
+if ! curl -fsS "${health_base}/v1/health/db" >/dev/null; then
+  echo "DB health check failed: ${health_base}/v1/health/db" >&2
+  exit 1
+fi
 echo "DB health OK"
 
 mkdir -p "$DEPLOY_DIR"
