@@ -1,9 +1,43 @@
 <view class="mine-subpage tags-page">
   <scroll-view scroll-y class="mine-subpage-scroll" enhanced show-scrollbar="{{false}}">
     <view class="mine-subpage-inner">
-      <view class="group-header">新建标签</view>
+      <view class="inset-group tag-overview-panel">
+        <view class="overview-heading">
+          <view class="overview-title-wrap">
+            <text class="overview-title">标签管理</text>
+            <text class="overview-subtitle">最多 50 个标签，用于整理提醒。</text>
+          </view>
+          <view class="overview-count">
+            <text class="overview-count-value">{{totalCount}}</text>
+            <text class="overview-count-unit">/50</text>
+          </view>
+        </view>
+        <view class="overview-stats">
+          <view class="overview-stat">
+            <text class="overview-stat-value">{{usedCount}}</text>
+            <text class="overview-stat-label">使用中</text>
+          </view>
+          <view class="overview-stat">
+            <text class="overview-stat-value">{{unusedCount}}</text>
+            <text class="overview-stat-label">未使用</text>
+          </view>
+          <view class="overview-stat palette-stat">
+            <view class="palette-preview">
+              <view
+                wx:for="{{palettePreview}}"
+                wx:key="color"
+                class="palette-preview-dot"
+                style="background: {{item.color}};"
+              ></view>
+              <text wx:if="{{palettePreview.length === 0}}" class="palette-preview-empty">未选择颜色</text>
+            </view>
+            <text class="overview-stat-label">色彩分布</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="group-header">快速新建</view>
       <view class="inset-group tag-create-card">
-        <text class="tag-limit-hint">最多 50 个标签，可用搜索和排序整理。</text>
         <view class="tag-create-row">
           <input class="tag-name-input" placeholder="标签名称，最多 32 字" maxlength="32" value="{{newName}}" bindinput="onNewNameInput" />
           <button class="todo-button todo-button-primary todo-button-sm create-button" size="mini" loading="{{creating}}" bindtap="onCreateTag">新增</button>
@@ -16,11 +50,13 @@
             style="background: {{item}}; color: {{item}};"
             data-color="{{item}}"
             bindtap="onNewColorTap"
-          ></view>
+          >
+            <text wx:if="{{newColor === item}}" class="color-dot-check">✓</text>
+          </view>
         </view>
       </view>
 
-      <view class="group-header">标签库 · {{tags.length}}/50</view>
+      <view class="group-header">标签库</view>
       <view class="inset-group tag-tools">
         <view class="search-wrap">
           <text class="search-icon">⌕</text>
@@ -35,16 +71,25 @@
       </view>
       <view wx:if="{{loading}}" class="subpage-hint">加载中…</view>
       <view wx:elif="{{tags.length === 0}}" class="inset-group empty-card">
-        <text class="subpage-meta">{{query ? '未找到匹配的标签。' : '还没有标签。创建提醒时添加标签，或在这里新建常用标签。'}}</text>
+        <text class="empty-title">{{query ? '没有匹配标签' : '还没有标签'}}</text>
+        <text class="empty-desc">{{query ? '换个关键词试试，或清除搜索后查看全部标签。' : '先创建一个常用标签，之后可以在提醒里快速选择。'}}</text>
+        <text wx:if="{{query}}" class="empty-action link-text pressable" bindtap="onClearSearch" hover-class="pressable-active">清除搜索</text>
       </view>
       <view wx:else class="inset-group tag-list">
         <view wx:for="{{tags}}" wx:key="id" class="tag-row pressable" data-id="{{item.id}}" bindtap="onTagTap" hover-class="pressable-active">
           <view class="tag-row-main">
-            <text class="tag-leading-dot" style="background: {{item.color}};"></text>
+            <view class="tag-chip-preview" style="--tag-color: {{item.color}}; --tag-bg: {{item.bgColor}};">
+              <text class="tag-chip-dot"></text>
+              <text class="tag-chip-name">{{item.name}}</text>
+            </view>
             <view class="tag-title-wrap">
               <text class="tag-name">{{item.name}}</text>
-              <text class="tag-usage">{{item.usageLabel}} · {{item.lastUsedLabel}}</text>
+              <text class="tag-usage">{{item.usageLabel}}</text>
             </view>
+          </view>
+          <view class="tag-row-meta">
+            <text class="tag-state {{item.stateClass}}">{{item.stateLabel}}</text>
+            <text class="tag-last-used">{{item.lastUsedLabel}}</text>
           </view>
           <view class="form-disclosure"></view>
         </view>

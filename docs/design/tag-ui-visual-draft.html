@@ -1,0 +1,960 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AI Todo 标签 UI 设计稿</title>
+    <style>
+      :root {
+        --primary: #007aff;
+        --good: #34c759;
+        --warning: #ff9500;
+        --danger: #ff3b30;
+        --purple: #5856d6;
+        --violet: #af52de;
+        --pink: #ff2d55;
+        --gray: #8e8e93;
+        --page: #f2f2f7;
+        --surface: #ffffff;
+        --muted-surface: #f7f7fb;
+        --text: #111111;
+        --secondary: #3c3c43;
+        --muted: #636366;
+        --subtle: #8e8e93;
+        --line: rgba(60, 60, 67, 0.12);
+        --shadow: 0 10px 34px rgba(0, 0, 0, 0.08);
+        --soft-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+        --radius: 14px;
+        font-family:
+          -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: #e9edf4;
+        color: var(--text);
+      }
+
+      .canvas {
+        max-width: 1440px;
+        margin: 0 auto;
+        padding: 32px;
+      }
+
+      .header {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 24px;
+        margin-bottom: 28px;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 30px;
+        letter-spacing: 0;
+      }
+
+      .header p {
+        max-width: 720px;
+        margin: 8px 0 0;
+        color: var(--muted);
+        font-size: 15px;
+        line-height: 1.55;
+      }
+
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: 8px;
+      }
+
+      .legend-chip {
+        display: inline-flex;
+        align-items: center;
+        min-height: 30px;
+        padding: 0 10px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.72);
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 600;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(300px, 1fr));
+        gap: 28px;
+        align-items: start;
+      }
+
+      .board {
+        min-width: 0;
+      }
+
+      .board-title {
+        margin: 0 0 12px;
+        color: var(--secondary);
+        font-size: 15px;
+        font-weight: 700;
+      }
+
+      .phone {
+        overflow: hidden;
+        width: 390px;
+        max-width: 100%;
+        min-height: 780px;
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        border-radius: 34px;
+        background: var(--page);
+        box-shadow: var(--shadow);
+      }
+
+      .status-bar {
+        display: flex;
+        justify-content: space-between;
+        padding: 14px 24px 8px;
+        color: var(--text);
+        font-size: 13px;
+        font-weight: 700;
+      }
+
+      .screen {
+        padding: 8px 18px 28px;
+      }
+
+      .large-title {
+        margin: 10px 0 4px;
+        font-size: 30px;
+        font-weight: 800;
+      }
+
+      .subtitle {
+        margin-bottom: 18px;
+        color: var(--subtle);
+        font-size: 13px;
+      }
+
+      .section-title {
+        margin: 18px 8px 8px;
+        color: var(--subtle);
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .panel {
+        border-radius: var(--radius);
+        background: var(--surface);
+        box-shadow: var(--soft-shadow);
+      }
+
+      .overview {
+        padding: 18px;
+      }
+
+      .overview-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 14px;
+      }
+
+      .overview-title {
+        font-size: 21px;
+        font-weight: 760;
+      }
+
+      .overview-copy {
+        margin-top: 4px;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.45;
+      }
+
+      .count-pill {
+        display: inline-flex;
+        align-items: baseline;
+        align-self: flex-start;
+        padding: 7px 10px;
+        border-radius: 12px;
+        background: rgba(0, 122, 255, 0.09);
+        color: var(--primary);
+        font-weight: 800;
+      }
+
+      .count-pill small {
+        margin-left: 2px;
+        font-size: 12px;
+      }
+
+      .stats {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1.7fr;
+        gap: 8px;
+        margin-top: 16px;
+      }
+
+      .stat {
+        min-width: 0;
+        padding: 12px;
+        border-radius: 12px;
+        background: var(--muted-surface);
+      }
+
+      .stat strong {
+        display: block;
+        font-size: 20px;
+      }
+
+      .stat span {
+        display: block;
+        margin-top: 6px;
+        color: var(--subtle);
+        font-size: 11px;
+        font-weight: 600;
+      }
+
+      .color-stack {
+        display: flex;
+        min-height: 22px;
+        align-items: center;
+      }
+
+      .color-stack i {
+        width: 22px;
+        height: 22px;
+        border: 3px solid var(--muted-surface);
+        border-radius: 50%;
+        box-shadow: 0 0 0 1px var(--line);
+      }
+
+      .color-stack i + i {
+        margin-left: -6px;
+      }
+
+      .create {
+        padding: 14px;
+      }
+
+      .input-row {
+        display: flex;
+        gap: 10px;
+      }
+
+      .fake-input {
+        display: flex;
+        flex: 1;
+        align-items: center;
+        min-width: 0;
+        min-height: 42px;
+        padding: 0 12px;
+        border-radius: 12px;
+        background: rgba(118, 118, 128, 0.12);
+        color: var(--subtle);
+        font-size: 14px;
+      }
+
+      .primary-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 68px;
+        border-radius: 12px;
+        background: var(--primary);
+        color: #fff;
+        font-size: 14px;
+        font-weight: 700;
+      }
+
+      .palette {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 14px;
+      }
+
+      .swatch {
+        display: flex;
+        width: 30px;
+        height: 30px;
+        align-items: center;
+        justify-content: center;
+        border: 3px solid #fff;
+        border-radius: 50%;
+        box-shadow: 0 0 0 1px var(--line);
+        color: #fff;
+        font-size: 16px;
+        font-weight: 800;
+      }
+
+      .swatch.selected {
+        box-shadow: 0 0 0 3px currentColor;
+      }
+
+      .toolbar {
+        padding: 12px;
+      }
+
+      .search {
+        display: flex;
+        align-items: center;
+        min-height: 42px;
+        padding: 0 12px;
+        border-radius: 12px;
+        background: rgba(118, 118, 128, 0.12);
+        color: var(--subtle);
+        font-size: 14px;
+      }
+
+      .segments {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 5px;
+        margin-top: 12px;
+        padding: 4px;
+        border-radius: 13px;
+        background: rgba(118, 118, 128, 0.12);
+      }
+
+      .segment {
+        display: flex;
+        min-height: 34px;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .segment.active {
+        background: #fff;
+        box-shadow: var(--soft-shadow);
+        color: var(--text);
+      }
+
+      .tag-list {
+        overflow: hidden;
+      }
+
+      .tag-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-height: 64px;
+        padding: 12px 14px;
+      }
+
+      .tag-row + .tag-row {
+        border-top: 1px solid var(--line);
+      }
+
+      .tag-preview-pill,
+      .inline-tag,
+      .filter-tag {
+        --tag: var(--primary);
+        display: inline-flex;
+        align-items: center;
+        min-width: 0;
+        border: 1px solid var(--tag);
+        border-radius: 999px;
+        background: color-mix(in srgb, var(--tag) 8%, white);
+        color: var(--tag);
+        font-weight: 700;
+      }
+
+      .tag-preview-pill {
+        max-width: 116px;
+        min-height: 31px;
+        padding: 0 10px;
+        font-size: 12px;
+      }
+
+      .tag-dot {
+        width: 7px;
+        height: 7px;
+        margin-right: 7px;
+        border-radius: 50%;
+        background: currentColor;
+      }
+
+      .tag-label {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .tag-info {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .tag-name {
+        overflow: hidden;
+        font-size: 15px;
+        font-weight: 700;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .tag-meta {
+        margin-top: 4px;
+        color: var(--subtle);
+        font-size: 12px;
+      }
+
+      .state {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 5px;
+        width: 74px;
+      }
+
+      .state-pill {
+        padding: 4px 8px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 750;
+      }
+
+      .state-pill.used {
+        background: rgba(52, 199, 89, 0.12);
+        color: var(--good);
+      }
+
+      .state-pill.idle {
+        background: rgba(118, 118, 128, 0.12);
+        color: var(--subtle);
+      }
+
+      .state-date {
+        overflow: hidden;
+        max-width: 74px;
+        color: var(--subtle);
+        font-size: 11px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .detail-hero {
+        padding: 18px;
+      }
+
+      .large-tag {
+        display: inline-flex;
+        max-width: 100%;
+        min-height: 42px;
+        align-items: center;
+        padding: 0 14px;
+        border: 1px solid var(--primary);
+        border-radius: 999px;
+        background: rgba(0, 122, 255, 0.08);
+        color: var(--primary);
+        font-size: 18px;
+        font-weight: 800;
+      }
+
+      .detail-meta {
+        margin-top: 12px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .edit-card {
+        padding: 14px;
+      }
+
+      .label {
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 750;
+      }
+
+      .text-field {
+        display: flex;
+        align-items: center;
+        min-height: 46px;
+        margin-top: 8px;
+        padding: 0 12px;
+        border-radius: 12px;
+        background: rgba(118, 118, 128, 0.12);
+        font-size: 17px;
+        font-weight: 650;
+      }
+
+      .hint-row {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 8px;
+        color: var(--subtle);
+        font-size: 11px;
+      }
+
+      .color-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 14px;
+        padding: 16px;
+      }
+
+      .color-grid .swatch {
+        width: 42px;
+        height: 42px;
+        justify-self: center;
+      }
+
+      .actions {
+        display: grid;
+        gap: 10px;
+        margin-top: 18px;
+      }
+
+      .button {
+        display: flex;
+        min-height: 46px;
+        align-items: center;
+        justify-content: center;
+        border-radius: 14px;
+        font-size: 15px;
+        font-weight: 760;
+      }
+
+      .button.primary {
+        background: var(--primary);
+        color: #fff;
+      }
+
+      .button.danger {
+        background: rgba(255, 59, 48, 0.09);
+        color: var(--danger);
+      }
+
+      .reminder-card {
+        overflow: hidden;
+      }
+
+      .reminder-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        min-height: 68px;
+        padding: 11px 14px;
+        background: #fff;
+      }
+
+      .reminder-row + .reminder-row {
+        border-top: 1px solid var(--line);
+      }
+
+      .check {
+        width: 22px;
+        height: 22px;
+        margin-top: 1px;
+        border: 2px solid rgba(0, 122, 255, 0.55);
+        border-radius: 50%;
+      }
+
+      .reminder-body {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .reminder-mainline {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        min-width: 0;
+      }
+
+      .reminder-title {
+        display: flex;
+        flex: 1;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
+        font-size: 16px;
+        font-weight: 760;
+      }
+
+      .reminder-title span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .source {
+        flex-shrink: 0;
+        padding: 3px 8px;
+        border-radius: 999px;
+        background: rgba(0, 122, 255, 0.1);
+        color: var(--primary);
+        font-size: 11px;
+        font-weight: 750;
+      }
+
+      .reminder-subline {
+        flex-shrink: 0;
+        color: var(--subtle);
+        font-size: 12px;
+        white-space: nowrap;
+      }
+
+      .reminder-meta-line {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        min-height: 24px;
+        margin-top: 7px;
+      }
+
+      .inline-tags {
+        display: flex;
+        flex: 1;
+        gap: 6px;
+        min-width: 0;
+        overflow: hidden;
+      }
+
+      .inline-tag {
+        max-width: 104px;
+        min-height: 22px;
+        padding: 0 7px;
+        font-size: 11px;
+        line-height: 1;
+      }
+
+      .tag-summary {
+        --tag: var(--primary);
+        display: inline-flex;
+        align-items: center;
+        flex-shrink: 0;
+        max-width: 92px;
+        min-height: 22px;
+        padding: 0 7px;
+        border-radius: 999px;
+        background: color-mix(in srgb, var(--tag) 10%, white);
+        color: var(--tag);
+        font-size: 11px;
+        font-weight: 750;
+      }
+
+      .tag-summary .tag-label {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .tag-filter-row {
+        display: flex;
+        gap: 8px;
+        margin: 10px 0 14px;
+        overflow: hidden;
+      }
+
+      .filter-tag {
+        flex-shrink: 0;
+        min-height: 28px;
+        padding: 0 10px;
+        font-size: 12px;
+      }
+
+      .filter-tag.active {
+        background: var(--tag);
+        color: #fff;
+      }
+
+      .note {
+        margin-top: 14px;
+        padding: 12px 14px;
+        border: 1px solid rgba(0, 122, 255, 0.12);
+        border-radius: 14px;
+        background: rgba(0, 122, 255, 0.06);
+        color: var(--secondary);
+        font-size: 13px;
+        line-height: 1.55;
+      }
+
+      @media (max-width: 1180px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+
+        .phone {
+          margin: 0 auto;
+        }
+
+        .header {
+          align-items: flex-start;
+          flex-direction: column;
+        }
+
+        .legend {
+          justify-content: flex-start;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="canvas">
+      <header class="header">
+        <div>
+          <h1>标签 UI 设计稿</h1>
+          <p>
+            目标是让标签更像“可识别的分类资产”，而不是附着在事项下面的细碎文字。设置页强调管理感，提醒列表强调低噪声与快速识别。
+          </p>
+        </div>
+        <div class="legend">
+          <span class="legend-chip">iOS 设置页语言</span>
+          <span class="legend-chip">微信小程序可落地</span>
+          <span class="legend-chip">不改 API</span>
+        </div>
+      </header>
+
+      <section class="grid">
+        <div class="board">
+          <h2 class="board-title">方案 A · 标签设置页</h2>
+          <div class="phone">
+            <div class="status-bar"><span>9:41</span><span>100%</span></div>
+            <div class="screen">
+              <div class="large-title">标签</div>
+              <div class="subtitle">管理常用标签、颜色与使用状态</div>
+
+              <div class="panel overview">
+                <div class="overview-top">
+                  <div>
+                    <div class="overview-title">标签管理</div>
+                    <div class="overview-copy">最多 50 个标签，用于整理提醒。</div>
+                  </div>
+                  <div class="count-pill">12<small>/50</small></div>
+                </div>
+                <div class="stats">
+                  <div class="stat"><strong>8</strong><span>使用中</span></div>
+                  <div class="stat"><strong>4</strong><span>未使用</span></div>
+                  <div class="stat">
+                    <div class="color-stack">
+                      <i style="background: var(--primary)"></i>
+                      <i style="background: var(--warning)"></i>
+                      <i style="background: var(--good)"></i>
+                      <i style="background: var(--purple)"></i>
+                      <i style="background: var(--pink)"></i>
+                    </div>
+                    <span>色彩分布</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="section-title">快速新建</div>
+              <div class="panel create">
+                <div class="input-row">
+                  <div class="fake-input">标签名称，最多 32 字</div>
+                  <div class="primary-button">新增</div>
+                </div>
+                <div class="palette">
+                  <span class="swatch selected" style="background: var(--primary); color: var(--primary)"
+                    >✓</span
+                  >
+                  <span class="swatch" style="background: var(--good)"></span>
+                  <span class="swatch" style="background: var(--warning)"></span>
+                  <span class="swatch" style="background: var(--danger)"></span>
+                  <span class="swatch" style="background: var(--purple)"></span>
+                  <span class="swatch" style="background: var(--violet)"></span>
+                  <span class="swatch" style="background: var(--pink)"></span>
+                  <span class="swatch" style="background: var(--gray)"></span>
+                </div>
+              </div>
+
+              <div class="section-title">标签库</div>
+              <div class="panel toolbar">
+                <div class="search">⌕&nbsp;&nbsp;搜索标签</div>
+                <div class="segments">
+                  <div class="segment active">常用</div>
+                  <div class="segment">最近编辑</div>
+                  <div class="segment">名称</div>
+                </div>
+              </div>
+
+              <div class="panel tag-list" style="margin-top: 10px">
+                <div class="tag-row">
+                  <div class="tag-preview-pill" style="--tag: var(--warning)">
+                    <i class="tag-dot"></i><span class="tag-label">客户报价</span>
+                  </div>
+                  <div class="tag-info">
+                    <div class="tag-name">客户报价</div>
+                    <div class="tag-meta">6 个提醒</div>
+                  </div>
+                  <div class="state">
+                    <span class="state-pill used">使用中</span>
+                    <span class="state-date">07-07</span>
+                  </div>
+                </div>
+                <div class="tag-row">
+                  <div class="tag-preview-pill" style="--tag: var(--good)">
+                    <i class="tag-dot"></i><span class="tag-label">健康</span>
+                  </div>
+                  <div class="tag-info">
+                    <div class="tag-name">健康</div>
+                    <div class="tag-meta">3 个提醒</div>
+                  </div>
+                  <div class="state">
+                    <span class="state-pill used">使用中</span>
+                    <span class="state-date">07-05</span>
+                  </div>
+                </div>
+                <div class="tag-row">
+                  <div class="tag-preview-pill" style="--tag: var(--violet)">
+                    <i class="tag-dot"></i><span class="tag-label">长期规划</span>
+                  </div>
+                  <div class="tag-info">
+                    <div class="tag-name">长期规划</div>
+                    <div class="tag-meta">0 个提醒</div>
+                  </div>
+                  <div class="state">
+                    <span class="state-pill idle">未使用</span>
+                    <span class="state-date">未使用</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="note">
+            设置页建议保留“管理资产”的视觉：统计、色彩分布和状态标签能让用户知道自己在整理一个标签库。
+          </div>
+        </div>
+
+        <div class="board">
+          <h2 class="board-title">方案 B · 标签详情页</h2>
+          <div class="phone">
+            <div class="status-bar"><span>9:41</span><span>100%</span></div>
+            <div class="screen">
+              <div class="large-title">编辑标签</div>
+              <div class="subtitle">预览会随名称与颜色即时变化</div>
+
+              <div class="panel detail-hero">
+                <div class="large-tag">
+                  <i class="tag-dot"></i><span class="tag-label">客户报价</span>
+                </div>
+                <div class="detail-meta">使用中 · 6 个提醒</div>
+              </div>
+
+              <div class="section-title">基础信息</div>
+              <div class="panel edit-card">
+                <div class="label">标签名称</div>
+                <div class="text-field">客户报价</div>
+                <div class="hint-row"><span>最多 32 字</span><span>6 个提醒</span></div>
+              </div>
+
+              <div class="section-title">颜色</div>
+              <div class="panel color-grid">
+                <span class="swatch" style="background: var(--primary)"></span>
+                <span class="swatch" style="background: var(--good)"></span>
+                <span class="swatch selected" style="background: var(--warning); color: var(--warning)"
+                  >✓</span
+                >
+                <span class="swatch" style="background: var(--danger)"></span>
+                <span class="swatch" style="background: var(--purple)"></span>
+                <span class="swatch" style="background: var(--violet)"></span>
+                <span class="swatch" style="background: var(--pink)"></span>
+                <span class="swatch" style="background: var(--gray)"></span>
+              </div>
+
+              <div class="actions">
+                <div class="button primary">保存修改</div>
+                <div class="button danger">删除标签</div>
+              </div>
+            </div>
+          </div>
+          <div class="note">
+            详情页的关键是“预览即结果”：用户选颜色时能立刻看到这个标签在列表里的真实样子。
+          </div>
+        </div>
+
+        <div class="board">
+          <h2 class="board-title">方案 C · 提醒事项中的标签</h2>
+          <div class="phone">
+            <div class="status-bar"><span>9:41</span><span>100%</span></div>
+            <div class="screen">
+              <div class="large-title">提醒</div>
+              <div class="subtitle">7月7日 周二 · Asia/Shanghai</div>
+              <div class="search">⌕&nbsp;&nbsp;搜索标题、备注、标签或跟踪</div>
+              <div class="tag-filter-row">
+                <div class="filter-tag active" style="--tag: var(--warning)">客户报价</div>
+                <div class="filter-tag" style="--tag: var(--primary)">工作</div>
+                <div class="filter-tag" style="--tag: var(--good)">健康</div>
+              </div>
+
+              <div class="segments">
+                <div class="segment active">未完成 4</div>
+                <div class="segment">处理中 2</div>
+                <div class="segment">已完成</div>
+              </div>
+
+              <div class="section-title">今天</div>
+              <div class="panel reminder-card">
+                <div class="reminder-row">
+                  <div class="check"></div>
+                  <div class="reminder-body">
+                    <div class="reminder-mainline">
+                      <div class="reminder-title"><span>整理客户报价方案</span><b class="source">Agent</b></div>
+                    </div>
+                    <div class="reminder-meta-line">
+                      <div class="inline-tags">
+                        <div class="inline-tag" style="--tag: var(--warning)">
+                          <i class="tag-dot"></i><span class="tag-label">客户报价</span>
+                        </div>
+                        <div class="inline-tag" style="--tag: var(--primary)">
+                          <i class="tag-dot"></i><span class="tag-label">工作</span>
+                        </div>
+                      </div>
+                      <div class="reminder-subline">今天 15:30</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="reminder-row">
+                  <div class="check"></div>
+                  <div class="reminder-body">
+                    <div class="reminder-mainline">
+                      <div class="reminder-title"><span>复盘本周训练计划和饮食</span></div>
+                    </div>
+                    <div class="reminder-meta-line">
+                      <div class="inline-tags">
+                        <div class="inline-tag" style="--tag: var(--good)">
+                          <i class="tag-dot"></i><span class="tag-label">健康</span>
+                        </div>
+                      </div>
+                      <div class="reminder-subline">今天 20:00</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="reminder-row">
+                  <div class="check"></div>
+                  <div class="reminder-body">
+                    <div class="reminder-mainline">
+                      <div class="reminder-title"><span>更新产品功能模块说明</span><b class="source">CLI</b></div>
+                      <div class="tag-summary" style="--tag: var(--violet)">
+                        <i class="tag-dot"></i><span class="tag-label">长期规划</span>
+                      </div>
+                    </div>
+                    <div class="reminder-meta-line">
+                      <div class="inline-tags"></div>
+                      <div class="reminder-subline">无截止时间</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="note">
+            提醒列表建议最多显示 2 个标签，更多直接忽略，不显示 +N。常规事项把标签与时间压在第二行；更紧凑的事项可把首个标签放在右侧摘要位，避免新增第三行高度。
+          </div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

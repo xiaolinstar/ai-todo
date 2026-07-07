@@ -3,20 +3,21 @@
     <view class="mine-subpage-inner">
       <view wx:if="{{loading}}" class="subpage-hint">加载中…</view>
       <block wx:else>
-        <view class="tag-preview">
-          <text class="tag-preview-dot" style="background: {{color}};"></text>
-          <text class="tag-preview-name">{{name || '未命名标签'}}</text>
+        <view class="inset-group tag-preview-panel" style="--tag-color: {{color}}; --tag-bg: {{bgColor}};">
+          <view class="tag-preview-chip">
+            <text class="tag-preview-dot"></text>
+            <text class="tag-preview-name">{{name || '未命名标签'}}</text>
+          </view>
+          <text class="tag-preview-meta">{{usageLabel}}</text>
         </view>
 
         <view class="group-header">基础信息</view>
-        <view class="inset-group subpage-group">
-          <view class="subpage-cell">
-            <text class="subpage-label">名称</text>
-            <input class="tag-name-input" placeholder="输入标签名称" maxlength="32" value="{{name}}" bindinput="onNameInput" confirm-type="done" />
-          </view>
-          <view class="subpage-cell">
-            <text class="subpage-label">使用中</text>
-            <text class="subpage-value">{{usageCount}} 个提醒</text>
+        <view class="inset-group tag-edit-card">
+          <text class="tag-edit-label">标签名称</text>
+          <input class="tag-name-input" placeholder="输入标签名称" maxlength="32" value="{{name}}" bindinput="onNameInput" confirm-type="done" />
+          <view class="tag-edit-footer">
+            <text class="tag-edit-hint">最多 32 字</text>
+            <text class="tag-edit-count">{{usageCount}} 个提醒</text>
           </view>
         </view>
 
@@ -37,7 +38,9 @@
           </view>
         </view>
 
-        <button class="todo-button todo-button-primary save-button" loading="{{saving}}" bindtap="onSave">保存</button>
+        <button class="todo-button save-button {{isDirty ? 'todo-button-primary' : 'save-button-idle'}}" loading="{{saving}}" bindtap="onSave">
+          {{isDirty ? '保存修改' : '完成'}}
+        </button>
         <button class="todo-button delete-button" loading="{{deleting}}" bindtap="onDelete">删除标签</button>
       </block>
     </view>

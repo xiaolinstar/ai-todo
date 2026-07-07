@@ -2,11 +2,11 @@ from uuid import uuid4
 
 from datetime import datetime
 
-from sqlalchemy import delete, func, select
+from sqlalchemy import and_, delete, func, select
 from sqlalchemy.orm import Session
 
 from ai_todo_api.common.time import now_utc
-from ai_todo_api.db.models import ReminderTagModel, TagModel
+from ai_todo_api.db.models import ReminderModel, ReminderTagModel, TagModel
 from ai_todo_api.modules.tags.normalize import clean_tag_display_name, normalize_tag_name
 from ai_todo_api.modules.tags.schemas import TagSummary
 
@@ -34,8 +34,16 @@ class TagRepository:
         if sort not in VALID_TAG_SORTS:
             raise ValueError("sort must be one of: usage, name, updated")
         statement = (
-            select(TagModel, func.count(ReminderTagModel.id).label("usage_count"))
+            select(TagModel, func.count(ReminderModel.id).label("usage_count"))
             .outerjoin(ReminderTagModel, ReminderTagModel.tag_id == TagModel.id)
+            .outerjoin(
+                ReminderModel,
+                and_(
+                    ReminderModel.id == ReminderTagModel.reminder_id,
+                    ReminderModel.user_id == self._user_id,
+                    ReminderModel.deleted_at.is_(None),
+                ),
+            )
             .where(TagModel.user_id == self._user_id)
             .group_by(
                 TagModel.id,
@@ -58,7 +66,7 @@ class TagRepository:
             statement = statement.order_by(TagModel.updated_at.desc(), TagModel.name.asc())
         else:
             statement = statement.order_by(
-                func.count(ReminderTagModel.id).desc(),
+                func.count(ReminderModel.id).desc(),
                 TagModel.updated_at.desc(),
                 TagModel.name.asc(),
             )
@@ -221,7 +229,17 @@ class TagRepository:
     def usage_count(self, tag_id: str) -> int:
         return int(
             self._session.scalar(
-                select(func.count()).select_from(ReminderTagModel).where(ReminderTagModel.tag_id == tag_id)
+                select(func.count(ReminderModel.id))
+                .select_from(ReminderTagModel)
+                .join(
+                    ReminderModel,
+                    ReminderModel.id == ReminderTagModel.reminder_id,
+                )
+                .where(
+                    ReminderTagModel.tag_id == tag_id,
+                    ReminderModel.user_id == self._user_id,
+                    ReminderModel.deleted_at.is_(None),
+                )
             )
             or 0
         )

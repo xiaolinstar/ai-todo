@@ -14,11 +14,14 @@ import { updateTabBarSelected } from '../../lib/tab-bar';
 import { getWindowWidthPx } from '../../lib/window-metrics';
 import { buildAppShareOptions, buildAppShareTimelineOptions } from '../../lib/share';
 import { loadContentPrefs } from '../../lib/content-prefs';
+import { withTagStyle, type TagStyleFields } from '../../lib/tag-style';
 import {
   deriveNotifyUi,
   enableWechatNotifyForTarget,
   loadWechatNotificationPrefs,
 } from '../../lib/wechat-notify';
+
+type TagView = TagSummary & TagStyleFields;
 
 interface ReminderView extends ReminderSummary {
   dueLabel: string;
@@ -36,8 +39,7 @@ interface ReminderView extends ReminderSummary {
   showEnableButton: boolean;
   showEnabledLabel: boolean;
   showAwaitingBadge: boolean;
-  visibleTags: TagSummary[];
-  hiddenTagCount: number;
+  visibleTags: TagView[];
 }
 
 interface ReminderGroup {
@@ -101,8 +103,7 @@ function enrichReminder(
     showEnableButton: false,
     showEnabledLabel: false,
     showAwaitingBadge: false,
-    visibleTags: tags.slice(0, 2),
-    hiddenTagCount: Math.max(tags.length - 2, 0),
+    visibleTags: tags.slice(0, 2).map(withTagStyle),
   };
 
   const notifyUi = deriveNotifyUi({
@@ -285,7 +286,10 @@ Page({
       ])
         .then(([account, contentPrefs, notifyPrefs, tagsRes]) => {
           const showTagsInList = contentPrefs.reminders.showTagsInList;
-          const tagOptions = showTagsInList && tagsRes.ok && tagsRes.data ? tagsRes.data.items : [];
+          const tagOptions =
+            showTagsInList && tagsRes.ok && tagsRes.data
+              ? tagsRes.data.items.map(withTagStyle)
+              : [];
           return fetchReminders({
             q: searchQuery || undefined,
             tag: searchTag || undefined,
@@ -367,7 +371,10 @@ Page({
           const { timezone, today } = account;
           const notifyAvailable = notifyPrefs.notifyAvailable;
           const showTagsInList = contentPrefs.reminders.showTagsInList;
-          const tagOptions = showTagsInList && tagsRes.ok && tagsRes.data ? tagsRes.data.items : [];
+          const tagOptions =
+            showTagsInList && tagsRes.ok && tagsRes.data
+              ? tagsRes.data.items.map(withTagStyle)
+              : [];
           const pendingItems = pendingRes.data.items.map((item) =>
             enrichReminder(item, timezone, notifyAvailable),
           );

@@ -133,6 +133,25 @@ def test_list_tags(client: TestClient, demo_suffix: str) -> None:
     assert customer["lastUsedAt"]
 
 
+def test_tag_usage_ignores_deleted_reminders(client: TestClient, demo_suffix: str) -> None:
+    tag_name = f"archive-{demo_suffix}"
+    create_response = client.post(
+        "/v1/reminders",
+        json={"title": "将删除的标签事项", "tagNames": [tag_name]},
+    )
+    assert create_response.status_code == 201
+    reminder_id = create_response.json()["data"]["reminder"]["id"]
+
+    delete_response = client.delete(f"/v1/reminders/{reminder_id}")
+    assert delete_response.status_code == 200
+
+    response = client.get("/v1/tags", params={"q": tag_name})
+    assert response.status_code == 200
+    items = response.json()["data"]["items"]
+    archived = next(item for item in items if item["name"] == tag_name)
+    assert archived["usageCount"] == 0
+
+
 def test_list_tags_sorting(client: TestClient, demo_suffix: str) -> None:
     popular = f"popular-{demo_suffix}"
     rare = f"rare-{demo_suffix}"

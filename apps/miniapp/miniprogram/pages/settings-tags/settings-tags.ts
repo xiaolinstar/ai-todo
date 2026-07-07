@@ -1,16 +1,35 @@
 import { createTag, fetchTags, type TagSummary } from '../../lib/api';
 import { TODO_TAG_PALETTE } from '../../lib/design-tokens';
+import { withTagStyle, type TagStyleFields } from '../../lib/tag-style';
+
+type TagSort = 'usage' | 'name' | 'updated';
+
+interface DecoratedTag extends TagSummary, TagStyleFields {
+  usageLabel: string;
+  lastUsedLabel: string;
+  stateLabel: string;
+  stateClass: string;
+}
+
+interface PalettePreviewItem {
+  color: string;
+  count: number;
+}
 
 Page({
   data: {
     loading: true,
     creating: false,
-    tags: [] as TagSummary[],
+    tags: [] as DecoratedTag[],
     palette: [...TODO_TAG_PALETTE],
+    palettePreview: [] as PalettePreviewItem[],
+    totalCount: 0,
+    usedCount: 0,
+    unusedCount: 0,
     newName: '',
     newColor: TODO_TAG_PALETTE[0],
     query: '',
-    sort: 'usage' as 'usage' | 'name' | 'updated',
+    sort: 'usage' as TagSort,
   },
 
   onShow() {
@@ -21,9 +40,11 @@ Page({
     this.setData({ loading: true });
     fetchTags({ limit: 50, q: this.data.query, sort: this.data.sort })
       .then((response) => {
+        const tags = response.ok && response.data ? decorateTags(response.data.items) : [];
         this.setData({
           loading: false,
-          tags: response.ok && response.data ? decorateTags(response.data.items) : [],
+          tags,
+          ...summarizeTags(tags),
         });
       })
       .catch(() => {
@@ -51,7 +72,7 @@ Page({
     this.loadTags();
   },
 
-  onSortTap(e: { currentTarget: { dataset: { sort?: 'usage' | 'name' | 'updated' } } }) {
+  onSortTap(e: { currentTarget: { dataset: { sort?: TagSort } } }) {
     const sort = e.currentTarget.dataset.sort;
     if (!sort || sort === this.data.sort) return;
     this.setData({ sort });
@@ -74,7 +95,7 @@ Page({
         }
         this.setData({
           newName: '',
-          tags: decorateTags(mergeTag(this.data.tags, response.data.tag)),
+          ...applyTagListState(decorateTags(mergeTag(this.data.tags, response.data.tag))),
         });
         wx.showToast({ title: '已新增', icon: 'success' });
       })
@@ -99,14 +120,47 @@ function mergeTag(tags: TagSummary[], next: TagSummary): TagSummary[] {
   return merged.sort((a, b) => a.name.localeCompare(b.name));
 }
 
-function decorateTags(
-  tags: TagSummary[],
-): Array<TagSummary & { usageLabel: string; lastUsedLabel: string }> {
+function decorateTags(tags: TagSummary[]): DecoratedTag[] {
   return tags.map((tag) => ({
-    ...tag,
+    ...withTagStyle(tag),
     usageLabel: `${tag.usageCount || 0} 个提醒`,
     lastUsedLabel: tag.lastUsedAt ? `最近使用 ${formatDate(tag.lastUsedAt)}` : '未使用',
+    stateLabel: tag.usageCount ? '使用中' : '未使用',
+    stateClass: tag.usageCount ? 'active' : 'idle',
   }));
+}
+
+function summarizeTags(tags: TagSummary[]) {
+  const usedCount = tags.filter((tag) => (tag.usageCount || 0) > 0).length;
+  return {
+    totalCount: tags.length,
+    usedCount,
+    unusedCount: Math.max(tags.length - usedCount, 0),
+    palettePreview: buildPalettePreview(tags),
+  };
+}
+
+function applyTagListState(tags: DecoratedTag[]) {
+  return {
+    tags,
+    ...summarizeTags(tags),
+  };
+}
+
+function buildPalettePreview(tags: TagSummary[]): PalettePreviewItem[] {
+  const counts = new Map<string, number>();
+  for (const tag of tags) {
+    counts.set(tag.color, (counts.get(tag.color) || 0) + 1);
+  }
+  return [...counts.entries()]
+    .sort((a, b) => b[1] - a[1] || paletteOrder(a[0]) - paletteOrder(b[0]))
+    .slice(0, 8)
+    .map(([color, count]) => ({ color, count }));
+}
+
+function paletteOrder(color: string): number {
+  const index = (TODO_TAG_PALETTE as readonly string[]).indexOf(color);
+  return index >= 0 ? index : TODO_TAG_PALETTE.length;
 }
 
 function formatDate(value: string): string {

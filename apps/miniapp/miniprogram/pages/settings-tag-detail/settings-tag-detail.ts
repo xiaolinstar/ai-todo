@@ -1,5 +1,6 @@
 import { deleteTag, fetchTags, updateTag, type TagSummary } from '../../lib/api';
 import { TODO_MODAL_CONFIRM_DANGER, TODO_TAG_PALETTE } from '../../lib/design-tokens';
+import { getTagBackgroundColor } from '../../lib/tag-style';
 
 Page({
   data: {
@@ -11,7 +12,10 @@ Page({
     originalColor: TODO_TAG_PALETTE[0],
     name: '',
     color: TODO_TAG_PALETTE[0],
+    bgColor: getTagBackgroundColor(TODO_TAG_PALETTE[0]),
     usageCount: 0,
+    usageLabel: '未使用',
+    isDirty: false,
     palette: [...TODO_TAG_PALETTE],
   },
 
@@ -48,7 +52,10 @@ Page({
           originalColor: tag.color,
           name: tag.name,
           color: tag.color,
+          bgColor: getTagBackgroundColor(tag.color),
           usageCount: tag.usageCount || 0,
+          usageLabel: formatUsageLabel(tag.usageCount || 0),
+          isDirty: false,
         });
       })
       .catch(() => {
@@ -58,12 +65,22 @@ Page({
   },
 
   onNameInput(e: { detail: { value: string } }) {
-    this.setData({ name: e.detail.value });
+    const name = e.detail.value;
+    this.setData({
+      name,
+      isDirty: isDirty(name, this.data.color, this.data.originalName, this.data.originalColor),
+    });
   },
 
   onColorTap(e: { currentTarget: { dataset: { color?: string } } }) {
     const color = e.currentTarget.dataset.color;
-    if (color) this.setData({ color });
+    if (color) {
+      this.setData({
+        color,
+        bgColor: getTagBackgroundColor(color),
+        isDirty: isDirty(this.data.name, color, this.data.originalName, this.data.originalColor),
+      });
+    }
   },
 
   onSave() {
@@ -123,3 +140,16 @@ Page({
     });
   },
 });
+
+function isDirty(
+  name: string,
+  color: string,
+  originalName: string,
+  originalColor: string,
+): boolean {
+  return name.trim() !== originalName || color !== originalColor;
+}
+
+function formatUsageLabel(count: number): string {
+  return count > 0 ? `使用中 · ${count} 个提醒` : '未使用 · 可放心调整名称和颜色';
+}
