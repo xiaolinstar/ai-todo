@@ -144,9 +144,10 @@ jobs:
           script_stop: true
           script: |
             DEPLOY_PATH="${DEPLOY_PATH:-$HOME/AgentProjects/ai-todo}"
+            DEPLOY_PATH="${DEPLOY_PATH//\$HOME/$HOME}"
             cd "$DEPLOY_PATH"
             git fetch --prune origin main
-            git pull --ff-only origin main || git fetch origin main && git reset --hard origin/main
+            git pull --ff-only origin main || { git fetch origin main && git reset --hard origin/main; }
             export AI_TODO_DEPLOY_MANIFEST=/tmp/deploy-manifest.json
             export AI_TODO_RELEASE_TAG="$RELEASE_TAG"
             bash apps/api/deploy/cd-k8s-bootstrap.sh
