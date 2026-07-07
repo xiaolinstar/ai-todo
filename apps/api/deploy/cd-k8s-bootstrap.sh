@@ -44,22 +44,37 @@ if ! command -v kustomize >/dev/null 2>&1; then
   export PATH="$(dirname "$KUSTOMIZE_BIN"):$PATH"
 fi
 
-export KUBECONFIG="${KUBECONFIG:-$HOME/.kube/config}"
-
 python3 "$REPO_ROOT/scripts/ci/verify_deploy_manifest.py" "$MANIFEST"
 
-read -r GIT_SHA API_IMAGE API_DIGEST FINGERPRINT RUN_ID <<EOF
-$(python3 - <<'PY' "$MANIFEST"
-import json, sys
+eval "$(python3 - <<'PY' "$MANIFEST"
+import json, shlex, sys
 m = json.load(open(sys.argv[1]))
-print(m["gitSha"])
-print(m["artifacts"]["api"]["image"])
-print(m["artifacts"]["api"]["digest"])
-print(m["fingerprint"])
-print(m.get("runId") or "")
+api = m["artifacts"]["api"]
+fields = {
+    "GIT_SHA": m["gitSha"],
+    "API_IMAGE": api["image"],
+    "API_DIGEST": api["digest"],
+    "FINGERPRINT": m["fingerprint"],
+    "RUN_ID": m.get("runId") or "",
+}
+for key, val in fields.items():
+    print(f"{key}={shlex.quote(str(val))}")
 PY
-)
-EOF
+)"
+
+if [[ -z "$GIT_SHA" || -z "$API_DIGEST" ]]; then
+  echo "Failed to parse manifest (git_sha/digest empty)" >&2
+  exit 1
+fi
+
+export KUBECONFIG="${KUBECONFIG:-$HOME/.kube/config}"
+if [[ ! -f "$KUBECONFIG" && -f /etc/rancher/k3s/k3s.yaml ]]; then
+  export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+fi
+if [[ ! -f "$KUBECONFIG" ]]; then
+  echo "Missing kubeconfig (expected ~/.kube/config or /etc/rancher/k3s/k3s.yaml)" >&2
+  exit 1
+fi
 
 echo "K8s deploy manifest OK"
 echo "  git_sha=${GIT_SHA}"

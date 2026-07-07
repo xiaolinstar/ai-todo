@@ -149,6 +149,7 @@ jobs:
             git reset --hard origin/main
             export AI_TODO_DEPLOY_MANIFEST=/tmp/deploy-manifest.json
             export AI_TODO_RELEASE_TAG="$RELEASE_TAG"
+            export KUBECONFIG="${KUBECONFIG:-$HOME/.kube/config}"
             bash apps/api/deploy/cd-k8s-bootstrap.sh
 
   verify:
