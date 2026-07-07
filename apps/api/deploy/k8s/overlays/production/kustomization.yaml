@@ -37,6 +37,12 @@ patches:
 generatorOptions:
   disableNameSuffixHash: true
 
+configMapGenerator:
+  - name: ai-todo-config
+    behavior: merge
+    envs:
+      - .env.production.configs
+
 secretGenerator:
   - name: ai-todo-secrets
     envs:

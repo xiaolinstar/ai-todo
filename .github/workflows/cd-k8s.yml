@@ -175,9 +175,10 @@ jobs:
             base="${CD_LOCAL_HEALTH_URL%/}"
             curl -fsS "${base}/v1/health" | python3 -c "
             import json, sys, os
-            p = json.load(sys.stdin)
+            payload = json.load(sys.stdin)
+            data = payload.get('data') if isinstance(payload.get('data'), dict) else payload
             exp = os.environ['EXPECT_GIT_SHA'].strip().lower()
-            act = (p.get('gitSha') or '').strip().lower()
+            act = (data.get('gitSha') or '').strip().lower()
             assert act, 'missing gitSha'
             assert act == exp or act.startswith(exp[:7]), f'gitSha {act} != {exp}'
             print('verify ok', act)

@@ -100,6 +100,15 @@ if [[ ! -f "$SECRETS_FILE" ]]; then
   exit 1
 fi
 
+CONFIGS_FILE="$OVERLAY_DIR/.env.production.configs"
+cat > "$CONFIGS_FILE" <<EOF
+AI_TODO_ENVIRONMENT=production
+AI_TODO_ALLOW_DEV_AUTH=false
+AI_TODO_GIT_SHA=${GIT_SHA}
+AI_TODO_RELEASE_TAG=${AI_TODO_RELEASE_TAG:-}
+EOF
+chmod 600 "$CONFIGS_FILE"
+
 DIGEST="$API_DIGEST"
 if [[ "$DIGEST" != sha256:* ]]; then
   DIGEST="sha256:${DIGEST#sha256:}"
@@ -143,10 +152,11 @@ fi
 python3 - <<'PY' /tmp/k8s-health.json "$GIT_SHA"
 import json, sys
 payload = json.load(open(sys.argv[1]))
+data = payload.get("data") if isinstance(payload.get("data"), dict) else payload
 expected = sys.argv[2].strip().lower()
-actual = (payload.get("gitSha") or payload.get("git_sha") or "").strip().lower()
+actual = (data.get("gitSha") or data.get("git_sha") or "").strip().lower()
 if not actual:
-    raise SystemExit("health response missing gitSha")
+    raise SystemExit("health response missing gitSha (check AI_TODO_GIT_SHA in configmap)")
 if actual != expected and not actual.startswith(expected[:7]):
     raise SystemExit(f"gitSha mismatch: expected {expected}, got {actual}")
 print(f"health ok gitSha={actual}")
