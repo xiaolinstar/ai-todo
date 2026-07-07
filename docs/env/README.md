@@ -37,15 +37,16 @@ For an existing production deployment, changing this value creates a new Compose
 
 ## Templates
 
-| Template                                   | Purpose                                                       |
-| ------------------------------------------ | ------------------------------------------------------------- |
-| `apps/api/.env.example`                    | shared non-secret API defaults                                |
-| `apps/api/.env.local.example`              | local Docker overrides and optional local WeChat test secrets |
-| `apps/api/.env.staging.example`            | staging VPS overrides and secrets checklist                   |
-| `apps/api/.env.production.example`         | production VPS overrides and secrets checklist                |
-| `docs/env/github-environments.example.env` | GitHub Environment secrets checklist                          |
-| `docs/env/github-environments.md`          | GitHub Variables / Secrets reference                          |
-| `docs/env/ops.example.env`                 | local shell variables for CD verification scripts             |
+| Template                                      | Purpose                                                       |
+| --------------------------------------------- | ------------------------------------------------------------- |
+| `apps/api/.env.example`                       | shared non-secret API defaults                                |
+| `apps/api/.env.local.example`                 | local Docker overrides and optional local WeChat test secrets |
+| `apps/api/.env.staging.example`               | staging VPS overrides and secrets checklist                   |
+| `apps/api/.env.production.example`            | production VPS overrides and secrets checklist                |
+| `docs/env/github/<env>/variables.env.example` | GitHub Actions Variables（L2）                                |
+| `docs/env/github/<env>/secrets.env.example`   | GitHub Actions Secrets（L2）                                  |
+| `docs/env/github-environments.md`             | L2 索引与 sync 工作流                                         |
+| `docs/env/ops.example.env`                    | local shell variables for CD verification scripts             |
 
 ## Health checks (/healthz)
 
