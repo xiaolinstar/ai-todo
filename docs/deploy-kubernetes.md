@@ -211,8 +211,7 @@ docker compose -f docker-compose.prod.yml --env-file .env.staging exec -T postgr
 kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=postgres \
   -n ai-todo-staging --timeout=180s
 
-kubectl exec -i -n ai-todo-staging deployment/postgres -- \
-  psql -U ai_todo -d ai_todo < /tmp/ai-todo-staging-backup.sql
+kubectl exec -i -n ai-todo-staging deployment/postgres -- psql -U ai_todo -d ai_todo < /tmp/ai-todo-staging-backup.sql
 
 kubectl rollout restart deployment/api -n ai-todo-staging
 ```
