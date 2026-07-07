@@ -57,5 +57,4 @@ generatorOptions:
 
 images:
   - name: ghcr.io/xiaolinstar/ai-todo-api
-    newName: ghcr.io/xiaolinstar/ai-todo-api
-    newTag: latest
+    newName: ghcr.nju.edu.cn/xiaolinstar/ai-todo-api
