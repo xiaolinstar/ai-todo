@@ -31,8 +31,17 @@ if ! command -v kubectl >/dev/null 2>&1; then
 fi
 
 if ! command -v kustomize >/dev/null 2>&1; then
-  echo "kustomize CLI is required (https://kubectl.docs.kubernetes.io/installation/kustomize/)" >&2
-  exit 1
+  KUSTOMIZE_BIN="${HOME}/.local/bin/kustomize"
+  if [[ ! -x "$KUSTOMIZE_BIN" ]]; then
+    echo "Installing kustomize to $KUSTOMIZE_BIN"
+    mkdir -p "$(dirname "$KUSTOMIZE_BIN")"
+    tmpdir="$(mktemp -d)"
+    curl -fsSL "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/v5.6.0/kustomize_v5.6.0_linux_amd64.tar.gz" \
+      | tar -xzf - -C "$tmpdir"
+    install -m 0755 "$tmpdir/kustomize" "$KUSTOMIZE_BIN"
+    rm -rf "$tmpdir"
+  fi
+  export PATH="$(dirname "$KUSTOMIZE_BIN"):$PATH"
 fi
 
 export KUBECONFIG="${KUBECONFIG:-$HOME/.kube/config}"
@@ -62,6 +71,7 @@ echo "  namespace=${K8S_NAMESPACE}"
 cd "$REPO_ROOT"
 git fetch origin
 git reset --hard "$GIT_SHA"
+git clean -fd -- "$K8S_OVERLAY" 2>/dev/null || true
 
 OVERLAY_DIR="$REPO_ROOT/$K8S_OVERLAY"
 if [[ ! -d "$OVERLAY_DIR" ]]; then

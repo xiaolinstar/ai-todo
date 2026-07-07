@@ -141,13 +141,12 @@ jobs:
           port: ${{ vars.DEPLOY_PORT || secrets.DEPLOY_PORT || 22 }}
           envs: FINGERPRINT,CI_RUN_ID,RELEASE_TAG,DEPLOY_PATH,K8S_OVERLAY,K8S_NAMESPACE,K8S_REGISTRY_MIRROR,CD_LOCAL_HEALTH_URL
           command_timeout: 15m
-          script_stop: true
           script: |
             DEPLOY_PATH="${DEPLOY_PATH:-$HOME/AgentProjects/ai-todo}"
             DEPLOY_PATH="${DEPLOY_PATH//\$HOME/$HOME}"
             cd "$DEPLOY_PATH"
             git fetch --prune origin main
-            git pull --ff-only origin main || { git fetch origin main && git reset --hard origin/main; }
+            git reset --hard origin/main
             export AI_TODO_DEPLOY_MANIFEST=/tmp/deploy-manifest.json
             export AI_TODO_RELEASE_TAG="$RELEASE_TAG"
             bash apps/api/deploy/cd-k8s-bootstrap.sh
@@ -171,7 +170,6 @@ jobs:
           password: ${{ secrets.DEPLOY_PASSWORD }}
           port: ${{ vars.DEPLOY_PORT || secrets.DEPLOY_PORT || 22 }}
           envs: CD_LOCAL_HEALTH_URL,EXPECT_GIT_SHA
-          script_stop: true
           script: |
             base="${CD_LOCAL_HEALTH_URL%/}"
             curl -fsS "${base}/v1/health" | python3 -c "
