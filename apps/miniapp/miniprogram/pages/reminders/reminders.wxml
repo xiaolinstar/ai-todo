@@ -28,16 +28,20 @@
       <text wx:if="{{searchQuery || searchTag}}" class="link-text pressable" bindtap="onClearSearch" hover-class="pressable-active">清除</text>
     </view>
     <scroll-view wx:if="{{showTagsInList && tagOptions.length > 0}}" class="tag-chip-scroll" scroll-x enable-flex>
-      <view
-        wx:for="{{tagOptions}}"
-        wx:key="id"
-        class="tag-filter-chip pressable {{searchTag === item.name ? 'active' : ''}}"
-        style="--tag-color: {{item.color}}; --tag-bg: {{item.bgColor}};"
-        data-name="{{item.name}}"
-        bindtap="onTagChipTap"
-        hover-class="pressable-active"
-      >
-        #{{item.name}}
+      <view class="tag-chip-inner">
+        <view
+          wx:for="{{tagOptions}}"
+          wx:key="id"
+          class="tag-filter-chip pressable {{searchTag === item.name ? 'active' : ''}}"
+          style="--tag-color: {{item.color}}; --tag-bg: {{item.bgColor}};"
+          data-name="{{item.name}}"
+          bindtap="onTagChipTap"
+          hover-class="pressable-active"
+        >
+          <view class="tag-filter-dot"></view>
+          <text class="tag-filter-name">{{item.name}}</text>
+          <text wx:if="{{searchTag === item.name}}" class="tag-filter-check">✓</text>
+        </view>
       </view>
     </scroll-view>
   </view>
@@ -93,7 +97,10 @@
           hover-class="reminder-row-pressed"
         >
           <view class="cell-body compact">
-            <view class="cell-title">{{item.title}}</view>
+            <view class="title-line">
+              <view class="cell-title">{{item.title}}</view>
+              <text wx:if="{{item.dueLabel && item.status !== 'completed'}}" class="cell-due-tag {{item.isOverdue ? 'overdue' : ''}}">{{item.dueLabel}}</text>
+            </view>
             <view wx:if="{{item.subline || (showTagsInList && item.visibleTags.length > 0)}}" class="reminder-meta-line">
               <view wx:if="{{showTagsInList && item.visibleTags.length > 0}}" class="tag-strip">
                 <view
@@ -105,6 +112,9 @@
                 >
                   <text class="tag-token-dot"></text>
                   <text class="tag-token-name">{{tag.name}}</text>
+                </view>
+                <view wx:if="{{item.hiddenTagCount > 0}}" class="tag-token tag-token-more">
+                  <text class="tag-token-name">+{{item.hiddenTagCount}}</text>
                 </view>
               </view>
               <view wx:if="{{item.subline}}" class="cell-subline">{{item.subline}}</view>
@@ -168,6 +178,7 @@
                 <view class="cell-body compact">
                   <view class="title-line">
                     <view class="cell-title {{item.completing ? 'done' : ''}}">{{item.title}}</view>
+                    <text wx:if="{{item.dueLabel && item.status !== 'completed'}}" class="cell-due-tag {{item.isOverdue ? 'overdue' : ''}}">{{item.dueLabel}}</text>
                     <view wx:if="{{item.sourceLabel}}" class="source-badge">{{item.sourceLabel}}</view>
                   </view>
                   <view wx:if="{{item.subline || (showTagsInList && item.visibleTags.length > 0)}}" class="reminder-meta-line">
@@ -181,6 +192,9 @@
                       >
                         <text class="tag-token-dot"></text>
                         <text class="tag-token-name">{{tag.name}}</text>
+                      </view>
+                      <view wx:if="{{item.hiddenTagCount > 0}}" class="tag-token tag-token-more">
+                        <text class="tag-token-name">+{{item.hiddenTagCount}}</text>
                       </view>
                     </view>
                     <view
@@ -262,6 +276,7 @@
                 <view class="cell-body compact">
                   <view class="title-line">
                     <view class="cell-title {{item.completing ? 'done' : ''}}">{{item.title}}</view>
+                    <text wx:if="{{item.dueLabel && item.status !== 'completed'}}" class="cell-due-tag {{item.isOverdue ? 'overdue' : ''}}">{{item.dueLabel}}</text>
                     <view wx:if="{{item.sourceLabel}}" class="source-badge">{{item.sourceLabel}}</view>
                   </view>
                   <view wx:if="{{item.subline || (showTagsInList && item.visibleTags.length > 0)}}" class="reminder-meta-line">
@@ -275,6 +290,9 @@
                       >
                         <text class="tag-token-dot"></text>
                         <text class="tag-token-name">{{tag.name}}</text>
+                      </view>
+                      <view wx:if="{{item.hiddenTagCount > 0}}" class="tag-token tag-token-more">
+                        <text class="tag-token-name">+{{item.hiddenTagCount}}</text>
                       </view>
                     </view>
                     <view
@@ -362,6 +380,9 @@
                     >
                       <text class="tag-token-dot"></text>
                       <text class="tag-token-name">{{tag.name}}</text>
+                    </view>
+                    <view wx:if="{{item.hiddenTagCount > 0}}" class="tag-token tag-token-more">
+                      <text class="tag-token-name">+{{item.hiddenTagCount}}</text>
                     </view>
                   </view>
                   <view wx:if="{{item.subline}}" class="cell-subline">{{item.subline}}</view>

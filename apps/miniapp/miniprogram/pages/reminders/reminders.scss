@@ -8,59 +8,106 @@
 }
 
 .tag-chip-scroll {
+  margin-top: 12rpx;
+}
+
+.tag-chip-inner {
   display: flex;
   flex-direction: row;
-  gap: 10rpx;
-  margin-top: 10rpx;
+  align-items: center;
+  gap: 12rpx;
+  padding: 4rpx 0;
   white-space: nowrap;
 }
 
 .tag-filter-chip {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  min-height: 40rpx;
+  max-width: 240rpx;
+  height: 40rpx;
   padding: 0 14rpx;
-  border: 1rpx solid var(--tag-color);
+  border: 1.5rpx solid var(--tag-color);
   border-radius: 999rpx;
   background: var(--tag-bg);
   color: var(--tag-color);
   font-size: var(--todo-font-size-xs);
   font-weight: var(--todo-font-weight-semibold);
-  line-height: 1;
-  box-shadow: 0 1rpx 3rpx var(--todo-border-card);
+  box-shadow: 0 2rpx 8rpx rgba(17, 24, 39, 0.06);
 }
 
 .tag-filter-chip.active {
   border-color: var(--tag-color);
   background: var(--tag-color);
   color: var(--todo-text-inverse);
+  box-shadow: 0 8rpx 18rpx rgba(17, 24, 39, 0.14);
+}
+
+.tag-filter-dot {
+  flex-shrink: 0;
+  width: 8rpx;
+  height: 8rpx;
+  margin-right: 6rpx;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.tag-filter-name {
+  overflow: hidden;
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tag-filter-check {
+  flex-shrink: 0;
+  margin-left: 6rpx;
+  font-size: var(--todo-font-size-xs);
+  font-weight: var(--todo-font-weight-bold);
+  line-height: 1;
 }
 
 .tag-strip {
   display: flex;
-  flex: 1;
+  flex: 0 1 auto;
   align-items: center;
   gap: 8rpx;
   min-width: 0;
-  height: 32rpx;
   overflow: hidden;
   white-space: nowrap;
 }
 
 .tag-token {
   display: inline-flex;
+  flex: 0 1 auto;
   align-items: center;
-  max-width: 180rpx;
-  height: 32rpx;
-  padding: 0 12rpx;
+  min-width: 0;
+  max-width: 160rpx;
+  padding: 4rpx 12rpx;
   border: 1rpx solid var(--tag-color);
   border-radius: 999rpx;
   background: var(--tag-bg);
   color: var(--tag-color);
   font-size: var(--todo-font-size-xs);
   font-weight: var(--todo-font-weight-semibold);
-  line-height: 1;
-  box-shadow: 0 1rpx 3rpx var(--todo-border-card);
+  line-height: 1.2;
+  box-shadow: 0 1rpx 2rpx rgba(17, 24, 39, 0.05);
+}
+
+.tag-token + .tag-token {
+  max-width: 124rpx;
+}
+
+.tag-token-more {
+  flex: 0 0 auto;
+  max-width: none;
+  padding: 4rpx 4rpx;
+  border: none;
+  background: none;
+  color: var(--todo-text-subtle);
+  box-shadow: none;
+  font-size: var(--todo-font-size-xs);
+  font-weight: var(--todo-font-weight-semibold);
+  line-height: 1.2;
 }
 
 .tag-token-dot {
@@ -135,6 +182,10 @@
   overflow: hidden;
 }
 
+.reminder-list .list-cell {
+  padding: 14rpx 22rpx;
+}
+
 .reminder-row {
   position: relative;
   max-height: 200rpx;
@@ -154,7 +205,7 @@
   z-index: 1;
   align-items: center;
   width: 100%;
-  min-height: 100rpx;
+  min-height: 84rpx;
   box-sizing: border-box;
   background: var(--todo-surface);
   transition:
@@ -172,13 +223,13 @@
   align-self: stretch;
   align-items: center;
   min-width: 0;
-  min-height: 64rpx;
+  min-height: 56rpx;
 }
 
 .reminder-row-main .cell-body.compact {
   flex: 1;
   justify-content: center;
-  gap: 6rpx;
+  gap: 4rpx;
   min-width: 0;
 }
 
@@ -192,6 +243,23 @@
 .title-line .cell-title {
   flex: 1;
   min-width: 0;
+  font-size: 30rpx;
+  line-height: 1.25;
+}
+
+.cell-due-tag {
+  flex-shrink: 0;
+  margin-left: 12rpx;
+  color: var(--todo-text-subtle);
+  font-size: var(--todo-font-size-xs);
+  font-weight: var(--todo-font-weight-medium);
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+.cell-due-tag.overdue {
+  color: var(--todo-danger);
+  font-weight: var(--todo-font-weight-semibold);
 }
 
 .source-badge {
@@ -217,23 +285,30 @@
 .reminder-meta-line {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 14rpx;
+  justify-content: flex-start;
+  gap: 8rpx;
   min-width: 0;
   min-height: 32rpx;
 }
 
 .reminder-meta-line .cell-subline {
-  flex: 1;
+  flex: 1 1 auto;
   min-width: 0;
   max-width: 100%;
+  font-size: var(--todo-font-size-sm);
+  line-height: 32rpx;
   text-align: left;
 }
 
 .reminder-meta-line .tag-strip + .cell-subline {
-  flex: 0 0 auto;
-  max-width: 180rpx;
-  text-align: right;
+  flex: 1 1 auto;
+  text-align: left;
+}
+
+.reminder-meta-line .tag-strip + .cell-subline::before {
+  content: '·';
+  margin-right: 8rpx;
+  color: var(--todo-text-subtle);
 }
 
 .check-hit-static {

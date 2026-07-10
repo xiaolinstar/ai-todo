@@ -40,6 +40,7 @@ interface ReminderView extends ReminderSummary {
   showEnabledLabel: boolean;
   showAwaitingBadge: boolean;
   visibleTags: TagView[];
+  hiddenTagCount: number;
 }
 
 interface ReminderGroup {
@@ -89,9 +90,9 @@ function enrichReminder(
     subline: buildReminderSubline({
       status: item.status,
       dueAt: item.dueAt,
-      dueLabel,
+      dueLabel: completed ? dueLabel : '',
       contactNames,
-      isOverdue,
+      isOverdue: completed ? false : isOverdue,
     }),
     completing: false,
     exiting: false,
@@ -104,6 +105,7 @@ function enrichReminder(
     showEnabledLabel: false,
     showAwaitingBadge: false,
     visibleTags: tags.slice(0, 2).map(withTagStyle),
+    hiddenTagCount: Math.max(0, tags.length - 2),
   };
 
   const notifyUi = deriveNotifyUi({
@@ -292,7 +294,7 @@ Page({
               : [];
           return fetchReminders({
             q: searchQuery || undefined,
-            tag: searchTag || undefined,
+            tags: searchTag ? [searchTag] : undefined,
             sort: 'updated_at',
             limit: 100,
           }).then((searchRes) => ({ account, notifyPrefs, showTagsInList, tagOptions, searchRes }));

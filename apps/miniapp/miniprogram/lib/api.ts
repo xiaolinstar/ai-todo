@@ -165,13 +165,18 @@ function buildUrl(path: string): string {
   return `${apiUrl.replace(/\/$/, '')}${path}`;
 }
 
-function buildQueryString(params: Record<string, string | undefined>): string {
+type QueryValue = string | string[] | undefined;
+
+function buildQueryString(params: Record<string, QueryValue>): string {
   const parts: string[] = [];
   Object.keys(params).forEach((key) => {
     const value = params[key];
-    if (value !== undefined && value !== '') {
-      parts.push(`${encodeURIComponent(key)}=${encodeURIComponent(value)}`);
-    }
+    const values = Array.isArray(value) ? value : [value];
+    values.forEach((entry) => {
+      if (entry !== undefined && entry !== '') {
+        parts.push(`${encodeURIComponent(key)}=${encodeURIComponent(entry)}`);
+      }
+    });
   });
   const query = parts.join('&');
   return query ? `?${query}` : '';
@@ -372,6 +377,7 @@ export function fetchReminders(params: {
   status?: string;
   q?: string;
   tag?: string;
+  tags?: string[];
   sort?: 'created_at' | 'due_at' | 'completed_at' | 'updated_at';
   limit?: number;
 }) {
@@ -379,7 +385,7 @@ export function fetchReminders(params: {
     `/v1/reminders${buildQueryString({
       status: params.status,
       q: params.q,
-      tag: params.tag,
+      tag: params.tags && params.tags.length > 0 ? params.tags : params.tag,
       sort: params.sort,
       limit: params.limit !== undefined ? String(params.limit) : undefined,
     })}`,

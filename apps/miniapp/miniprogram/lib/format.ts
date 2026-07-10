@@ -289,6 +289,10 @@ export function buildReminderSubline(input: {
 
   if (input.status === 'in_progress') {
     parts.push('处理中');
+  } else if (input.status === 'pending') {
+    parts.push('未完成');
+  } else if (completed) {
+    parts.push('已完成');
   }
 
   if (input.tagName) {
