@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 # Invoked by GitHub Actions CD (K8s) after git pull on the VPS.
+# This app release path intentionally manages only API/worker resources.
+# PostgreSQL and Alembic migrations are handled by dedicated DB runbooks/workflows.
 # Expects: AI_TODO_DEPLOY_MANIFEST, K8S_* vars, CD_LOCAL_HEALTH_URL (from GitHub Environment).
 set -euo pipefail
 
@@ -123,7 +125,6 @@ echo "Applying overlay (image=${MIRROR_REF})"
 kubectl diff -k . || true
 kubectl apply -k .
 
-kubectl rollout status deployment/postgres -n "$K8S_NAMESPACE" --timeout=180s
 kubectl rollout status deployment/api -n "$K8S_NAMESPACE" --timeout="${HEALTH_WAIT_SECONDS}s"
 
 if kubectl get deployment/worker -n "$K8S_NAMESPACE" >/dev/null 2>&1; then

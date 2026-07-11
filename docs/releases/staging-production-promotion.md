@@ -28,18 +28,18 @@
 | 预发布 | `https://staging.xingxiaolin.cn` | `trial`（体验版）或 `develop` + 真机 | 体验版扫码、预览/真机调试 |
 | 生产   | `https://xingxiaolin.cn`         | `release`（正式版）                  | 已发布正式版              |
 
-GitHub CD：`workflow_dispatch` → `environment: staging` / `production`，各自独立 `DEPLOY_*` 与 `CD_PUBLIC_API_URL`。详见 [env/README.md](../env/README.md)。
+GitHub CD：staging 走 Compose `CD` workflow 的 `environment: staging`；production 走 `CD (K8s)` workflow 的 GitHub Environment `production-k8s`。两者各自独立 `DEPLOY_*` 与 `CD_PUBLIC_API_URL`。详见 [env/README.md](../env/README.md)。
 
 ---
 
 ## 两条发布线
 
-| 组件           | 发布方式                                  | 与另一组件的关系                                               |
-| -------------- | ----------------------------------------- | -------------------------------------------------------------- |
-| **API**        | 手动 CD（staging → production）           | 体验版验收依赖 staging API；正式版依赖 production API          |
-| **微信小程序** | 开发者工具上传 → 体验版 / 提审 / 正式发布 | L1 版本号独立；兼容性见 [compatibility.md](./compatibility.md) |
+| 组件           | 发布方式                                    | 与另一组件的关系                                               |
+| -------------- | ------------------------------------------- | -------------------------------------------------------------- |
+| **API**        | 手动 CD（staging Compose → production K8s） | 体验版验收依赖 staging API；正式版依赖 production API          |
+| **微信小程序** | 开发者工具上传 → 体验版 / 提审 / 正式发布   | L1 版本号独立；兼容性见 [compatibility.md](./compatibility.md) |
 
-**不必**每次都在同一分钟同时点「production CD」和「微信正式发布」，但**正式发布小程序前**须保证 production API 与客户端组合已在 [compatibility.md](./compatibility.md) 中验证或记录。
+**不必**每次都在同一分钟同时点「production K8s CD」和「微信正式发布」，但**正式发布小程序前**须保证 production API 与客户端组合已在 [compatibility.md](./compatibility.md) 中验证或记录。
 
 ---
 
@@ -62,7 +62,7 @@ flowchart TD
   L --> M{晋升门槛满足?}
   M -->|否| N[修复或回滚 staging]
   M -->|是| O{本批需 production API?}
-  O -->|是| P[CD environment=production<br/>同 release_tag]
+  O -->|是| P[CD K8s environment=production-k8s<br/>同 release_tag]
   O -->|否| Q[保持 production 不变]
   K --> R[审核通过]
   P --> S[production smoke]
@@ -78,36 +78,36 @@ flowchart TD
 3. **Staging CD（API 有变更时必做）**：GitHub Actions → CD → `environment=staging`，填写同一 `release_tag`。
 4. **小程序体验版**：上传 miniapp L1；体验版 / 预览 / 真机调试连 staging 验收。
 5. **提审（可提前）**：审核周期与 staging 浸泡并行，不必等 production。
-6. **晋升门槛**（见下节）：满足后再触发 **production CD**（若本批需要）。
+6. **晋升门槛**（见下节）：满足后再触发 **CD (K8s) / production-k8s**（若本批需要）。
 7. **正式发布**：微信审核通过后，在合适窗口发布正式版（连 production）。
 
 ---
 
 ## 按变更类型的策略
 
-| 变更类型                 | Staging CD          | 体验版 / 提审                                  | Production CD       | 微信正式版            |
-| ------------------------ | ------------------- | ---------------------------------------------- | ------------------- | --------------------- |
-| **仅小程序**（API 兼容） | 可选                | 上传 + smoke                                   | 通常 **不需要**     | 审核通过后发布        |
-| **仅 API**（向后兼容）   | **必须**            | 可不更新                                       | staging 达标后      | —                     |
-| **API + 小程序**         | **必须**            | 同 tag 体验版                                  | staging 达标后      | 审核通过 + API 已就绪 |
-| **破坏性 API / 迁移**    | **必须** + 延长浸泡 | 体验版与 production 版本组合写入 compatibility | 达标 + 迁移策略确认 | 与 API 同步发布       |
+| 变更类型                 | Staging CD（Compose） | 体验版 / 提审                                  | Production CD（K8s） | 微信正式版            |
+| ------------------------ | --------------------- | ---------------------------------------------- | -------------------- | --------------------- |
+| **仅小程序**（API 兼容） | 可选                  | 上传 + smoke                                   | 通常 **不需要**      | 审核通过后发布        |
+| **仅 API**（向后兼容）   | **必须**              | 可不更新                                       | staging 达标后       | —                     |
+| **API + 小程序**         | **必须**              | 同 tag 体验版                                  | staging 达标后       | 审核通过 + API 已就绪 |
+| **破坏性 API / 迁移**    | **必须** + 延长浸泡   | 体验版与 production 版本组合写入 compatibility | 达标 + 迁移策略确认  | 与 API 同步发布       |
 
-示例：**v0.8.2** 仅小程序（多环境登录）→ 打 tag、上传体验版/提审即可，**无需**为 0.8.2 单独跑 production CD。
+示例：**v0.8.2** 仅小程序（多环境登录）→ 打 tag、上传体验版/提审即可，**无需**为 0.8.2 单独跑 production K8s CD。
 
 ---
 
 ## Production 晋升门槛（当前：人工）
 
-在触发 `environment=production` 的 CD 之前，发布负责人应确认：
+在触发 `CD (K8s)` / `production-k8s` 之前，发布负责人应确认：
 
-| #   | 门槛                                  | 建议默认                                          | 当前执行方式                         |
-| --- | ------------------------------------- | ------------------------------------------------- | ------------------------------------ |
-| 1   | Staging 已部署 **同一 `release_tag`** | 必须（API 有变更时）                              | 人工核对 `curl staging.../v1/health` |
-| 2   | 浸泡时间                              | **≥ 24 小时**（或至少覆盖一个完整日活周期）       | 人工记录部署时间                     |
-| 3   | 监控无故障                            | 浸泡期内 Monitor(staging) 无失败；关键 smoke 通过 | 人工查看 Actions / artifact          |
-| 4   | 小程序 smoke                          | 体验版四 Tab、微信登录、本批改动点                | 人工真机                             |
-| 5   | 数据库迁移                            | 符合 expand → deploy → backfill → contract        | 人工 + `/v1/health/db`               |
-| 6   | 兼容性                                | [compatibility.md](./compatibility.md) 已更新     | 人工                                 |
+| #   | 门槛                                  | 建议默认                                                     | 当前执行方式                         |
+| --- | ------------------------------------- | ------------------------------------------------------------ | ------------------------------------ |
+| 1   | Staging 已部署 **同一 `release_tag`** | 必须（API 有变更时）                                         | 人工核对 `curl staging.../v1/health` |
+| 2   | 浸泡时间                              | **≥ 24 小时**（或至少覆盖一个完整日活周期）                  | 人工记录部署时间                     |
+| 3   | 监控无故障                            | 浸泡期内 Monitor(staging) 无失败；关键 smoke 通过            | 人工查看 Actions / artifact          |
+| 4   | 小程序 smoke                          | 体验版四 Tab、微信登录、本批改动点                           | 人工真机                             |
+| 5   | 数据库迁移                            | staging Compose 验证；production K8s 显式 migration workflow | 人工 + `/v1/health/db`               |
+| 6   | 兼容性                                | [compatibility.md](./compatibility.md) 已更新                | 人工                                 |
 
 内测阶段可将 #2、#3 酌情缩短；**用户量显著增长后应严格执行**。
 
@@ -149,7 +149,7 @@ curl -sS https://xingxiaolin.cn/v1/health | jq '.data | {environment, releaseTag
 | 能力                        | 说明                                                            |
 | --------------------------- | --------------------------------------------------------------- |
 | **Production CD 前置检查**  | production job 启动前校验 staging 同 tag、部署时间 ≥ 可配置阈值 |
-| **Monitor 门禁**            | 要求最近 N 次 `Monitor`（staging）成功才允许 production CD      |
+| **Monitor 门禁**            | 要求最近 N 次 `Monitor`（staging）成功才允许 production K8s CD  |
 | **可选 smoke PAT**          | staging 上 `CD_SMOKE_PAT` 黑盒通过作为晋升条件                  |
 | **GitHub Environment 保护** | production 需审批 + 上述检查 artifact                           |
 | **晋升记录**                | CD Summary 输出「staging 部署于 …，浸泡 …h，monitor …」         |

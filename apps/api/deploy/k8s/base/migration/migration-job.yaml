@@ -1,0 +1,36 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: db-migration
+  labels:
+    app.kubernetes.io/name: db-migration
+    app.kubernetes.io/part-of: ai-todo
+    app.kubernetes.io/component: db-migration
+    app.kubernetes.io/managed-by: kustomize
+spec:
+  backoffLimit: 0
+  ttlSecondsAfterFinished: 86400
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: db-migration
+        app.kubernetes.io/part-of: ai-todo
+        app.kubernetes.io/component: db-migration
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: db-migration
+          image: ghcr.io/xiaolinstar/ai-todo-api:latest
+          imagePullPolicy: IfNotPresent
+          args:
+            - alembic
+            - upgrade
+            - head
+          envFrom:
+            - configMapRef:
+                name: ai-todo-config
+            - secretRef:
+                name: ai-todo-secrets
+          env:
+            - name: AI_TODO_SKIP_MIGRATIONS
+              value: "true"

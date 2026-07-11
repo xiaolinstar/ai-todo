@@ -1,0 +1,172 @@
+name: DB Migration (K8s)
+
+on:
+  workflow_dispatch:
+    inputs:
+      ci_run_id:
+        description: Optional CI workflow run ID. Leave empty to resolve from release_tag.
+        type: string
+        required: false
+      release_tag:
+        description: Release tag whose API image contains the Alembic migrations.
+        type: string
+        required: false
+      migration_type:
+        description: Operational migration type.
+        type: choice
+        required: true
+        options:
+          - expand
+          - backfill
+          - contract
+      production_backup_confirmed:
+        description: Type BACKUP_CONFIRMED for production-k8s runs.
+        type: string
+        required: false
+
+permissions:
+  actions: read
+  contents: read
+  packages: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  NODE_VERSION: "24"
+  PYTHON_VERSION: "3.11"
+
+concurrency:
+  group: db-migration-k8s-production-k8s
+  cancel-in-progress: false
+
+jobs:
+  resolve-manifest:
+    name: 1 · Resolve manifest
+    runs-on: ubuntu-latest
+    outputs:
+      git_sha: ${{ steps.manifest.outputs.git_sha }}
+      fingerprint: ${{ steps.manifest.outputs.fingerprint }}
+      ci_run_id: ${{ steps.ci_run.outputs.run_id }}
+      release_tag: ${{ steps.ci_run.outputs.release_tag }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Resolve CI run id
+        id: ci_run
+        env:
+          INPUT_RUN_ID: ${{ github.event.inputs.ci_run_id }}
+          INPUT_RELEASE_TAG: ${{ github.event.inputs.release_tag }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/cd/resolve-ci-run.mjs
+
+      - name: Download deploy-manifest from CI
+        uses: actions/download-artifact@v7
+        with:
+          name: deploy-manifest
+          run-id: ${{ steps.ci_run.outputs.run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: manifest
+
+      - name: Verify manifest fingerprint
+        run: python3 scripts/ci/verify_deploy_manifest.py manifest/deploy-manifest.json
+
+      - name: Export manifest fields
+        id: manifest
+        env:
+          TARGET_SHA: ${{ steps.ci_run.outputs.target_sha }}
+        run: node scripts/cd/export-manifest-fields.mjs manifest/deploy-manifest.json
+
+      - uses: actions/upload-artifact@v6
+        with:
+          name: db-migration-k8s-deploy-manifest
+          path: manifest/deploy-manifest.json
+          retention-days: 7
+
+  migrate:
+    name: 2 · Run Alembic migration
+    needs: [resolve-manifest]
+    runs-on: ubuntu-latest
+    environment: production-k8s
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Check production safety confirmation
+        env:
+          MIGRATION_TYPE: ${{ inputs.migration_type }}
+          PRODUCTION_BACKUP_CONFIRMED: ${{ inputs.production_backup_confirmed }}
+        run: |
+          if [ "$MIGRATION_TYPE" = "contract" ]; then
+            echo "Contract migrations require a maintenance window and explicit operator review." >&2
+            echo "Use this workflow only after docs/database-migrations.md requirements are satisfied." >&2
+          fi
+          if [ "$PRODUCTION_BACKUP_CONFIRMED" != "BACKUP_CONFIRMED" ]; then
+            echo "Production DB migration requires production_backup_confirmed=BACKUP_CONFIRMED." >&2
+            exit 1
+          fi
+
+      - name: Check deploy configuration
+        id: deploy_config
+        env:
+          CD_ENVIRONMENT: production-k8s
+          DEPLOY_HOST_PRESENT: ${{ vars.DEPLOY_HOST != '' || secrets.DEPLOY_HOST != '' }}
+          DEPLOY_USER_PRESENT: ${{ vars.DEPLOY_USER != '' || secrets.DEPLOY_USER != '' }}
+          DEPLOY_SSH_KEY_PRESENT: ${{ secrets.DEPLOY_SSH_KEY != '' }}
+          DEPLOY_PASSWORD_PRESENT: ${{ secrets.DEPLOY_PASSWORD != '' }}
+        run: node scripts/cd/check-deploy-config.mjs
+
+      - name: Download verified manifest
+        if: steps.deploy_config.outputs.configured == 'true'
+        uses: actions/download-artifact@v7
+        with:
+          name: db-migration-k8s-deploy-manifest
+          path: manifest
+
+      - name: Copy manifest to server
+        if: steps.deploy_config.outputs.configured == 'true'
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ vars.DEPLOY_HOST || secrets.DEPLOY_HOST }}
+          username: ${{ vars.DEPLOY_USER || secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          password: ${{ secrets.DEPLOY_PASSWORD }}
+          port: ${{ vars.DEPLOY_PORT || secrets.DEPLOY_PORT || 22 }}
+          source: manifest/deploy-manifest.json
+          target: /tmp/
+          strip_components: 1
+          overwrite: true
+
+      - name: Run migration on K8s host
+        if: steps.deploy_config.outputs.configured == 'true'
+        uses: appleboy/ssh-action@v1.2.5
+        env:
+          DEPLOY_PATH: ${{ vars.DEPLOY_PATH || secrets.DEPLOY_PATH }}
+          K8S_MIGRATION_OVERLAY: ${{ vars.K8S_MIGRATION_OVERLAY || 'apps/api/deploy/k8s/overlays/production-migration' }}
+          K8S_NAMESPACE: ${{ vars.K8S_NAMESPACE || 'ai-todo' }}
+          K8S_REGISTRY_MIRROR: ${{ vars.K8S_REGISTRY_MIRROR || 'ghcr.nju.edu.cn' }}
+        with:
+          host: ${{ vars.DEPLOY_HOST || secrets.DEPLOY_HOST }}
+          username: ${{ vars.DEPLOY_USER || secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          password: ${{ secrets.DEPLOY_PASSWORD }}
+          port: ${{ vars.DEPLOY_PORT || secrets.DEPLOY_PORT || 22 }}
+          envs: DEPLOY_PATH,K8S_MIGRATION_OVERLAY,K8S_NAMESPACE,K8S_REGISTRY_MIRROR
+          command_timeout: 15m
+          script: |
+            DEPLOY_PATH="${DEPLOY_PATH:-$HOME/AgentProjects/ai-todo}"
+            DEPLOY_PATH="${DEPLOY_PATH//\$HOME/$HOME}"
+            cd "$DEPLOY_PATH"
+            git fetch --prune origin main
+            git reset --hard origin/main
+            export AI_TODO_DEPLOY_MANIFEST=/tmp/deploy-manifest.json
+            export KUBECONFIG="${KUBECONFIG:-$HOME/.kube/config}"
+            bash apps/api/deploy/run-k8s-migration.sh

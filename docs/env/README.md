@@ -2,13 +2,13 @@
 
 ai-todo uses three runtime environments:
 
-| Environment           | Runtime                          | API env file                                 | GitHub Environment |
-| --------------------- | -------------------------------- | -------------------------------------------- | ------------------ |
-| `local`               | developer machine / local Docker | `apps/api/.env` + `apps/api/.env.local`      | none               |
-| `staging`             | VPS + gateway                    | `apps/api/.env` + `apps/api/.env.staging`    | `staging`          |
-| `prod` / `production` | VPS + gateway                    | `apps/api/.env` + `apps/api/.env.production` | `production`       |
+| Environment           | Runtime                          | API env file                               | GitHub Environment |
+| --------------------- | -------------------------------- | ------------------------------------------ | ------------------ |
+| `local`               | developer machine / local Docker | `apps/api/.env` + `apps/api/.env.local`    | none               |
+| `staging`             | VPS + gateway + Docker Compose   | `apps/api/.env` + `apps/api/.env.staging`  | `staging`          |
+| `prod` / `production` | VPS + gateway + K8s              | K8s overlay env files / GitHub Environment | `production-k8s`   |
 
-`prod` is the product environment name; current scripts and GitHub Actions keep the established file and Environment name `production`.
+`prod` is the product environment name. Production API currently runs on K8s through GitHub Environment `production-k8s`; `.env.production` and GitHub Environment `production` remain for Compose-era compatibility and fallback documentation.
 
 ## Load Order
 
@@ -82,7 +82,9 @@ cp .env.staging.example .env.staging
 ENV_FILE=.env.staging deploy/remote-deploy.sh
 ```
 
-Staging VPS（Kubernetes，手动 `kubectl`，见 [deploy-kubernetes.md](../deploy-kubernetes.md)）：
+Staging VPS（Kubernetes，当前不启用）：
+
+> Staging 现有宿主机为 2C2G，k3s 控制面和 `kubectl` 操作容易造成资源打满。当前 staging 正式保留 Docker Compose；以下 K8s env 文件只作为未来迁移到更高规格机器时的备用模板。
 
 ```bash
 cd apps/api/deploy/k8s/overlays/staging

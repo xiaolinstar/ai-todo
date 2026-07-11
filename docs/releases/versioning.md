@@ -93,6 +93,7 @@ git push origin v0.1.4
 - `0.8.6`：微信提醒闭环；提醒/日程创建与编辑开关、列表状态与补授权入口（见 [v0.8.6.md](./v0.8.6.md)）。
 - `0.8.7`：Reminder Tag 词表、全文/标签搜索、事项跟踪；CLI 与小程序对齐搜索/标签/跟踪能力，并包含头像持久化与提醒时间修复（见 [v0.8.7.md](./v0.8.7.md)）。
 - `0.8.8`：标签管理与提醒列表标签视觉优化；API 标签使用统计忽略已删除提醒（见 [v0.8.8.md](./v0.8.8.md)）。
+- `0.8.9`：小程序提醒列表标签展示与筛选体验优化；标签折叠、选中态和到期信息布局更紧凑（见 [v0.8.9.md](./v0.8.9.md)）。
 - `0.4.0`：CLI npm 全局安装、配置优先 UX、小程序复制 settings JSON（见 [v0.4.0-plan.md](./v0.4.0-plan.md)）。
 - `0.4.1`：Git 发布火车；npm 包名 `@xiaolinstar/ai-todo-cli` 与文档/CI 对齐（组件 L1 不变，见 [v0.4.1.md](./v0.4.1.md)）。
 - `0.4.3`：生产 API 域名 `xingxiaolin.cn`；API `0.2.2`（见 [v0.4.3.md](./v0.4.3.md)、[api-0.2.2.md](./api-0.2.2.md)）。
@@ -110,7 +111,7 @@ git push origin v0.1.4
 3. 更新 `docs/releases/vX.Y.Z.md`、追加 [compatibility.md](./compatibility.md) 一行。
 4. 提交并创建 Git tag `vX.Y.Z`（CD 仍用此 `release_tag`）。
 5. 推送 `main` 与 tag。
-6. **API 有变更**：手动 CD `environment=staging` → 体验版验收 → 满足晋升门槛后 CD `environment=production`（同一 `release_tag`）。
+6. **API 有变更**：手动 Compose CD `environment=staging` → 体验版验收 → 满足晋升门槛后 `CD (K8s)` / `production-k8s`（同一 `release_tag`）。
 7. **微信小程序**：上传版本号 = **miniapp L1**；可先提审，审核通过后发布正式版。
 8. 验收核对：
 
@@ -120,7 +121,7 @@ curl -sS "$PRODUCTION_API_URL/v1/health" | jq '.data | {apiVersion, releaseTag, 
 ai-todo version --json
 ```
 
-**仅小程序 patch**（如 v0.8.2）且 production API 已兼容时，可跳过步骤 6 的 production CD。
+**仅小程序 patch**（如 v0.8.2）且 production API 已兼容时，可跳过步骤 6 的 production K8s CD。
 
 只有当 `main` 继续高风险开发且需长期 hotfix 已发布版本时，才考虑 release 分支。当前默认 `main` + tag。
 

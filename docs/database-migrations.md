@@ -4,14 +4,21 @@ ai-todo 的 API 镜像是不可变制品，但 PostgreSQL 数据保存在 Docker
 
 运维视角的 PostgreSQL volume、备份、恢复与危险命令见 [ops-postgresql-data.md](./ops-postgresql-data.md)。
 
+K8s 环境下，应用发布与 Alembic migration 已解耦：
+
+- `CD (K8s)` 只发布 API / worker，默认 `AI_TODO_SKIP_MIGRATIONS=true`。
+- `DB Migration (K8s)` 复用指定 release 的 API 镜像 digest，以一次性 `db-migration` Job 执行 `alembic upgrade head`。
+- Postgres / PVC 由独立 db overlay 管理，不随普通应用发布滚动。
+
 ## 发布原则
 
 使用 expand / deploy / backfill / contract：
 
 1. **Expand**：只新增兼容结构，例如新表、新 nullable 列、新索引、新宽松约束。旧版本 API 继续可运行。
-2. **Deploy**：部署新应用代码，让它同时兼容旧字段和新字段，或开始双写。
-3. **Backfill**：补历史数据。大数据量补偿不要放在请求路径里。
-4. **Contract**：确认没有旧代码依赖后，再删除旧字段、旧表、旧索引或收紧约束。Contract 应独立成后续发布。
+2. **Migrate**：在 K8s 中通过 `DB Migration (K8s)` 显式执行 expand migration；Compose 旧路径仍由 API entrypoint 执行。
+3. **Deploy**：部署新应用代码，让它同时兼容旧字段和新字段，或开始双写。
+4. **Backfill**：补历史数据。大数据量补偿不要放在请求路径里。
+5. **Contract**：确认没有旧代码依赖后，再删除旧字段、旧表、旧索引或收紧约束。Contract 应独立成后续发布。
 
 ## 禁止和高风险操作
 

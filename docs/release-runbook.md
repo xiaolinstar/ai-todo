@@ -26,7 +26,7 @@
     → CD staging（API 有变更时）→ https://staging.xingxiaolin.cn
     → 小程序体验版 / 预览 / 真机调试验收（连 staging）
     → 可选：提交微信审核（与 staging 浸泡并行）
-    → staging 达标后 CD production（同 release_tag）→ https://xingxiaolin.cn
+    → staging 达标后 CD (K8s) production-k8s（同 release_tag）→ https://xingxiaolin.cn
     → 审核通过后发布微信正式版（连 production）
 
 微信用户（正式版）
@@ -170,7 +170,7 @@ curl -sf https://xingxiaolin.cn/v1/health/db
 
 ## 六、日常发布流程
 
-默认路径：**staging 先发布、达标后再 production**；小程序**体验版连 staging、正式版连 production**。细则见 [staging-production-promotion.md](./releases/staging-production-promotion.md)。
+默认路径：**staging Compose 先发布、达标后再 production K8s**；小程序**体验版连 staging、正式版连 production**。细则见 [staging-production-promotion.md](./releases/staging-production-promotion.md)。
 
 ### 完整发布火车（API ± 小程序）
 
@@ -185,7 +185,7 @@ curl -sf https://xingxiaolin.cn/v1/health/db
 6. 上传小程序体验版（L1 版本号）；真机 smoke（trial → staging）
 7. 可选：提交微信审核（不必等 production）
 8. staging 浸泡 ≥24h（内测可缩短）且 Monitor(staging) 无故障
-9. CD：environment=production，同一 release_tag
+9. CD (K8s)：GitHub Environment production-k8s，同一 release_tag
 10. 验收 production（health / health/db / smoke）
 11. 微信审核通过后发布正式版
 ```
@@ -199,10 +199,10 @@ curl -sf https://xingxiaolin.cn/v1/health/db
 ```text
 1. pnpm check:wechat
 2. 打 tag；上传体验版 → staging smoke → 提审
-3. 通常无需 production CD；审核通过后发布正式版
+3. 通常无需 production K8s CD；审核通过后发布正式版
 ```
 
-示例：v0.8.2 仅小程序，无需为 0.8.2 单独触发 production CD。
+示例：v0.8.2 仅小程序，无需为 0.8.2 单独触发 production K8s CD。
 
 ### Gateway 变更（域名/证书/路由）
 

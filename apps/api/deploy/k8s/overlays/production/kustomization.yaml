@@ -21,19 +21,6 @@ patches:
             targetPort: 3100
             nodePort: 30082
             protocol: TCP
-  - target:
-      kind: PersistentVolumeClaim
-      name: postgres-pvc
-    patch: |
-      apiVersion: v1
-      kind: PersistentVolumeClaim
-      metadata:
-        name: postgres-pvc
-      spec:
-        resources:
-          requests:
-            storage: 5Gi
-
 generatorOptions:
   disableNameSuffixHash: true
 

@@ -1,9 +1,20 @@
 # ai-todo Kubernetes 部署
 
 日期：2026-07-07  
-状态：**Production 已切 K8s**（111 · `2026-07-07`，见 [production-compose-to-k8s-data-migration.md](./releases/production-compose-to-k8s-data-migration.md)）；Staging 迁移进行中。Production 发版走 GitHub Environment **`production-k8s`** + CD (K8s)。
+状态：**Production 已切 K8s**（111 · `2026-07-07`，见 [production-compose-to-k8s-data-migration.md](./releases/production-compose-to-k8s-data-migration.md)）；**Staging 保留 Docker Compose**。Production 发版走 GitHub Environment **`production-k8s`** + CD (K8s)。
 
-本文只维护 **Kustomize 清单** 与 **显式 `kubectl` 命令**。不封装 shell 部署脚本——每一步在终端里可见、可审计。
+本文维护 **Kustomize 清单**、GitHub Actions CD 入口与显式 `kubectl` 命令。应用发布、PostgreSQL 生命周期和 Alembic migration 已拆分为不同运维动作。
+
+## 当前环境格局
+
+| 环境           | 当前部署面         | 用途                                             | 说明                                                             |
+| -------------- | ------------------ | ------------------------------------------------ | ---------------------------------------------------------------- |
+| local          | Docker Compose     | 日常开发、API 热调试                             | 推荐路径，资源占用低                                             |
+| local-k8s      | Docker Desktop K8s | 验证 K8s 清单、StatefulSet、显式 migration Job   | 不作为日常开发主路径                                             |
+| staging        | Docker Compose     | 体验版 / 真机调试 / 发布晋升前验证               | 所在宿主机 2C2G，暂不运行 k3s，避免控制面与 kubectl 操作打满资源 |
+| production-k8s | k3s                | 正式生产 API / worker / Postgres PVC / migration | 当前生产发布面，app / db / migration 生命周期解耦                |
+
+`overlays/staging*` 仅保留为 K8s 备用模板和未来迁移素材；当前 staging 发布继续走 Compose CD。
 
 ## 部署模型：平台 IaC + 发版 manifest + 部署记录
 
@@ -17,7 +28,7 @@ K8s 路径采用与 Compose CD **同一哲学**的折中方案（非 Full GitOps
 
 ```text
 CI  → deploy-manifest.json（这次该用哪个 digest）
-CD  → manifest + Git overlay → kustomize edit set image → kubectl apply -k
+CD  → manifest + Git app overlay → kustomize edit set image → kubectl apply -k
     → 成功后在 VPS 写 .deploy/current.json
 ```
 
@@ -27,11 +38,13 @@ CD  → manifest + Git overlay → kustomize edit set image → kubectl apply -k
 
 ## 原则
 
-- **应用清单**：`kubectl apply -k <overlay>`
+- **应用清单**：`kubectl apply -k <app-overlay>`，只管理 API / worker / API Service / ConfigMap / Secret
+- **数据库清单**：`kubectl apply -k <db-overlay>`，只在首次部署或数据库运维窗口执行
+- **数据库迁移**：通过 `DB Migration (K8s)` workflow 或 `db-migration` Job 显式执行
 - **预览 diff**：`kubectl diff -k <overlay>` 或 `kubectl kustomize <overlay>`
 - **密钥**：overlay 目录下的 `.env.*.secrets` / `.env.*.configs`（gitignore），由 Kustomize `secretGenerator` / `configMapGenerator` 注入
 - **发版换镜像**：从 CI `deploy-manifest.json` 取 digest → `kustomize edit set image` → `kubectl apply -k`（**不进 Git**）
-- **CD**：Staging 迁 K8s 期间 **手动** 执行下文命令；GitHub CD 仍走 Compose（`deploy-from-manifest.sh`），待 Staging 稳定后再把 CD job 改为 manifest 驱动的 kubectl 步骤
+- **CD**：`CD (K8s)` 只发布 app overlay；不会 apply Postgres / PVC，也不会自动运行 Alembic migration
 
 ## 镜像与 registry
 
@@ -48,7 +61,7 @@ CI（`.github/workflows/ci.yml`）只 push **`sha-<commit短SHA>`** tag 与 dige
 
 ### api 与 worker 同镜像
 
-`api` 与 `worker` Deployment 共用同一镜像；Kustomize `images` 块按 `name` 匹配后**一次替换、两边生效**。worker 差异仅在 `args`（跑 notification worker）与 `AI_TODO_SKIP_MIGRATIONS=true`。
+`api` 与 `worker` Deployment 共用同一镜像；Kustomize `images` 块按 `name` 匹配后**一次替换、两边生效**。worker 差异仅在 `args`（跑 notification worker）。K8s app overlay 默认 `AI_TODO_SKIP_MIGRATIONS=true`，应用发布不再自动执行 Alembic。
 
 ### 国内 VPS 使用 NJU 镜像站
 
@@ -64,48 +77,48 @@ IMAGE='ghcr.nju.edu.cn/xiaolinstar/ai-todo-api@sha256:<digest>'
 
 ```text
 小程序 / 探针
-  → https://staging.xingxiaolin.cn  或  https://xingxiaolin.cn
+  → https://xingxiaolin.cn
   → xiaolin-gateway
-  → 宿主机 NodePort 30083 (staging) / 30082 (production)
+  → 宿主机 NodePort 30082 (production)
   → Service api → Pod :3100
-  → Service postgres → PVC
+  → Service postgres → StatefulSet postgres → PVC
   → Deployment worker（按需 0/1 副本）
 ```
 
-| 环境        | Overlay 路径          | Namespace         | API NodePort |
-| ----------- | --------------------- | ----------------- | ------------ |
-| local       | `overlays/local`      | `ai-todo`         | LB `8082`    |
-| **staging** | `overlays/staging`    | `ai-todo-staging` | **30083**    |
-| production  | `overlays/production` | `ai-todo`         | **30082**    |
+| 环境        | App overlay           | DB overlay               | Migration overlay               | Namespace         | API NodePort |
+| ----------- | --------------------- | ------------------------ | ------------------------------- | ----------------- | ------------ |
+| local       | `overlays/local`      | `overlays/local-db`      | `overlays/local-migration`      | `ai-todo`         | LB `8082`    |
+| **staging** | `overlays/staging`    | `overlays/staging-db`    | `overlays/staging-migration`    | `ai-todo-staging` | **30083**    |
+| production  | `overlays/production` | `overlays/production-db` | `overlays/production-migration` | `ai-todo`         | **30082**    |
 
 清单根目录：`apps/api/deploy/k8s/`。
 
-> Gateway：Staging 上游 `127.0.0.1:30083`；Production 上游 `127.0.0.1:30082`（自 Compose `:8082` 切换时改 xiaolin-gateway）。
+> Gateway：Production 上游 `127.0.0.1:30082`。Staging 当前仍由 Compose 提供服务，不走 `30083`。
 
 ## 组件行为
 
-| 步骤     | API Pod                  | Worker Pod                             |
-| -------- | ------------------------ | -------------------------------------- |
-| 等数据库 | entrypoint `wait_for_db` | 同左                                   |
-| 迁移     | `alembic upgrade head`   | 跳过（`AI_TODO_SKIP_MIGRATIONS=true`） |
-| 探针     | `GET /v1/health`         | `worker_healthcheck.py`                |
+| 步骤     | API Pod                                | Worker Pod              | Migration Job                   |
+| -------- | -------------------------------------- | ----------------------- | ------------------------------- |
+| 等数据库 | entrypoint `wait_for_db`               | 同左                    | 同左                            |
+| 迁移     | 跳过（`AI_TODO_SKIP_MIGRATIONS=true`） | 跳过                    | `alembic upgrade head`          |
+| 探针     | `GET /v1/health`                       | `worker_healthcheck.py` | `kubectl wait job/db-migration` |
 
 Worker：base 清单默认 `replicas: 1`。未配置 `AI_TODO_WECHAT_REMINDER_TEMPLATE_ID` 时，部署后执行 `kubectl scale … --replicas=0`（见下文）。
 
 ### `kubectl rollout status` 含义
 
 ```bash
-kubectl rollout status deployment/postgres -n ai-todo --timeout=180s
+kubectl rollout status deployment/api -n ai-todo --timeout=180s
 ```
 
-| 部分                  | 含义                          |
-| --------------------- | ----------------------------- |
-| `rollout status`      | 阻塞等待 Deployment 就绪      |
-| `deployment/postgres` | 资源名                        |
-| `-n ai-todo`          | 命名空间                      |
-| `--timeout=180s`      | 最多等 180 秒，超时则命令失败 |
+| 部分             | 含义                          |
+| ---------------- | ----------------------------- |
+| `rollout status` | 阻塞等待 Deployment 就绪      |
+| `deployment/api` | 资源名                        |
+| `-n ai-todo`     | 命名空间                      |
+| `--timeout=180s` | 最多等 180 秒，超时则命令失败 |
 
-Postgres Pod 需通过 readiness probe（`pg_isready`）才算 Ready。通常顺序：先 `postgres`，再 `api`（含迁移），最后 `worker`。
+Postgres 使用独立 DB overlay 管理。应用日常发布只等待 `api` / `worker`；DB schema 变更通过 migration Job 单独等待。
 
 ---
 
@@ -121,11 +134,12 @@ cp env-secrets.example   .env.local.secrets
 # 预览
 kubectl kustomize .
 
-# 应用
+# 首次本地 K8s：先应用 app config/secret，再应用 db，再应用 app
 kubectl apply -k .
+kubectl apply -k ../local-db
 
 # 等待 + 验证
-kubectl rollout status deployment/postgres -n ai-todo
+kubectl rollout status statefulset/postgres -n ai-todo
 kubectl rollout status deployment/api     -n ai-todo
 curl -fsS http://127.0.0.1:8082/v1/health
 kubectl get pods -n ai-todo
@@ -135,7 +149,11 @@ kubectl get pods -n ai-todo
 
 ---
 
-## 二、Staging 迁移
+## 二、Staging K8s 备用模板（当前不启用）
+
+当前 staging 宿主机为 2C2G，k3s 控制面和 `kubectl` 操作容易造成机器资源打满。因此 staging **正式保留 Docker Compose**；本节仅作为未来迁移到更大规格机器时的备用 runbook，不是当前发布路径。
+
+当前 staging 发布路径见 [deploy.md](./deploy.md)、[ci-cd.md](./ci-cd.md) 和 [staging-production-promotion.md](./releases/staging-production-promotion.md)。
 
 ### 0. 准备集群（VPS）
 
@@ -179,10 +197,20 @@ kustomize edit set image \
 cd ~/AgentProjects/ai-todo
 kubectl diff -k apps/api/deploy/k8s/overlays/staging || true
 kubectl apply -k apps/api/deploy/k8s/overlays/staging
+kubectl apply -k apps/api/deploy/k8s/overlays/staging-db
 
-kubectl rollout status deployment/postgres -n ai-todo-staging --timeout=180s
+kubectl rollout status statefulset/postgres -n ai-todo-staging --timeout=180s
 kubectl rollout status deployment/api     -n ai-todo-staging --timeout=180s
 kubectl rollout status deployment/worker  -n ai-todo-staging --timeout=180s
+```
+
+空库首次部署或含 Alembic migration 的版本，需要显式执行：
+
+```bash
+kubectl delete job/db-migration -n ai-todo-staging --ignore-not-found=true
+kubectl apply -k apps/api/deploy/k8s/overlays/staging-migration
+kubectl wait --for=condition=complete job/db-migration -n ai-todo-staging --timeout=300s
+kubectl logs job/db-migration -n ai-todo-staging --tail=200
 ```
 
 无订阅模板时关闭 worker：
@@ -211,8 +239,11 @@ docker compose -f docker-compose.prod.yml --env-file .env.staging exec -T postgr
 kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=postgres \
   -n ai-todo-staging --timeout=180s
 
-kubectl exec -i -n ai-todo-staging deployment/postgres -- psql -U ai_todo -d ai_todo < /tmp/ai-todo-staging-backup.sql
+kubectl exec -i -n ai-todo-staging statefulset/postgres -- psql -U ai_todo -d ai_todo < /tmp/ai-todo-staging-backup.sql
 
+kubectl delete job/db-migration -n ai-todo-staging --ignore-not-found=true
+kubectl apply -k ~/AgentProjects/ai-todo/apps/api/deploy/k8s/overlays/staging-migration
+kubectl wait --for=condition=complete job/db-migration -n ai-todo-staging --timeout=300s
 kubectl rollout restart deployment/api -n ai-todo-staging
 ```
 
@@ -321,10 +352,20 @@ kustomize edit set image \
 cd ~/AgentProjects/ai-todo
 kubectl diff -k apps/api/deploy/k8s/overlays/production || true
 kubectl apply -k apps/api/deploy/k8s/overlays/production
+kubectl apply -k apps/api/deploy/k8s/overlays/production-db
 
-kubectl rollout status deployment/postgres -n ai-todo --timeout=180s
+kubectl rollout status statefulset/postgres -n ai-todo --timeout=180s
 kubectl rollout status deployment/api     -n ai-todo --timeout=180s
 kubectl rollout status deployment/worker  -n ai-todo --timeout=180s
+```
+
+空库首次部署或含 Alembic migration 的版本，需要显式执行：
+
+```bash
+kubectl delete job/db-migration -n ai-todo --ignore-not-found=true
+kubectl apply -k apps/api/deploy/k8s/overlays/production-migration
+kubectl wait --for=condition=complete job/db-migration -n ai-todo --timeout=300s
+kubectl logs job/db-migration -n ai-todo --tail=200
 ```
 
 无订阅模板时：
@@ -351,12 +392,15 @@ curl -fsS https://xingxiaolin.cn/v1/health/db
 
 ### 4. 日常变更速查
 
-| 场景              | 操作                                                              |
-| ----------------- | ----------------------------------------------------------------- |
-| 发新版 API        | manifest digest → `kustomize edit set image` → `kubectl apply -k` |
-| 只改密钥          | 改 `.env.production.secrets` → `apply -k` → `rollout restart`     |
-| 改 NodePort / PVC | 改 overlay `kustomization.yaml` → `apply -k`                      |
-| 查当前版本        | VPS `.deploy/current.json` 或 `GET /v1/health`                    |
+| 场景                  | 操作                                                                   |
+| --------------------- | ---------------------------------------------------------------------- |
+| 发新版 API            | `CD (K8s)`：manifest digest → app overlay → `kubectl apply -k`         |
+| 执行 expand migration | 先备份 → `DB Migration (K8s)` → `CD (K8s)`                             |
+| 执行 contract         | 维护窗口 → 备份/回滚预案 → `DB Migration (K8s)`，不和普通 app 发布混跑 |
+| 只改密钥              | 改 `.env.production.secrets` → app overlay apply → `rollout restart`   |
+| 改 NodePort           | 改 app overlay → app overlay apply                                     |
+| 改 PVC / Postgres     | 改 db overlay → 维护窗口 apply                                         |
+| 查当前版本            | VPS `.deploy/current.json` 或 `GET /v1/health`                         |
 
 ---
 
@@ -376,6 +420,8 @@ kubectl describe pod -n $NS -l app.kubernetes.io/name=ai-todo-api
 # 仅渲染 YAML，不应用
 kubectl kustomize apps/api/deploy/k8s/overlays/staging
 kubectl kustomize apps/api/deploy/k8s/overlays/production
+kubectl kustomize apps/api/deploy/k8s/overlays/production-db
+kubectl kustomize apps/api/deploy/k8s/overlays/production-migration
 
 # 镜像拉取失败（ImagePullBackOff）
 kubectl describe pod -n $NS -l app.kubernetes.io/name=ai-todo-api
@@ -383,26 +429,29 @@ kubectl describe pod -n $NS -l app.kubernetes.io/name=ai-todo-api
 
 # 删除整个栈（危险：PVC 策略见 base 清单）
 kubectl delete -k apps/api/deploy/k8s/overlays/staging
+kubectl delete -k apps/api/deploy/k8s/overlays/staging-db
 kubectl delete -k apps/api/deploy/k8s/overlays/production
+kubectl delete -k apps/api/deploy/k8s/overlays/production-db
 ```
 
 ---
 
 ## 五、与 Compose 差异
 
-| 项              | Compose                        | K8s                                   |
-| --------------- | ------------------------------ | ------------------------------------- |
-| 隔离            | `AI_TODO_COMPOSE_PROJECT_NAME` | Namespace                             |
-| Staging 端口    | `8083`                         | NodePort `30083`                      |
-| Production 端口 | `8082`                         | NodePort `30082`                      |
-| 存储            | Docker volume                  | PVC（staging 2Gi / production 5Gi）   |
-| Worker          | `--profile notifications`      | `kubectl scale` 控制副本              |
-| 镜像发版        | manifest → `AI_TODO_API_IMAGE` | manifest → `kustomize edit set image` |
-| 部署记录        | `.deploy/current.json`         | 同上（K8s CD 接入后写入）             |
+| 项              | Compose                        | K8s                                                   |
+| --------------- | ------------------------------ | ----------------------------------------------------- |
+| 隔离            | `AI_TODO_COMPOSE_PROJECT_NAME` | Namespace                                             |
+| Staging 端口    | `8083`                         | NodePort `30083`                                      |
+| Production 端口 | `8082`                         | NodePort `30082`                                      |
+| 存储            | Docker volume                  | 独立 DB overlay + PVC（staging 2Gi / production 5Gi） |
+| Worker          | `--profile notifications`      | `kubectl scale` 控制副本                              |
+| 镜像发版        | manifest → `AI_TODO_API_IMAGE` | manifest → app overlay `kustomize edit set image`     |
+| DB migration    | API entrypoint 自动执行        | `DB Migration (K8s)` workflow / Job                   |
+| 部署记录        | `.deploy/current.json`         | 同上（K8s CD 接入后写入）                             |
 
 ## 六、后续
 
-- **CD 接 K8s**：GitHub Actions SSH 步骤读 manifest → `kustomize edit set image` → `kubectl apply -k` → 写 `.deploy/current.json`
+- **DB 外置**：当迁移到独立数据库或云数据库时，保持 app overlay 不变，只替换 Secret 中的 DSN / Postgres 连接信息
 - **Full GitOps（可选）**：Staging 稳定后评估 Flux / Argo CD + 自动 image pin commit
 
 ## 相关文档
