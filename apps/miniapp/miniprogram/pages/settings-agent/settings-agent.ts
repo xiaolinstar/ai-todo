@@ -1,3 +1,4 @@
+import { handleApiError } from '../../lib/error-handler';
 import { createPat, listApiTokens } from '../../lib/api';
 import { getConfig } from '../../lib/config';
 import { formatShortDate } from '../../lib/format';
@@ -40,7 +41,7 @@ Page({
       .then((response) => {
         this.setData({ patLoading: false });
         if (!response.ok || !response.data) {
-          wx.showToast({ title: response.error?.message || '加载失败', icon: 'none' });
+          handleApiError(response.error, '加载失败');
           return;
         }
         const patItems = response.data.items.map((raw) => {
@@ -105,7 +106,7 @@ Page({
       .then((response) => {
         this.setData({ quickCreating: false });
         if (!response.ok || !response.data) {
-          wx.showToast({ title: response.error?.message || '创建失败', icon: 'none' });
+          handleApiError(response.error, '创建失败');
           return;
         }
         const token = response.data.token;

@@ -52,6 +52,7 @@ curl POST /v1/reminders   # 最直接
 
 - **技术栈：微信原生**（TypeScript + Sass，对齐 party-helper，见 `docs/miniapp-conventions.md`）
 - 优先级低于 CLI/Skills；MVP 页面：今日、创建提醒、完成、联系人（见 `apps/miniapp/README.md`）
+- **时区解析兜底**：Windows PC 微信等环境底层 Chromium 可能缺乏完整 ICU 数据库，导致 `Intl.DateTimeFormat` 抛错。处理时区偏移时必须使用本地系统时区偏移（`getTimezoneOffset`）作为后备，**严禁兜底为 0 (UTC)**，以防止保存与读取产生完美的 8 小时不对称时差。同时需注意部分环境下 `hour12: false` 产生的 `hour === 24` 午夜解析 Bug，必须伴随日期进位（day + 1）处理。
 
 ### 认证与用户
 

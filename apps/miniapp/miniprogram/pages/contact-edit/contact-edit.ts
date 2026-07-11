@@ -1,3 +1,4 @@
+import { handleApiError } from '../../lib/error-handler';
 import { fetchContact, updateContact } from '../../lib/api';
 
 Page({
@@ -26,7 +27,7 @@ Page({
       .then((response) => {
         if (!response.ok || !response.data) {
           this.setData({ loading: false });
-          wx.showToast({ title: response.error?.message || '加载失败', icon: 'none' });
+          handleApiError(response.error, '加载失败');
           return;
         }
         const contact = response.data.contact;
@@ -107,7 +108,7 @@ Page({
       .then((response) => {
         this.setData({ submitting: false });
         if (!response.ok) {
-          wx.showToast({ title: response.error?.message || '保存失败', icon: 'none' });
+          handleApiError(response.error, '保存失败');
           return;
         }
         wx.showToast({ title: '已保存', icon: 'success' });

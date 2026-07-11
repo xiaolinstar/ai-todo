@@ -1,3 +1,4 @@
+import { handleApiError } from '../../lib/error-handler';
 import { fetchHealth, fetchMe, revokeAllApiTokens } from '../../lib/api';
 import { clearProfileSetupSeen, getConfig, getDefaultApiUrl } from '../../lib/config';
 
@@ -56,7 +57,7 @@ Page({
         if (!result.confirm) return;
         revokeAllApiTokens().then((response) => {
           if (!response.ok) {
-            wx.showToast({ title: response.error?.message || '失败', icon: 'none' });
+            handleApiError(response.error, '失败');
             return;
           }
           wx.showToast({ title: '已清理', icon: 'success' });

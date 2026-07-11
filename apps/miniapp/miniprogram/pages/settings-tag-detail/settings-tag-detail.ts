@@ -1,3 +1,4 @@
+import { handleApiError } from '../../lib/error-handler';
 import { deleteTag, fetchTags, updateTag, type TagSummary } from '../../lib/api';
 import { TODO_MODAL_CONFIRM_DANGER, TODO_TAG_PALETTE } from '../../lib/design-tokens';
 import { getTagBackgroundColor } from '../../lib/tag-style';
@@ -36,7 +37,7 @@ Page({
       .then((response) => {
         if (!response.ok || !response.data) {
           this.setData({ loading: false });
-          wx.showToast({ title: response.error?.message || '加载失败', icon: 'none' });
+          handleApiError(response.error, '加载失败');
           return;
         }
         const tag = response.data.items.find((item: TagSummary) => item.id === this.data.tagId);
@@ -101,7 +102,7 @@ Page({
       .then((response) => {
         this.setData({ saving: false });
         if (!response.ok || !response.data) {
-          wx.showToast({ title: response.error?.message || '保存失败', icon: 'none' });
+          handleApiError(response.error, '保存失败');
           return;
         }
         wx.showToast({ title: '已保存', icon: 'success' });
@@ -126,7 +127,7 @@ Page({
           .then((response) => {
             this.setData({ deleting: false });
             if (!response.ok) {
-              wx.showToast({ title: response.error?.message || '删除失败', icon: 'none' });
+              handleApiError(response.error, '删除失败');
               return;
             }
             wx.showToast({ title: '已删除', icon: 'success' });

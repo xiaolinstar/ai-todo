@@ -1,3 +1,4 @@
+import { handleApiError } from '../../lib/error-handler';
 import { loadAccountDay } from '../../lib/account-day';
 import {
   addReminderTrackEntry,
@@ -68,7 +69,7 @@ Page({
       .then(([account, response, prefs, tagsResponse]) => {
         if (!response.ok || !response.data) {
           this.setData({ loading: false });
-          wx.showToast({ title: response.error?.message || '加载失败', icon: 'none' });
+          handleApiError(response.error, '加载失败');
           return;
         }
         const reminder = response.data.reminder;

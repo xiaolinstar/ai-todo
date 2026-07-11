@@ -1,3 +1,4 @@
+import { handleApiError } from '../../lib/error-handler';
 import { completeReminder, deleteReminder, fetchReminders, fetchTags } from '../../lib/api';
 import { loadAccountDay } from '../../lib/account-day';
 import { TODO_MODAL_CONFIRM_DANGER } from '../../lib/design-tokens';
@@ -624,7 +625,7 @@ Page({
       .then((response) => {
         if (!response.ok) {
           this.revertCompletingItem(id);
-          wx.showToast({ title: response.error?.message || '操作失败', icon: 'none' });
+          handleApiError(response.error, '操作失败');
           return;
         }
 
@@ -776,7 +777,7 @@ Page({
       .then((response) => {
         if (!response.ok) {
           this.patchReminderItem(id, { deleting: false, exiting: false, swipeX: 0 });
-          wx.showToast({ title: response.error?.message || '删除失败', icon: 'none' });
+          handleApiError(response.error, '删除失败');
           return;
         }
 

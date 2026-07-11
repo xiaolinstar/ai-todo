@@ -1,3 +1,4 @@
+import { handleApiError } from '../../lib/error-handler';
 import { createPat } from '../../lib/api';
 import { getConfig } from '../../lib/config';
 import {
@@ -88,7 +89,7 @@ Page({
       .then((response) => {
         this.setData({ submitting: false });
         if (!response.ok || !response.data) {
-          wx.showToast({ title: response.error?.message || '创建失败', icon: 'none' });
+          handleApiError(response.error, '创建失败');
           return;
         }
         const token = response.data.token;

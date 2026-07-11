@@ -1,3 +1,4 @@
+import { handleApiError } from '../../lib/error-handler';
 import { fetchMe, updateProfile } from '../../lib/api';
 import { persistAvatarFromTemp, resolveAvatarDisplayUrl } from '../../lib/avatar-cache';
 import { markPrivacyConsented } from '../../lib/privacy';
@@ -37,7 +38,7 @@ Page({
       .then((response) => {
         this.setData({ loading: false });
         if (!response.ok || !response.data) {
-          wx.showToast({ title: response.error?.message || '登录已过期', icon: 'none' });
+          handleApiError(response.error, '登录已过期');
           setTimeout(() => wx.navigateBack(), 600);
           return;
         }
@@ -138,7 +139,7 @@ Page({
       .then((response) => {
         this.setData({ saving: false });
         if (!response.ok || !response.data) {
-          wx.showToast({ title: response.error?.message || '保存失败', icon: 'none' });
+          handleApiError(response.error, '保存失败');
           return;
         }
         const user = response.data.user;

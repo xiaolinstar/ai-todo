@@ -1,3 +1,4 @@
+import { handleApiError } from '../../lib/error-handler';
 import { ApiTokenSummary, listApiTokens, revokeApiToken } from '../../lib/api';
 import { getConfig } from '../../lib/config';
 import { TODO_MODAL_CONFIRM_DANGER } from '../../lib/design-tokens';
@@ -38,7 +39,7 @@ Page({
       .then((response) => {
         this.setData({ loading: false });
         if (!response.ok || !response.data) {
-          wx.showToast({ title: response.error?.message || '加载失败', icon: 'none' });
+          handleApiError(response.error, '加载失败');
           return;
         }
         const raw = response.data.items.find((item) => item.id === this.data.tokenId);
@@ -88,7 +89,7 @@ Page({
           .then((response) => {
             this.setData({ revoking: false });
             if (!response.ok) {
-              wx.showToast({ title: response.error?.message || '吊销失败', icon: 'none' });
+              handleApiError(response.error, '吊销失败');
               return;
             }
             wx.showToast({ title: '已吊销', icon: 'success' });

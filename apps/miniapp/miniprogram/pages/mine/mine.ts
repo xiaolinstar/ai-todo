@@ -1,3 +1,4 @@
+import { handleApiError } from '../../lib/error-handler';
 import { updateProfile } from '../../lib/api';
 import {
   persistAvatarFromTemp,
@@ -333,7 +334,7 @@ Page({
       .then((response) => {
         this.setData({ profileSaving: false });
         if (!response.ok || !response.data) {
-          wx.showToast({ title: response.error?.message || '保存失败', icon: 'none' });
+          handleApiError(response.error, '保存失败');
           return;
         }
         this.applyUser(response.data.user, false);

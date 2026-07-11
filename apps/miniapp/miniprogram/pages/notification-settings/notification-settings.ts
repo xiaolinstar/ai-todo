@@ -1,3 +1,4 @@
+import { handleApiError } from '../../lib/error-handler';
 import { fetchNotificationSettings, updateNotificationSettings } from '../../lib/api';
 import { formatQuietHoursLabel } from '../../lib/notification-labels';
 import { todoPageThemeData } from '../../lib/theme';
@@ -24,7 +25,7 @@ Page({
       .then((settingsResponse) => {
         this.setData({ loading: false });
         if (!settingsResponse.ok || !settingsResponse.data) {
-          wx.showToast({ title: settingsResponse.error?.message || '加载失败', icon: 'none' });
+          handleApiError(settingsResponse.error, '加载失败');
           setTimeout(() => wx.navigateBack(), 600);
           return;
         }
@@ -62,7 +63,7 @@ Page({
         this.setData({ saving: false });
         if (!response.ok || !response.data) {
           if (!options?.silent) {
-            wx.showToast({ title: response.error?.message || '保存失败', icon: 'none' });
+            handleApiError(response.error, '保存失败');
           }
           this.loadSettings();
           return;

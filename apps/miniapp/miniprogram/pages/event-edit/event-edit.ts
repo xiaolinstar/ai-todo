@@ -1,3 +1,4 @@
+import { handleApiError } from '../../lib/error-handler';
 import { loadAccountDay } from '../../lib/account-day';
 import { fetchCalendarEvent, updateCalendarEvent } from '../../lib/api';
 import type { ContactSummary } from '../../lib/api';
@@ -49,7 +50,7 @@ Page({
       .then(([account, response, prefs]) => {
         if (!response.ok || !response.data) {
           this.setData({ loading: false });
-          wx.showToast({ title: response.error?.message || '加载失败', icon: 'none' });
+          handleApiError(response.error, '加载失败');
           return;
         }
         const event = response.data.calendarEvent;
@@ -141,11 +142,7 @@ Page({
       const endDefaults = applyDefaultEventEnd(
         this.data.startDate,
         this.data.startTime,
-        {
-          defaultHasEnd: true,
-          defaultDurationMinutes: this.normalizeDuration(this._originalDurationMinutes),
-          selectTodayOnOpen: true,
-        },
+        this._originalDurationMinutes,
         this.data.accountTimezone,
       );
       this.setData({
@@ -176,13 +173,6 @@ Page({
     this.setData({ endTime: e.detail.value });
   },
 
-  normalizeDuration(minutes: number): 30 | 60 | 90 {
-    if (minutes === 30 || minutes === 90) {
-      return minutes;
-    }
-    return 60;
-  },
-
   setStartDateTime(startDate: string, startTime: string) {
     if (this._endTouched || !this.data.hasEnd) {
       this.setData({ startDate, startTime });
@@ -191,11 +181,7 @@ Page({
     const endDefaults = applyDefaultEventEnd(
       startDate,
       startTime,
-      {
-        defaultHasEnd: true,
-        defaultDurationMinutes: this.normalizeDuration(this._originalDurationMinutes),
-        selectTodayOnOpen: true,
-      },
+      this._originalDurationMinutes,
       this.data.accountTimezone,
     );
     this.setData({
@@ -271,7 +257,7 @@ Page({
       .then(async (response) => {
         this.setData({ submitting: false });
         if (!response.ok) {
-          wx.showToast({ title: response.error?.message || '保存失败', icon: 'none' });
+          handleApiError(response.error, '保存失败');
           return;
         }
         if (shouldSubscribe) {

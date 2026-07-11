@@ -1,7 +1,8 @@
+import { handleApiError } from '../../lib/error-handler';
 import { loadAccountDay } from '../../lib/account-day';
 import { createCalendarEvent } from '../../lib/api';
 import type { ContactSummary } from '../../lib/api';
-import { applyDefaultEventEnd, loadContentPrefs } from '../../lib/content-prefs';
+import { applyDefaultEventEnd } from '../../lib/content-prefs';
 import { combineDateTime } from '../../lib/format';
 import { todoPageThemeData } from '../../lib/theme';
 import {
@@ -32,28 +33,17 @@ Page({
   _endTouched: false,
 
   onLoad() {
-    Promise.all([loadAccountDay(), loadContentPrefs()]).then(
-      ([{ today, timezone, nowTime }, prefs]) => {
-        const endDefaults = applyDefaultEventEnd(
-          today,
-          nowTime,
-          {
-            ...prefs.calendar,
-            defaultHasEnd: true,
-            defaultDurationMinutes: 60,
-          },
-          timezone,
-        );
-        this.setData({
-          accountTimezone: timezone,
-          startDate: today,
-          startTime: nowTime,
-          hasEnd: endDefaults.hasEnd,
-          endDate: endDefaults.endDate,
-          endTime: endDefaults.endTime,
-        });
-      },
-    );
+    loadAccountDay().then(({ today, timezone, nowTime }) => {
+      const endDefaults = applyDefaultEventEnd(today, nowTime, 60, timezone);
+      this.setData({
+        accountTimezone: timezone,
+        startDate: today,
+        startTime: nowTime,
+        hasEnd: endDefaults.hasEnd,
+        endDate: endDefaults.endDate,
+        endTime: endDefaults.endTime,
+      });
+    });
     loadWechatNotificationPrefs().then((prefs) => {
       this.setData({
         notifyAvailable: prefs.notifyAvailable,
@@ -89,11 +79,7 @@ Page({
       const endDefaults = applyDefaultEventEnd(
         this.data.startDate,
         this.data.startTime,
-        {
-          defaultHasEnd: true,
-          defaultDurationMinutes: 60,
-          selectTodayOnOpen: true,
-        },
+        60,
         this.data.accountTimezone,
       );
       this.setData({
@@ -129,16 +115,7 @@ Page({
       this.setData({ startDate, startTime });
       return;
     }
-    const endDefaults = applyDefaultEventEnd(
-      startDate,
-      startTime,
-      {
-        defaultHasEnd: true,
-        defaultDurationMinutes: 60,
-        selectTodayOnOpen: true,
-      },
-      this.data.accountTimezone,
-    );
+    const endDefaults = applyDefaultEventEnd(startDate, startTime, 60, this.data.accountTimezone);
     this.setData({
       startDate,
       startTime,
@@ -215,7 +192,7 @@ Page({
       .then(async (response) => {
         this.setData({ submitting: false });
         if (!response.ok) {
-          wx.showToast({ title: response.error?.message || '创建失败', icon: 'none' });
+          handleApiError(response.error, '创建失败');
           return;
         }
         await this.notifyAfterSave(response.data?.calendarEvent.id);

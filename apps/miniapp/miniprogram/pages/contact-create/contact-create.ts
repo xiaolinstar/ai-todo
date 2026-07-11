@@ -1,3 +1,4 @@
+import { handleApiError } from '../../lib/error-handler';
 import { createContact } from '../../lib/api';
 
 Page({
@@ -81,7 +82,7 @@ Page({
       .then((response) => {
         this.setData({ submitting: false });
         if (!response.ok) {
-          wx.showToast({ title: response.error?.message || '添加失败', icon: 'none' });
+          handleApiError(response.error, '添加失败');
           return;
         }
         wx.showToast({ title: '已添加', icon: 'success' });

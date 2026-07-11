@@ -1,3 +1,4 @@
+import { handleApiError } from '../../lib/error-handler';
 import { loadAccountDay } from '../../lib/account-day';
 import { createReminder, createTag, fetchTags } from '../../lib/api';
 import type { ContactSummary, TagSummary } from '../../lib/api';
@@ -134,7 +135,7 @@ Page({
       .then((response) => {
         this.setData({ tagCreating: false });
         if (!response.ok || !response.data) {
-          wx.showToast({ title: response.error?.message || '创建标签失败', icon: 'none' });
+          handleApiError(response.error, '创建标签失败');
           return;
         }
         const tag = response.data.tag;
@@ -229,7 +230,7 @@ Page({
       .then(async (response) => {
         this.setData({ submitting: false });
         if (!response.ok) {
-          wx.showToast({ title: response.error?.message || '创建失败', icon: 'none' });
+          handleApiError(response.error, '创建失败');
           return;
         }
         await this.notifyAfterSave(response.data?.reminder.id);

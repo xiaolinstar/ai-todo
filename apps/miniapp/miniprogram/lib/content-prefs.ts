@@ -140,14 +140,11 @@ export function buildContactSubtitle(
 export function applyDefaultEventEnd(
   startDate: string,
   startTime: string,
-  prefs: CalendarContentPrefs,
+  durationMinutes: number,
   timeZone?: string,
 ): { hasEnd: boolean; endDate: string; endTime: string } {
-  if (!prefs.defaultHasEnd) {
-    return { hasEnd: false, endDate: startDate, endTime: startTime };
-  }
   const startMs = combineDateTimeToMillis(startDate, startTime, timeZone);
-  const endMs = startMs + prefs.defaultDurationMinutes * 60 * 1000;
+  const endMs = startMs + durationMinutes * 60 * 1000;
   const end = splitIsoDateTime(new Date(endMs).toISOString(), timeZone);
   return {
     hasEnd: true,

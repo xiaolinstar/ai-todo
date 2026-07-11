@@ -1,3 +1,4 @@
+import { handleApiError } from '../../lib/error-handler';
 import { createTag, fetchTags, type TagSummary } from '../../lib/api';
 import { TODO_TAG_PALETTE } from '../../lib/design-tokens';
 import { withTagStyle, type TagStyleFields } from '../../lib/tag-style';
@@ -90,7 +91,7 @@ Page({
       .then((response) => {
         this.setData({ creating: false });
         if (!response.ok || !response.data) {
-          wx.showToast({ title: response.error?.message || '新增失败', icon: 'none' });
+          handleApiError(response.error, '新增失败');
           return;
         }
         this.setData({

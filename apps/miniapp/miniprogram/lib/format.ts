@@ -29,16 +29,22 @@ function zonedParts(instant: Date, timeZone: string): ZonedParts | null {
       hour12: false,
     }).formatToParts(instant);
     const pick = (type: string) => parts.find((p) => p.type === type)?.value;
-    const year = Number(pick('year'));
-    const month = Number(pick('month'));
-    const day = Number(pick('day'));
-    const hour = Number(pick('hour'));
+    let year = Number(pick('year'));
+    let month = Number(pick('month'));
+    let day = Number(pick('day'));
+    let hour = Number(pick('hour'));
     const minute = Number(pick('minute'));
-    const normalizedHour = hour === 24 ? 0 : hour;
     if ([year, month, day, hour, minute].some((n) => Number.isNaN(n))) {
       return null;
     }
-    return { year, month, day, hour: normalizedHour, minute };
+    if (hour === 24) {
+      hour = 0;
+      const nextDay = new Date(Date.UTC(year, month - 1, day + 1));
+      year = nextDay.getUTCFullYear();
+      month = nextDay.getUTCMonth() + 1;
+      day = nextDay.getUTCDate();
+    }
+    return { year, month, day, hour, minute };
   } catch {
     return null;
   }
@@ -64,7 +70,7 @@ export function resolveAccountTimeZone(timeZone?: string): string {
 function timeZoneOffsetMillis(utcMs: number, timeZone: string): number {
   const parts = zonedParts(new Date(utcMs), timeZone);
   if (!parts) {
-    return 0;
+    return -new Date(utcMs).getTimezoneOffset() * 60000;
   }
   const asUtc = Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute);
   return asUtc - utcMs;
