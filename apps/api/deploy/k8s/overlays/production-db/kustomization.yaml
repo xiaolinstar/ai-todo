@@ -6,6 +6,12 @@ namespace: ai-todo
 resources:
   - ../../base/db
 
+labels:
+  - pairs:
+      app.kubernetes.io/instance: ai-todo-production
+    includeSelectors: false
+    includeTemplates: true
+
 patches:
   - target:
       kind: PersistentVolumeClaim

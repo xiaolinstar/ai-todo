@@ -16,6 +16,7 @@ spec:
         app.kubernetes.io/name: db-migration
         app.kubernetes.io/part-of: ai-todo
         app.kubernetes.io/component: db-migration
+        app.kubernetes.io/managed-by: kustomize
     spec:
       restartPolicy: Never
       containers:
@@ -34,3 +35,10 @@ spec:
           env:
             - name: AI_TODO_SKIP_MIGRATIONS
               value: "true"
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "50m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"

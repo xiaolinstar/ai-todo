@@ -6,6 +6,12 @@ namespace: ai-todo-staging
 resources:
   - ../../base/db
 
+labels:
+  - pairs:
+      app.kubernetes.io/instance: ai-todo-staging
+    includeSelectors: false
+    includeTemplates: true
+
 patches:
   - target:
       kind: PersistentVolumeClaim

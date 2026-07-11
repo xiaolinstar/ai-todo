@@ -6,6 +6,12 @@ namespace: ai-todo
 resources:
   - ../../base
 
+labels:
+  - pairs:
+      app.kubernetes.io/instance: ai-todo-local
+    includeSelectors: false
+    includeTemplates: true
+
 patches:
   - target:
       kind: Service

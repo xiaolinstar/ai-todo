@@ -43,6 +43,13 @@ spec:
             limits:
               memory: "256Mi"
               cpu: "500m"
+          startupProbe:
+            exec:
+              command:
+                - python
+                - /app/scripts/worker_healthcheck.py
+            failureThreshold: 30
+            periodSeconds: 2
           livenessProbe:
             exec:
               command:

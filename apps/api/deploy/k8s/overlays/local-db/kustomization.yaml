@@ -5,3 +5,9 @@ namespace: ai-todo
 
 resources:
   - ../../base/db
+
+labels:
+  - pairs:
+      app.kubernetes.io/instance: ai-todo-local
+    includeSelectors: false
+    includeTemplates: true

@@ -95,6 +95,8 @@ IMAGE='ghcr.nju.edu.cn/xiaolinstar/ai-todo-api@sha256:<digest>'
 
 > Gateway：Production 上游 `127.0.0.1:30082`。Staging 当前仍由 Compose 提供服务，不走 `30083`。
 
+> Kustomize config/secret generator 当前保留 `disableNameSuffixHash: true`。原因是 app、db、migration 三类 overlay 分开执行，Postgres StatefulSet 与 migration Job 需要稳定引用同一组 `ai-todo-config` / `ai-todo-secrets`。后续若要开启哈希后缀，需要先把共享配置的生成与引用模型改成可跨 overlay 一致解析。
+
 ## 组件行为
 
 | 步骤     | API Pod                                | Worker Pod              | Migration Job                   |

@@ -6,6 +6,12 @@ namespace: ai-todo-staging
 resources:
   - ../../base
 
+labels:
+  - pairs:
+      app.kubernetes.io/instance: ai-todo-staging
+    includeSelectors: false
+    includeTemplates: true
+
 patches:
   - target:
       kind: Namespace
