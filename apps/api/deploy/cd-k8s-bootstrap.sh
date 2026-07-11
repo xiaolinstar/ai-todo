@@ -164,14 +164,19 @@ print(f"health ok gitSha={actual}")
 PY
 
 db_deadline=$((SECONDS + 60))
+db_ok=false
 while (( SECONDS < db_deadline )); do
   if curl -fsS "${health_base}/v1/health/db" >/dev/null 2>&1; then
+    db_ok=true
     break
   fi
   sleep 2
 done
-if ! curl -fsS "${health_base}/v1/health/db" >/dev/null; then
-  echo "DB health check failed: ${health_base}/v1/health/db" >&2
+
+if [ "$db_ok" = false ]; then
+  echo "DB health check failed after timeout: ${health_base}/v1/health/db" >&2
+  # Try one last time without silencing stderr to print the error reason
+  curl -fsS "${health_base}/v1/health/db" >/dev/null || true
   exit 1
 fi
 echo "DB health OK"

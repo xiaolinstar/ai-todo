@@ -39,6 +39,10 @@ spec:
             limits:
               memory: "256Mi"
               cpu: "500m"
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sh", "-c", "sleep 5"]
           startupProbe:
             httpGet:
               path: /v1/health
