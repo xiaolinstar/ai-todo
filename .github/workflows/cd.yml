@@ -1,6 +1,9 @@
 name: CD
 
 on:
+  push:
+    tags:
+      - "v*.*.*"
   workflow_dispatch:
     inputs:
       environment:
@@ -39,12 +42,13 @@ env:
   PYTHON_VERSION: "3.11"
 
 concurrency:
-  group: cd-${{ github.event.inputs.environment || 'production' }}
+  group: cd-${{ github.event_name == 'push' && 'staging' || (github.event.inputs.environment || 'production') }}
   cancel-in-progress: false
 
 jobs:
   resolve-manifest:
     name: 1 · Resolve manifest
+    if: contains(github.ref_name, '-') || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     outputs:
       git_sha: ${{ steps.manifest.outputs.git_sha }}
@@ -71,7 +75,7 @@ jobs:
         id: ci_run
         env:
           INPUT_RUN_ID: ${{ github.event.inputs.ci_run_id }}
-          INPUT_RELEASE_TAG: ${{ github.event.inputs.release_tag }}
+          INPUT_RELEASE_TAG: ${{ github.event.inputs.release_tag || github.ref_name }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: node scripts/cd/resolve-ci-run.mjs
 
@@ -108,7 +112,7 @@ jobs:
     name: 2 · Classify release
     needs: [resolve-manifest]
     runs-on: ubuntu-latest
-    environment: ${{ github.event.inputs.environment || 'production' }}
+    environment: ${{ github.event_name == 'push' && 'staging' || (github.event.inputs.environment || 'production') }}
     outputs:
       release_class: ${{ steps.classify.outputs.release_class }}
       has_schema_changes: ${{ steps.classify.outputs.has_schema_changes }}
@@ -146,7 +150,7 @@ jobs:
     name: 3 · Deploy
     needs: [resolve-manifest, classify-release]
     runs-on: ubuntu-latest
-    environment: ${{ github.event.inputs.environment || 'production' }}
+    environment: ${{ github.event_name == 'push' && 'staging' || (github.event.inputs.environment || 'production') }}
     steps:
       - uses: actions/checkout@v6
 
@@ -160,7 +164,7 @@ jobs:
       - name: Check deploy configuration
         id: deploy_config
         env:
-          CD_ENVIRONMENT: ${{ github.event.inputs.environment || 'production' }}
+          CD_ENVIRONMENT: ${{ github.event_name == 'push' && 'staging' || (github.event.inputs.environment || 'production') }}
           DEPLOY_HOST_PRESENT: ${{ vars.DEPLOY_HOST != '' || secrets.DEPLOY_HOST != '' }}
           DEPLOY_USER_PRESENT: ${{ vars.DEPLOY_USER != '' || secrets.DEPLOY_USER != '' }}
           DEPLOY_SSH_KEY_PRESENT: ${{ secrets.DEPLOY_SSH_KEY != '' }}
@@ -199,7 +203,7 @@ jobs:
           GHCR_DEPLOY_USER: ${{ vars.GHCR_DEPLOY_USER || secrets.GHCR_DEPLOY_USER || github.actor }}
           DEPLOY_PATH: ${{ vars.DEPLOY_PATH || secrets.DEPLOY_PATH }}
           DEPLOY_MODE_INPUT: ${{ github.event.inputs.deploy_mode || 'auto' }}
-          CD_ENVIRONMENT: ${{ github.event.inputs.environment || 'production' }}
+          CD_ENVIRONMENT: ${{ github.event_name == 'push' && 'staging' || (github.event.inputs.environment || 'production') }}
         with:
           host: ${{ vars.DEPLOY_HOST || secrets.DEPLOY_HOST }}
           username: ${{ vars.DEPLOY_USER || secrets.DEPLOY_USER }}
@@ -224,7 +228,7 @@ jobs:
     needs: [resolve-manifest, deploy]
     if: needs.deploy.result == 'success'
     runs-on: ubuntu-latest
-    environment: ${{ github.event.inputs.environment || 'production' }}
+    environment: ${{ github.event_name == 'push' && 'staging' || (github.event.inputs.environment || 'production') }}
     outputs:
       verify_error: ${{ steps.verify.outputs.error }}
     steps:
@@ -279,7 +283,7 @@ jobs:
     needs: [deploy, post-deploy-verify]
     if: ${{ always() && needs.deploy.result == 'success' && needs.post-deploy-verify.result == 'failure' }}
     runs-on: ubuntu-latest
-    environment: ${{ github.event.inputs.environment || 'production' }}
+    environment: ${{ github.event_name == 'push' && 'staging' || (github.event.inputs.environment || 'production') }}
     steps:
       - uses: actions/checkout@v6
 
@@ -293,7 +297,7 @@ jobs:
       - name: Check deploy configuration
         id: deploy_config
         env:
-          CD_ENVIRONMENT: ${{ github.event.inputs.environment || 'production' }}
+          CD_ENVIRONMENT: ${{ github.event_name == 'push' && 'staging' || (github.event.inputs.environment || 'production') }}
           DEPLOY_HOST_PRESENT: ${{ vars.DEPLOY_HOST != '' || secrets.DEPLOY_HOST != '' }}
           DEPLOY_USER_PRESENT: ${{ vars.DEPLOY_USER != '' || secrets.DEPLOY_USER != '' }}
           DEPLOY_SSH_KEY_PRESENT: ${{ secrets.DEPLOY_SSH_KEY != '' }}
@@ -307,7 +311,7 @@ jobs:
           GHCR_DEPLOY_TOKEN: ${{ secrets.GHCR_DEPLOY_TOKEN || github.token }}
           GHCR_DEPLOY_USER: ${{ vars.GHCR_DEPLOY_USER || secrets.GHCR_DEPLOY_USER || github.actor }}
           DEPLOY_PATH: ${{ vars.DEPLOY_PATH || secrets.DEPLOY_PATH }}
-          CD_ENVIRONMENT: ${{ github.event.inputs.environment || 'production' }}
+          CD_ENVIRONMENT: ${{ github.event_name == 'push' && 'staging' || (github.event.inputs.environment || 'production') }}
         with:
           host: ${{ vars.DEPLOY_HOST || secrets.DEPLOY_HOST }}
           username: ${{ vars.DEPLOY_USER || secrets.DEPLOY_USER }}
@@ -330,7 +334,7 @@ jobs:
     needs: [rollback]
     if: ${{ needs.rollback.result == 'success' }}
     runs-on: ubuntu-latest
-    environment: ${{ github.event.inputs.environment || 'production' }}
+    environment: ${{ github.event_name == 'push' && 'staging' || (github.event.inputs.environment || 'production') }}
     steps:
       - uses: actions/checkout@v6
 
@@ -374,13 +378,13 @@ jobs:
       - release-not-adopted
     if: ${{ always() && !cancelled() }}
     runs-on: ubuntu-latest
-    environment: ${{ github.event.inputs.environment || 'production' }}
+    environment: ${{ github.event_name == 'push' && 'staging' || (github.event.inputs.environment || 'production') }}
     steps:
       - uses: actions/checkout@v6
 
       - name: Write release report
         env:
-          CD_ENVIRONMENT: ${{ github.event.inputs.environment || 'production' }}
+          CD_ENVIRONMENT: ${{ github.event_name == 'push' && 'staging' || (github.event.inputs.environment || 'production') }}
           CD_RELEASE_TAG: ${{ needs.resolve-manifest.outputs.release_tag }}
           CD_GIT_SHA: ${{ needs.resolve-manifest.outputs.git_sha }}
           CD_FINGERPRINT: ${{ needs.resolve-manifest.outputs.fingerprint }}
