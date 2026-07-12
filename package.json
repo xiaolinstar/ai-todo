@@ -1,6 +1,6 @@
 {
   "name": "ai-todo",
-  "version": "0.4.0",
+  "version": "0.8.14",
   "private": true,
   "packageManager": "pnpm@11.5.2",
   "scripts": {

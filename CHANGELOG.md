@@ -9,6 +9,13 @@ ai-todo 的版本变更记录。**双版本**策略：
 
 格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 
+## [0.8.14](https://github.com/xiaolinstar/ai-todo/compare/v0.8.13...v0.8.14) (2026-07-12)
+
+
+### Bug Fixes
+
+* **cd:** require manual deployment trigger ([1c17cf9](https://github.com/xiaolinstar/ai-todo/commit/1c17cf975187eb5f84ecb7e98fab2ebda8f95665))
+
 ## [Unreleased]
 
 ### Added
