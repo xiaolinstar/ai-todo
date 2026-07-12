@@ -3,8 +3,7 @@
 # 1. gitleaks: 扫暂存区，阻止 secret 漏库（本地无 gitleaks 时降级，CI 兜底）
 # 2. lint-staged: 对暂存文件跑 eslint --fix + prettier --write
 
-# Source husky.sh for v8 compat; v9 is no-op
-. "$(dirname -- "$0")/_/husky.sh" 2>/dev/null || true
+
 
 # ── 1. Secret scan (staged content) ───────────────────────────────
 if command -v gitleaks >/dev/null 2>&1; then

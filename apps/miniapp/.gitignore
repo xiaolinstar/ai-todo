@@ -2,6 +2,7 @@
 miniprogram/**/*.js
 miniprogram/**/*.wxss
 .preview/
+.cloudbase/
 ci.env
 # 微信代码上传密钥（公众平台下载的 private.wx*.key，勿提交）
 private.wx*.key
