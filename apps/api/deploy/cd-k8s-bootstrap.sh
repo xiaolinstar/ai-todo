@@ -102,14 +102,14 @@ if [[ ! -f "$SECRETS_FILE" ]]; then
   exit 1
 fi
 
-CONFIGS_FILE="$OVERLAY_DIR/.env.production.configs"
-cat > "$CONFIGS_FILE" <<EOF
+CONFIG_FILE="$OVERLAY_DIR/.env.production.config"
+cat > "$CONFIG_FILE" <<EOF
 AI_TODO_ENVIRONMENT=production
 AI_TODO_ALLOW_DEV_AUTH=false
 AI_TODO_GIT_SHA=${GIT_SHA}
 AI_TODO_RELEASE_TAG=${AI_TODO_RELEASE_TAG:-}
 EOF
-chmod 600 "$CONFIGS_FILE"
+chmod 600 "$CONFIG_FILE"
 
 DIGEST="$API_DIGEST"
 if [[ "$DIGEST" != sha256:* ]]; then

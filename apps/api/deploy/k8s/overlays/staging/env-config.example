@@ -1,5 +1,5 @@
 # Staging Kubernetes overlay config (local only — gitignored as .env.*).
-#   cp env-configs.example .env.staging.configs
+#   cp env-config.example .env.staging.config
 
 AI_TODO_ENVIRONMENT=staging
 AI_TODO_ALLOW_DEV_AUTH=false

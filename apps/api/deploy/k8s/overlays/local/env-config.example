@@ -1,5 +1,6 @@
 # Local overlay config（gitignore：.env.*）
-#   cp env-configs.example .env.local.configs
+#   cp env-config.example .env.local.config
+#   edit .env.local.config
 
 AI_TODO_ENVIRONMENT=local
 AI_TODO_ALLOW_DEV_AUTH=true

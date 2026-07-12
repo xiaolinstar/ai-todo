@@ -88,7 +88,7 @@ Staging VPS（Kubernetes，当前不启用）：
 
 ```bash
 cd apps/api/deploy/k8s/overlays/staging
-cp env-configs.example .env.staging.configs
+cp env-config.example .env.staging.config
 cp env-secrets.example   .env.staging.secrets
 # 编辑 secrets 后：
 kubectl apply -k .
