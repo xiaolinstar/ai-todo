@@ -35,6 +35,7 @@ configMapGenerator:
     behavior: merge
     envs:
       - .env.production.config
+      - .env.production.release
 
 secretGenerator:
   - name: ai-todo-secrets

@@ -1,9 +1,9 @@
 # Copy to (gitignored):
 #   cp env-config.example .env.production.config
 #
-# CD (cd-k8s-bootstrap.sh) overwrites release identity on each deploy.
+# This file is manually maintained. Do NOT include AI_TODO_GIT_SHA
+# or AI_TODO_RELEASE_TAG here — they are injected dynamically by
+# cd-k8s-bootstrap.sh into .env.production.release on each deploy.
 
 AI_TODO_ENVIRONMENT=production
 AI_TODO_ALLOW_DEV_AUTH=false
-# AI_TODO_RELEASE_TAG=
-# AI_TODO_GIT_SHA=

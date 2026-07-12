@@ -117,10 +117,11 @@ MIRROR_REF="${K8S_REGISTRY_MIRROR}/xiaolinstar/ai-todo-api@${DIGEST}"
 
 cd "$OVERLAY_DIR"
 
-# Inject release metadata dynamically
-kustomize edit add configmap ai-todo-config --behavior=merge \
-  --from-literal=AI_TODO_GIT_SHA="${GIT_SHA}" \
-  --from-literal=AI_TODO_RELEASE_TAG="${AI_TODO_RELEASE_TAG:-}"
+# Write release metadata to a separate file (generated on each deploy, gitignored)
+cat > .env.production.release <<EOF
+AI_TODO_GIT_SHA=${GIT_SHA}
+AI_TODO_RELEASE_TAG=${AI_TODO_RELEASE_TAG:-}
+EOF
 
 kustomize edit set image "ghcr.io/xiaolinstar/ai-todo-api=${MIRROR_REF}"
 
