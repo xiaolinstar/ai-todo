@@ -142,30 +142,36 @@ fi
 
 health_base="${CD_LOCAL_HEALTH_URL%/}"
 deadline=$((SECONDS + HEALTH_WAIT_SECONDS))
+health_ok=false
+
 while (( SECONDS < deadline )); do
   if curl -fsS "${health_base}/v1/health" >/tmp/k8s-health.json 2>/dev/null; then
-    break
-  fi
-  sleep 3
-done
-
-if [[ ! -f /tmp/k8s-health.json ]]; then
-  echo "Local health check failed: ${health_base}/v1/health" >&2
-  exit 1
-fi
-
-python3 - <<'PY' /tmp/k8s-health.json "$GIT_SHA"
+    # Verify gitSha matches
+    if python3 - <<'PY' /tmp/k8s-health.json "$GIT_SHA"
 import json, sys
 payload = json.load(open(sys.argv[1]))
 data = payload.get("data") if isinstance(payload.get("data"), dict) else payload
 expected = sys.argv[2].strip().lower()
 actual = (data.get("gitSha") or data.get("git_sha") or "").strip().lower()
 if not actual:
-    raise SystemExit("health response missing gitSha (check AI_TODO_GIT_SHA in configmap)")
+    sys.exit(1)
 if actual != expected and not actual.startswith(expected[:7]):
-    raise SystemExit(f"gitSha mismatch: expected {expected}, got {actual}")
-print(f"health ok gitSha={actual}")
+    sys.exit(1)
 PY
+    then
+      health_ok=true
+      break
+    fi
+  fi
+  sleep 3
+done
+
+if [ "$health_ok" = false ]; then
+  echo "Local health check failed or gitSha mismatch: ${health_base}/v1/health" >&2
+  cat /tmp/k8s-health.json || true
+  exit 1
+fi
+echo "health ok gitSha=${GIT_SHA}"
 
 db_deadline=$((SECONDS + 60))
 db_ok=false
