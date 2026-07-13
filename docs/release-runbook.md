@@ -23,10 +23,10 @@
 开发者 push main
     → CI（scan → build → test → publish deploy-manifest）
     → 打 tag vX.Y.Z
-    → CD staging（API 有变更时）→ https://staging.xingxiaolin.cn
+    → 手动 CD staging（API 有变更时，填写 release_tag）→ https://staging.xingxiaolin.cn
     → 小程序体验版 / 预览 / 真机调试验收（连 staging）
     → 可选：提交微信审核（与 staging 浸泡并行）
-    → staging 达标后 CD (K8s) production-k8s（同 release_tag）→ https://xingxiaolin.cn
+    → staging 达标后手动 CD (K8s) production-k8s（同 release_tag）→ https://xingxiaolin.cn
     → 审核通过后发布微信正式版（连 production）
 
 微信用户（正式版）
@@ -189,6 +189,8 @@ curl -sf https://xingxiaolin.cn/v1/health/db
 10. 验收 production（health / health/db / smoke）
 11. 微信审核通过后发布正式版
 ```
+
+注意：`vX.Y.Z` tag 只是 CD 的 `release_tag` 参数。push tag 不会、也不应自动触发 CD；生产发布必须人工 Run workflow，避免在 CI manifest 尚未发布、小程序未验收或 staging 未达标时部署。
 
 ### 仅 API 变更
 
